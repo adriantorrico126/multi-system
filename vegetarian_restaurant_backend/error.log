@@ -1,0 +1,342 @@
+2025-07-10 23:29:44 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:45 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:45 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:45 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:46 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:46 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:47 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:47 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:29:48 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:31:24 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-10 23:31:30 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:113:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 00:22:38 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 00:23:14 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 00:30:31 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 00:30:46 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 00:31:04 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 12:57:01 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 12:57:04 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 12:59:57 [error]: Error al actualizar estado de venta:
+2025-07-11 13:03:54 [error]: Error al actualizar estado de venta:
+2025-07-11 13:04:23 [error]: Error al actualizar estado de venta:
+2025-07-11 13:12:18 [error]: Error al actualizar estado de venta:
+2025-07-11 13:13:06 [error]: Error al actualizar estado de venta:
+2025-07-11 13:13:58 [error]: Error al actualizar estado de venta:
+2025-07-11 17:40:47 [error]: Backend: Error in transaction:
+2025-07-11 17:40:47 [error]: Backend: Stack trace:
+2025-07-11 17:52:00 [error]: Backend: Error in transaction:
+2025-07-11 17:52:00 [error]: Backend: Stack trace:
+2025-07-11 17:52:28 [error]: Backend: Error in transaction:
+2025-07-11 17:52:28 [error]: Backend: Stack trace:
+2025-07-11 21:24:52 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:24:52 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:24:53 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:24:53 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:25:17 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:25:17 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:25:17 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:25:17 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:27:48 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:27:48 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:36:37 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-11 21:36:37 [error]: TypeError: Cannot read properties of undefined (reading 'id_sucursal')
+    at exports.getArqueoData (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\src\controllers\ventaController.js:288:34)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)

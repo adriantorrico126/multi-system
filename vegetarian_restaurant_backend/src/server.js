@@ -1,5 +1,8 @@
+console.log('=== INICIANDO SERVER.JS ===');
 const app = require('./app');
+console.log('app importado correctamente');
 const envConfig = require('./config/envConfig');
+console.log('envConfig importado correctamente');
 // const db = require('./config/database'); // Ya se inicializa en database.js y se prueba en app.js healthcheck
 
 const PORT = envConfig.PORT;

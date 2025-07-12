@@ -1,8 +1,27 @@
 const express = require('express');
 const categoriaController = require('../controllers/categoriaController');
-// Podríamos añadir middlewares de validación o autenticación aquí si los tuviéramos
-// const { validateCategoriaCreation } = require('../middlewares/validationMiddleware');
-// const authMiddleware = require('../middlewares/authMiddleware');
+const apicache = require('apicache');
+const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { check } = require('express-validator');
+
+let cache = apicache.middleware;
+
+// Middleware para limpiar caché
+const clearCache = (cacheKey) => (req, res, next) => {
+  apicache.clear(cacheKey);
+  next();
+};
+
+// Reglas de validación para la creación de categorías
+const createCategoriaValidationRules = [
+  check('nombre').notEmpty().withMessage('El nombre de la categoría es requerido.').trim(),
+];
+
+// Reglas de validación para la actualización de categorías
+const updateCategoriaValidationRules = [
+  check('nombre').optional().notEmpty().withMessage('El nombre de la categoría no puede estar vacío.').trim(),
+  check('activo').optional().isBoolean().withMessage('Activo debe ser un valor booleano.'),
+];
 
 const router = express.Router();
 
@@ -10,25 +29,24 @@ const router = express.Router();
 // POST /api/v1/categorias - Crear una nueva categoría
 router.post(
   '/',
-  // validateCategoriaCreation, // Ejemplo de middleware de validación
+  authenticateToken, 
+  authorizeRoles('admin', 'gerente'),
+  createCategoriaValidationRules,
+  clearCache('categorias'), // Limpia la caché de categorías
   categoriaController.createCategoria
 );
 
 // GET /api/v1/categorias - Obtener todas las categorías (activas por defecto)
 // GET /api/v1/categorias?includeInactive=true - Obtener todas las categorías (incluyendo inactivas)
-router.get('/', categoriaController.getAllCategorias);
+router.get('/', cache('1 minute'), categoriaController.getAllCategorias);
 
 // GET /api/v1/categorias/:id - Obtener una categoría por ID
 router.get('/:id', categoriaController.getCategoriaById);
 
 // PUT /api/v1/categorias/:id - Actualizar una categoría por ID
-router.put('/:id', categoriaController.updateCategoria);
+router.put('/:id', authenticateToken, authorizeRoles('admin', 'gerente'), updateCategoriaValidationRules, clearCache('categorias'), categoriaController.updateCategoria);
 
 // DELETE /api/v1/categorias/:id - Eliminar una categoría por ID (soft delete)
-router.delete('/:id', categoriaController.deleteCategoria);
-
-// Ejemplo de ruta para hard delete (si se decide implementar)
-// router.delete('/:id/hard', authMiddleware.isAdmin, categoriaController.hardDeleteCategoria);
-
+router.delete('/:id', authenticateToken, authorizeRoles('admin', 'gerente'), clearCache('categorias'), categoriaController.deleteCategoria);
 
 module.exports = router;
