@@ -20,6 +20,10 @@ beforeEach(async () => {
   // Limpieza de la base de datos y configuración inicial
   try {
     await db.query('DELETE FROM detalle_ventas CASCADE;');
+    await db.query('DELETE FROM facturas CASCADE;');
+    await db.query('DELETE FROM prefacturas CASCADE;');
+    // Poner a NULL las referencias de ventas en mesas antes de borrar ventas
+    await db.query('UPDATE mesas SET id_venta_actual = NULL;');
     await db.query('DELETE FROM ventas CASCADE;');
     await db.query('DELETE FROM mesas CASCADE;');
     await db.query('DELETE FROM productos CASCADE;');
@@ -390,7 +394,7 @@ describe('Endpoints de Ventas', () => {
 
     it('debería retornar 400 si la mesa no está en uso', async () => {
       // Poner la mesa en estado libre
-      await db.query('UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;', [mesaId]);
+      await db.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
 
       const closeData = {
         mesa_numero: mesaNumero,

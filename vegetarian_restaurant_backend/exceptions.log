@@ -642,3 +642,134 @@ SyntaxError: missing ) after argument list
     at Module.load (node:internal/modules/cjs/loader:1289:32)
     at Function._load (node:internal/modules/cjs/loader:1108:12)
     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+2025-07-11 23:16:47 [error]: Error: Cannot find module 'jsonwebtoken'
+Require stack:
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\categoriaRoutes.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\index.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js:1:13)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+2025-07-11 23:42:23 [error]: Error: Cannot find module 'jsonwebtoken'
+Require stack:
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\categoriaRoutes.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\index.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js:1:13)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+2025-07-11 23:43:48 [error]: Error: Cannot find module 'jsonwebtoken'
+Require stack:
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\categoriaRoutes.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\index.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js:1:13)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+2025-07-11 23:45:05 [error]: Error: Cannot find module 'jsonwebtoken'
+Require stack:
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\categoriaRoutes.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js
+- C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\index.js
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\middlewares\authMiddleware.js:1:13)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+2025-07-12 12:15:59 [error]: C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\userRoutes.js:9
+router.post('/', authorizeRoles('admin'), /* validación */, userController.createUser);
+                                                          ^
+
+SyntaxError: Unexpected token ','
+    at wrapSafe (node:internal/modules/cjs/loader:1486:18)
+    at Module._compile (node:internal/modules/cjs/loader:1528:20)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:131:20)
+2025-07-12 12:16:40 [error]: C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\userRoutes.js:9
+router.post('/', authorizeRoles('admin'), /* validación */, userController.createUser);
+                                                          ^
+
+SyntaxError: Unexpected token ','
+    at wrapSafe (node:internal/modules/cjs/loader:1486:18)
+    at Module._compile (node:internal/modules/cjs/loader:1528:20)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+    at require (node:internal/modules/helpers:136:16)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:131:20)
+2025-07-12 12:36:48 [error]: Error: Route.get() requires a callback function but got a [object Undefined]
+    at Route.<computed> [as get] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:216:15)
+    at proto.<computed> [as get] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:521:19)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\routes\authRoutes.js:15:8)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Module.require (node:internal/modules/cjs/loader:1311:12)
+2025-07-12 13:19:50 [error]: Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js:10:20)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+2025-07-12 13:28:30 [error]: Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at Server.listen (node:net:2099:7)
+    at Function.listen (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\server.js:10:20)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)

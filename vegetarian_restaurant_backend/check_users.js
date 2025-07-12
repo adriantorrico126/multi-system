@@ -1,81 +1,40 @@
-const db = require('./src/config/database');
+require('dotenv').config();
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
 
 async function checkUsers() {
+  const client = await pool.connect();
   try {
-    console.log('=== VERIFICANDO USUARIOS EN LA BD ===');
+    console.log('🔍 Verificando usuarios en la base de datos...');
     
-    // Verificar usuarios en la tabla vendedores
-    const vendedoresQuery = `
-      SELECT 
-        id_vendedor,
-        username,
-        nombre,
-        rol,
-        activo
+    const result = await client.query(`
+      SELECT id_vendedor, username, nombre, rol, id_sucursal, id_restaurante
       FROM vendedores 
-      ORDER BY id_vendedor;
-    `;
+      ORDER BY id_vendedor
+    `);
     
-    const { rows: vendedores } = await db.query(vendedoresQuery);
-    console.log('\n1. USUARIOS EN TABLA VENDEDORES:');
-    console.table(vendedores);
+    console.log('📋 Usuarios encontrados:');
+    result.rows.forEach(user => {
+      console.log(`ID: ${user.id_vendedor}, Username: ${user.username}, Nombre: ${user.nombre}, Rol: ${user.rol}, Sucursal: ${user.id_sucursal}, Restaurante: ${user.id_restaurante}`);
+    });
     
-    // Verificar si hay algún usuario con rol 'cocinero'
-    const cocinerosQuery = `
-      SELECT 
-        id_vendedor,
-        username,
-        nombre,
-        rol,
-        activo
-      FROM vendedores 
-      WHERE rol = 'cocinero'
-      ORDER BY id_vendedor;
-    `;
-    
-    const { rows: cocineros } = await db.query(cocinerosQuery);
-    console.log('\n2. USUARIOS CON ROL "COCINERO":');
-    if (cocineros.length > 0) {
-      console.table(cocineros);
-    } else {
-      console.log('❌ No hay usuarios con rol "cocinero"');
+    if (result.rows.length === 0) {
+      console.log('⚠️ No se encontraron usuarios en la base de datos');
     }
     
-    // Verificar todos los roles disponibles
-    const rolesQuery = `
-      SELECT 
-        rol,
-        COUNT(*) as cantidad
-      FROM vendedores 
-      GROUP BY rol
-      ORDER BY rol;
-    `;
-    
-    const { rows: roles } = await db.query(rolesQuery);
-    console.log('\n3. DISTRIBUCIÓN DE ROLES:');
-    console.table(roles);
-    
-    // Verificar usuarios activos
-    const activosQuery = `
-      SELECT 
-        username,
-        nombre,
-        rol,
-        activo
-      FROM vendedores 
-      WHERE activo = true
-      ORDER BY rol, username;
-    `;
-    
-    const { rows: activos } = await db.query(activosQuery);
-    console.log('\n4. USUARIOS ACTIVOS:');
-    console.table(activos);
-    
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error al verificar usuarios:', error);
   } finally {
-    await db.pool.end();
+    client.release();
   }
+  await pool.end();
 }
 
 checkUsers(); 

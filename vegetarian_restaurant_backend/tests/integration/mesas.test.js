@@ -70,7 +70,7 @@ describe('Endpoints de Mesas', () => {
   describe('GET /mesas/:id_sucursal', () => {
     it('debería obtener todas las mesas de una sucursal', async () => {
       // Crear algunas mesas
-      await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (1, $1, 4, 'libre'), (2, $1, 6, 'en_uso');', [sucursalId]);
+      await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (1, $1, 4, 'libre'), (2, $1, 6, 'en_uso');", [sucursalId]);
 
       const response = await request(app)
         .get(`${apiPrefix}/mesas/${sucursalId}`)
@@ -117,7 +117,7 @@ describe('Endpoints de Mesas', () => {
   describe('POST /mesas/abrir', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (30, $1, 4, 'libre') RETURNING id_mesa;', [sucursalId]);
+      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (30, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -149,7 +149,7 @@ describe('Endpoints de Mesas', () => {
   describe('POST /mesas/cerrar/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (40, $1, 4, 'en_uso', 50.00) RETURNING id_mesa;', [sucursalId]);
+      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (40, $1, 4, 'en_uso', 50.00) RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -165,7 +165,7 @@ describe('Endpoints de Mesas', () => {
 
     it('debería retornar 400 si la mesa no está en uso (o no existe)', async () => {
       // Poner la mesa en estado libre
-      await db.query('UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;', [mesaId]);
+      await db.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
 
       const response = await request(app)
         .post(`${apiPrefix}/mesas/cerrar/${mesaId}`)
@@ -182,7 +182,7 @@ describe('Endpoints de Mesas', () => {
 
     beforeEach(async () => {
       // Crear una mesa en uso
-      await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (50, $1, 4, 'en_uso', 10.00);', [sucursalId]);
+      await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (50, $1, 4, 'en_uso', 10.00);", [sucursalId]);
       mesaNumero = 50;
 
       // Crear un producto
@@ -209,7 +209,7 @@ describe('Endpoints de Mesas', () => {
     });
 
     it('debería retornar 400 si la mesa no está en uso', async () => {
-      await db.query('UPDATE mesas SET estado = 'libre' WHERE numero = $1 AND id_sucursal = $2;', [mesaNumero, sucursalId]);
+      await db.query("UPDATE mesas SET estado = 'libre' WHERE numero = $1 AND id_sucursal = $2;", [mesaNumero, sucursalId]);
 
       const items = [
         { id_producto: productoId, cantidad: 1, precio_unitario: 2.50 }
@@ -258,7 +258,7 @@ describe('Endpoints de Mesas', () => {
   describe('PUT /mesas/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (70, $1, 4, 'libre') RETURNING id_mesa;', [sucursalId]);
+      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (70, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -292,7 +292,7 @@ describe('Endpoints de Mesas', () => {
   describe('DELETE /mesas/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (80, $1, 4, 'libre') RETURNING id_mesa;', [sucursalId]);
+      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (80, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 

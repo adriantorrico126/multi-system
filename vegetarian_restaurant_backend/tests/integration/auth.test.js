@@ -32,6 +32,8 @@ beforeEach(async () => {
   try {
     // Limpiar tablas en orden inverso de dependencia
     await db.query('DELETE FROM detalle_ventas CASCADE;');
+    await db.query('DELETE FROM facturas CASCADE;');
+    await db.query('DELETE FROM prefacturas CASCADE;');
     await db.query('DELETE FROM ventas CASCADE;');
     await db.query('DELETE FROM mesas CASCADE;');
     await db.query('DELETE FROM productos CASCADE;');

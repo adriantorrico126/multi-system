@@ -340,3 +340,533 @@
     at next (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
     at Function.handle (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
     at router (C:\Users\Adrian\Documents\mentitaa\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:51 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:51 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllProductos (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:7:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at makeResponseCacheable (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:242:5)
+    at cache (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:689:16)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+2025-07-12 12:32:51 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllProductos (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:7:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at makeResponseCacheable (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:242:5)
+    at cache (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:689:16)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+2025-07-12 12:32:51 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllCategorias (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\categoriaController.js:28:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at makeResponseCacheable (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:242:5)
+    at cache (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:689:16)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+2025-07-12 12:32:51 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllCategorias (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\categoriaController.js:28:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at makeResponseCacheable (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:242:5)
+    at cache (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\apicache\src\apicache.js:689:16)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+2025-07-12 12:32:52 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:53 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:53 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:55 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:55 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:59 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:32:59 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:07 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:07 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:08 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:08 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:10 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:10 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:14 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:33:14 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.getAllSucursales (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\sucursalController.js:6:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:34:07 [error]: Error al registrar venta (general catch):
+2025-07-12 12:34:07 [error]: Backend: Stack trace (general catch):
+2025-07-12 12:34:07 [error]: TypeError: Cannot read properties of undefined (reading 'id_restaurante')
+    at exports.createVenta (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:54:37)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:284:15
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:35:22 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:22 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:23 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:23 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:25 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:25 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:51 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:51 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:52 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:52 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:55 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:35:56 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:56 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:35:57 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:35:58 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:00 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:04 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:31 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:32 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:35 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:36:40 [error]: Error: Ruta no encontrada
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\app.js:127:17
+    at Layer.handle [as handle_request] (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:328:13)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:346:12)
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:280:10)
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:646:15
+    at next (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:265:14)
+    at Function.handle (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:175:3)
+    at router (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\express\lib\router\index.js:47:12)
+2025-07-12 12:38:29 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:29 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:30 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:30 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:32 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:32 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:38 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:38 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:39 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:39 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:41 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:41 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:45 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:38:45 [error]: error: el mensaje de «bind» entrega 3 parámetros, pero la sentencia preparada «» requiere 2
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\ventaModel.js:166:22)
+    at async exports.getVentasOrdenadas (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\ventaController.js:389:20)
+2025-07-12 12:56:28 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:56:28 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:58:43 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:58:43 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:59:45 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:59:45 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:59:55 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 12:59:55 [error]: error: no existe la columna mi.id_restaurante
+    at C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Object.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\models\productoModel.js:141:22)
+    at async exports.getStockMovementsHistory (C:\Users\Adrian\Documents\sitemm\sistema-pos\vegetarian_restaurant_backend\src\controllers\productoController.js:157:21)
+2025-07-12 13:12:54 [error]: Backend: Error in transaction:
+2025-07-12 13:12:54 [error]: Backend: Stack trace:
+2025-07-12 13:15:16 [error]: Backend: Error in transaction:
+2025-07-12 13:15:16 [error]: Backend: Stack trace:
+2025-07-12 13:17:27 [error]: Backend: Error in transaction:
+2025-07-12 13:17:27 [error]: Backend: Stack trace:
+2025-07-12 13:18:12 [error]: Backend: Error in transaction:
+2025-07-12 13:18:12 [error]: Backend: Stack trace:
+2025-07-12 13:18:28 [error]: Backend: Error in transaction:
+2025-07-12 13:18:28 [error]: Backend: Stack trace:
+2025-07-12 13:18:57 [error]: Backend: Error in transaction:
+2025-07-12 13:18:57 [error]: Backend: Stack trace:
+2025-07-12 13:27:55 [error]: Backend: Error in transaction:
+2025-07-12 13:27:55 [error]: Backend: Stack trace:
+2025-07-12 13:30:06 [error]: Backend: Error in transaction:
+2025-07-12 13:30:06 [error]: Backend: Stack trace:
+2025-07-12 13:34:20 [error]: Backend: Error in transaction:
+2025-07-12 13:34:20 [error]: Backend: Stack trace:
+2025-07-12 13:40:51 [error]: Backend: Error in transaction:
+2025-07-12 13:40:51 [error]: Backend: Stack trace:
+2025-07-12 14:11:16 [error]: Backend: Error in transaction:
+2025-07-12 14:11:16 [error]: Backend: Stack trace:
+2025-07-12 14:12:59 [error]: Backend: Error in transaction:
+2025-07-12 14:12:59 [error]: Backend: Stack trace:
+2025-07-12 14:16:00 [error]: Backend: Error in transaction:
+2025-07-12 14:16:00 [error]: Backend: Stack trace:
+2025-07-12 14:17:45 [error]: Backend: Error in transaction:
+2025-07-12 14:17:45 [error]: Backend: Stack trace:

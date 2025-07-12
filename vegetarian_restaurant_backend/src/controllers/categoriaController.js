@@ -4,12 +4,14 @@ const logger = require('../config/logger'); // Importar el logger
 exports.createCategoria = async (req, res, next) => {
   try {
     const { nombre } = req.body;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!nombre) {
       logger.warn('Intento de crear categoría sin nombre.');
       return res.status(400).json({ message: 'El campo nombre es obligatorio.' });
     }
-    const nuevaCategoria = await Categoria.create({ nombre });
-    logger.info('Categoría creada exitosamente:', { id: nuevaCategoria.id_categoria, nombre: nuevaCategoria.nombre });
+    const nuevaCategoria = await Categoria.create({ nombre, id_restaurante });
+    logger.info('Categoría creada exitosamente:', { id: nuevaCategoria.id_categoria, nombre: nuevaCategoria.nombre, id_restaurante: nuevaCategoria.id_restaurante });
     res.status(201).json({
       message: 'Categoría creada exitosamente.',
       data: nuevaCategoria,
@@ -23,8 +25,10 @@ exports.createCategoria = async (req, res, next) => {
 exports.getAllCategorias = async (req, res, next) => {
   try {
     const includeInactive = req.query.includeInactive === 'true';
-    const categorias = await Categoria.findAll(includeInactive);
-    logger.info('Categorías obtenidas exitosamente.', { count: categorias.length, includeInactive });
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
+    const categorias = await Categoria.findAll(id_restaurante, includeInactive);
+    logger.info('Categorías obtenidas exitosamente.', { count: categorias.length, includeInactive, id_restaurante });
     res.status(200).json({
       message: categorias.length > 0 ? 'Categorías obtenidas exitosamente.' : 'No hay categorías registradas.',
       count: categorias.length,
@@ -39,12 +43,14 @@ exports.getAllCategorias = async (req, res, next) => {
 exports.getCategoriaById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const categoria = await Categoria.findById(id);
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
+    const categoria = await Categoria.findById(id, id_restaurante);
     if (!categoria) {
-      logger.warn(`Categoría con ID ${id} no encontrada.`);
+      logger.warn(`Categoría con ID ${id} no encontrada para el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Categoría no encontrada.' });
     }
-    logger.info('Categoría obtenida exitosamente por ID:', { id: categoria.id_categoria, nombre: categoria.nombre });
+    logger.info('Categoría obtenida exitosamente por ID:', { id: categoria.id_categoria, nombre: categoria.nombre, id_restaurante: categoria.id_restaurante });
     res.status(200).json({
       message: 'Categoría obtenida exitosamente.',
       data: categoria,
@@ -59,18 +65,19 @@ exports.updateCategoria = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { nombre, activo } = req.body;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (nombre === undefined && activo === undefined) {
       logger.warn('Intento de actualizar categoría sin campos proporcionados.');
       return res.status(400).json({ message: 'Debe proporcionar al menos un campo para actualizar (nombre o activo).' });
     }
 
-    const categoriaActualizada = await Categoria.update(id, { nombre, activo });
+    const categoriaActualizada = await Categoria.update(id, id_restaurante, { nombre, activo });
     if (!categoriaActualizada) {
-      logger.warn(`Categoría con ID ${id} no encontrada para actualizar.`);
+      logger.warn(`Categoría con ID ${id} no encontrada para actualizar en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Categoría no encontrada para actualizar.' });
     }
-    logger.info('Categoría actualizada exitosamente:', { id: categoriaActualizada.id_categoria, nombre: categoriaActualizada.nombre });
+    logger.info('Categoría actualizada exitosamente:', { id: categoriaActualizada.id_categoria, nombre: categoriaActualizada.nombre, id_restaurante: categoriaActualizada.id_restaurante });
     res.status(200).json({
       message: 'Categoría actualizada exitosamente.',
       data: categoriaActualizada,
@@ -84,22 +91,24 @@ exports.updateCategoria = async (req, res, next) => {
 exports.deleteCategoria = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const categoriaEliminada = await Categoria.delete(id);
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
+    const categoriaEliminada = await Categoria.delete(id, id_restaurante);
     if (!categoriaEliminada || !categoriaEliminada.activo === false) {
-      const categoriaExistente = await Categoria.findById(id);
+      const categoriaExistente = await Categoria.findById(id, id_restaurante);
       if (!categoriaExistente) {
-        logger.warn(`Categoría con ID ${id} no encontrada para eliminar.`);
+        logger.warn(`Categoría con ID ${id} no encontrada para eliminar en el restaurante ${id_restaurante}.`);
         return res.status(404).json({ message: 'Categoría no encontrada para eliminar.' });
       }
       if (categoriaExistente.activo === false) {
-        logger.info(`Categoría con ID ${id} ya estaba inactiva.`);
+        logger.info(`Categoría con ID ${id} ya estaba inactiva para el restaurante ${id_restaurante}.`);
         return res.status(200).json({
             message: 'La categoría ya estaba marcada como inactiva.',
             data: categoriaExistente
         });
       }
     }
-    logger.info(`Categoría con ID ${id} marcada como inactiva (soft delete).`);
+    logger.info(`Categoría con ID ${id} marcada como inactiva (soft delete) para el restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Categoría marcada como inactiva exitosamente (soft delete).',
       data: categoriaEliminada,

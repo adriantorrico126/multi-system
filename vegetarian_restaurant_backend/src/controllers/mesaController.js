@@ -6,14 +6,15 @@ const logger = require('../config/logger'); // Importar el logger
 exports.getMesas = async (req, res, next) => {
   try {
     const { id_sucursal } = req.params;
-    
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!id_sucursal) {
       logger.warn('ID de sucursal es requerido para obtener mesas.');
       return res.status(400).json({ message: 'ID de sucursal es requerido.' });
     }
 
-    const mesas = await Mesa.getMesasBySucursal(id_sucursal);
-    logger.info(`Mesas obtenidas exitosamente para sucursal ${id_sucursal}.`);
+    const mesas = await Mesa.getMesasBySucursal(id_sucursal, id_restaurante);
+    logger.info(`Mesas obtenidas exitosamente para sucursal ${id_sucursal} y restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Mesas obtenidas exitosamente.',
       data: mesas
@@ -28,20 +29,21 @@ exports.getMesas = async (req, res, next) => {
 exports.getMesa = async (req, res, next) => {
   try {
     const { numero, id_sucursal } = req.params;
-    
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!numero || !id_sucursal) {
       logger.warn('Número de mesa y ID de sucursal son requeridos para obtener una mesa específica.');
       return res.status(400).json({ message: 'Número de mesa y ID de sucursal son requeridos.' });
     }
 
-    const mesa = await Mesa.getMesaByNumero(numero, id_sucursal);
+    const mesa = await Mesa.getMesaByNumero(numero, id_sucursal, id_restaurante);
     
     if (!mesa) {
-      logger.warn(`Mesa ${numero} no encontrada en sucursal ${id_sucursal}.`);
+      logger.warn(`Mesa ${numero} no encontrada en sucursal ${id_sucursal} para el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
 
-    logger.info(`Mesa ${numero} obtenida exitosamente de sucursal ${id_sucursal}.`);
+    logger.info(`Mesa ${numero} obtenida exitosamente de sucursal ${id_sucursal} y restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Mesa obtenida exitosamente.',
       data: mesa
@@ -57,6 +59,7 @@ exports.abrirMesa = async (req, res, next) => {
   try {
     const { numero, id_sucursal } = req.body;
     const id_vendedor = req.user.id; // Del token JWT
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!numero || !id_sucursal) {
       logger.warn('Número de mesa y ID de sucursal son requeridos para abrir mesa.');
@@ -64,9 +67,9 @@ exports.abrirMesa = async (req, res, next) => {
     }
 
     // Verificar si la mesa está disponible
-    const mesaDisponible = await Mesa.mesaDisponible(numero, id_sucursal);
+    const mesaDisponible = await Mesa.mesaDisponible(numero, id_sucursal, id_restaurante);
     if (!mesaDisponible) {
-      logger.warn(`Mesa ${numero} no encontrada para abrir.`);
+      logger.warn(`Mesa ${numero} no encontrada para abrir en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
 
@@ -82,13 +85,13 @@ exports.abrirMesa = async (req, res, next) => {
       await client.query('BEGIN');
       
       // Abrir la mesa
-      const mesaAbierta = await Mesa.abrirMesa(numero, id_sucursal, id_vendedor, client);
+      const mesaAbierta = await Mesa.abrirMesa(numero, id_sucursal, id_vendedor, id_restaurante, client);
       
       // Crear prefactura
-      const prefactura = await Mesa.crearPrefactura(mesaAbierta.id_mesa, null, client);
+      const prefactura = await Mesa.crearPrefactura(mesaAbierta.id_mesa, null, id_restaurante, client);
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${numero} abierta exitosamente por vendedor ${id_vendedor}.`);
+      logger.info(`Mesa ${numero} abierta exitosamente por vendedor ${id_vendedor} para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa ${numero} abierta exitosamente.`,
         data: {
@@ -113,6 +116,7 @@ exports.abrirMesa = async (req, res, next) => {
 exports.cerrarMesa = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para cerrar mesa.');
@@ -124,16 +128,16 @@ exports.cerrarMesa = async (req, res, next) => {
       await client.query('BEGIN');
       
       // Cerrar la mesa
-      const mesaCerrada = await Mesa.cerrarMesa(id_mesa, client);
+      const mesaCerrada = await Mesa.cerrarMesa(id_mesa, id_restaurante, client);
       
       // Cerrar prefactura si existe
-      const prefactura = await Mesa.getPrefacturaByMesa(id_mesa);
+      const prefactura = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
       if (prefactura) {
-        await Mesa.cerrarPrefactura(prefactura.id_prefactura, mesaCerrada.total_acumulado, client);
+        await Mesa.cerrarPrefactura(prefactura.id_prefactura, mesaCerrada.total_acumulado, id_restaurante, client);
       }
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${id_mesa} cerrada exitosamente.`);
+      logger.info(`Mesa ${id_mesa} cerrada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa cerrada exitosamente.`,
         data: {
@@ -158,6 +162,7 @@ exports.cerrarMesa = async (req, res, next) => {
 exports.liberarMesa = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para liberar mesa.');
@@ -169,9 +174,9 @@ exports.liberarMesa = async (req, res, next) => {
       await client.query('BEGIN');
       
       // Obtener la mesa actual
-      const mesa = await Mesa.getMesaById(id_mesa);
+      const mesa = await Mesa.getMesaById(id_mesa, id_restaurante);
       if (!mesa) {
-        logger.warn(`Mesa ${id_mesa} no encontrada para liberar.`);
+        logger.warn(`Mesa ${id_mesa} no encontrada para liberar en el restaurante ${id_restaurante}.`);
         return res.status(404).json({ message: 'Mesa no encontrada.' });
       }
 
@@ -181,16 +186,16 @@ exports.liberarMesa = async (req, res, next) => {
       }
 
       // Liberar la mesa (marcar como libre sin facturar)
-      const mesaLiberada = await Mesa.liberarMesa(id_mesa, client);
+      const mesaLiberada = await Mesa.liberarMesa(id_mesa, id_restaurante, client);
       
       // Cerrar prefactura si existe (sin facturar)
-      const prefactura = await Mesa.getPrefacturaByMesa(id_mesa);
+      const prefactura = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
       if (prefactura) {
-        await Mesa.cerrarPrefactura(prefactura.id_prefactura, 0, client); // Total 0 porque no se factura
+        await Mesa.cerrarPrefactura(prefactura.id_prefactura, 0, id_restaurante, client); // Total 0 porque no se factura
       }
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${id_mesa} liberada exitosamente.`);
+      logger.info(`Mesa ${id_mesa} liberada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa liberada exitosamente.`,
         data: {
@@ -215,6 +220,7 @@ exports.agregarProductosAMesa = async (req, res, next) => {
   try {
     const { numero, id_sucursal, items, total } = req.body;
     const id_vendedor = req.user.id;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!numero || !id_sucursal || !items || items.length === 0) {
       logger.warn('Número de mesa, sucursal y productos son requeridos para agregar productos a mesa.');
@@ -222,9 +228,9 @@ exports.agregarProductosAMesa = async (req, res, next) => {
     }
 
     // Verificar si la mesa está en uso
-    const mesa = await Mesa.getMesaByNumero(numero, id_sucursal);
+    const mesa = await Mesa.getMesaByNumero(numero, id_sucursal, id_restaurante);
     if (!mesa) {
-      logger.warn(`Mesa ${numero} no encontrada para agregar productos.`);
+      logger.warn(`Mesa ${numero} no encontrada para agregar productos en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
 
@@ -247,7 +253,8 @@ exports.agregarProductosAMesa = async (req, res, next) => {
         id_sucursal: id_sucursal,
         tipo_servicio: 'Mesa',
         total: total,
-        mesa_numero: numero
+        mesa_numero: numero,
+        id_restaurante: id_restaurante // Pasar id_restaurante a createVenta
       }, client);
 
       // Crear detalles de venta
@@ -259,15 +266,16 @@ exports.agregarProductosAMesa = async (req, res, next) => {
           precio_unitario: item.precio_unitario,
           observaciones: item.observaciones || null
         })),
+        id_restaurante, // Pasar id_restaurante a createDetalleVenta
         client
       );
 
       // Actualizar total acumulado de la mesa
       const nuevoTotal = mesa.total_acumulado + total;
-      await Mesa.actualizarTotalAcumulado(mesa.id_mesa, nuevoTotal, client);
+      await Mesa.actualizarTotalAcumulado(mesa.id_mesa, nuevoTotal, id_restaurante, client);
 
       await client.query('COMMIT');
-      logger.info(`Productos agregados a la mesa ${numero} exitosamente. Total acumulado: ${nuevoTotal}`);
+      logger.info(`Productos agregados a la mesa ${numero} exitosamente para el restaurante ${id_restaurante}. Total acumulado: ${nuevoTotal}`);
       res.status(200).json({
         message: `Productos agregados a la mesa ${numero} exitosamente.`,
         data: {
@@ -293,6 +301,7 @@ exports.agregarProductosAMesa = async (req, res, next) => {
 exports.generarPrefactura = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para generar prefactura.');
@@ -300,9 +309,9 @@ exports.generarPrefactura = async (req, res, next) => {
     }
 
     // Obtener mesa
-    const mesaResult = await db.query('SELECT * FROM mesas WHERE id_mesa = $1', [id_mesa]);
+    const mesaResult = await db.query('SELECT * FROM mesas WHERE id_mesa = $1 AND id_restaurante = $2', [id_mesa, id_restaurante]);
     if (mesaResult.rows.length === 0) {
-      logger.warn(`Mesa con ID ${id_mesa} no encontrada para generar prefactura.`);
+      logger.warn(`Mesa con ID ${id_mesa} no encontrada para generar prefactura en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
     const mesa = mesaResult.rows[0];
@@ -315,13 +324,14 @@ exports.generarPrefactura = async (req, res, next) => {
       WHERE v.mesa_numero = $1 
         AND v.id_sucursal = $2
         AND v.fecha >= $3
+        AND v.id_restaurante = $4
         AND v.estado IN ('abierta', 'en_uso', 'pendiente_cobro', 'entregado')
     `;
-    const totalResult = await db.query(totalQuery, [mesa.numero, mesa.id_sucursal, mesa.hora_apertura]);
+    const totalResult = await db.query(totalQuery, [mesa.numero, mesa.id_sucursal, mesa.hora_apertura, id_restaurante]);
     const totalAcumulado = parseFloat(totalResult.rows[0].total_acumulado) || 0;
 
     // Actualizar el total acumulado en la mesa
-    await db.query('UPDATE mesas SET total_acumulado = $1 WHERE id_mesa = $2', [totalAcumulado, id_mesa]);
+    await db.query('UPDATE mesas SET total_acumulado = $1 WHERE id_mesa = $2 AND id_restaurante = $3', [totalAcumulado, id_mesa, id_restaurante]);
 
     // Obtener historial solo de la sesión actual
     const historialQuery = `
@@ -344,11 +354,12 @@ exports.generarPrefactura = async (req, res, next) => {
       WHERE v.mesa_numero = $1
         AND v.id_sucursal = $2
         AND v.fecha >= $3
+        AND v.id_restaurante = $4
       ORDER BY v.fecha DESC
     `;
-    const historialResult = await db.query(historialQuery, [mesa.numero, mesa.id_sucursal, mesa.hora_apertura]);
+    const historialResult = await db.query(historialQuery, [mesa.numero, mesa.id_sucursal, mesa.hora_apertura, id_restaurante]);
 
-    logger.info(`Prefactura generada exitosamente para mesa ${id_mesa}. Total acumulado: ${totalAcumulado}`);
+    logger.info(`Prefactura generada exitosamente para mesa ${id_mesa} en el restaurante ${id_restaurante}. Total acumulado: ${totalAcumulado}`);
     res.status(200).json({
       message: 'Prefactura generada exitosamente.',
       data: {
@@ -367,14 +378,15 @@ exports.generarPrefactura = async (req, res, next) => {
 exports.getEstadisticasMesas = async (req, res, next) => {
   try {
     const { id_sucursal } = req.params;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!id_sucursal) {
       logger.warn('ID de sucursal es requerido para obtener estadísticas de mesas.');
       return res.status(400).json({ message: 'ID de sucursal es requerido.' });
     }
 
-    const estadisticas = await Mesa.getEstadisticasMesas(id_sucursal);
-    logger.info(`Estadísticas de mesas obtenidas exitosamente para sucursal ${id_sucursal}.`);
+    const estadisticas = await Mesa.getEstadisticasMesas(id_sucursal, id_restaurante);
+    logger.info(`Estadísticas de mesas obtenidas exitosamente para sucursal ${id_sucursal} y restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Estadísticas obtenidas exitosamente.',
       data: estadisticas
@@ -390,14 +402,15 @@ exports.getHistorialMesa = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
     const { fecha } = req.query;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para obtener historial de mesa.');
       return res.status(400).json({ message: 'ID de mesa es requerido.' });
     }
 
-    const historial = await Mesa.getHistorialVentasMesa(id_mesa, fecha);
-    logger.info(`Historial de mesa ${id_mesa} obtenido exitosamente.`);
+    const historial = await Mesa.getHistorialVentasMesa(id_mesa, id_restaurante, fecha);
+    logger.info(`Historial de mesa ${id_mesa} obtenido exitosamente para el restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Historial obtenido exitosamente.',
       data: historial
@@ -416,14 +429,15 @@ exports.getHistorialMesa = async (req, res, next) => {
 exports.getConfiguracionMesas = async (req, res, next) => {
   try {
     const { id_sucursal } = req.params;
-    
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!id_sucursal) {
       logger.warn('ID de sucursal es requerido para obtener configuración de mesas.');
       return res.status(400).json({ message: 'ID de sucursal es requerido.' });
     }
 
-    const mesas = await Mesa.getConfiguracionMesas(id_sucursal);
-    logger.info(`Configuración de mesas obtenida exitosamente para sucursal ${id_sucursal}.`);
+    const mesas = await Mesa.getConfiguracionMesas(id_sucursal, id_restaurante);
+    logger.info(`Configuración de mesas obtenida exitosamente para sucursal ${id_sucursal} y restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Configuración de mesas obtenida exitosamente.',
       data: mesas
@@ -438,16 +452,17 @@ exports.getConfiguracionMesas = async (req, res, next) => {
 exports.crearMesa = async (req, res, next) => {
   try {
     const { numero, id_sucursal, capacidad = 4, estado = 'libre' } = req.body;
-    
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!numero || !id_sucursal) {
       logger.warn('Número de mesa y ID de sucursal son requeridos para crear mesa.');
       return res.status(400).json({ message: 'Número de mesa y ID de sucursal son requeridos.' });
     }
 
     // Verificar que el número de mesa no exista
-    const numeroExiste = await Mesa.numeroMesaExiste(numero, id_sucursal);
+    const numeroExiste = await Mesa.numeroMesaExiste(numero, id_sucursal, id_restaurante);
     if (numeroExiste) {
-      logger.warn(`El número de mesa ${numero} ya existe en la sucursal ${id_sucursal}.`);
+      logger.warn(`El número de mesa ${numero} ya existe en la sucursal ${id_sucursal} para el restaurante ${id_restaurante}.`);
       return res.status(400).json({ message: `El número de mesa ${numero} ya existe en esta sucursal.` });
     }
 
@@ -455,10 +470,10 @@ exports.crearMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       
-      const nuevaMesa = await Mesa.crearMesa({ numero, id_sucursal, capacidad, estado }, client);
+      const nuevaMesa = await Mesa.crearMesa({ numero, id_sucursal, capacidad, estado, id_restaurante }, client);
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${numero} creada exitosamente en sucursal ${id_sucursal}.`);
+      logger.info(`Mesa ${numero} creada exitosamente en sucursal ${id_sucursal} para el restaurante ${id_restaurante}.`);
       res.status(201).json({
         message: `Mesa ${numero} creada exitosamente.`,
         data: nuevaMesa
@@ -480,8 +495,9 @@ exports.crearMesa = async (req, res, next) => {
 exports.actualizarMesa = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
-    const { numero, capacidad, estado } = req.body;
-    
+    const { numero, capacidad, estado, id_sucursal } = req.body; // Obtener id_sucursal del body
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para actualizar mesa.');
       return res.status(400).json({ message: 'ID de mesa es requerido.' });
@@ -489,9 +505,9 @@ exports.actualizarMesa = async (req, res, next) => {
 
     // Verificar que el número de mesa no exista (excluyendo la mesa actual)
     if (numero) {
-      const numeroExiste = await Mesa.numeroMesaExiste(numero, req.body.id_sucursal, id_mesa);
+      const numeroExiste = await Mesa.numeroMesaExiste(numero, id_sucursal, id_restaurante, id_mesa);
       if (numeroExiste) {
-        logger.warn(`El número de mesa ${numero} ya existe en la sucursal ${req.body.id_sucursal} (excluyendo la mesa actual).`);
+        logger.warn(`El número de mesa ${numero} ya existe en la sucursal ${id_sucursal} para el restaurante ${id_restaurante} (excluyendo la mesa actual).`);
         return res.status(400).json({ message: `El número de mesa ${numero} ya existe en esta sucursal.` });
       }
     }
@@ -500,10 +516,10 @@ exports.actualizarMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       
-      const mesaActualizada = await Mesa.actualizarMesa(id_mesa, { numero, capacidad, estado }, client);
+      const mesaActualizada = await Mesa.actualizarMesa(id_mesa, id_restaurante, { numero, capacidad, estado }, client);
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${mesaActualizada.numero} actualizada exitosamente.`);
+      logger.info(`Mesa ${mesaActualizada.numero} actualizada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa ${mesaActualizada.numero} actualizada exitosamente.`,
         data: mesaActualizada
@@ -525,7 +541,8 @@ exports.actualizarMesa = async (req, res, next) => {
 exports.eliminarMesa = async (req, res, next) => {
   try {
     const { id_mesa } = req.params;
-    
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
     if (!id_mesa) {
       logger.warn('ID de mesa es requerido para eliminar mesa.');
       return res.status(400).json({ message: 'ID de mesa es requerido.' });
@@ -535,10 +552,10 @@ exports.eliminarMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       
-      const mesaEliminada = await Mesa.eliminarMesa(id_mesa, client);
+      const mesaEliminada = await Mesa.eliminarMesa(id_mesa, id_restaurante, client);
       
       await client.query('COMMIT');
-      logger.info(`Mesa ${mesaEliminada.numero} eliminada exitosamente.`);
+      logger.info(`Mesa ${mesaEliminada.numero} eliminada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa ${mesaEliminada.numero} eliminada exitosamente.`,
         data: mesaEliminada

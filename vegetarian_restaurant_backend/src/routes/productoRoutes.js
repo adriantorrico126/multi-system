@@ -39,7 +39,7 @@ const updateStockValidationRules = [
 ];
 
 // Obtener todos los productos (con caché de 1 minuto)
-router.get('/', cache('1 minute'), productoController.getAllProductos);
+router.get('/', authenticateToken, cache('1 minute'), productoController.getAllProductos);
 
 // Crear un nuevo producto (limpia la caché de productos)
 router.post('/', authenticateToken, authorizeRoles('admin', 'gerente'), createProductValidationRules, clearCache('productos'), productoController.createProducto);

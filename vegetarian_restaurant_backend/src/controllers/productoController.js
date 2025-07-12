@@ -4,8 +4,9 @@ const logger = require('../config/logger'); // Importar el logger
 
 exports.getAllProductos = async (req, res, next) => {
   try {
-    const productos = await Producto.getAllProductos();
-    logger.info('Productos obtenidos exitosamente.');
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+    const productos = await Producto.getAllProductos(id_restaurante);
+    logger.info('Productos obtenidos exitosamente.', { id_restaurante });
     res.status(200).json({
       message: 'Productos obtenidos exitosamente.',
       data: productos
@@ -25,9 +26,11 @@ exports.createProducto = async (req, res, next) => {
 
   try {
     const { nombre, precio, id_categoria, stock_actual, imagen_url } = req.body;
-    const producto = await Producto.createProducto({ nombre, precio, id_categoria, stock_actual, imagen_url });
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
-    logger.info('Producto creado exitosamente:', { id: producto.id_producto, nombre: producto.nombre });
+    const producto = await Producto.createProducto({ nombre, precio, id_categoria, stock_actual, imagen_url, id_restaurante });
+
+    logger.info('Producto creado exitosamente:', { id: producto.id_producto, nombre: producto.nombre, id_restaurante: producto.id_restaurante });
     res.status(201).json({
       message: 'Producto creado exitosamente.',
       data: producto
@@ -49,17 +52,18 @@ exports.updateProducto = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { nombre, precio, id_categoria, stock_actual, activo, imagen_url } = req.body;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
-    const producto = await Producto.updateProducto(id, { nombre, precio, id_categoria, stock_actual, activo, imagen_url });
+    const producto = await Producto.updateProducto(id, id_restaurante, { nombre, precio, id_categoria, stock_actual, activo, imagen_url });
 
     if (!producto) {
-      logger.warn(`Producto con ID ${id} no encontrado para actualizar.`);
+      logger.warn(`Producto con ID ${id} no encontrado para actualizar en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ 
         message: 'Producto no encontrado.' 
       });
     }
 
-    logger.info('Producto actualizado exitosamente:', { id: producto.id_producto, nombre: producto.nombre });
+    logger.info('Producto actualizado exitosamente:', { id: producto.id_producto, nombre: producto.nombre, id_restaurante: producto.id_restaurante });
     res.status(200).json({
       message: 'Producto actualizado exitosamente.',
       data: producto
@@ -74,17 +78,18 @@ exports.updateProducto = async (req, res, next) => {
 exports.deleteProducto = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
-    const producto = await Producto.deleteProducto(id);
+    const producto = await Producto.deleteProducto(id, id_restaurante);
 
     if (!producto) {
-      logger.warn(`Producto con ID ${id} no encontrado para eliminar.`);
+      logger.warn(`Producto con ID ${id} no encontrado para eliminar en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ 
         message: 'Producto no encontrado.' 
       });
     }
 
-    logger.info(`Producto con ID ${id} eliminado exitosamente.`);
+    logger.info(`Producto con ID ${id} eliminado exitosamente para el restaurante ${id_restaurante}.`);
     res.status(200).json({
       message: 'Producto eliminado exitosamente.'
     });
@@ -98,9 +103,10 @@ exports.deleteProducto = async (req, res, next) => {
 // Nuevas funciones para inventario
 exports.getInventorySummary = async (req, res, next) => {
   try {
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
     logger.info('Backend: getInventorySummary called with user:', req.user);
-    const inventory = await Producto.getInventorySummary();
-    logger.info('Backend: Resumen de inventario obtenido.');
+    const inventory = await Producto.getInventorySummary(id_restaurante);
+    logger.info('Backend: Resumen de inventario obtenido.', { id_restaurante });
     res.status(200).json({
       message: 'Resumen de inventario obtenido exitosamente.',
       data: inventory
@@ -122,6 +128,7 @@ exports.updateProductStock = async (req, res, next) => {
     const { id } = req.params;
     const { cantidad_cambio, tipo_movimiento } = req.body;
     const id_vendedor = req.user.id; // Asumiendo que el id del usuario está en req.user.id
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
     // La validación de express-validator ya cubre esto, pero se mantiene como fallback
     if (!cantidad_cambio || !tipo_movimiento) {
@@ -129,9 +136,9 @@ exports.updateProductStock = async (req, res, next) => {
       return res.status(400).json({ message: 'Cantidad de cambio y tipo de movimiento son requeridos.' });
     }
 
-    const result = await Producto.updateStock(id, cantidad_cambio, tipo_movimiento, id_vendedor);
+    const result = await Producto.updateStock(id, cantidad_cambio, tipo_movimiento, id_vendedor, id_restaurante);
 
-    logger.info('Stock actualizado y movimiento registrado exitosamente:', { productId: id, change: cantidad_cambio, type: tipo_movimiento });
+    logger.info('Stock actualizado y movimiento registrado exitosamente:', { productId: id, change: cantidad_cambio, type: tipo_movimiento, id_restaurante });
     res.status(200).json({
       message: 'Stock actualizado y movimiento registrado exitosamente.',
       data: result
@@ -145,8 +152,10 @@ exports.updateProductStock = async (req, res, next) => {
 exports.getStockMovementsHistory = async (req, res, next) => {
   try {
     const { id_producto, startDate, endDate } = req.query;
-    const history = await Producto.getStockMovementsHistory(id_producto, startDate, endDate);
-    logger.info('Historial de movimientos de stock obtenido exitosamente.', { productId: id_producto });
+    const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+
+    const history = await Producto.getStockMovementsHistory(id_restaurante, id_producto, startDate, endDate);
+    logger.info('Historial de movimientos de stock obtenido exitosamente.', { productId: id_producto, id_restaurante });
     res.status(200).json({
       message: 'Historial de movimientos de stock obtenido exitosamente.',
       data: history

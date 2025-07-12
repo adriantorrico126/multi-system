@@ -20,23 +20,28 @@ exports.authenticateToken = (req, res, next) => {
   });
 };
 
-// Middleware para verificar el rol del usuario (acepta 'rol' o 'role')
+// Middleware para verificar el rol del usuario
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    const userRole = req.user?.rol || req.user?.role;
-    console.log('Auth middleware:', { 
-      user: req.user, 
-      userRole, 
-      requiredRoles: roles,
-      hasPermission: req.user && roles.includes(userRole)
-    });
-    
-    if (!req.user || !roles.includes(userRole)) {
-      console.log('Auth middleware: Acceso denegado');
-      return res.status(403).json({ message: 'Acceso denegado. No tienes los permisos necesarios para realizar esta acción.' });
+    const userRole = req.user?.rol;
+    if (!userRole || !roles.includes(userRole)) {
+      return res.status(403).json({ message: 'Acceso denegado. No tienes los permisos necesarios.' });
     }
-    
-    console.log('Auth middleware: Acceso concedido');
     next();
   };
+};
+
+// Middleware para asegurar que la petición tiene un contexto de restaurante (tenant).
+exports.ensureTenantContext = (req, res, next) => {
+  // El rol 'super_admin' puede operar sin un id_restaurante específico en el token,
+  // ya que su función es gestionar los restaurantes mismos.
+  if (req.user.rol === 'super_admin') {
+    return next();
+  }
+
+  // Para todos los demás roles, el id_restaurante es obligatorio.
+  if (!req.user.id_restaurante) {
+    return res.status(403).json({ message: 'Acceso denegado. No se pudo determinar el restaurante asociado a su usuario.' });
+  }
+  next();
 };

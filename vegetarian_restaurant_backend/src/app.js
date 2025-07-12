@@ -22,6 +22,7 @@ const productoRoutes = require('./routes/productoRoutes');
 const ventaRoutes = require('./routes/ventaRoutes');
 const sucursalRoutes = require('./routes/sucursalRoutes');
 const mesaRoutes = require('./routes/mesaRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -118,6 +119,7 @@ app.use(`${envConfig.API_PREFIX}/productos`, productoRoutes);
 app.use(`${envConfig.API_PREFIX}/ventas`, ventaRoutes);
 app.use(`${envConfig.API_PREFIX}/sucursales`, sucursalRoutes);
 app.use(`${envConfig.API_PREFIX}/mesas`, mesaRoutes);
+app.use(`${envConfig.API_PREFIX}/dashboard`, dashboardRoutes);
 
 // Ruta para la documentación de Swagger UI
 app.use(`${envConfig.API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec));

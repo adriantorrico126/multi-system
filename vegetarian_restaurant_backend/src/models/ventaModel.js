@@ -1,30 +1,30 @@
 const db = require('../config/database');
 
 const Venta = {
-  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero }, client = db) {
+  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, id_restaurante }, client = db) {
     
     const query = `
-      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, 'recibido')
-      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado, created_at;
+      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado, id_restaurante)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, 'recibido', $7)
+      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado, created_at, id_restaurante;
     `;
-    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero];
+    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, id_restaurante];
     
     const { rows } = await client.query(query, values);
     return rows[0];
   },
 
-  async createDetalleVenta(id_venta, items, client = db) {
+  async createDetalleVenta(id_venta, items, id_restaurante, client = db) {
     
     const detalles = [];
     for (const item of items) {
       
       const query = `
-        INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario, observaciones)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id_detalle, id_venta, id_producto, cantidad, precio_unitario, subtotal, observaciones, created_at;
+        INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario, observaciones, id_restaurante)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id_detalle, id_venta, id_producto, cantidad, precio_unitario, subtotal, observaciones, created_at, id_restaurante;
       `;
-      const values = [id_venta, item.id_producto, item.cantidad, item.precio_unitario, item.observaciones || null];
+      const values = [id_venta, item.id_producto, item.cantidad, item.precio_unitario, item.observaciones || null, id_restaurante];
       
       const { rows } = await client.query(query, values);
       detalles.push(rows[0]);
@@ -33,21 +33,21 @@ const Venta = {
       try {
         
         // Verificar stock antes del update
-        const stockBeforeQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1';
-        const stockBeforeResult = await client.query(stockBeforeQuery, [item.id_producto]);
+        const stockBeforeQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1 AND id_restaurante = $2';
+        const stockBeforeResult = await client.query(stockBeforeQuery, [item.id_producto, id_restaurante]);
         
         // Actualizar stock sin permitir valores negativos
         const updateStockQuery = `
           UPDATE productos 
           SET stock_actual = GREATEST(0, stock_actual - $1) 
-          WHERE id_producto = $2;
+          WHERE id_producto = $2 AND id_restaurante = $3;
         `;
         
-        const { rowCount } = await client.query(updateStockQuery, [item.cantidad, item.id_producto]);
+        const { rowCount } = await client.query(updateStockQuery, [item.cantidad, item.id_producto, id_restaurante]);
         
         // Verificar stock después del update
-        const stockAfterQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1';
-        const stockAfterResult = await client.query(stockAfterQuery, [item.id_producto]);
+        const stockAfterQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1 AND id_restaurante = $2';
+        const stockAfterResult = await client.query(stockAfterQuery, [item.id_producto, id_restaurante]);
       } catch (err) {
         console.error('Model: Error updating stock for product', item.id_producto, err);
         console.error('Model: Error details:', err.message);
@@ -59,7 +59,7 @@ const Venta = {
     return detalles;
   },
 
-  async getSalesSummary(startDate, endDate, id_sucursal = null) {
+  async getSalesSummary(startDate, endDate, id_restaurante, id_sucursal = null) {
     
     let query = `
       SELECT
@@ -72,14 +72,14 @@ const Venta = {
       JOIN
           metodos_pago mp ON v.id_pago = mp.id_pago
       WHERE
-          v.fecha >= $1 AND v.fecha < ($2::date + INTERVAL '1 day')
+          v.fecha >= $1 AND v.fecha < ($2::date + INTERVAL '1 day') AND v.id_restaurante = $3
     `;
     
-    let params = [startDate, endDate];
+    let params = [startDate, endDate, id_restaurante];
     
     // Agregar filtro por sucursal si se proporciona
     if (id_sucursal) {
-      query += ` AND v.id_sucursal = $3`;
+      query += ` AND v.id_sucursal = $4`;
       params.push(id_sucursal);
     }
     
@@ -94,7 +94,7 @@ const Venta = {
     return rows;
   },
 
-  async getDailyCashFlow(startDate, endDate, id_sucursal = null) {
+  async getDailyCashFlow(startDate, endDate, id_restaurante, id_sucursal = null) {
     
     let query = `
       SELECT
@@ -107,14 +107,14 @@ const Venta = {
       JOIN
           metodos_pago mp ON v.id_pago = mp.id_pago
       WHERE
-          fecha >= $1 AND fecha < ($2::date + INTERVAL '1 day')
+          fecha >= $1 AND fecha < ($2::date + INTERVAL '1 day') AND v.id_restaurante = $3
     `;
     
-    let params = [startDate, endDate];
+    let params = [startDate, endDate, id_restaurante];
     
     // Agregar filtro por sucursal si se proporciona
     if (id_sucursal) {
-      query += ` AND v.id_sucursal = $3`;
+      query += ` AND v.id_sucursal = $4`;
       params.push(id_sucursal);
     }
     
@@ -129,7 +129,7 @@ const Venta = {
     return rows;
   },
 
-  async getVentasOrdenadas(limit = 50, id_sucursal = null) {
+  async getVentasOrdenadas(id_restaurante, limit = 50, id_sucursal = null) {
     let query = `
       SELECT 
         v.id_venta,
@@ -140,18 +140,20 @@ const Venta = {
         v.estado,
         mp.descripcion as metodo_pago,
         s.nombre as sucursal_nombre,
-        vend.nombre as vendedor_nombre
+        vend.nombre as vendedor_nombre,
+        v.id_restaurante
       FROM ventas v
       JOIN metodos_pago mp ON v.id_pago = mp.id_pago
       JOIN sucursales s ON v.id_sucursal = s.id_sucursal
       JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
+      WHERE v.id_restaurante = $1
     `;
     
-    let params = [];
+    let params = [id_restaurante];
     
     // Agregar filtro por sucursal si se proporciona
     if (id_sucursal) {
-      query += ` WHERE v.id_sucursal = $1`;
+      query += ` AND v.id_sucursal = $2`;
       params.push(id_sucursal);
     }
     
@@ -165,22 +167,24 @@ const Venta = {
     return rows;
   },
 
-  async verificarFechasVentas() {
+  async verificarFechasVentas(id_restaurante) {
     const query = `
       SELECT 
         id_venta,
         fecha,
         created_at,
-        EXTRACT(EPOCH FROM (fecha - created_at)) as diferencia_segundos
+        EXTRACT(EPOCH FROM (fecha - created_at)) as diferencia_segundos,
+        id_restaurante
       FROM ventas 
+      WHERE id_restaurante = $1
       ORDER BY id_venta DESC 
       LIMIT 10;
     `;
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [id_restaurante]);
     return rows;
   },
 
-  async getVentasPorFecha() {
+  async getVentasPorFecha(id_restaurante) {
     const query = `
       SELECT 
         id_venta,
@@ -188,16 +192,18 @@ const Venta = {
         total,
         estado,
         tipo_servicio,
-        mesa_numero
+        mesa_numero,
+        id_restaurante
       FROM ventas 
+      WHERE id_restaurante = $1
       ORDER BY fecha DESC, id_venta DESC 
       LIMIT 20;
     `;
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [id_restaurante]);
     return rows;
   },
 
-  async verificarDuplicadosFecha() {
+  async verificarDuplicadosFecha(id_restaurante) {
     const query = `
       SELECT 
         fecha,
@@ -205,22 +211,24 @@ const Venta = {
         array_agg(id_venta ORDER BY id_venta) as ids_ventas,
         array_agg(total ORDER BY id_venta) as totales
       FROM ventas 
+      WHERE id_restaurante = $1
       GROUP BY fecha
       HAVING COUNT(*) > 1
       ORDER BY fecha DESC;
     `;
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [id_restaurante]);
     return rows;
   },
 
-  async corregirFechasVentas() {
+  async corregirFechasVentas(id_restaurante) {
     // Obtener todas las ventas ordenadas por ID
     const query = `
       SELECT id_venta, created_at
       FROM ventas 
+      WHERE id_restaurante = $1
       ORDER BY id_venta ASC;
     `;
-    const { rows } = await db.query(query);
+    const { rows } = await db.query(query, [id_restaurante]);
     
     // Actualizar fechas basándose en created_at para mantener orden cronológico
     const updates = [];
@@ -233,16 +241,16 @@ const Venta = {
       const updateQuery = `
         UPDATE ventas 
         SET fecha = $1 
-        WHERE id_venta = $2;
+        WHERE id_venta = $2 AND id_restaurante = $3;
       `;
-      await db.query(updateQuery, [nuevaFecha, venta.id_venta]);
+      await db.query(updateQuery, [nuevaFecha, venta.id_venta, id_restaurante]);
       updates.push({ id_venta: venta.id_venta, nueva_fecha: nuevaFecha });
     }
     
     return updates;
   },
 
-  async getVentasHoy(id_sucursal = null, fecha = null) {
+  async getVentasHoy(id_restaurante, id_sucursal = null, fecha = null) {
     // Si no se proporciona fecha, usar hoy
     const fechaConsulta = fecha || new Date().toISOString().split('T')[0];
     
@@ -256,19 +264,20 @@ const Venta = {
         v.estado,
         mp.descripcion as metodo_pago,
         s.nombre as sucursal_nombre,
-        vend.nombre as vendedor_nombre
+        vend.nombre as vendedor_nombre,
+        v.id_restaurante
       FROM ventas v
       JOIN metodos_pago mp ON v.id_pago = mp.id_pago
       JOIN sucursales s ON v.id_sucursal = s.id_sucursal
       JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
-      WHERE DATE(v.fecha) = $1
+      WHERE DATE(v.fecha) = $1 AND v.id_restaurante = $2
     `;
     
-    let params = [fechaConsulta];
+    let params = [fechaConsulta, id_restaurante];
     
     // Agregar filtro por sucursal si se proporciona
     if (id_sucursal) {
-      query += ` AND v.id_sucursal = $2`;
+      query += ` AND v.id_sucursal = $3`;
       params.push(id_sucursal);
     }
     
@@ -284,7 +293,7 @@ const Venta = {
    * @param {string} nuevoEstado - Nuevo estado a asignar
    * @returns {Promise<object>} Venta actualizada
    */
-  async updateEstadoVenta(id_venta, nuevoEstado) {
+  async updateEstadoVenta(id_venta, nuevoEstado, id_restaurante) {
     // Validar estados permitidos
     const estadosPermitidos = ['recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado'];
     if (!estadosPermitidos.includes(nuevoEstado)) {
@@ -293,10 +302,10 @@ const Venta = {
     const query = `
       UPDATE ventas
       SET estado = $1
-      WHERE id_venta = $2
-      RETURNING id_venta, estado;
+      WHERE id_venta = $2 AND id_restaurante = $3
+      RETURNING id_venta, estado, id_restaurante;
     `;
-    const { rows } = await db.query(query, [nuevoEstado, id_venta]);
+    const { rows } = await db.query(query, [nuevoEstado, id_venta, id_restaurante]);
     if (rows.length === 0) {
       throw new Error('Venta no encontrada');
     }

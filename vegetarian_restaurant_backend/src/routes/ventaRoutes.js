@@ -4,10 +4,10 @@ const ventaController = require('../controllers/ventaController');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware'); // Importar middlewares
 
 // Registrar una nueva venta
-router.post('/', ventaController.createVenta);
+router.post('/', authenticateToken, authorizeRoles('admin', 'gerente', 'cajero'), ventaController.createVenta);
 
 // Obtener pedidos para la cocina
-router.get('/cocina', authenticateToken, authorizeRoles('cocinero', 'admin', 'gerente'), ventaController.getPedidosParaCocina);
+router.get('/cocina', authenticateToken, authorizeRoles('cocinero', 'admin', 'gerente', 'cajero'), ventaController.getPedidosParaCocina);
 
 // Actualizar estado de pedido
 router.put('/:id/status', authenticateToken, authorizeRoles('cocinero', 'admin', 'gerente'), ventaController.actualizarEstadoPedido);
@@ -16,7 +16,7 @@ router.put('/:id/status', authenticateToken, authorizeRoles('cocinero', 'admin',
 router.patch('/:id/estado', authenticateToken, authorizeRoles('cocinero', 'admin', 'gerente'), ventaController.updateEstadoVenta);
 
 // Cerrar mesa con facturación
-router.post('/cerrar-mesa', ventaController.cerrarMesaConFactura);
+router.post('/cerrar-mesa', authenticateToken, authorizeRoles('admin', 'gerente', 'cajero'), ventaController.cerrarMesaConFactura);
 
 // Obtener datos de arqueo
 router.get('/arqueo', authenticateToken, authorizeRoles('admin', 'gerente'), ventaController.getArqueoData);
