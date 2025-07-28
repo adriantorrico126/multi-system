@@ -6,17 +6,22 @@ import { useNavigate } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { refreshInventory } from '@/services/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/context/AuthContext';
 
 interface AuthUser {
   username: string;
-  role: 'cajero' | 'admin' | 'cocinero';
+  role: 'cajero' | 'admin' | 'cocinero' | 'mesero';
   branch: string;
 }
 
 interface Branch {
-  id: number;
-  name: string;
-  location: string;
+  id?: number;
+  id_sucursal?: number;
+  nombre?: string;
+  name?: string;
+  ciudad?: string;
+  location?: string;
+  direccion?: string;
 }
 
 interface HeaderProps {
@@ -51,6 +56,15 @@ export const Header = React.memo(({
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const unreadCount = notifications.filter(n => !n.read).length;
   const [popoverOpen, setPopoverOpen] = React.useState(false);
+
+  // Debug logs para verificar la información de sucursales
+  React.useEffect(() => {
+    console.log('🔍 Header Debug - currentUser:', currentUser);
+    console.log('🔍 Header Debug - currentBranch:', currentBranch);
+    console.log('🔍 Header Debug - branches:', branches);
+    console.log('🔍 Header Debug - selectedBranchId:', selectedBranchId);
+    console.log('🔍 Header Debug - onSucursalChange:', !!onSucursalChange);
+  }, [currentUser, currentBranch, branches, selectedBranchId, onSucursalChange]);
 
   // Ref para controlar si el componente está montado
   const isMountedRef = React.useRef(true);
@@ -138,37 +152,57 @@ export const Header = React.memo(({
   }, []);
 
   return (
-    <div className="bg-white border-b border-gray-200 shadow-sm">
+    <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             {/* Logo y Título */}
             <div className="flex items-center gap-3">
-              <img src="/logos/logo.jpg" alt="DATY Logo" className="w-10 h-10 rounded-xl shadow-lg object-contain bg-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">D</span>
+              </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">DATY</h1>
-                <p className="text-sm text-gray-500">Sistema POS Profesional</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">DATY</h1>
+                <p className="text-sm text-gray-600 font-medium">Sistema POS Profesional</p>
               </div>
             </div>
             
             {/* Información de Sucursal y Selector */}
             {currentBranch && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                <Store className="h-4 w-4 text-gray-600" />
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                  <Store className="h-4 w-4 text-white" />
+                </div>
                 <div className="text-sm">
-                  <div className="font-medium text-gray-900">{currentBranch.name}</div>
-                  <div className="text-gray-500">{currentBranch.location}</div>
+                  <div className="font-semibold text-gray-900">{currentBranch.name}</div>
+                  <div className="text-gray-600">{currentBranch.location}</div>
                 </div>
                 {/* Selector de sucursal solo para admin/cocinero */}
-                {branches && branches.length > 1 && (currentUser.role === 'admin' || currentUser.role === 'cocinero') && onSucursalChange && (
-                  <Select value={selectedBranchId?.toString()} onValueChange={v => onSucursalChange(Number(v))}>
-                    <SelectTrigger className="ml-2 w-40">
-                      <SelectValue placeholder="Seleccionar sucursal" />
+                {branches && branches.length > 1 && (currentUser.role === 'admin' || currentUser.role === 'cocinero' || currentUser.role === 'super_admin') && onSucursalChange && (
+                  <Select 
+                    value={selectedBranchId?.toString()} 
+                    onValueChange={v => {
+                      console.log('🔄 Selector de sucursal cambiado a:', v);
+                      onSucursalChange(Number(v));
+                    }}
+                  >
+                    <SelectTrigger className="ml-2 w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
+                      <SelectValue placeholder="Cambiar sucursal" />
                     </SelectTrigger>
                     <SelectContent>
-                      {branches.map(branch => (
-                        <SelectItem key={branch.id} value={branch.id.toString()}>{branch.name}</SelectItem>
-                      ))}
+                      {branches.filter(branch => {
+                        const branchId = branch.id_sucursal || branch.id;
+                        return branchId !== undefined && branchId !== null;
+                      }).map(branch => {
+                        const branchId = branch.id_sucursal || branch.id;
+                        const branchName = branch.nombre || branch.name;
+                        console.log('🔍 Renderizando opción de sucursal:', { branchId, branchName, branch });
+                        return (
+                          <SelectItem key={branchId} value={branchId.toString()}>
+                            {branchName}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 )}
@@ -180,22 +214,27 @@ export const Header = React.memo(({
             {/* Notificaciones */}
             <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative p-1 bg-transparent border-none shadow-none hover:bg-gray-100 focus:bg-gray-100">
-                  <Bell className="h-3 w-3 text-gray-700" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }} />
+                <Button variant="ghost" size="sm" className="relative p-2 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200">
+                  <Bell className="h-4 w-4 text-gray-700" />
                   {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg">
                       {unreadCount}
                     </Badge>
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 p-0">
-                <div className="p-3 border-b font-semibold text-gray-700">Notificaciones</div>
-                <ul className="max-h-60 overflow-y-auto divide-y">
+              <PopoverContent align="end" className="w-80 p-0 bg-white/95 backdrop-blur-md border border-gray-200/50 shadow-2xl rounded-2xl">
+                <div className="p-4 border-b border-gray-200/50 font-semibold text-gray-700 bg-gradient-to-r from-gray-50/50 to-white/50">
+                  Notificaciones del Sistema
+                </div>
+                <ul className="max-h-60 overflow-y-auto divide-y divide-gray-100">
                   {notifications.length === 0 ? (
-                    <li className="p-4 text-center text-gray-400">Sin notificaciones</li>
+                    <li className="p-6 text-center text-gray-400">
+                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      Sin notificaciones
+                    </li>
                   ) : notifications.map(n => (
-                    <li key={n.id} className={`p-3 text-sm ${n.read ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                    <li key={n.id} className={`p-4 text-sm ${n.read ? 'text-gray-500' : 'font-semibold text-gray-900 bg-blue-50/50'}`}>
                       {n.text}
                     </li>
                   ))}
@@ -204,24 +243,33 @@ export const Header = React.memo(({
             </Popover>
 
             {/* Información del Usuario */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
-              <User className="h-4 w-4 text-gray-600" />
+            <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                <User className="h-4 w-4 text-white" />
+              </div>
               <div className="text-sm">
-                <div className="font-medium text-gray-900">{currentUser.username}</div>
+                <div className="font-semibold text-gray-900">{currentUser.username}</div>
                 <Badge 
                   variant={currentUser.role === 'admin' ? 'default' : 'secondary'}
-                  className="text-xs"
+                  className={`text-xs font-semibold ${
+                    currentUser.role === 'admin' 
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white' 
+                      : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                  }`}
                 >
                   {currentUser.role === 'admin' ? 'Administrador' : 
-                   currentUser.role === 'cocinero' ? 'Cocinero' : 'Cajero'}
+                   currentUser.role === 'cocinero' ? 'Cocinero' : 
+                   currentUser.role === 'mesero' ? 'Mesero' : 'Cajero'}
                 </Badge>
               </div>
             </div>
             
             {/* Hora Actual */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-              <Clock className="h-4 w-4 text-gray-600" />
-              <div className="text-sm font-medium text-gray-900">
+            <div className="flex items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                <Clock className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-sm font-semibold text-gray-900">
                 {currentTime.toLocaleTimeString('es-ES', { 
                   hour: '2-digit', 
                   minute: '2-digit'
@@ -236,7 +284,7 @@ export const Header = React.memo(({
                   variant="outline" 
                   size="sm" 
                   onClick={handleArqueoClick}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   <DollarSign className="h-4 w-4" />
                   Arqueo
@@ -247,7 +295,7 @@ export const Header = React.memo(({
                   variant="outline" 
                   size="sm" 
                   onClick={handleInventoryClick}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   <Package className="h-4 w-4" />
                   Inventario
@@ -258,7 +306,7 @@ export const Header = React.memo(({
                 size="sm"
                 onClick={onExportSales}
                 disabled={salesCount === 0}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Download className="h-4 w-4" />
                 Exportar
@@ -268,11 +316,22 @@ export const Header = React.memo(({
                 variant="outline" 
                 size="sm" 
                 onClick={onLogout}
-                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-red-200/50 shadow-lg hover:shadow-xl transition-all duration-200 text-red-600 hover:text-red-700 hover:border-red-300"
               >
                 <LogOut className="h-4 w-4" />
                 Salir
               </Button>
+              {currentUser.role === 'admin' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/soporte')}
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Package className="h-4 w-4" />
+                  Soporte
+                </Button>
+              )}
             </div>
           </div>
         </div>

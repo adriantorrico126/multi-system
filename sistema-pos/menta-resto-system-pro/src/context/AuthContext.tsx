@@ -5,7 +5,7 @@ interface User {
   id: number;
   nombre: string;
   username: string;
-  rol: 'cajero' | 'admin' | 'cocinero' | 'super_admin';
+  rol: 'cajero' | 'admin' | 'cocinero' | 'super_admin' | 'mesero';
   sucursal: {
     id: number;
     nombre: string;

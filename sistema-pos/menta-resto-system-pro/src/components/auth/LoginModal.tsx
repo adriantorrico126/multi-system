@@ -90,7 +90,7 @@ export function LoginModal({ onLoginSuccess }: LoginModalProps) {
         <span className="absolute inset-0 pointer-events-none" aria-hidden>
           <svg width="100%" height="100%" className="absolute inset-0 w-full h-full">
             <rect
-              x="6" y="6" width="calc(100% - 12)" height="calc(100% - 12)"
+              x="6" y="6" width="96%" height="96%"
               rx="24" ry="24"
               fill="none"
               stroke="url(#borderGradient)"

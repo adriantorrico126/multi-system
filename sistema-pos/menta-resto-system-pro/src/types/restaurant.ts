@@ -18,6 +18,7 @@ export interface CartItem extends Product {
   quantity: number;
   notes?: string;
   originalId?: string; // ID original del producto (para cuando el item del carrito tiene un ID único)
+  modificadores?: any[]; // Modificadores seleccionados para este ítem
 }
 
 export interface Sale {
@@ -42,8 +43,16 @@ export interface InvoiceData {
 export interface User {
   id: string;
   username: string;
-  role: 'cashier' | 'admin';
-  name: string;
+  rol: 'cajero' | 'admin' | 'cocinero' | 'mesero' | 'super_admin';
+  nombre: string;
+  sucursal?: {
+    id: number;
+    nombre: string;
+    ciudad: string;
+    direccion: string;
+  };
+  id_restaurante?: number;
+  id_vendedor?: number;
 }
 
 export interface Branch {
@@ -60,7 +69,7 @@ export interface Mesa {
   id_mesa: number;
   numero: number;
   capacidad: number;
-  estado: 'libre' | 'en_uso' | 'pendiente_cobro' | 'reservada' | 'mantenimiento';
+  estado: 'libre' | 'en_uso' | 'pendiente_cobro' | 'reservada' | 'mantenimiento' | 'agrupada';
   total_acumulado: number;
   hora_apertura?: string;
   hora_cierre?: string;
@@ -68,6 +77,11 @@ export interface Mesa {
   total_venta_actual?: number;
   fecha_venta_actual?: string;
   estado_venta_actual?: string;
+  // NUEVO: propiedades para gestión avanzada de mesas
+  id_grupo_mesa?: number;
+  id_mesero_actual?: number;
+  id_restaurante?: number;
+  id_sucursal?: number;
 }
 
 export interface Prefactura {

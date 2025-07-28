@@ -6,11 +6,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash, Search, Store, MapPin, Building } from 'lucide-react';
+import { 
+  Plus, 
+  Edit, 
+  Trash, 
+  Search, 
+  Store, 
+  MapPin, 
+  Building,
+  Users,
+  Activity,
+  Target,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+  Eye,
+  Download,
+  RefreshCw,
+  BarChart3,
+  Globe,
+  Phone,
+  Mail
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBranches, createSucursal, updateSucursal, deleteSucursal } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Sucursal {
   id_sucursal: number;
@@ -28,6 +53,7 @@ interface SucursalManagementProps {
 export function SucursalManagement({ currentUserRole }: SucursalManagementProps) {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [editingSucursal, setEditingSucursal] = useState<Sucursal | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -44,7 +70,8 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
   const [formData, setFormData] = useState({
     nombre: '',
     ciudad: '',
-    direccion: ''
+    direccion: '',
+    activo: true
   });
 
   const filteredSucursales = useMemo(() => {
@@ -52,16 +79,29 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
       const matchesSearch = sucursal.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            sucursal.ciudad.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            sucursal.direccion.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
+      const matchesStatus = selectedStatus === 'all' || 
+                           (selectedStatus === 'active' && sucursal.activo) ||
+                           (selectedStatus === 'inactive' && !sucursal.activo);
+      return matchesSearch && matchesStatus;
     });
-  }, [sucursales, searchTerm]);
+  }, [sucursales, searchTerm, selectedStatus]);
 
   const resetForm = () => {
     setFormData({
       nombre: '',
       ciudad: '',
-      direccion: ''
+      direccion: '',
+      activo: true
     });
+  };
+
+  // Calcular estadísticas
+  const stats = {
+    total: sucursales.length,
+    active: sucursales.filter(s => s.activo).length,
+    inactive: sucursales.filter(s => !s.activo).length,
+    cities: [...new Set(sucursales.map(s => s.ciudad))].length,
+    avgPerCity: sucursales.length > 0 ? sucursales.length / [...new Set(sucursales.map(s => s.ciudad))].length : 0
   };
 
   const createSucursalMutation = useMutation({
@@ -148,7 +188,8 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
     setFormData({
       nombre: sucursal.nombre,
       ciudad: sucursal.ciudad,
-      direccion: sucursal.direccion
+      direccion: sucursal.direccion,
+      activo: sucursal.activo
     });
     setIsEditDialogOpen(true);
   };

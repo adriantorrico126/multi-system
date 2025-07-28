@@ -1,44 +1,23 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1';
-console.log('API_URL configurada como:', API_URL);
+// Crear una instancia global de Axios
+const api = axios.create();
 
-// Configurar axios para incluir credenciales
-axios.defaults.withCredentials = true;
-
-// Agregar interceptores para debugging
-axios.interceptors.request.use(
-  (config) => {
-    console.log('API Request:', {
-      method: config.method,
-      url: config.url,
-      headers: config.headers,
-      data: config.data
-    });
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
-
-axios.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data
-    });
-    return response;
-  },
-  (error) => {
-    console.error('API Response Error:', {
-      message: error.message,
-      status: error.response?.status,
-      url: error.config?.url,
-      data: error.response?.data
-    });
+// Interceptor global para manejar expiración de JWT
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.data && typeof error.response.data.message === 'string') {
+      if (
+        error.response.status === 401 || error.response.status === 403 ||
+        error.response.data.message.toLowerCase().includes('jwt expired')
+      ) {
+        // Limpiar token y redirigir al login
+        localStorage.removeItem('jwtToken');
+        window.location.href = '/login?expired=1';
+        return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
+      }
+    }
     return Promise.reject(error);
   }
 );
@@ -46,10 +25,10 @@ axios.interceptors.response.use(
 // Función para establecer el token de autenticación en las cabeceras de Axios
 export const setAuthToken = (token: string | null) => {
   if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     localStorage.setItem('jwtToken', token); // Almacenar en localStorage
   } else {
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
     localStorage.removeItem('jwtToken'); // Eliminar de localStorage
   }
 };
@@ -128,7 +107,7 @@ export const getCategories = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/categorias?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?id_restaurante=${restauranteId}`);
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
@@ -143,7 +122,7 @@ export const getAllCategories = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/categorias?id_restaurante=${restauranteId}&includeInactive=true`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?id_restaurante=${restauranteId}&includeInactive=true`);
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
@@ -159,7 +138,7 @@ export const createCategory = async (categoryData: { nombre: string }) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/categorias`, { ...categoryData, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias`, { ...categoryData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error creating category:', error);
@@ -169,7 +148,7 @@ export const createCategory = async (categoryData: { nombre: string }) => {
 
 export const deleteCategory = async (categoryId: number) => {
   try {
-    const response = await axios.delete(`${API_URL}/categorias/${categoryId}`);
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias/${categoryId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting category:', error);
@@ -179,7 +158,7 @@ export const deleteCategory = async (categoryId: number) => {
 
 export const updateCategory = async (categoryId: number, categoryData: { nombre?: string; activo?: boolean }) => {
   try {
-    const response = await axios.put(`${API_URL}/categorias/${categoryId}`, categoryData);
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias/${categoryId}`, categoryData);
     return response.data;
   } catch (error) {
     console.error('Error updating category:', error);
@@ -191,7 +170,7 @@ export const getBranches = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/sucursales?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/sucursales?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching branches:', error);
@@ -208,7 +187,7 @@ export const createSucursal = async (sucursalData: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/sucursales`, { ...sucursalData, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/sucursales`, { ...sucursalData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error creating sucursal:', error);
@@ -225,7 +204,7 @@ export const updateSucursal = async (id_sucursal: number, sucursalData: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.put(`${API_URL}/sucursales/${id_sucursal}`, { ...sucursalData, id_restaurante: restauranteId });
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/sucursales/${id_sucursal}`, { ...sucursalData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error updating sucursal:', error);
@@ -237,7 +216,7 @@ export const deleteSucursal = async (id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.delete(`${API_URL}/sucursales/${id_sucursal}`);
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/sucursales/${id_sucursal}`);
     return response.data.data;
   } catch (error) {
     console.error('Error deleting sucursal:', error);
@@ -249,7 +228,7 @@ export const deleteSucursal = async (id_sucursal: number) => {
 export const login = async (username: string, password: string) => {
   try {
     console.log('API: Login attempt for username:', username);
-    const response = await axios.post(`${API_URL}/auth/login`, {
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/auth/login`, {
       username,
       password
     });
@@ -269,7 +248,7 @@ export const getUsers = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/auth/users?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/auth/users?id_restaurante=${restauranteId}`);
     // Mapear id_vendedor a id para compatibilidad con el frontend
     return response.data.data.map((user: any) => ({ ...user, id: user.id_vendedor }));
   } catch (error) {
@@ -281,7 +260,7 @@ export const getUsers = async () => {
 export async function deleteUser(userId: string) {
   const restauranteId = getRestauranteId();
   if (!restauranteId) throw new Error('Restaurante ID not found.');
-  const response = await axios.delete(`${API_URL}/users/${userId}?id_restaurante=${restauranteId}`);
+  const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users/${userId}?id_restaurante=${restauranteId}`);
   return response.data;
 }
 
@@ -290,7 +269,7 @@ export const getDashboardStats = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/dashboard/stats?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/dashboard/stats?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -309,7 +288,7 @@ export const createUser = async (userData: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/users`, { ...userData, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users`, { ...userData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error creating user:', error);
@@ -322,7 +301,7 @@ export const getProducts = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/productos?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos?id_restaurante=${restauranteId}`);
     // Map backend product structure to frontend Product interface
     return response.data.data.map((product: any) => ({
       id: product.id_producto.toString(),
@@ -344,7 +323,7 @@ export const getAllProducts = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/productos?id_restaurante=${restauranteId}&includeInactive=true`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos?id_restaurante=${restauranteId}&includeInactive=true`);
     // Map backend product structure to frontend Product interface
     return response.data.data.map((product: any) => ({
       id: product.id_producto.toString(),
@@ -373,7 +352,7 @@ export const createProduct = async (productData: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/productos`, { ...productData, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos`, { ...productData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error creating product:', error);
@@ -392,7 +371,7 @@ export const updateProduct = async (productData: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.put(`${API_URL}/productos/${productData.id}?id_restaurante=${restauranteId}`, { ...productData, id_restaurante: restauranteId });
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos/${productData.id}?id_restaurante=${restauranteId}`, { ...productData, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error updating product:', error);
@@ -404,7 +383,7 @@ export const deleteProduct = async (productId: string) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.delete(`${API_URL}/productos/${productId}?id_restaurante=${restauranteId}`);
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos/${productId}?id_restaurante=${restauranteId}`);
     return response.data.data;
   }  catch (error) {
     console.error('Error deleting product:', error);
@@ -414,13 +393,14 @@ export const deleteProduct = async (productId: string) => {
 
 // Registrar una venta
 export const createSale = async (sale: {
-  items: Array<{ id: string; quantity: number; price: number; notes?: string }>,
-  total: number,
-  paymentMethod: string,
-  cashier: string,
-  branch: string,
-  mesa_numero?: number,
-  tipo_servicio?: 'Mesa' | 'Delivery' | 'Para Llevar',
+  items: Array<{ id: string; quantity: number; price: number; notes?: string, modificadores?: any[] }>;
+  total: number;
+  paymentMethod: string;
+  cashier: string;
+  id_sucursal: number;
+  mesa_numero?: number;
+  id_mesa?: number; // <-- Aseguramos que se pueda enviar id_mesa
+  tipo_servicio?: 'Mesa' | 'Delivery' | 'Para Llevar';
   invoiceData?: {
     nit: string;
     businessName: string;
@@ -435,25 +415,27 @@ export const createSale = async (sale: {
     id_producto: parseInt(item.id, 10),
     cantidad: item.quantity,
     precio_unitario: item.price,
-    observaciones: item.notes || ''
+    observaciones: item.notes || '',
+    modificadores: item.modificadores || []
   }));
   
-  const payload = {
+  const payload: any = {
     items,
     total: sale.total,
     paymentMethod: sale.paymentMethod,
     cashier: sale.cashier,
-    branch: sale.branch,
+    id_sucursal: sale.id_sucursal,
     tipo_servicio: sale.tipo_servicio || 'Mesa',
     mesa_numero: sale.mesa_numero,
     invoiceData: sale.invoiceData,
     id_restaurante: restauranteId // Añadir id_restaurante al payload
   };
-  
+  if (sale.id_mesa) payload.id_mesa = sale.id_mesa; // <-- Enviar id_mesa si está presente
+
   console.log('Frontend: Sending sale payload:', payload);
-  
+
   try {
-    const response = await axios.post(`${API_URL}/ventas`, payload);
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas`, payload);
     return response.data;
   } catch (error) {
     console.error('Error creating sale:', error);
@@ -482,7 +464,7 @@ export const refreshInventory = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/productos/inventario/resumen?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos/inventario/resumen?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error refreshing inventory:', error);
@@ -495,7 +477,7 @@ export const getKitchenOrders = async () => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/ventas/cocina?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/cocina?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching kitchen orders:', error);
@@ -509,7 +491,7 @@ export const updateOrderStatus = async (saleId: string, status: string) => {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     console.log('API: Updating order status:', { saleId, status, restauranteId });
-    const response = await axios.patch(`${API_URL}/ventas/${saleId}/estado?id_restaurante=${restauranteId}`, { estado: status });
+    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${saleId}/estado?id_restaurante=${restauranteId}`, { estado: status });
     console.log('API: Update response:', response.data);
     return response.data.data;
   } catch (error) {
@@ -529,7 +511,7 @@ export const apiLogout = () => {
 export const testOrders = async () => {
   try {
     console.log('API: Testing orders endpoint');
-    const response = await axios.get(`${API_URL}/ventas/test/pedidos`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/test/pedidos`);
     console.log('API: Test response:', response.data);
     return response.data;
   } catch (error) {
@@ -545,7 +527,7 @@ export const testOrders = async () => {
 export const testAllOrders = async () => {
   try {
     console.log('API: Testing all orders endpoint');
-    const response = await axios.get(`${API_URL}/ventas/test/todos-pedidos`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/test/todos-pedidos`);
     console.log('API: All orders response:', response.data);
     return response.data;
   } catch (error) {
@@ -561,7 +543,7 @@ export const testAllOrders = async () => {
 export const testOrderStats = async () => {
   try {
     console.log('API: Testing order stats endpoint');
-    const response = await axios.get(`${API_URL}/ventas/test/estadisticas-pedidos`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/test/estadisticas-pedidos`);
     console.log('API: Order stats response:', response.data);
     return response.data;
   } catch (error) {
@@ -576,7 +558,7 @@ export const testOrderStats = async () => {
 // Función de prueba para verificar conectividad básica
 export const testConnection = async () => {
   try {
-    const response = await axios.get(`${API_URL}/test`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/test`);
     return response.data;
   } catch (error) {
     console.error('Error testing connection:', error);
@@ -593,7 +575,7 @@ export const getMesas = async (id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/mesas/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching mesas:', error);
@@ -606,7 +588,7 @@ export const getMesa = async (numero: number, id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/mesas/${numero}/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${numero}/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching mesa:', error);
@@ -619,7 +601,7 @@ export const abrirMesa = async (numero: number, id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/mesas/abrir`, {
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/abrir`, {
       numero,
       id_sucursal,
       id_restaurante: restauranteId
@@ -636,7 +618,7 @@ export const cerrarMesa = async (id_mesa: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/mesas/${id_mesa}/cerrar?id_restaurante=${restauranteId}`);
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/cerrar?id_restaurante=${restauranteId}`);
     return response.data;
   } catch (error) {
     console.error('Error al cerrar mesa:', error);
@@ -648,7 +630,16 @@ export const liberarMesa = async (id_mesa: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.patch(`${API_URL}/mesas/${id_mesa}/liberar?id_restaurante=${restauranteId}`);
+    
+    const url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/liberar?id_restaurante=${restauranteId}`;
+    console.log('=== DEBUG LIBERAR MESA API ===');
+    console.log('URL completa:', url);
+    console.log('id_mesa:', id_mesa);
+    console.log('restauranteId:', restauranteId);
+    console.log('Método: PATCH');
+    console.log('=== FIN DEBUG API ===');
+    
+    const response = await api.patch(url);
     return response.data;
   } catch (error) {
     console.error('Error al liberar mesa:', error);
@@ -666,7 +657,7 @@ export const agregarProductosAMesa = async (data: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/mesas/agregar-productos`, { ...data, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/agregar-productos`, { ...data, id_restaurante: restauranteId });
     return response.data;
   } catch (error) {
     console.error('Error agregando productos a mesa:', error);
@@ -679,7 +670,7 @@ export const generarPrefactura = async (id_mesa: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/mesas/${id_mesa}/prefactura?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/prefactura?id_restaurante=${restauranteId}`);
     return response.data;
   } catch (error) {
     console.error('Error generando prefactura:', error);
@@ -692,7 +683,7 @@ export const getEstadisticasMesas = async (id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/mesas/sucursal/${id_sucursal}/estadisticas?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/sucursal/${id_sucursal}/estadisticas?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error obteniendo estadísticas de mesas:', error);
@@ -706,7 +697,7 @@ export const getHistorialMesa = async (id_mesa: number, fecha?: string) => {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     const params = fecha ? { fecha, id_restaurante: restauranteId } : { id_restaurante: restauranteId };
-    const response = await axios.get(`${API_URL}/mesas/${id_mesa}/historial`, { params });
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/historial`, { params });
     return response.data.data;
   } catch (error) {
     console.error('Error obteniendo historial de mesa:', error);
@@ -728,10 +719,25 @@ export const cerrarMesaConFactura = async (data: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/mesas/cerrar-con-factura`, { ...data, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/cerrar-con-factura`, { ...data, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error al cerrar mesa con factura:', error);
+    throw error;
+  }
+};
+
+// Marcar mesa como pagada (nuevo flujo)
+export const marcarMesaComoPagada = async (data: {
+  id_mesa: number;
+}) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/marcar-pagado`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error al marcar mesa como pagada:', error);
     throw error;
   }
 };
@@ -744,7 +750,7 @@ export const getConfiguracionMesas = async (id_sucursal: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.get(`${API_URL}/mesas/configuracion/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/sucursal/${id_sucursal}?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error al obtener configuración de mesas:', error);
@@ -761,7 +767,7 @@ export const crearMesa = async (data: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.post(`${API_URL}/mesas/configuracion`, { ...data, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion`, { ...data, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error al crear mesa:', error);
@@ -778,7 +784,7 @@ export const actualizarMesa = async (id_mesa: number, data: {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.put(`${API_URL}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`, { ...data, id_restaurante: restauranteId });
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`, { ...data, id_restaurante: restauranteId });
     return response.data.data;
   } catch (error) {
     console.error('Error al actualizar mesa:', error);
@@ -790,7 +796,7 @@ export const eliminarMesa = async (id_mesa: number) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await axios.delete(`${API_URL}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`);
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`);
     return response.data.data;
   } catch (error) {
     console.error('Error al eliminar mesa:', error);
@@ -816,7 +822,7 @@ export const getVentasHoy = async (fecha?: string) => {
         params.append('fecha', fecha);
       }
       
-      const response = await axios.get(`${API_URL}/ventas/ventas-hoy?${params.toString()}`);
+      const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/ventas-hoy?${params.toString()}`);
       return response.data.data;
     }
     
@@ -827,7 +833,7 @@ export const getVentasHoy = async (fecha?: string) => {
       params.append('fecha', fecha);
     }
     
-    const response = await axios.get(`${API_URL}/ventas/ventas-hoy?${params.toString()}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/ventas-hoy?${params.toString()}`);
     return response.data.data;
   } catch (error) {
     console.error('Error fetching today sales:', error);
@@ -843,10 +849,7 @@ export async function getVentasOrdenadas(limit = 50, sucursalIdOverride?: number
   params.append('limit', limit.toString());
   params.append('id_restaurante', restauranteId.toString());
   if (sucursalId) params.append('sucursal', sucursalId.toString());
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.get(`${API_URL}/ventas/ordenadas?${params.toString()}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/ordenadas?${params.toString()}`);
   const data = response.data.data;
   // Mapear productos correctamente en cada venta
   return data.map((venta: any) => {
@@ -868,8 +871,8 @@ export async function getVentasOrdenadas(limit = 50, sucursalIdOverride?: number
       total: parseFloat(venta.total) || 0,
       paymentMethod: venta.metodo_pago || venta.paymentMethod || '',
       timestamp: new Date(fechaValida),
-      cashier: venta.cajero || venta.nombre_cajero || '',
-      branch: venta.sucursal_nombre || '',
+      cashier: venta.vendedor_nombre || venta.cajero || venta.nombre_cajero || '',
+      branch: venta.sucursal_nombre || venta.branch || '',
       mesa_numero: venta.mesa_numero || null,
       tipo_servicio: venta.tipo_servicio || '',
       invoiceData: venta.invoiceData || null,
@@ -899,7 +902,7 @@ export const getArqueoData = async (startDate: string, endDate: string, sucursal
       params.append('sucursal', sucursalId.toString());
     }
     
-    const response = await axios.get(`${API_URL}/ventas/arqueo?${params.toString()}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/arqueo?${params.toString()}`);
     
     // Manejar la nueva estructura de respuesta
     const responseData = response.data.data;
@@ -926,34 +929,22 @@ export const getArqueoData = async (startDate: string, endDate: string, sucursal
 
 // Métodos de pago (solo admin)
 export const getPaymentMethods = async () => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.get(`${API_URL}/metodos_pago`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos_pago`);
   return response.data.data;
 };
 
 export const createPaymentMethod = async (descripcion: string) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.post(`${API_URL}/metodos_pago`, { descripcion }, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos_pago`, { descripcion });
   return response.data.data;
 };
 
 export const updatePaymentMethod = async (id: number, data: { descripcion?: string, activo?: boolean }) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.put(`${API_URL}/metodos_pago/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos_pago/${id}`, data);
   return response.data.data;
 };
 
 export const deletePaymentMethod = async (id: number) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.delete(`${API_URL}/metodos_pago/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos_pago/${id}`);
   return response.data;
 };
 
@@ -966,34 +957,22 @@ export const crearPagoSuscripcion = async (data: {
   fecha_transferencia: string;
   comprobante_url?: string;
 }) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.post(`${API_URL}/pagos_suscripcion`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/pagos_suscripcion`, data);
   return response.data.data;
 };
 
 export const getPagosSuscripcion = async () => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.get(`${API_URL}/pagos_suscripcion`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/pagos_suscripcion`);
   return response.data.data;
 };
 
 export const aprobarPagoSuscripcion = async (id: number) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.post(`${API_URL}/pagos_suscripcion/${id}/aprobar`, {}, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/pagos_suscripcion/${id}/aprobar`, {});
   return response.data.data;
 };
 
 export const rechazarPagoSuscripcion = async (id: number) => {
-  const token = localStorage.getItem('jwtToken');
-  const response = await axios.post(`${API_URL}/pagos_suscripcion/${id}/rechazar`, {}, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/pagos_suscripcion/${id}/rechazar`, {});
   return response.data.data;
 };
 
@@ -1020,6 +999,119 @@ export const exportVentasFiltradas = async (filtros: {
   if (filtros.id_producto) params.append('id_producto', filtros.id_producto.toString());
   if (filtros.metodo_pago) params.append('metodo_pago', filtros.metodo_pago);
   if (filtros.cajero) params.append('cajero', filtros.cajero);
-  const response = await axios.get(`${API_URL}/ventas/export?${params.toString()}`);
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/export?${params.toString()}`);
   return response.data.data;
+};
+
+export const createSupportTicket = async (asunto: string, descripcion: string) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/soporte/tickets`, { asunto, descripcion });
+  return response.data.data;
+};
+
+export const getSupportTickets = async () => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/soporte/tickets`);
+  return response.data.data;
+};
+
+// ===================================
+// 🔹 SERVICIOS DE GRUPOS DE MESAS
+// ===================================
+
+export const crearGrupoMesas = async (data: {
+  id_restaurante: number;
+  id_sucursal: number;
+  mesas: number[];
+  id_mesero: number;
+  id_venta_principal?: number;
+}) => {
+  console.log('Datos enviados a crearGrupoMesas:', data);
+  console.log('URL del endpoint:', `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas`);
+  try {
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas`, data);
+    console.log('✅ Respuesta exitosa del backend:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error completo del backend:', error);
+    console.error('❌ Error response data:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
+    console.error('❌ Error message:', error.message);
+    throw error;
+  }
+};
+
+export const agregarMesaAGrupo = async (id_grupo_mesa: number, id_mesa: number) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/${id_grupo_mesa}/mesas`, { id_mesa });
+  return response.data;
+};
+
+export const removerMesaDeGrupo = async (id_grupo_mesa: number, id_mesa: number) => {
+  const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/${id_grupo_mesa}/mesas/${id_mesa}`);
+  return response.data;
+};
+
+export const cerrarGrupoMesas = async (id_grupo_mesa: number) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/${id_grupo_mesa}/cerrar`, {});
+  return response.data;
+};
+
+export const listarGruposMesasActivos = async (id_restaurante: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/activos?id_restaurante=${id_restaurante}`);
+  return response.data.grupos;
+};
+
+export const consultarGrupoPorMesa = async (id_mesa: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/mesa/${id_mesa}`);
+  return response.data.grupo;
+};
+
+// Listar modificadores de un producto
+export const getModificadoresPorProducto = async (id_producto: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/modificadores/producto/${id_producto}`);
+  return response.data.modificadores;
+};
+
+// Asociar modificadores a un detalle de venta
+export const asociarModificadoresADetalle = async (id_detalle_venta: number, id_modificadores: number[]) => {
+  const response = await api.post(
+    `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/modificadores/detalle/${id_detalle_venta}`,
+    { id_modificadores }
+  );
+  return response.data;
+};
+
+export { api };
+
+export const getPedidosMeseroPendientes = async (id_sucursal: number, id_restaurante: number) => {
+  const response = await api.get(
+    `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/pendientes-mesero?id_sucursal=${id_sucursal}&id_restaurante=${id_restaurante}`
+  );
+  return response.data.data;
+};
+
+// Aceptar pedido de mesero
+export const aceptarPedidoMesero = async (id_venta: number) => {
+  const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}/aceptar`);
+  return response.data;
+};
+
+// Rechazar pedido de mesero
+export const rechazarPedidoMesero = async (id_venta: number, motivo?: string) => {
+  try {
+    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}/rechazar`, { motivo });
+    return response.data;
+  } catch (error) {
+    console.error('Error rechazando pedido de mesero:', error);
+    throw error;
+  }
+};
+
+// NUEVO: Función para reasignar mesero a una mesa
+export const reasignarMesero = async (id_mesa: number, id_mesero: number) => {
+  try {
+    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/mesero`, { id_mesero });
+    return response.data;
+  } catch (error) {
+    console.error('Error reasignando mesero:', error);
+    throw error;
+  }
 };

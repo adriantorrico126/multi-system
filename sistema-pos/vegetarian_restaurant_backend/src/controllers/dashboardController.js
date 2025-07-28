@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const logger = require('../config/logger');
 
 exports.getDashboardStats = async (req, res, next) => {
@@ -48,10 +48,10 @@ exports.getDashboardStats = async (req, res, next) => {
     
     // Ejecutar todas las consultas
     const [ventasResult, productosResult, usuariosResult, mesasResult] = await Promise.all([
-      db.query(ventasHoyQuery, [id_restaurante]),
-      db.query(productosQuery, [id_restaurante]),
-      db.query(usuariosQuery, [id_restaurante]),
-      db.query(mesasQuery, [id_restaurante])
+      pool.query(ventasHoyQuery, [id_restaurante]),
+      pool.query(productosQuery, [id_restaurante]),
+      pool.query(usuariosQuery, [id_restaurante]),
+      pool.query(mesasQuery, [id_restaurante])
     ]);
     
     const stats = {

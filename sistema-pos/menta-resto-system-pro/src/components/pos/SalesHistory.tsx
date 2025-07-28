@@ -1,21 +1,32 @@
-import { useState } from 'react';
-import { Sale } from '@/types/restaurant';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit, Trash2, Search, FileText } from 'lucide-react';
-import { EditSaleModal } from './EditSaleModal';
-import { useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, Edit, Trash2, FileText, Download, Calendar, Filter, BarChart3, TrendingUp, DollarSign, Users, Package, Building, CreditCard, Tag, Settings } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { exportVentasFiltradas } from '@/services/api';
 import { exportSalesToCSV } from '@/utils/csvExport';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { getBranches, getProducts, getPaymentMethods, getUsers } from '@/services/api';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { CardDescription } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
+import { Sale } from '@/types/restaurant';
+import { EditSaleModal } from './EditSaleModal';
+import { getBranches, getProducts, getPaymentMethods, getUsers } from '@/services/api';
 
 interface SalesHistoryProps {
   sales: Sale[];
@@ -25,117 +36,198 @@ interface SalesHistoryProps {
 }
 
 export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: SalesHistoryProps) {
+  const [activeTab, setActiveTab] = useState<'historial' | 'avanzadas'>('historial');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [activeTab, setActiveTab] = useState<'historial' | 'avanzadas'>('historial');
-
-  // Filtros avanzados
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [branches, setBranches] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
-  const [selectedPayment, setSelectedPayment] = useState<string>('');
-  const [selectedCajero, setSelectedCajero] = useState<string>('');
   const [loadingExport, setLoadingExport] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Nuevo estado para exportación avanzada
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [sucursal, setSucursal] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const [fechaInicioPdf, setFechaInicioPdf] = useState('');
+  const [fechaFinPdf, setFechaFinPdf] = useState('');
+  const [sucursalPdf, setSucursalPdf] = useState('');
 
   useEffect(() => {
-    if (userRole === 'admin' && activeTab === 'avanzadas') {
-      getBranches().then(setBranches);
-      getProducts().then(setProducts);
-      getPaymentMethods().then(setPaymentMethods);
-      getUsers().then(setUsers);
-    }
-  }, [userRole, activeTab]);
+    // Cargar datos para filtros avanzados
+    const loadFilterData = async () => {
+      try {
+        // Aquí se cargarían los datos para los filtros si fuera necesario
+      } catch (error) {
+        console.error('Error cargando datos de filtros:', error);
+      }
+    };
+    loadFilterData();
+  }, []);
 
-  const filteredSales = sales.filter(sale => 
-    sale.id.includes(searchTerm) ||
-    sale.cashier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sale.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredSales = sales.filter(sale => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      sale.id.toString().includes(searchLower) ||
+      sale.cashier.toLowerCase().includes(searchLower) ||
+      sale.items.some(item => item.name.toLowerCase().includes(searchLower))
+    );
+  });
 
   const handleEditSale = (sale: Sale) => {
     setSelectedSale(sale);
   };
 
-  const handleSaveEdit = (editedSale: Sale) => {
-    onEditSale(editedSale);
+  const handleSaveEdit = (updatedSale: Sale) => {
+    onEditSale(updatedSale);
     setSelectedSale(null);
   };
 
+  const handleDeleteSale = (saleId: string) => {
+    onDeleteSale(saleId);
+  };
+
   // --- Exportación avanzada ---
-  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
-    setLoadingExport(true);
-    setExportError(null);
+  const handleExportExcel = async () => {
+    setIsExporting(true);
     try {
-      if (!dateRange?.from || !dateRange?.to) {
-        setExportError('Debe seleccionar un rango de fechas.');
-        setLoadingExport(false);
-        return;
-      }
-      const filtros: any = {
-        fecha_inicio: formatDate(dateRange.from),
-        fecha_fin: formatDate(dateRange.to),
+      const filtros = {
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        sucursal: sucursal || null,
+        producto: null,
+        metodo_pago: null,
+        cajero: null
       };
-      if (selectedBranch) filtros.id_sucursal = Number(selectedBranch);
-      if (selectedProduct) filtros.id_producto = Number(selectedProduct);
-      if (selectedPayment) filtros.metodo_pago = selectedPayment;
-      if (selectedCajero) filtros.cajero = selectedCajero;
+
       const ventas = await exportVentasFiltradas(filtros);
-      if (ventas.length === 0) {
-        setExportError('No hay ventas para exportar con los filtros seleccionados.');
-        setLoadingExport(false);
-        return;
-      }
-      if (format === 'csv') {
-        exportSalesToCSV(ventas, `ventas_export_${filtros.fecha_inicio}_a_${filtros.fecha_fin}.csv`);
-      } else if (format === 'xlsx') {
-        const ws = XLSX.utils.json_to_sheet(ventas.map(mapVentaToExport));
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
-        XLSX.writeFile(wb, `ventas_export_${filtros.fecha_inicio}_a_${filtros.fecha_fin}.xlsx`);
-      } else if (format === 'pdf') {
-        const doc = new jsPDF();
-        // Encabezados
-        const headers = [
-          'ID', 'Fecha', 'Hora', 'Cajero', 'Sucursal', 'Total', 'Método de Pago', 'Productos'
-        ];
-        const rows = ventas.map((v: any) => [
-          v.id_venta,
-          v.fecha ? formatDate(new Date(v.fecha)) : '',
-          v.fecha ? formatTime(new Date(v.fecha)) : '',
-          v.cajero,
-          v.sucursal_nombre,
-          v.total,
-          v.metodo_pago,
-          (v.productos || []).map((p: any) => `${p.nombre} x${p.cantidad}`).join('; ')
-        ]);
-        (doc as any).autoTable({ head: [headers], body: rows });
-        doc.save(`ventas_export_${filtros.fecha_inicio}_a_${filtros.fecha_fin}.pdf`);
-      }
-    } catch (err: any) {
-      setExportError('Error al exportar: ' + (err?.message || 'Error desconocido.'));
+      
+      // Mapear datos para Excel
+      const datosExcel = ventas.map(venta => ({
+        ID: venta.id,
+        Fecha: formatDate(venta.timestamp),
+        Cajero: venta.cashier,
+        Sucursal: venta.branch,
+        Total: venta.total,
+        Método_Pago: venta.paymentMethod,
+        Productos: venta.items.map(item => `${item.name} x${item.quantity}`).join(', ')
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+      
+      const fileName = `ventas_${fechaInicio}_a_${fechaFin}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: "Exportación exitosa",
+        description: `Se exportaron ${ventas.length} ventas a Excel`,
+      });
+    } catch (error) {
+      console.error('Error al exportar a Excel:', error);
+      toast({
+        title: "Error en la exportación",
+        description: "No se pudo exportar a Excel",
+        variant: "destructive",
+      });
     } finally {
-      setLoadingExport(false);
+      setIsExporting(false);
     }
   };
 
-  function formatDate(date: Date) {
-    return format(date, 'yyyy-MM-dd');
-  }
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const filtros = {
+        fecha_inicio: fechaInicioPdf,
+        fecha_fin: fechaFinPdf,
+        sucursal: sucursalPdf || null,
+        producto: null,
+        metodo_pago: null,
+        cajero: null
+      };
+
+      const ventas = await exportVentasFiltradas(filtros);
+      
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFontSize(20);
+      doc.text('Reporte de Ventas', 105, 20, { align: 'center' });
+      
+      // Información del reporte
+      doc.setFontSize(12);
+      doc.text(`Período: ${fechaInicioPdf} a ${fechaFinPdf}`, 20, 35);
+      doc.text(`Total de ventas: ${ventas.length}`, 20, 45);
+      
+      // Tabla de ventas
+      const headers = [['ID', 'Fecha', 'Cajero', 'Sucursal', 'Total', 'Método Pago']];
+      const data = ventas.map(venta => [
+        venta.id.toString(),
+        formatDate(venta.timestamp),
+        venta.cashier,
+        venta.branch,
+        `Bs${venta.total.toFixed(2)}`,
+        venta.paymentMethod
+      ]);
+      
+      (doc as any).autoTable({
+        head: headers,
+        body: data,
+        startY: 55,
+        styles: {
+          fontSize: 10,
+          cellPadding: 3
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: 255
+        }
+      });
+      
+      const fileName = `reporte_ventas_${fechaInicioPdf}_a_${fechaFinPdf}.pdf`;
+      doc.save(fileName);
+      
+      toast({
+        title: "PDF generado",
+        description: `Se generó el reporte PDF con ${ventas.length} ventas`,
+      });
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      toast({
+        title: "Error al generar PDF",
+        description: "No se pudo generar el reporte PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Función para formatear fechas
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   function formatTime(date: Date) {
     return format(date, 'HH:mm:ss');
   }
+
   function mapVentaToExport(v: any) {
     return {
       ID: v.id_venta,
-      Fecha: v.fecha ? formatDate(new Date(v.fecha)) : '',
-      Hora: v.fecha ? formatTime(new Date(v.fecha)) : '',
+      Fecha: v.fecha,
       Cajero: v.cajero,
-      Sucursal: v.sucursal_nombre,
+      Sucursal: v.sucursal,
       Total: v.total,
       'Método de Pago': v.metodo_pago,
       Productos: (v.productos || []).map((p: any) => `${p.nombre} x${p.cantidad}`).join('; ')
@@ -144,116 +236,111 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
 
   // --- Renderizado ---
   return (
-    <Card>
+    <div className="h-full flex flex-col">
       {userRole === 'admin' && (
-        <div className="flex gap-2 border-b bg-gray-50 px-6 pt-4">
+        <div className="flex gap-2 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80 px-6 pt-4 pb-4">
           <Button
-            variant={activeTab === 'historial' ? 'default' : 'outline'}
+            variant="outline"
+            size="sm"
             onClick={() => setActiveTab('historial')}
-            className="rounded-t-lg"
+            className={activeTab === 'historial' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}
           >
+            <FileText className="h-4 w-4 mr-2" />
             Historial de Ventas
           </Button>
           <Button
-            variant={activeTab === 'avanzadas' ? 'default' : 'outline'}
+            variant="outline"
+            size="sm"
             onClick={() => setActiveTab('avanzadas')}
-            className="rounded-t-lg"
+            className={activeTab === 'avanzadas' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}
           >
+            <Settings className="h-4 w-4 mr-2" />
             Funciones Avanzadas
           </Button>
         </div>
       )}
+      
       {activeTab === 'historial' && (
-        <>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Historial de Ventas ({sales.length})
-            </CardTitle>
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por ID, cajero o producto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <div className="flex-1 flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/50 to-white/50">
+            <div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Historial de Ventas ({filteredSales.length})
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">Gestiona y revisa todas las transacciones</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Fecha/Hora</TableHead>
-                    <TableHead>Cajero</TableHead>
-                    <TableHead>Sucursal</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Pago</TableHead>
-                    <TableHead>Productos</TableHead>
-                    <TableHead>Acciones</TableHead>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por ID, cajero o producto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-auto p-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Fecha/Hora</TableHead>
+                  <TableHead>Cajero</TableHead>
+                  <TableHead>Sucursal</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead>Productos</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell className="font-medium">#{sale.id}</TableCell>
+                    <TableCell>{formatDate(sale.timestamp)}</TableCell>
+                    <TableCell>{sale.cashier}</TableCell>
+                    <TableCell>{sale.branch}</TableCell>
+                    <TableCell>
+                      <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                        Bs{sale.total.toFixed(2)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{sale.paymentMethod}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSale(sale)}
+                          className="rounded-lg transition-all duration-200"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteSale(sale.id)}
+                          className="rounded-lg transition-all duration-200"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-mono text-xs">{sale.id}</TableCell>
-                      <TableCell className="text-xs">
-                        {sale.timestamp.toLocaleDateString()}<br/>
-                        {sale.timestamp.toLocaleTimeString()}
-                      </TableCell>
-                      <TableCell>{sale.cashier}</TableCell>
-                      <TableCell>{sale.branch}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-700">
-                          <span translate="no">Bs</span> {sale.total.toFixed(2)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{sale.paymentMethod}</TableCell>
-                      <TableCell className="max-w-40">
-                        <div className="text-xs">
-                          {sale.items.map((item) => (
-                            <div key={item.id}>{item.name} x{item.quantity}</div>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {(userRole === 'admin' || sale.timestamp.toDateString() === new Date().toDateString()) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditSale(sale)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                          )}
-                          {userRole === 'admin' && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => onDeleteSale(sale.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
+                ))}
+              </TableBody>
+            </Table>
             {filteredSales.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No se encontraron ventas
               </div>
             )}
-          </CardContent>
+          </div>
+          
           {selectedSale && (
             <EditSaleModal
               sale={selectedSale}
@@ -261,97 +348,162 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
               onCancel={() => setSelectedSale(null)}
             />
           )}
-        </>
+        </div>
       )}
-      {activeTab === 'avanzadas' && userRole === 'admin' && (
-        <CardContent>
-          <div className="max-w-3xl mx-auto p-6 space-y-8">
-            <h2 className="text-xl font-bold mb-4">Exportar Ventas Avanzado</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Rango de Fechas</label>
-                <Input
-                  type="date"
-                  value={dateRange?.from ? formatDate(dateRange.from) : ''}
-                  onChange={e => setDateRange(r => ({ ...r, from: new Date(e.target.value) }))}
-                  className="mb-2 w-full"
-                />
-                <Input
-                  type="date"
-                  value={dateRange?.to ? formatDate(dateRange.to) : ''}
-                  onChange={e => setDateRange(r => ({ ...r, to: new Date(e.target.value) }))}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Sucursal</label>
-                <select
-                  className="w-full border rounded px-2 py-2 mb-2"
-                  value={selectedBranch}
-                  onChange={e => setSelectedBranch(e.target.value)}
-                >
-                  <option value="">Todas</option>
-                  {branches.map(b => (
-                    <option key={b.id_sucursal} value={b.id_sucursal}>{b.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Producto</label>
-                <select
-                  className="w-full border rounded px-2 py-2 mb-2"
-                  value={selectedProduct}
-                  onChange={e => setSelectedProduct(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Método de Pago</label>
-                <select
-                  className="w-full border rounded px-2 py-2 mb-2"
-                  value={selectedPayment}
-                  onChange={e => setSelectedPayment(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {paymentMethods.map(pm => (
-                    <option key={pm.descripcion} value={pm.descripcion}>{pm.descripcion}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Cajero</label>
-                <select
-                  className="w-full border rounded px-2 py-2 mb-2"
-                  value={selectedCajero}
-                  onChange={e => setSelectedCajero(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {users.filter(u => u.rol === 'cajero' || u.rol === 'admin').map(u => (
-                    <option key={u.username} value={u.username}>{u.nombre} ({u.username})</option>
-                  ))}
-                </select>
+
+      {activeTab === 'avanzadas' && (
+        <div className="flex-1 p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
+                Exportación Avanzada
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-5 w-5" />
+                      Exportar a Excel
+                    </CardTitle>
+                    <CardDescription>
+                      Exporta las ventas filtradas a formato Excel (.xlsx)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="fechaInicio" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Fecha de Inicio
+                      </Label>
+                      <input
+                        type="date"
+                        id="fechaInicio"
+                        value={fechaInicio}
+                        onChange={(e) => setFechaInicio(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fechaFin" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Fecha de Fin
+                      </Label>
+                      <input
+                        type="date"
+                        id="fechaFin"
+                        value={fechaFin}
+                        onChange={(e) => setFechaFin(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sucursal" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Sucursal
+                      </Label>
+                      <select
+                        id="sucursal"
+                        value={sucursal}
+                        onChange={(e) => setSucursal(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      >
+                        <option value="">Todas las sucursales</option>
+                        <option value="1">Sucursal 16 de Julio</option>
+                        <option value="2">Sucursal Centro</option>
+                      </select>
+                    </div>
+                    <Button
+                      onClick={handleExportExcel}
+                      disabled={isExporting}
+                      className="w-full"
+                    >
+                      {isExporting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Exportando...
+                        </>
+                      ) : (
+                        <>
+                          <FileSpreadsheet className="h-4 w-4 mr-2" />
+                          Exportar a Excel
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Exportar a PDF
+                    </CardTitle>
+                    <CardDescription>
+                      Genera un reporte PDF detallado de las ventas
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="fechaInicioPdf" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Fecha de Inicio
+                      </Label>
+                      <input
+                        type="date"
+                        id="fechaInicioPdf"
+                        value={fechaInicioPdf}
+                        onChange={(e) => setFechaInicioPdf(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fechaFinPdf" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Fecha de Fin
+                      </Label>
+                      <input
+                        type="date"
+                        id="fechaFinPdf"
+                        value={fechaFinPdf}
+                        onChange={(e) => setFechaFinPdf(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sucursalPdf" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                        Sucursal
+                      </Label>
+                      <select
+                        id="sucursalPdf"
+                        value={sucursalPdf}
+                        onChange={(e) => setSucursalPdf(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
+                      >
+                        <option value="">Todas las sucursales</option>
+                        <option value="1">Sucursal 16 de Julio</option>
+                        <option value="2">Sucursal Centro</option>
+                      </select>
+                    </div>
+                    <Button
+                      onClick={handleExportPDF}
+                      disabled={isExporting}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {isExporting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Generando PDF...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Exportar a PDF
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row justify-center items-center gap-4 mt-8">
-              <Button onClick={() => handleExport('csv')} disabled={loadingExport} className="w-48">
-                Exportar CSV
-              </Button>
-              <Button onClick={() => handleExport('xlsx')} disabled={loadingExport} className="w-48">
-                Exportar XLSX
-              </Button>
-              <Button onClick={() => handleExport('pdf')} disabled={loadingExport} className="w-48">
-                Exportar PDF
-              </Button>
-            </div>
-            {loadingExport && <div className="text-blue-600 text-center">Exportando...</div>}
-            {exportError && <div className="text-red-600 text-center">{exportError}</div>}
           </div>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

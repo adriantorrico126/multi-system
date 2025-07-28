@@ -1,42 +1,331 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados para el sistema de gestión de mesas */
+
+/* Animaciones suaves para transiciones */
+.mesa-card {
+  @apply transition-all duration-300 ease-in-out;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.mesa-card:hover {
+  @apply transform scale-[1.02] shadow-xl;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Gradientes personalizados */
+.gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.gradient-warning {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.gradient-danger {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+/* Efectos de hover mejorados */
+.hover-lift {
+  @apply transition-transform duration-200 ease-in-out;
+}
+
+.hover-lift:hover {
+  @apply transform -translate-y-1;
+}
+
+/* Badges con animaciones */
+.badge-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: .5;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+/* Loading spinners personalizados */
+.spinner-primary {
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-success {
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #10b981;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Efectos de glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Cards con bordes animados */
+.card-border-animated {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-border-animated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  animation: border-slide 2s linear infinite;
+}
+
+@keyframes border-slide {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
   }
 }
 
-.card {
-  padding: 2em;
+/* Tooltips personalizados */
+.tooltip-custom {
+  position: relative;
 }
 
-.read-the-docs {
-  color: #888;
+.tooltip-custom::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 50;
+}
+
+.tooltip-custom:hover::after {
+  opacity: 1;
+}
+
+/* Scrollbars personalizados */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Efectos de focus mejorados */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Estados de carga con skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Efectos de profundidad */
+.depth-1 {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.depth-2 {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.depth-3 {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .mobile-hidden {
+    display: none;
+  }
+  
+  .mobile-full {
+    width: 100%;
+  }
+}
+
+@media (min-width: 641px) {
+  .desktop-hidden {
+    display: none;
+  }
+}
+
+/* Estilos específicos para el sistema de mesas */
+.mesa-status-libre {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+
+.mesa-status-en-uso {
+  @apply bg-blue-100 text-blue-800 border-blue-200;
+}
+
+.mesa-status-pendiente {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+
+.mesa-status-pagado {
+  @apply bg-purple-100 text-purple-800 border-purple-200;
+}
+
+/* Efectos de hover para botones de acción */
+.action-button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.action-button:hover {
+  @apply transform scale-105;
+}
+
+.action-button:active {
+  @apply transform scale-95;
+}
+
+/* Estilos para modales */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Estilos para tabs */
+.tab-active {
+  @apply bg-blue-50 text-blue-700 border-blue-200;
+}
+
+.tab-inactive {
+  @apply bg-transparent text-gray-600 border-transparent;
+}
+
+/* Estilos para badges de estado */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Estilos para cards de estadísticas */
+.stats-card {
+  @apply relative overflow-hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+/* Estilos para el grid de mesas */
+.mesa-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (min-width: 640px) {
+  .mesa-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .mesa-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+/* Estilos para el header profesional */
+.header-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Estilos para iconos con animación */
+.icon-bounce {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Estilos para notificaciones */
+.notification-success {
+  @apply bg-green-50 border-green-200 text-green-800;
+}
+
+.notification-error {
+  @apply bg-red-50 border-red-200 text-red-800;
+}
+
+.notification-warning {
+  @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+
+.notification-info {
+  @apply bg-blue-50 border-blue-200 text-blue-800;
 }

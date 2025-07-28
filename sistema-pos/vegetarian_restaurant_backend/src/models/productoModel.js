@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 const Producto = {
   async getAllProductos(id_restaurante) {
@@ -10,7 +10,7 @@ const Producto = {
       WHERE p.id_restaurante = $1 AND p.activo = true
       ORDER BY c.nombre, p.nombre
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     return rows;
   },
 
@@ -23,7 +23,7 @@ const Producto = {
       WHERE p.id_restaurante = $1
       ORDER BY c.nombre, p.nombre
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     return rows;
   },
 
@@ -35,7 +35,7 @@ const Producto = {
       LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
       WHERE p.id_producto = $1 AND p.id_restaurante = $2
     `;
-    const { rows } = await db.query(query, [id, id_restaurante]);
+    const { rows } = await pool.query(query, [id, id_restaurante]);
     return rows[0];
   },
 
@@ -45,7 +45,7 @@ const Producto = {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id_producto, nombre, precio, id_categoria, stock_actual, imagen_url, id_restaurante
     `;
-    const { rows } = await db.query(query, [
+    const { rows } = await pool.query(query, [
       nombre, precio, id_categoria, stock_actual || 0, imagen_url, id_restaurante
     ]);
     return rows[0];
@@ -63,7 +63,7 @@ const Producto = {
       WHERE id_producto = $7 AND id_restaurante = $8
       RETURNING id_producto, nombre, precio, id_categoria, stock_actual, activo, imagen_url, id_restaurante
     `;
-    const { rows } = await db.query(query, [
+    const { rows } = await pool.query(query, [
       nombre, precio, id_categoria, stock_actual, activo, imagen_url, id, id_restaurante
     ]);
     return rows[0];
@@ -76,7 +76,7 @@ const Producto = {
       WHERE id_producto = $1 AND id_restaurante = $2
       RETURNING id_producto, id_restaurante
     `;
-    const { rows } = await db.query(query, [id, id_restaurante]);
+    const { rows } = await pool.query(query, [id, id_restaurante]);
     return rows[0];
   },
 
@@ -89,7 +89,7 @@ const Producto = {
       WHERE id_producto = $2 AND id_restaurante = $3
       RETURNING stock_actual;
     `;
-    const { rows: productRows } = await db.query(updateProductQuery, [cantidad_cambio, id_producto, id_restaurante]);
+    const { rows: productRows } = await pool.query(updateProductQuery, [cantidad_cambio, id_producto, id_restaurante]);
     const nuevo_stock = productRows[0].stock_actual;
 
     // Registrar movimiento en la tabla movimientos_inventario
@@ -98,7 +98,7 @@ const Producto = {
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *;
     `;
-    const { rows: movementRows } = await db.query(recordMovementQuery, [
+    const { rows: movementRows } = await pool.query(recordMovementQuery, [
       id_producto, tipo_movimiento, cantidad_cambio, nuevo_stock - cantidad_cambio, nuevo_stock, id_vendedor, id_restaurante
     ]);
 
@@ -113,7 +113,7 @@ const Producto = {
       WHERE p.activo = true AND p.id_restaurante = $1
       ORDER BY p.nombre;
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     // Asegurar que el precio sea número
     return rows.map(row => ({
       ...row,
@@ -151,7 +151,7 @@ const Producto = {
 
     query += ' ORDER BY mi.fecha_movimiento DESC;';
 
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   }
 };

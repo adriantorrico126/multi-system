@@ -1,0 +1,213 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Admin Console Backend API",
+    "version": "1.0.0",
+    "description": "API para la consola de administración central del sistema POS multirestaurante."
+  },
+  "servers": [
+    { "url": "/api" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AdminUser": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "username": { "type": "string" },
+          "nombre": { "type": "string" },
+          "activo": { "type": "boolean" },
+          "creado_en": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Restaurante": {
+        "type": "object",
+        "properties": {
+          "id_restaurante": { "type": "integer" },
+          "nombre": { "type": "string" },
+          "activo": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Sucursal": {
+        "type": "object",
+        "properties": {
+          "id_sucursal": { "type": "integer" },
+          "nombre": { "type": "string" },
+          "activo": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PagoRestaurante": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "id_restaurante": { "type": "integer" },
+          "monto": { "type": "number" },
+          "fecha_pago": { "type": "string", "format": "date-time" },
+          "metodo_pago": { "type": "string" },
+          "observaciones": { "type": "string" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login de administrador",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/AdminUser" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/admin-users": {
+      "get": {
+        "summary": "Listar administradores",
+        "responses": {
+          "200": {
+            "description": "Lista de administradores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/AdminUser" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/restaurantes": {
+      "get": {
+        "summary": "Listar restaurantes",
+        "responses": {
+          "200": {
+            "description": "Lista de restaurantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Restaurante" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/sucursales": {
+      "get": {
+        "summary": "Listar sucursales",
+        "responses": {
+          "200": {
+            "description": "Lista de sucursales",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Sucursal" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/pagos/registrar": {
+      "post": {
+        "summary": "Registrar pago de restaurante",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id_restaurante": { "type": "integer" },
+                  "monto": { "type": "number" },
+                  "metodo_pago": { "type": "string" },
+                  "observaciones": { "type": "string" }
+                },
+                "required": ["id_restaurante", "monto"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pago registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/PagoRestaurante" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    }
+  }
+} 

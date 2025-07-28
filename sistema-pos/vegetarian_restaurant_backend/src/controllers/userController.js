@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
 const envConfig = require('../config/envConfig');
 const logger = require('../config/logger');
@@ -15,7 +15,7 @@ exports.createUser = async (req, res, next) => {
     const { nombre, username, email, password, rol, id_sucursal } = req.body;
     const id_restaurante = req.user.id_restaurante;
 
-    const existingUser = await db.query(
+    const existingUser = await pool.query(
       'SELECT id_vendedor FROM vendedores WHERE username = $1 AND id_restaurante = $2',
       [username, id_restaurante]
     );
@@ -36,7 +36,7 @@ exports.createUser = async (req, res, next) => {
       RETURNING id_vendedor, nombre, username, email, rol, id_sucursal, id_restaurante
     `;
 
-    const { rows } = await db.query(insertQuery, [
+    const { rows } = await pool.query(insertQuery, [
       nombre, username, email, passwordHash, rol, id_sucursal, id_restaurante
     ]);
 
@@ -82,7 +82,7 @@ exports.getUsers = async (req, res, next) => {
       params.push(userSucursalId);
     }
 
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
 
     logger.info('Usuarios obtenidos exitosamente.');
     res.status(200).json({
@@ -105,7 +105,7 @@ exports.deleteUser = async (req, res, next) => {
       return res.status(400).json({ message: 'No puedes eliminar tu propio usuario.' });
     }
     // Soft delete: poner activo=false
-    const result = await db.query('UPDATE vendedores SET activo = false WHERE id_vendedor = $1 AND id_restaurante = $2 RETURNING *', [id, id_restaurante]);
+    const result = await pool.query('UPDATE vendedores SET activo = false WHERE id_vendedor = $1 AND id_restaurante = $2 RETURNING *', [id, id_restaurante]);
     if (result.rowCount === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
     }

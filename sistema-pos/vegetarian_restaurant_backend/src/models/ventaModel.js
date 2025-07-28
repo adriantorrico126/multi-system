@@ -1,20 +1,29 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 const Venta = {
-  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, id_restaurante }, client = db) {
+  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante }, client = pool) {
+    // Validación extra: si es venta por mesa, id_mesa y mesa_numero deben ser válidos
+    if (tipo_servicio === 'Mesa' && (id_mesa == null || mesa_numero == null)) {
+      throw new Error(`[VENTA MODEL] No se puede crear venta: id_mesa o mesa_numero es null o undefined. id_mesa: ${id_mesa}, mesa_numero: ${mesa_numero}`);
+    }
     
+    // Estado inicial según el tipo de servicio
+    let estadoInicial = 'recibido';
+    if (tipo_servicio === 'Mesa') {
+      estadoInicial = 'pendiente_caja'; // Asegúrate que el constraint de la tabla ventas permita este valor
+    }
     const query = `
-      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado, id_restaurante)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, 'recibido', $7)
-      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado, created_at, id_restaurante;
+      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante;
     `;
-    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, id_restaurante];
+    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante];
     
     const { rows } = await client.query(query, values);
     return rows[0];
   },
 
-  async createDetalleVenta(id_venta, items, id_restaurante, client = db) {
+  async createDetalleVenta(id_venta, items, id_restaurante, client = pool) {
     
     const detalles = [];
     for (const item of items) {
@@ -90,7 +99,7 @@ const Venta = {
           fecha_venta, metodo_pago;
     `;
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -125,7 +134,7 @@ const Venta = {
           fecha;
     `;
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -174,7 +183,7 @@ const Venta = {
     `;
     params.push(limit);
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -191,7 +200,7 @@ const Venta = {
       ORDER BY id_venta DESC 
       LIMIT 10;
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     return rows;
   },
 
@@ -210,7 +219,7 @@ const Venta = {
       ORDER BY fecha DESC, id_venta DESC 
       LIMIT 20;
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     return rows;
   },
 
@@ -227,7 +236,7 @@ const Venta = {
       HAVING COUNT(*) > 1
       ORDER BY fecha DESC;
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     return rows;
   },
 
@@ -239,7 +248,7 @@ const Venta = {
       WHERE id_restaurante = $1
       ORDER BY id_venta ASC;
     `;
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     
     // Actualizar fechas basándose en created_at para mantener orden cronológico
     const updates = [];
@@ -254,7 +263,7 @@ const Venta = {
         SET fecha = $1 
         WHERE id_venta = $2 AND id_restaurante = $3;
       `;
-      await db.query(updateQuery, [nuevaFecha, venta.id_venta, id_restaurante]);
+      await pool.query(updateQuery, [nuevaFecha, venta.id_venta, id_restaurante]);
       updates.push({ id_venta: venta.id_venta, nueva_fecha: nuevaFecha });
     }
     
@@ -294,7 +303,7 @@ const Venta = {
     
     query += ` ORDER BY v.fecha DESC, v.id_venta DESC`;
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -316,84 +325,12 @@ const Venta = {
       WHERE id_venta = $2 AND id_restaurante = $3
       RETURNING id_venta, estado, id_restaurante;
     `;
-    const { rows } = await db.query(query, [nuevoEstado, id_venta, id_restaurante]);
+    const { rows } = await pool.query(query, [nuevoEstado, id_venta, id_restaurante]);
     if (rows.length === 0) {
       throw new Error('Venta no encontrada');
     }
     return rows[0];
-  },
-
-  /**
-   * Obtiene ventas filtradas para exportación avanzada
-   * @param {Object} filtros - Filtros avanzados
-   * @param {string} filtros.fecha_inicio - Fecha inicio (YYYY-MM-DD)
-   * @param {string} filtros.fecha_fin - Fecha fin (YYYY-MM-DD)
-   * @param {number} [filtros.id_sucursal] - Sucursal opcional
-   * @param {number} [filtros.id_producto] - Producto opcional
-   * @param {string} [filtros.metodo_pago] - Método de pago opcional
-   * @param {string} [filtros.cajero] - Cajero opcional (username)
-   * @param {number} id_restaurante - Restaurante
-   * @returns {Promise<Array>} Ventas filtradas
-   */
-  async getVentasFiltradas(filtros, id_restaurante) {
-    let query = `
-      SELECT 
-        v.id_venta,
-        v.fecha,
-        v.total,
-        v.estado,
-        v.tipo_servicio,
-        v.mesa_numero,
-        v.id_restaurante,
-        v.id_sucursal,
-        s.nombre as sucursal_nombre,
-        mp.descripcion as metodo_pago,
-        vend.username as cajero,
-        json_agg(json_build_object(
-          'id_producto', dv.id_producto,
-          'nombre', p.nombre,
-          'cantidad', dv.cantidad,
-          'precio_unitario', dv.precio_unitario,
-          'subtotal', dv.subtotal
-        )) as productos
-      FROM ventas v
-      JOIN sucursales s ON v.id_sucursal = s.id_sucursal
-      JOIN metodos_pago mp ON v.id_pago = mp.id_pago
-      JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
-      JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
-      JOIN productos p ON dv.id_producto = p.id_producto
-      WHERE v.id_restaurante = $1
-        AND v.fecha >= $2 AND v.fecha <= $3
-    `;
-    const params = [id_restaurante, filtros.fecha_inicio, filtros.fecha_fin];
-    let paramIdx = 4;
-    if (filtros.id_sucursal) {
-      query += ` AND v.id_sucursal = $${paramIdx}`;
-      params.push(filtros.id_sucursal);
-      paramIdx++;
-    }
-    if (filtros.id_producto) {
-      query += ` AND dv.id_producto = $${paramIdx}`;
-      params.push(filtros.id_producto);
-      paramIdx++;
-    }
-    if (filtros.metodo_pago) {
-      query += ` AND mp.descripcion = $${paramIdx}`;
-      params.push(filtros.metodo_pago);
-      paramIdx++;
-    }
-    if (filtros.cajero) {
-      query += ` AND vend.username = $${paramIdx}`;
-      params.push(filtros.cajero);
-      paramIdx++;
-    }
-    query += `
-      GROUP BY v.id_venta, s.nombre, mp.descripcion, vend.username
-      ORDER BY v.fecha DESC, v.id_venta DESC
-    `;
-    const { rows } = await db.query(query, params);
-    return rows;
   }
 };
 
-module.exports = Venta; 
+module.exports = Venta;

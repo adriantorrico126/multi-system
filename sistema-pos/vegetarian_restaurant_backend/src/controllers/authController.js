@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const envConfig = require('../config/envConfig');
 const { validationResult } = require('express-validator');
 const logger = require('../config/logger');
@@ -21,7 +21,7 @@ exports.login = async (req, res, next) => {
       WHERE username = $1 AND activo = true
     `;
     
-    const { rows } = await db.query(query, [username]);
+    const { rows } = await pool.query(query, [username]);
     
     if (rows.length === 0) {
       logger.warn(`Intento de login fallido para usuario: ${username} (usuario no encontrado o inactivo).`);
@@ -47,7 +47,7 @@ exports.login = async (req, res, next) => {
       WHERE id_sucursal = $1 AND activo = true
     `;
     
-    const sucursalResult = await db.query(sucursalQuery, [user.id_sucursal]);
+    const sucursalResult = await pool.query(sucursalQuery, [user.id_sucursal]);
     const sucursal = sucursalResult.rows[0];
 
     const token = jwt.sign(
@@ -61,7 +61,7 @@ exports.login = async (req, res, next) => {
         id_restaurante: user.id_restaurante
       },
       envConfig.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '8h' } // Aumentar expiración a 8 horas para pruebas
     );
 
     logger.info(`Login exitoso para usuario: ${username} (Rol: ${user.rol}, Sucursal: ${sucursal ? sucursal.nombre : 'N/A'}).`);
@@ -102,7 +102,7 @@ exports.getUsers = async (req, res, next) => {
       ORDER BY v.nombre
     `;
     
-    const { rows } = await db.query(query, [id_restaurante]);
+    const { rows } = await pool.query(query, [id_restaurante]);
     
     logger.info(`Usuarios obtenidos exitosamente para restaurante ${id_restaurante}.`);
     res.status(200).json({

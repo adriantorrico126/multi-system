@@ -1,13 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sale } from '@/types/restaurant';
-import { TrendingUp, DollarSign, ShoppingCart, Clock, Users, Package, Calendar as CalendarIcon } from 'lucide-react';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  ShoppingCart, 
+  Clock, 
+  Users, 
+  Package, 
+  Calendar as CalendarIcon,
+  BarChart3,
+  Activity,
+  Target,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+  Eye,
+  Download,
+  RefreshCw
+} from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getVentasHoy, getVentasOrdenadas } from '@/services/api';
 import { format } from 'date-fns';
@@ -100,263 +117,364 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
   console.log('DashboardStats - ventasFiltradas:', ventasFiltradas);
 
   // Calcular estadísticas
-  const totalRevenue = ventasFiltradas.reduce((sum: number, venta: any) => {
-    const total = venta?.total;
-    if (total === undefined || total === null) {
-      console.warn('Venta with undefined total:', venta);
-      return sum;
-    }
-    return sum + parseFloat(total);
-  }, 0);
   const totalVentas = ventasFiltradas.length;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const activeProducts = products.filter(p => p.available).length;
-  const averageTicket = totalVentas > 0 ? totalRevenue / totalVentas : 0;
+  const totalIngresos = ventasFiltradas.reduce((sum, venta) => sum + (venta.total || 0), 0);
+  const promedioVenta = totalVentas > 0 ? totalIngresos / totalVentas : 0;
+  const productosActivos = products.filter(p => p.available).length;
+  const pedidosPendientes = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length;
 
-  // Calcular porcentaje de ventas del día vs total
-  const totalRevenueGeneral = ventasOrdenadas.reduce((sum: number, venta: any) => {
-    const total = venta?.total;
-    if (total === undefined || total === null) {
-      console.warn('Venta ordenada with undefined total:', venta);
-      return sum;
-    }
-    return sum + parseFloat(total);
-  }, 0);
-  const porcentajeDelDia = totalRevenueGeneral > 0 ? (totalRevenue / totalRevenueGeneral) * 100 : 0;
-
-  const statsData = [
-    {
-      title: selectedDate && format(selectedDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') 
-        ? "Ventas del Día" 
-        : "Total de Ventas",
-      value: totalVentas,
-      subtitle: `Bs ${totalRevenue.toFixed(2)}`,
-      icon: ShoppingCart,
-      color: "text-green-600",
-      bgColor: "bg-green-50"
-    },
-    {
-      title: selectedDate && format(selectedDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') 
-        ? "Ingresos del Día" 
-        : "Total de Ingresos",
-      value: `Bs ${totalRevenue.toFixed(2)}`,
-      subtitle: `${totalVentas} ventas`,
-      icon: DollarSign,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50"
-    },
-    {
-      title: "Ticket Promedio",
-      value: `Bs ${averageTicket.toFixed(2)}`,
-      subtitle: "Por venta",
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50"
-    },
-    {
-      title: "Órdenes Pendientes",
-      value: pendingOrders,
-      subtitle: `${orders.length} total`,
-      icon: Clock,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50"
-    },
-    {
-      title: "Productos Activos",
-      value: activeProducts,
-      subtitle: `${products.length} total`,
-      icon: Package,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50"
-    },
-    {
-      title: "Usuarios Activos",
-      value: "3",
-      subtitle: "En línea",
-      icon: Users,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50"
-    }
-  ];
+  // Calcular crecimiento vs día anterior
+  const ventasHoy = ventasFiltradas.filter(v => 
+    format(new Date(v.timestamp), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+  );
+  const ventasAyer = ventasFiltradas.filter(v => 
+    format(new Date(v.timestamp), 'yyyy-MM-dd') === format(new Date(Date.now() - 86400000), 'yyyy-MM-dd')
+  );
+  
+  const crecimientoVentas = ventasAyer.length > 0 
+    ? ((ventasHoy.length - ventasAyer.length) / ventasAyer.length) * 100 
+    : 0;
+  
+  const crecimientoIngresos = ventasAyer.length > 0 
+    ? ((ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0) - ventasAyer.reduce((sum, v) => sum + (v.total || 0), 0)) / ventasAyer.reduce((sum, v) => sum + (v.total || 0), 0)) * 100 
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Selector de Fecha */}
+      {/* Header del Dashboard */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Resumen de Ventas</h2>
-          <p className="text-gray-600">Estadísticas detalladas de las ventas</p>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+            Dashboard Ejecutivo
+          </h2>
+          <p className="text-gray-600 mt-1">
+            Análisis completo de rendimiento y métricas de negocio
+          </p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={() => setSelectedDate(new Date())}
-            className={cn(
-              "text-sm",
-              format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && 
-              "bg-blue-50 border-blue-200 text-blue-700"
-            )}
+            size="sm"
+            onClick={() => queryClient.invalidateQueries()}
+            className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            Todas las fechas
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={() => setSelectedDate(new Date('2025-07-11'))}
-            className={cn(
-              "text-sm",
-              format(selectedDate, 'yyyy-MM-dd') === format(new Date('2025-07-11'), 'yyyy-MM-dd') && 
-              "bg-green-50 border-green-200 text-green-700"
-            )}
-          >
-            Hoy
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
           </Button>
           
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
+                className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                {format(selectedDate, 'dd MMM yyyy', { locale: es })}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0 bg-white/95 backdrop-blur-md border border-gray-200/50 shadow-2xl rounded-2xl">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => {
-                  if (date) {
-                    setSelectedDate(date);
-                    setIsCalendarOpen(false);
-                  }
+                  setSelectedDate(date || new Date());
+                  setIsCalendarOpen(false);
                 }}
                 initialFocus
-                locale={es}
+                className="rounded-xl"
               />
             </PopoverContent>
           </Popover>
         </div>
       </div>
 
-      {/* Estado de Carga */}
-      {isLoadingVentas && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-2">Cargando ventas...</p>
-        </div>
-      )}
-
-      {/* Mostrar errores si los hay */}
-      {(errorVentas || errorOrdenadas) && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <h3 className="text-red-800 font-semibold mb-2">Error al cargar datos</h3>
-          {errorVentas && (
-            <p className="text-red-600 text-sm">Error ventas: {errorVentas.message}</p>
-          )}
-          {errorOrdenadas && (
-            <p className="text-red-600 text-sm">Error ventas ordenadas: {errorOrdenadas.message}</p>
-          )}
-        </div>
-      )}
-
-      {/* Estadísticas */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-      {statsData.map((stat, index) => (
-        <Card key={stat.title} className="hover:shadow-lg transition-all duration-300 pos-card">
-          <CardContent className="p-6">
+      {/* Tarjetas de Métricas Principales */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Ventas Totales */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className={`text-2xl font-bold ${stat.color}`}>
-                    {stat.value}
-                  </h3>
-                  {stat.subtitle && (
-                    <span className="text-sm text-gray-500">{stat.subtitle}</span>
-                  )}
-                </div>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              <CardTitle className="text-sm font-semibold text-blue-700">Ventas Totales</CardTitle>
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <ShoppingCart className="h-5 w-5 text-blue-600" />
               </div>
             </div>
-              {index === 0 && totalRevenue > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    +{porcentajeDelDia.toFixed(1)}% del total
-                </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-blue-900">{totalVentas}</p>
+                <div className="flex items-center mt-1">
+                  {crecimientoVentas >= 0 ? (
+                    <ArrowUpRight className="h-4 w-4 text-green-600 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-red-600 mr-1" />
+                  )}
+                  <span className={cn(
+                    "text-sm font-medium",
+                    crecimientoVentas >= 0 ? "text-green-600" : "text-red-600"
+                  )}>
+                    {Math.abs(crecimientoVentas).toFixed(1)}%
+                  </span>
+                </div>
               </div>
-            )}
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                Hoy
+              </Badge>
+            </div>
           </CardContent>
         </Card>
-      ))}
+
+        {/* Ingresos Totales */}
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-green-700">Ingresos Totales</CardTitle>
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <DollarSign className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-green-900">
+                  Bs {totalIngresos.toLocaleString('es-BO')}
+                </p>
+                <div className="flex items-center mt-1">
+                  {crecimientoIngresos >= 0 ? (
+                    <ArrowUpRight className="h-4 w-4 text-green-600 mr-1" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-red-600 mr-1" />
+                  )}
+                  <span className={cn(
+                    "text-sm font-medium",
+                    crecimientoIngresos >= 0 ? "text-green-600" : "text-red-600"
+                  )}>
+                    {Math.abs(crecimientoIngresos).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                Promedio: Bs {promedioVenta.toFixed(2)}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Productos Activos */}
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-purple-700">Productos Activos</CardTitle>
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-purple-900">{productosActivos}</p>
+                <p className="text-sm text-purple-600 mt-1">Disponibles</p>
+              </div>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                {((productosActivos / products.length) * 100).toFixed(0)}% Activos
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pedidos Pendientes */}
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-orange-700">Pedidos Pendientes</CardTitle>
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                <Clock className="h-5 w-5 text-orange-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-orange-900">{pedidosPendientes}</p>
+                <p className="text-sm text-orange-600 mt-1">En preparación</p>
+              </div>
+              <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
+                {orders.length > 0 ? ((pedidosPendientes / orders.length) * 100).toFixed(0) : 0}% Pendientes
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Lista de Ventas del Día */}
-      {ventasFiltradas.length > 0 && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Ventas del {format(selectedDate, "PPP", { locale: es })}
-            </h3>
-            <div className="space-y-3">
-              {ventasFiltradas.slice(0, 10).map((venta: any) => {
-                let fechaVenta = '';
-                if (venta.fecha && !isNaN(Date.parse(venta.fecha))) {
-                  fechaVenta = venta.fecha;
-                } else if (venta.timestamp && !isNaN(new Date(venta.timestamp).getTime())) {
-                  fechaVenta = venta.timestamp;
-                } else {
-                  fechaVenta = new Date().toISOString();
-                }
-                return (
-                  <div key={venta.id_venta} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium text-gray-900">Venta #{venta.id_venta}</p>
-                        <p className="text-sm text-gray-500">
-                          {format(new Date(fechaVenta), "HH:mm")} - {venta.vendedor_nombre}
-                        </p>
+      {/* Gráficos y Análisis Detallados */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Análisis de Ventas por Hora */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                Análisis de Ventas por Hora
+              </CardTitle>
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <BarChart3 className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {ventasFiltradas.length > 0 ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 24 }, (_, hour) => {
+                    const ventasEnHora = ventasFiltradas.filter(v => 
+                      new Date(v.timestamp).getHours() === hour
+                    );
+                    const porcentaje = (ventasEnHora.length / ventasFiltradas.length) * 100;
+                    
+                    return (
+                      <div key={hour} className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-gray-600 w-12">
+                          {hour.toString().padStart(2, '0')}:00
+                        </span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${porcentaje}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-700 w-12 text-right">
+                          {ventasEnHora.length}
+                        </span>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">Bs {venta.total ? parseFloat(venta.total).toFixed(2) : '0.00'}</p>
-                      <p className="text-sm text-gray-500">{venta.metodo_pago || 'N/A'}</p>
-                    </div>
-                  </div>
-                );
-              })}
-              {ventasFiltradas.length > 10 && (
-                <p className="text-sm text-gray-500 text-center">
-                  Mostrando 10 de {ventasFiltradas.length} ventas
-                </p>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">No hay datos de ventas para mostrar</p>
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Mensaje cuando no hay ventas */}
-      {!isLoadingVentas && ventasFiltradas.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay ventas</h3>
-            <p className="text-gray-500">
-              No se registraron ventas el {format(selectedDate, "PPP", { locale: es })}
-            </p>
+        {/* Métricas de Rendimiento */}
+        <Card className="bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                Métricas de Rendimiento
+              </CardTitle>
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Target className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-blue-900">Tasa de Conversión</p>
+                    <p className="text-sm text-blue-600">Ventas por visitante</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-blue-900">
+                    {totalVentas > 0 ? ((totalVentas / (totalVentas + pedidosPendientes)) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/10 rounded-lg">
+                    <Zap className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-green-900">Eficiencia Operativa</p>
+                    <p className="text-sm text-green-600">Productos activos vs total</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-green-900">
+                    {products.length > 0 ? ((productosActivos / products.length) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl border border-purple-200/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <Users className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-purple-900">Satisfacción del Cliente</p>
+                    <p className="text-sm text-purple-600">Pedidos completados</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-purple-900">
+                    {orders.length > 0 ? (((orders.length - pedidosPendientes) / orders.length) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+
+      {/* Acciones Rápidas */}
+      <Card className="bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Acciones Rápidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Eye className="h-6 w-6 text-blue-600" />
+                <span className="font-semibold">Ver Reporte Detallado</span>
+                <span className="text-sm text-gray-600">Análisis completo</span>
+              </div>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Download className="h-6 w-6 text-green-600" />
+                <span className="font-semibold">Exportar Datos</span>
+                <span className="text-sm text-gray-600">CSV, Excel, PDF</span>
+              </div>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+                <span className="font-semibold">Configurar Alertas</span>
+                <span className="text-sm text-gray-600">Notificaciones</span>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 });
-
-DashboardStats.displayName = 'DashboardStats';

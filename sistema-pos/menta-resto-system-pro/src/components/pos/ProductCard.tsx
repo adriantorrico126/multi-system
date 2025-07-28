@@ -7,20 +7,41 @@ import { Plus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { getModificadoresPorProducto } from '@/services/api';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product, notes?: string) => void;
+  onAddToCart: (product: Product, notes?: string, modificadores?: any[]) => void;
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [notes, setNotes] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [modificadores, setModificadores] = useState<any[]>([]);
+  const [selectedMods, setSelectedMods] = useState<number[]>([]);
+  const [loadingMods, setLoadingMods] = useState(false);
 
   const handleAddToCart = () => {
-    onAddToCart(product, notes);
+    onAddToCart(product, notes, modificadores.filter(m => selectedMods.includes(m.id_modificador)));
     setNotes(''); // Clear notes after adding to cart
+    setSelectedMods([]);
     setIsDialogOpen(false);
+  };
+
+  // Cargar modificadores al abrir el diálogo
+  const handleOpenDialog = async (open: boolean) => {
+    setIsDialogOpen(open);
+    if (open && modificadores.length === 0 && !loadingMods) {
+      setLoadingMods(true);
+      try {
+        const mods = await getModificadoresPorProducto(product.id);
+        setModificadores(mods);
+      } catch (e) {
+        // opcional: mostrar error
+      } finally {
+        setLoadingMods(false);
+      }
+    }
   };
 
   return (
@@ -28,18 +49,18 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-medium text-sm leading-tight">{product.name}</h3>
-          <Badge variant="secondary" className="bg-green-100 text-green-700 ml-2">
+          <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-lg">
             <span translate="no">Bs</span> {product.price}
           </Badge>
         </div>
         
         <div className="flex justify-between items-center mt-4">
           <span className="text-xs text-muted-foreground">{product.category}</span>
-          <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <AlertDialog open={isDialogOpen} onOpenChange={handleOpenDialog}>
             <AlertDialogTrigger asChild>
               <Button
                 size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -62,10 +83,37 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                     className="col-span-3"
                   />
                 </div>
+                {loadingMods ? (
+                  <div className="text-xs text-muted-foreground">Cargando modificadores...</div>
+                ) : modificadores.length > 0 && (
+                  <div className="grid gap-2">
+                    <Label>Modificadores/Adiciones</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {modificadores.map(mod => (
+                        <Button
+                          key={mod.id_modificador}
+                          size="sm"
+                          variant={selectedMods.includes(mod.id_modificador) ? 'default' : 'outline'}
+                          onClick={() => setSelectedMods(prev => prev.includes(mod.id_modificador)
+                            ? prev.filter(id => id !== mod.id_modificador)
+                            : [...prev, mod.id_modificador])}
+                          className={selectedMods.includes(mod.id_modificador) 
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+                            : 'hover:border-green-300 hover:text-green-700'
+                          }
+                        >
+                          {mod.nombre_modificador} {mod.precio_extra > 0 ? `(+${mod.precio_extra})` : ''}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAddToCart}>Añadir al Carrito</AlertDialogAction>
+                <AlertDialogAction onClick={handleAddToCart} className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg">
+                  Añadir al Carrito
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 const Categoria = {
   async create({ nombre, id_restaurante }) {
@@ -9,7 +9,7 @@ const Categoria = {
     `;
     const values = [nombre, id_restaurante];
     try {
-      const { rows } = await db.query(query, values);
+      const { rows } = await pool.query(query, values);
       return rows[0];
     } catch (error) {
       console.error('Error al crear categoría:', error);
@@ -25,7 +25,7 @@ const Categoria = {
     }
     query += ' ORDER BY nombre ASC;';
     try {
-      const { rows } = await db.query(query, values);
+      const { rows } = await pool.query(query, values);
       return rows;
     } catch (error) {
       console.error('Error al obtener todas las categorías:', error);
@@ -40,7 +40,7 @@ const Categoria = {
       WHERE id_categoria = $1 AND id_restaurante = $2;
     `;
     try {
-      const { rows } = await db.query(query, [id_categoria, id_restaurante]);
+      const { rows } = await pool.query(query, [id_categoria, id_restaurante]);
       return rows[0]; // Retorna undefined si no se encuentra
     } catch (error) {
       console.error(`Error al obtener categoría con ID ${id_categoria} para restaurante ${id_restaurante}:`, error);
@@ -79,7 +79,7 @@ const Categoria = {
     `;
 
     try {
-      const { rows } = await db.query(query, values);
+      const { rows } = await pool.query(query, values);
       return rows[0];
     } catch (error) {
       console.error(`Error al actualizar categoría con ID ${id_categoria} para restaurante ${id_restaurante}:`, error);
@@ -105,7 +105,7 @@ const Categoria = {
     // Para un borrado físico, si es necesario
     const query = 'DELETE FROM categorias WHERE id_categoria = $1 AND id_restaurante = $2 RETURNING *;';
     try {
-      const { rows } = await db.query(query, [id_categoria, id_restaurante]);
+      const { rows } = await pool.query(query, [id_categoria, id_restaurante]);
       return rows[0]; // Retorna la categoría eliminada
     } catch (error) {
       console.error(`Error al eliminar (hard delete) categoría con ID ${id_categoria} para restaurante ${id_restaurante}:`, error);

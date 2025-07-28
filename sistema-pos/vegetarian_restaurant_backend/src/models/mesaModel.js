@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 const Mesa = {
   // Obtener todas las mesas de una sucursal
@@ -21,7 +21,7 @@ const Mesa = {
       WHERE m.id_sucursal = $1 AND m.id_restaurante = $2
       ORDER BY m.numero
     `;
-    const { rows } = await db.query(query, [id_sucursal, id_restaurante]);
+    const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
     return rows;
   },
 
@@ -38,12 +38,12 @@ const Mesa = {
       LEFT JOIN ventas v ON m.id_venta_actual = v.id_venta
       WHERE m.numero = $1 AND m.id_sucursal = $2 AND m.id_restaurante = $3
     `;
-    const { rows } = await db.query(query, [numero, id_sucursal, id_restaurante]);
+    const { rows } = await pool.query(query, [numero, id_sucursal, id_restaurante]);
     return rows[0];
   },
 
   // Abrir mesa (iniciar servicio)
-  async abrirMesa(numero, id_sucursal, id_vendedor, id_restaurante, client = db) {
+  async abrirMesa(numero, id_sucursal, id_vendedor, id_restaurante, client = pool) {
     // Cierra todas las ventas abiertas/en uso/pendiente_cobro para esta mesa y sucursal
     await client.query(`
       UPDATE ventas
@@ -61,11 +61,14 @@ const Mesa = {
       RETURNING *
     `;
     const { rows } = await client.query(query, [numero, id_sucursal, id_restaurante]);
+    if (!rows[0]) {
+      throw new Error(`No se pudo abrir la mesa ${numero} en la sucursal ${id_sucursal} (restaurante ${id_restaurante}). Verifica que esté libre y exista.`);
+    }
     return rows[0];
   },
 
   // Cerrar mesa (finalizar servicio)
-  async cerrarMesa(id_mesa, id_restaurante, client = db) {
+  async cerrarMesa(id_mesa, id_restaurante, client = pool) {
     const query = `
       UPDATE mesas 
       SET estado = 'libre', 
@@ -80,7 +83,7 @@ const Mesa = {
   },
 
   // Liberar mesa (marcar como libre sin facturar)
-  async liberarMesa(id_mesa, id_restaurante, client = db) {
+  async liberarMesa(id_mesa, id_restaurante, client = pool) {
     const query = `
       UPDATE mesas 
       SET estado = 'libre', 
@@ -95,7 +98,7 @@ const Mesa = {
   },
 
   // Obtener mesa por ID
-  async getMesaById(id_mesa, id_restaurante) {
+  async getMesaById(id_mesa, id_sucursal, id_restaurante) {
     const query = `
       SELECT 
         m.*,
@@ -105,14 +108,14 @@ const Mesa = {
         v.estado as estado_venta_actual
       FROM mesas m
       LEFT JOIN ventas v ON m.id_venta_actual = v.id_venta
-      WHERE m.id_mesa = $1 AND m.id_restaurante = $2
+      WHERE m.id_mesa = $1 AND m.id_sucursal = $2 AND m.id_restaurante = $3
     `;
-    const { rows } = await db.query(query, [id_mesa, id_restaurante]);
+    const { rows } = await pool.query(query, [id_mesa, id_sucursal, id_restaurante]);
     return rows[0];
   },
 
   // Actualizar total acumulado de una mesa
-  async actualizarTotalAcumulado(id_mesa, nuevo_total, id_restaurante, client = db) {
+  async actualizarTotalAcumulado(id_mesa, nuevo_total, id_restaurante, client = pool) {
     const query = `
       UPDATE mesas 
       SET total_acumulado = $2
@@ -124,7 +127,7 @@ const Mesa = {
   },
 
   // Asignar venta a mesa
-  async asignarVentaAMesa(id_mesa, id_venta, id_restaurante, client = db) {
+  async asignarVentaAMesa(id_mesa, id_venta, id_restaurante, client = pool) {
     const query = `
       UPDATE mesas 
       SET id_venta_actual = $2
@@ -132,6 +135,18 @@ const Mesa = {
       RETURNING *
     `;
     const { rows } = await client.query(query, [id_mesa, id_venta, id_restaurante]);
+    return rows[0];
+  },
+
+  // Asignar mesero a la mesa (actualiza id_mesero_actual)
+  async asignarMeseroAMesa(id_mesa, id_mesero, id_restaurante, client = pool) {
+    const query = `
+      UPDATE mesas
+      SET id_mesero_actual = $2
+      WHERE id_mesa = $1 AND id_restaurante = $3
+      RETURNING *
+    `;
+    const { rows } = await client.query(query, [id_mesa, id_mesero, id_restaurante]);
     return rows[0];
   },
 
@@ -149,12 +164,12 @@ const Mesa = {
       ORDER BY p.fecha_apertura DESC
       LIMIT 1
     `;
-    const { rows } = await db.query(query, [id_mesa, id_restaurante]);
+    const { rows } = await pool.query(query, [id_mesa, id_restaurante]);
     return rows[0];
   },
 
   // Crear prefactura
-  async crearPrefactura(id_mesa, id_venta_principal, id_restaurante, client = db) {
+  async crearPrefactura(id_mesa, id_venta_principal, id_restaurante, client = pool) {
     const query = `
       INSERT INTO prefacturas (id_mesa, id_venta_principal, total_acumulado, estado, id_restaurante)
       VALUES ($1, $2, 0, 'abierta', $3)
@@ -165,7 +180,7 @@ const Mesa = {
   },
 
   // Cerrar prefactura
-  async cerrarPrefactura(id_prefactura, total_final, id_restaurante, client = db) {
+  async cerrarPrefactura(id_prefactura, total_final, id_restaurante, client = pool) {
     const query = `
       UPDATE prefacturas 
       SET estado = 'cerrada', 
@@ -208,7 +223,7 @@ const Mesa = {
     
     query += ` ORDER BY v.fecha DESC`;
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -219,7 +234,7 @@ const Mesa = {
       FROM mesas 
       WHERE numero = $1 AND id_sucursal = $2 AND id_restaurante = $3
     `;
-    const { rows } = await db.query(query, [numero, id_sucursal, id_restaurante]);
+    const { rows } = await pool.query(query, [numero, id_sucursal, id_restaurante]);
     return rows.length > 0 ? rows[0] : null;
   },
 
@@ -230,17 +245,18 @@ const Mesa = {
         COUNT(*) as total_mesas,
         COUNT(CASE WHEN estado = 'libre' THEN 1 END) as mesas_libres,
         COUNT(CASE WHEN estado = 'en_uso' THEN 1 END) as mesas_en_uso,
-        COUNT(CASE WHEN estado = 'pendiente_cobro' THEN 1 END) as mesas_pendientes,
+        COUNT(CASE WHEN estado = 'pendiente_cobro' THEN 1 END) as mesas_pendiente_cobro,
+        COUNT(CASE WHEN estado = 'pagado' THEN 1 END) as mesas_pagadas,
         SUM(total_acumulado) as total_acumulado_general
       FROM mesas 
       WHERE id_sucursal = $1 AND id_restaurante = $2
     `;
-    const { rows } = await db.query(query, [id_sucursal, id_restaurante]);
+    const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
     return rows[0];
   },
 
   // Crear nueva mesa
-  async crearMesa({ numero, id_sucursal, capacidad = 4, estado = 'libre', id_restaurante }, client = db) {
+  async crearMesa({ numero, id_sucursal, capacidad = 4, estado = 'libre', id_restaurante }, client = pool) {
     const query = `
       INSERT INTO mesas (numero, id_sucursal, capacidad, estado, id_restaurante)
       VALUES ($1, $2, $3, $4, $5)
@@ -251,7 +267,7 @@ const Mesa = {
   },
 
   // Actualizar mesa
-  async actualizarMesa(id_mesa, id_restaurante, { numero, capacidad, estado }, client = db) {
+  async actualizarMesa(id_mesa, id_restaurante, { numero, capacidad, estado }, client = pool) {
     const query = `
       UPDATE mesas 
       SET numero = $2, capacidad = $3, estado = $4, updated_at = NOW()
@@ -263,7 +279,7 @@ const Mesa = {
   },
 
   // Eliminar mesa
-  async eliminarMesa(id_mesa, id_restaurante, client = db) {
+  async eliminarMesa(id_mesa, id_restaurante, client = pool) {
     // Verificar que la mesa no esté en uso
     const mesa = await client.query('SELECT estado FROM mesas WHERE id_mesa = $1 AND id_restaurante = $2', [id_mesa, id_restaurante]);
     if (mesa.rows.length === 0) {
@@ -294,7 +310,7 @@ const Mesa = {
       WHERE id_sucursal = $1 AND id_restaurante = $2
       ORDER BY numero
     `;
-    const { rows } = await db.query(query, [id_sucursal, id_restaurante]);
+    const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
     return rows;
   },
 
@@ -311,8 +327,56 @@ const Mesa = {
       params.push(id_mesa_excluir);
     }
     
-    const { rows } = await db.query(query, params);
+    const { rows } = await pool.query(query, params);
     return rows.length > 0;
+  },
+
+  // Marcar mesa como pagada (nuevo flujo)
+  async marcarMesaComoPagada(id_mesa, id_restaurante, client = pool) {
+    // Primero obtener el total acumulado actual
+    const mesaQuery = `
+      SELECT total_acumulado, numero
+      FROM mesas 
+      WHERE id_mesa = $1 AND id_restaurante = $2
+    `;
+    const mesaResult = await client.query(mesaQuery, [id_mesa, id_restaurante]);
+    
+    if (mesaResult.rows.length === 0) {
+      throw new Error('Mesa no encontrada');
+    }
+    
+    const totalAcumulado = mesaResult.rows[0].total_acumulado || 0;
+    
+    // Marcar mesa como libre y resetear total acumulado para nuevos clientes
+    const query = `
+      UPDATE mesas 
+      SET estado = 'libre', 
+          hora_cierre = NOW(),
+          id_venta_actual = NULL,
+          total_acumulado = 0,
+          hora_apertura = NULL
+      WHERE id_mesa = $1 AND id_restaurante = $2
+      RETURNING *
+    `;
+    const { rows } = await client.query(query, [id_mesa, id_restaurante]);
+    
+    // Retornar la mesa con el total acumulado anterior (para referencia)
+    return {
+      ...rows[0],
+      total_acumulado: totalAcumulado
+    };
+  },
+
+  // Método para actualizar el estado de una mesa
+  async actualizarEstadoMesa(id_mesa, estado, id_restaurante, client = pool) {
+    const query = `
+      UPDATE mesas
+      SET estado = $2, updated_at = NOW()
+      WHERE id_mesa = $1 AND id_restaurante = $3
+      RETURNING *;
+    `;
+    const { rows } = await client.query(query, [id_mesa, estado, id_restaurante]);
+    return rows[0];
   }
 };
 

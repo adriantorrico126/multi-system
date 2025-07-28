@@ -18,15 +18,44 @@ import Membresia from '../../pages/Membresia';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, BarChart3, FileText, Users, ShoppingCart, ClipboardList, Package, UtensilsCrossed, LayoutDashboard, Building, Tag } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Search, 
+  BarChart3, 
+  FileText, 
+  Users, 
+  ShoppingCart, 
+  ClipboardList, 
+  Package, 
+  UtensilsCrossed, 
+  LayoutDashboard, 
+  Building, 
+  Tag, 
+  LogOut, 
+  Clock,
+  Settings,
+  Activity,
+  TrendingUp,
+  DollarSign,
+  User,
+  Shield,
+  Zap
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
-// Asegúrate de importar KitchenView si es un componente separado
 import { KitchenView } from '../../pages/KitchenView';
-
+import { MesasMesero } from './MesasMesero';
+import { PedidosPendientesCajero } from './PedidosPendientesCajero';
+import { MesaMap } from './index';
+import { useTheme } from '@/context/ThemeContext';
+import { Switch } from '@/components/ui/switch';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+import { PedidosMeseroCajero } from './PedidosMeseroCajero';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -46,7 +75,7 @@ export interface Order {
   timestamp: Date;
   table?: string;
   cashier: string;
-  priority: 'normal' | 'high'; // Podría ser 'normal' | 'high' | 'urgent'
+  priority: 'normal' | 'high';
 }
 
 /**
@@ -55,30 +84,66 @@ export interface Order {
  * Utiliza React Query para la gestión de datos asíncronos y Context API para la autenticación.
  */
 export function POSSystem() {
-  const { user, logout } = useAuth(); // Obtiene el usuario autenticado y la función de cierre de sesión
-  const { toast } = useToast(); // Hook para mostrar notificaciones
-  const queryClient = useQueryClient(); // Cliente de React Query para invalidar cachés
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { theme, toggleTheme } = useTheme();
+  const [now, setNow] = React.useState(dayjs());
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => setNow(dayjs()), 1000 * 30);
+    return () => clearInterval(interval);
+  }, []);
 
   // Estado para sucursal seleccionada (solo admin/gerente)
   const { data: branches = [] } = useQuery({ queryKey: ['branches'], queryFn: getBranches });
   const isAdmin = user.rol === 'admin' || user.rol === 'super_admin';
   const [selectedBranchId, setSelectedBranchId] = React.useState<number | null>(null);
 
+  // Debug logs para verificar la estructura de branches
+  React.useEffect(() => {
+    console.log('🔍 Branches Debug - branches:', branches);
+    console.log('🔍 Branches Debug - branches structure:', branches.map(b => ({
+      id: b.id,
+      id_sucursal: b.id_sucursal,
+      nombre: b.nombre,
+      name: b.name,
+      ciudad: b.ciudad,
+      location: b.location
+    })));
+  }, [branches]);
+
   // Al iniciar, setear sucursal seleccionada a la del usuario (o la primera si es admin)
   React.useEffect(() => {
+    console.log('🔄 Inicializando sucursal - isAdmin:', isAdmin, 'branches:', branches.length, 'user.sucursal:', user.sucursal);
+    
     if (isAdmin && branches.length > 0) {
-      // Intentar obtener la sucursal guardada en localStorage
       const savedSucursalId = localStorage.getItem('selectedSucursalId');
       if (savedSucursalId) {
-        setSelectedBranchId(parseInt(savedSucursalId));
+        const parsedId = parseInt(savedSucursalId);
+        // Verificar que la sucursal guardada existe en la lista actual
+        const branchExists = branches.find(b => b.id_sucursal === parsedId || b.id === parsedId);
+        if (branchExists) {
+          setSelectedBranchId(parsedId);
+          console.log('✅ Sucursal restaurada desde localStorage:', parsedId);
+        } else {
+          // Si la sucursal guardada no existe, usar la primera disponible
+          const firstBranchId = branches[0].id_sucursal ?? branches[0].id;
+          setSelectedBranchId(firstBranchId);
+          localStorage.setItem('selectedSucursalId', firstBranchId.toString());
+          console.log('✅ Sucursal cambiada a primera disponible:', firstBranchId);
+        }
       } else {
         // Si no hay sucursal guardada, usar la primera disponible
         const firstBranchId = branches[0].id_sucursal ?? branches[0].id;
         setSelectedBranchId(firstBranchId);
         localStorage.setItem('selectedSucursalId', firstBranchId.toString());
+        console.log('✅ Sucursal inicializada a primera disponible:', firstBranchId);
       }
     } else if (user.sucursal?.id) {
+      // Para usuarios no-admin, usar su sucursal asignada
       setSelectedBranchId(user.sucursal.id);
+      console.log('✅ Sucursal del usuario:', user.sucursal.id);
     }
   }, [isAdmin, branches, user.sucursal?.id]);
 
@@ -87,16 +152,13 @@ export function POSSystem() {
     setSelectedBranchId(newSucursalId);
     localStorage.setItem('selectedSucursalId', newSucursalId.toString());
     
-    // Invalidar queries para forzar refetch con la nueva sucursal
-    // Asegurarse de que las invalidaciones sean conscientes del inquilino
     queryClient.invalidateQueries({ queryKey: ['mesas', user?.id_restaurante] });
     queryClient.invalidateQueries({ queryKey: ['estadisticas-mesas', user?.id_restaurante] });
     queryClient.invalidateQueries({ queryKey: ['ventas', user?.id_restaurante] });
     queryClient.invalidateQueries({ queryKey: ['users', user?.id_restaurante] });
-    queryClient.invalidateQueries({ queryKey: ['products', user?.id_restaurante] }); // También productos
-    queryClient.invalidateQueries({ queryKey: ['categories', user?.id_restaurante] }); // También categorías
+    queryClient.invalidateQueries({ queryKey: ['products', user?.id_restaurante] });
+    queryClient.invalidateQueries({ queryKey: ['categories', user?.id_restaurante] });
     
-    // Disparar evento personalizado para que el dashboard se actualice
     window.dispatchEvent(new CustomEvent('sucursal-changed', { 
       detail: { sucursalId: newSucursalId } 
     }));
@@ -107,8 +169,17 @@ export function POSSystem() {
   // Sucursal seleccionada (objeto)
   const selectedBranch = React.useMemo(() => {
     if (!selectedBranchId) return undefined;
-    return branches.find(b => b.id_sucursal === selectedBranchId || b.id === selectedBranchId);
+    const branch = branches.find(b => b.id_sucursal === selectedBranchId || b.id === selectedBranchId);
+    console.log('🔍 selectedBranch Debug - selectedBranchId:', selectedBranchId, 'branch:', branch);
+    return branch;
   }, [branches, selectedBranchId]);
+
+  // Obtener la lista de mesas disponibles para la sucursal seleccionada
+  const { data: mesas = [] } = useQuery({
+    queryKey: ['mesas', selectedBranchId],
+    queryFn: () => getMesas(selectedBranchId),
+    enabled: !!selectedBranchId,
+  });
 
   // Determina si el usuario solo puede ver mesas (cajero)
   const onlyMesas = user.rol === 'cajero';
@@ -116,15 +187,15 @@ export function POSSystem() {
   const showAdminFeatures = user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin';
 
   // --- Estado Local del Componente ---
-  const [cart, setCart] = useState<CartItem[]>([]); // Carrito de compras actual
-  const [activeTab, setActiveTab] = useState('pos'); // Pestaña principal activa (e.g., 'pos', 'orders', 'sales', 'dashboard')
-  const [searchTerm, setSearchTerm] = useState(''); // Término de búsqueda para productos
-  const [selectedCategory, setSelectedCategory] = useState<string>('all'); // Categoría de producto seleccionada para filtrar
-  const [showCheckout, setShowCheckout] = useState(false); // Controla la visibilidad del modal de pago
-  const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null); // Venta seleccionada para mostrar factura
-  const [mesaNumero, setMesaNumero] = useState<number | null>(null); // Número de mesa para ventas de tipo 'Mesa'
-  const [tipoServicio, setTipoServicio] = useState<'Mesa' | 'Delivery' | 'Para Llevar'>('Mesa'); // Tipo de servicio (Mesa, Delivery, Para Llevar)
-  const [activeDashboardSubTab, setActiveDashboardSubTab] = useState<string>('summary'); // Sub-pestaña activa dentro del Dashboard ('summary', 'products', 'users', 'mesas')
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [activeTab, setActiveTab] = useState('pos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null);
+  const [mesaNumero, setMesaNumero] = useState<number | null>(null);
+  const [tipoServicio, setTipoServicio] = useState<'Mesa' | 'Delivery' | 'Para Llevar'>('Mesa');
+  const [activeDashboardSubTab, setActiveDashboardSubTab] = useState<string>('summary');
 
   // --- React Query: Gestión de Datos Asíncronos ---
 
@@ -143,19 +214,19 @@ export function POSSystem() {
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn: getProducts,
-    staleTime: 5 * 60 * 1000, // Los datos se consideran "stale" después de 5 minutos, pero se usan si están en caché
-    refetchOnWindowFocus: false, // Evita refetching innecesario al cambiar de ventana
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   // Obtener categorías de productos
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ['categories', user?.id_restaurante],
     queryFn: getCategories,
-    staleTime: 0, // Siempre refetch para obtener categorías actualizadas
+    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
-  // Obtener pedidos para la vista de cocina/gestión de pedidos (refresca cada 5 segundos)
+  // Obtener pedidos para la vista de cocina/gestión de pedidos
   const canViewOrders = user.rol === 'cocinero' || user.rol === 'admin' || user.rol === 'cajero';
   const {
     data: backendOrders = [],
@@ -163,8 +234,8 @@ export function POSSystem() {
   } = useQuery({
     queryKey: ['orders-pos'],
     queryFn: getKitchenOrders,
-    refetchInterval: 5000, // Actualiza los pedidos cada 5 segundos
-    enabled: !!user && canViewOrders, // Ahora también para cajero
+    refetchInterval: 5000,
+    enabled: !!user && canViewOrders,
     refetchOnWindowFocus: true,
     staleTime: 3000,
   });
@@ -172,16 +243,14 @@ export function POSSystem() {
   // Filtrar pedidos para el cajero: solo los de su sucursal
   const filteredOrders = React.useMemo(() => {
     if (user.rol === 'cajero') {
-      // Filtrar por sucursal del cajero
       return (backendOrders || []).filter((order: any) => {
-        // Convertir a números para comparación
         const orderSucursalId = parseInt(order.id_sucursal) || parseInt(order.sucursal_id);
         const userSucursalId = parseInt(user.sucursal?.id);
         return orderSucursalId === userSucursalId;
       });
     }
     return backendOrders || [];
-  }, [backendOrders, user]);
+  }, [backendOrders, user.rol, user.sucursal?.id]);
 
   // Manejar errores de pedidos con useEffect
   useEffect(() => {
@@ -323,6 +392,45 @@ export function POSSystem() {
         return;
       }
 
+      if (tipoServicio === 'Mesa') {
+        const mesaObj = mesas.find((m: any) => m.numero === mesaNumero);
+        console.log('Mesas disponibles:', mesas);
+        console.log('Número de mesa seleccionado:', mesaNumero, 'Tipo:', typeof mesaNumero);
+        if (!mesaObj) {
+          toast({
+            title: '❌ Mesa no encontrada',
+            description: `La mesa número ${mesaNumero} no existe en la sucursal seleccionada.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (typeof mesaNumero !== 'number' || isNaN(mesaNumero) || mesaNumero < 1) {
+          toast({
+            title: '❌ Número de mesa inválido',
+            description: 'El número de mesa debe ser un número válido mayor a 0.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+      // Log del payload antes de enviar
+      console.log('Payload a enviar:', {
+        items: cart.map((item) => ({
+          id: item.originalId || item.id,
+          quantity: item.quantity,
+          price: item.price,
+          notes: item.notes,
+          modificadores: item.modificadores || []
+        })),
+        total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        paymentMethod,
+        cashier: user?.username || 'Desconocido',
+        id_sucursal: selectedBranchId!,
+        mesa_numero: tipoServicio === 'Mesa' ? mesaNumero : null,
+        tipo_servicio: tipoServicio,
+        invoiceData,
+      });
+
       // Prepara los datos de la nueva venta
       const newSale: Sale = {
         id: Date.now().toString(), // ID temporal, será reemplazado por el del backend
@@ -337,7 +445,32 @@ export function POSSystem() {
         invoiceData,
       };
 
+      // Buscar el id_mesa correspondiente al número de mesa seleccionado
+      let idMesaSeleccionada: number | undefined = undefined;
+      if (tipoServicio === 'Mesa' && mesaNumero && Array.isArray(mesas)) {
+        const mesaObj = mesas.find((m: any) => m.numero === mesaNumero);
+        if (mesaObj) idMesaSeleccionada = mesaObj.id_mesa;
+      }
+
       try {
+        // Log del payload antes de enviar
+        console.log('POSSystem: Payload enviado a createSale:', {
+          items: cart.map((item) => ({
+            id: item.originalId || item.id,
+            quantity: item.quantity,
+            price: item.price,
+            notes: item.notes,
+            modificadores: item.modificadores || []
+          })),
+          total: newSale.total,
+          paymentMethod,
+          cashier: newSale.cashier,
+          id_sucursal: selectedBranchId!,
+          mesa_numero: newSale.mesa_numero,
+          // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
+          tipo_servicio: tipoServicio,
+          invoiceData,
+        });
         // Envía la venta al backend
         const backendResponse = await createSale({
           items: cart.map((item) => ({
@@ -345,12 +478,14 @@ export function POSSystem() {
             quantity: item.quantity,
             price: item.price,
             notes: item.notes,
+            modificadores: item.modificadores || []
           })),
           total: newSale.total,
           paymentMethod,
           cashier: newSale.cashier,
-          branch: selectedBranchId, // Enviar SIEMPRE el id numérico de sucursal
+          id_sucursal: selectedBranchId!,
           mesa_numero: newSale.mesa_numero,
+          // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
           tipo_servicio: tipoServicio,
           invoiceData,
         });
@@ -389,7 +524,9 @@ export function POSSystem() {
           queryClient.invalidateQueries({ queryKey: ['orders-pos'] }); // Invalida caché de órdenes
           // Nueva línea: Invalida la query de mesas para actualizar el total acumulado en tiempo real
           queryClient.invalidateQueries({ queryKey: ['mesas', user?.sucursal?.id] });
-          console.log('Frontend: Inventory, orders, and mesas refreshed after sale');
+          // Nueva línea: Invalida todas las queries de prefactura para actualización automática
+          queryClient.invalidateQueries({ queryKey: ['prefactura'], exact: false });
+          console.log('Frontend: Inventory, orders, mesas, and prefactura refreshed after sale');
         } catch (inventoryError) {
           console.error('Frontend: Error refreshing inventory or orders:', inventoryError);
           // Opcional: mostrar un toast si el refresh falla
@@ -402,47 +539,17 @@ export function POSSystem() {
       } catch (error: any) {
         // LOG DETALLADO PARA DEPURACIÓN
         console.error('Error al registrar venta (DETALLE):', error);
-        
+        if (error.response?.data) {
+          console.error('Backend error message:', error.response.data.message);
+          console.error('Backend error details:', error.response.data.details);
+        }
         // Manejar errores específicos del backend
         let errorTitle = '❌ Error al Registrar Venta';
         let errorDescription = 'No se pudo registrar la venta en el sistema. Intenta nuevamente.';
-        
         if (error.response?.data?.message) {
-          const backendMessage = error.response.data.message;
-          
-          // Errores específicos del backend
-          if (backendMessage.includes('Mesa') && backendMessage.includes('no encontrada')) {
-            errorTitle = '🏢 Mesa No Encontrada';
-            const details = error.response?.data?.details || '';
-            errorDescription = `La mesa ${mesaNumero} no existe en esta sucursal. ${details}`;
-          } else if (backendMessage.includes('no está disponible')) {
-            errorTitle = '🚫 Mesa No Disponible';
-            const details = error.response?.data?.details || '';
-            errorDescription = `La mesa ${mesaNumero} no está disponible en este momento. ${details}`;
-          } else if (backendMessage.includes('Cajero no encontrado')) {
-            errorTitle = '👤 Cajero No Encontrado';
-            errorDescription = 'El cajero especificado no existe en el sistema. Contacta al administrador.';
-          } else if (backendMessage.includes('Sucursal no encontrada')) {
-            errorTitle = '🏢 Sucursal No Encontrada';
-            errorDescription = 'La sucursal especificada no existe en el sistema. Contacta al administrador.';
-          } else if (backendMessage.includes('Método de pago no encontrado')) {
-            errorTitle = '💳 Método de Pago No Válido';
-            errorDescription = 'El método de pago seleccionado no está disponible. Selecciona otro método.';
-          } else if (backendMessage.includes('Producto no encontrado')) {
-            errorTitle = '📦 Producto No Encontrado';
-            errorDescription = 'Uno o más productos no están disponibles en el inventario.';
-          } else {
-            // Usar el mensaje del backend si es específico
-            errorDescription = backendMessage;
-          }
-        } else if (error.message) {
-          // Errores de red o conexión
-          if (error.message.includes('Network Error') || error.message.includes('timeout')) {
-            errorTitle = '🌐 Error de Conexión';
-            errorDescription = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
-          } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
-            errorTitle = '🔐 Sesión Expirada';
-            errorDescription = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+          errorDescription = error.response.data.message;
+          if (error.response?.data?.details) {
+            errorDescription += ' ' + error.response.data.details;
           }
         }
         
@@ -453,7 +560,7 @@ export function POSSystem() {
         });
       }
     },
-    [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId]
+    [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas]
   );
 
   /**
@@ -635,6 +742,26 @@ export function POSSystem() {
     }
   }, [onlyMesas]);
 
+  // Determinar la sucursal actual para el Header
+  const currentBranchForHeader = React.useMemo(() => {
+    const branch = selectedBranch
+      ? {
+          id: selectedBranch.id_sucursal?.toString() || selectedBranch.id?.toString() || 'N/A',
+          name: selectedBranch.nombre || selectedBranch.name,
+          location: `${selectedBranch.ciudad || selectedBranch.location || ''} ${selectedBranch.direccion ? '- ' + selectedBranch.direccion : ''}`,
+        }
+      : user.sucursal
+      ? {
+          id: user.sucursal.id?.toString() || 'N/A',
+          name: user.sucursal.nombre,
+          location: `${user.sucursal.ciudad} - ${user.sucursal.direccion}`,
+        }
+      : undefined;
+    
+    console.log('🔍 currentBranchForHeader Debug - selectedBranch:', selectedBranch, 'user.sucursal:', user.sucursal, 'result:', branch);
+    return branch;
+  }, [selectedBranch, user.sucursal]);
+
   // --- Renderizado Condicional Basado en el Rol del Usuario ---
 
   // Si el usuario no está autenticado, no renderiza el POS (esto es manejado por Index.tsx)
@@ -673,50 +800,73 @@ export function POSSystem() {
   );
   }
 
-  // Información de la sucursal actual para el Header
-  const currentBranch = selectedBranch
-    ? {
-        id: selectedBranch.id_sucursal?.toString() || selectedBranch.id?.toString() || 'N/A',
-        name: selectedBranch.nombre || selectedBranch.name,
-        location: `${selectedBranch.ciudad || selectedBranch.location || ''} ${selectedBranch.direccion ? '- ' + selectedBranch.direccion : ''}`,
-      }
-    : user.sucursal
-    ? {
-        id: user.sucursal.id?.toString() || 'N/A',
-        name: user.sucursal.nombre,
-        location: `${user.sucursal.ciudad} - ${user.sucursal.direccion}`,
-      }
-    : undefined;
-
+  // Si el usuario es mesero, mostrar el mapa visual de mesas como vista principal
+  if (user.rol === 'mesero') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-blue-950 flex flex-col">
+        <header className="flex items-center justify-between px-6 py-3 border-b bg-white/90 dark:bg-gray-900/90 shadow-sm">
+          <div className="flex items-center gap-4">
+            <img src="/logos/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full shadow-md" />
+            <div className="flex flex-col">
+              <span className="font-extrabold text-lg tracking-tight text-gray-900 dark:text-white">DATY</span>
+              <span className="text-xs text-gray-500 dark:text-gray-300">Sistema POS Profesional</span>
+            </div>
+            <div className="ml-6 px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col shadow-sm">
+              <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{user.sucursal?.nombre || 'Sucursal'}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-300">{user.sucursal?.ciudad} - {user.sucursal?.direccion}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-bold shadow">{user.nombre}</span>
+            <span className="px-2 py-1 rounded-md bg-pink-100 text-pink-700 text-xs font-bold shadow">Mesero</span>
+            <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono shadow flex items-center gap-1"><Clock className="w-4 h-4" />{now.locale('es').format('HH:mm')}</span>
+            <span className="text-sm">{theme === 'dark' ? '🌙' : '☀️'}</span>
+            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
+            <button
+              onClick={logout}
+              className="ml-2 px-3 py-1 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center gap-1 text-sm font-semibold transition-colors shadow"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" /> Salir
+            </button>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <MesaMap />
+        </main>
+      </div>
+    );
+  }
+  
+  // Renderizar el header global solo si el rol NO es mesero
+  const showHeader = user.rol !== 'mesero';
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      {/* Encabezado Principal del Sistema */}
-      <Header
-        currentUser={{
-          username: user.username,
-          role: user.rol,
-          branch: currentBranch?.id || 'N/A',
-        }}
-        currentBranch={currentBranch}
-        salesCount={sales.length}
-        onExportSales={exportDailySales}
-        onLogout={handleLogout}
-        branches={isAdmin ? branches.map(b => ({ 
-          id: Number(b.id_sucursal), 
-          name: b.nombre, 
-          location: `${b.ciudad || ''} ${b.direccion ? '- ' + b.direccion : ''}` 
-        } as any)) : undefined}
-        selectedBranchId={selectedBranchId ?? undefined}
-        onSucursalChange={isAdmin ? handleSucursalChange : undefined}
-      />
+    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
+      {showHeader ? (
+        <Header
+          currentUser={{
+            username: user.username,
+            role: user.rol,
+            branch: user.sucursal?.nombre || ''
+          }}
+          currentBranch={currentBranchForHeader}
+          salesCount={sales.length}
+          onExportSales={() => exportSalesToCSV(sales)}
+          onLogout={logout}
+          branches={branches}
+          selectedBranchId={selectedBranchId ?? undefined}
+          onSucursalChange={isAdmin ? handleSucursalChange : undefined}
+        />
+      ) : null}
 
       {/* Navegación de Pestañas Principales */}
-      <nav className="border-b bg-white px-6 shadow-sm">
-        <div className="flex flex-row gap-2">
+      <nav className="border-b border-gray-200/50 bg-white/80 backdrop-blur-sm px-6 py-3 shadow-lg flex-shrink-0">
+        <div className="flex flex-row gap-3">
           <Button
             variant={activeTab === 'pos' ? 'default' : 'outline'}
             onClick={() => handleTabChange('pos')}
-            className="rounded-t-lg"
+            className="rounded-xl transition-all duration-200"
           >
             <ShoppingCart className="h-5 w-5 mr-2" />
             Punto de Venta
@@ -724,16 +874,26 @@ export function POSSystem() {
           <Button
             variant={activeTab === 'orders' ? 'default' : 'outline'}
             onClick={() => handleTabChange('orders')}
-            className="rounded-t-lg"
+            className="rounded-xl transition-all duration-200"
           >
             <ClipboardList className="h-5 w-5 mr-2" />
             Pedidos
           </Button>
+          {user.rol === 'cajero' && (
+            <Button
+              variant={activeTab === 'mesero' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('mesero')}
+              className="rounded-xl transition-all duration-200"
+            >
+              <Users className="h-5 w-5 mr-2" />
+              Mesero
+            </Button>
+          )}
           {(user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin') && (
             <Button
               variant={activeTab === 'sales' ? 'default' : 'outline'}
               onClick={() => handleTabChange('sales')}
-              className="rounded-t-lg"
+              className="rounded-xl transition-all duration-200"
             >
               <FileText className="h-5 w-5 mr-2" />
               Historial de Ventas
@@ -743,7 +903,7 @@ export function POSSystem() {
             <Button
               variant={activeTab === 'dashboard' ? 'default' : 'outline'}
               onClick={() => handleTabChange('dashboard')}
-              className="rounded-t-lg"
+              className="rounded-xl transition-all duration-200"
             >
               <LayoutDashboard className="h-5 w-5 mr-2" />
               Dashboard
@@ -752,14 +912,15 @@ export function POSSystem() {
         </div>
       </nav>
 
-      {/* Navegación de Pestañas de Administración (Secundarias) - SOLO SI activeTab es 'dashboard' */}
+      {/* Navegación de Pestañas de Administración (Secundarias) */}
       {activeTab === 'dashboard' && showAdminFeatures && (
-        <nav className="border-b bg-gray-50 px-6 py-2 shadow-inner">
-          <div className="flex flex-row gap-2">
+        <nav className="border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80 backdrop-blur-sm px-6 py-3 shadow-inner flex-shrink-0">
+          <div className="flex flex-row gap-3">
             <Button
               variant={activeDashboardSubTab === 'summary' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('summary')}
+              className="rounded-lg transition-all duration-200"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Resumen
@@ -768,14 +929,16 @@ export function POSSystem() {
               variant={activeDashboardSubTab === 'products' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('products')}
+              className="rounded-lg transition-all duration-200"
             >
               <Package className="h-4 w-4 mr-2" />
               Productos
             </Button>
-            <Button
+                        <Button
               variant={activeDashboardSubTab === 'users' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('users')}
+              className="rounded-lg transition-all duration-200"
             >
               <Users className="h-4 w-4 mr-2" />
               Usuarios
@@ -823,14 +986,14 @@ export function POSSystem() {
       )}
 
       {/* Contenido Principal de la Aplicación */}
-      <main className="flex flex-1 p-6 gap-6 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden">
         {/* Contenido de las Pestañas */}
-        <div className="flex-1 overflow-auto pr-2">
+        <div className="flex-1 overflow-auto">
           {/* Vista de Punto de Venta (POS) */}
           {activeTab === 'pos' && (
-            <div className="flex flex-col gap-4 px-4 md:px-8 mt-4">
-              {/* Buscador de productos - ahora en una fila aparte y espacioso */}
-              <div className="w-full mb-2 mt-4">
+            <div className="flex flex-col h-full p-6">
+              {/* Buscador de productos - fijo en la parte superior */}
+              <div className="w-full mb-4 flex-shrink-0">
                 <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
@@ -841,8 +1004,9 @@ export function POSSystem() {
                   />
                 </div>
               </div>
-              {/* Filtros de categoría */}
-              <div className="w-full flex flex-wrap gap-2 items-center justify-start">
+              
+              {/* Filtros de categoría - fijos debajo del buscador */}
+              <div className="w-full flex flex-wrap gap-2 items-center justify-start mb-6 flex-shrink-0">
                 <CategoryFilter
                   selectedCategory={selectedCategory}
                   onSelectCategory={(categoryId: string) => setSelectedCategory(categoryId)}
@@ -850,100 +1014,110 @@ export function POSSystem() {
                   isLoading={isLoadingCategories}
                 />
               </div>
-              {/* Grid de productos */}
-              {isLoadingProducts ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-pulse">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <Card key={i} className="h-48 w-full bg-gray-200 rounded-lg" />
-                  ))}
-                </div>
-              ) : filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
-                  ))}
-                </div>
-              ) : (
-                <Card className="mt-8">
-                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <Search className="h-16 w-16 text-gray-300 mb-4" />
-                    <p className="text-gray-500 text-xl font-semibold">No se encontraron productos</p>
-                    <p className="text-gray-400 text-sm mt-1">
-                      Intenta ajustar tu búsqueda o filtros de categoría.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              
+              {/* Grid de productos - scrollable */}
+              <div className="flex-1 overflow-auto">
+                {isLoadingProducts ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-pulse">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <Card key={i} className="h-48 w-full bg-gray-200 rounded-lg" />
+                    ))}
+                  </div>
+                ) : filteredProducts.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {filteredProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="mt-8">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                      <Search className="h-16 w-16 text-gray-300 mb-4" />
+                      <p className="text-gray-500 text-xl font-semibold">No se encontraron productos</p>
+                      <p className="text-gray-400 text-sm mt-1">
+                        Intenta ajustar tu búsqueda o filtros de categoría.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
           )}
 
           {/* Vista de Gestión de Pedidos */}
           {activeTab === 'orders' && (
-            <div className="flex flex-col gap-4 px-4 md:px-8 mt-4">
-              <OrderManagement
-                orders={orders}
-                onUpdateOrderStatus={handleUpdateOrderStatus}
-                userRole={user.rol}
-              />
+            <div className="p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                <OrderManagement
+                  orders={orders}
+                  onUpdateOrderStatus={handleUpdateOrderStatus}
+                  userRole={user.rol}
+                />
+              </div>
             </div>
           )}
 
           {/* Vista de Historial de Ventas */}
           {activeTab === 'sales' && (user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin') && (
-            <div className="flex flex-col gap-4 px-4 md:px-8 mt-4">
-              <SalesHistory
-                sales={sales}
-                onEditSale={handleEditSale}
-                onDeleteSale={handleDeleteSale}
-                userRole={user.rol}
-              />
+            <div className="p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
+                <SalesHistory
+                  sales={sales}
+                  onEditSale={handleEditSale}
+                  onDeleteSale={handleDeleteSale}
+                  userRole={user.rol}
+                />
+              </div>
             </div>
           )}
 
           {/* Vistas de Administración (dentro del Dashboard) */}
           {activeTab === 'dashboard' && showAdminFeatures && (
-            <div className="space-y-8 w-full"> {/* Añadir w-full para que ocupe todo el ancho */}
+            <div className="p-6">
               {onlyMesas ? (
                 // Solo cajero: solo ve la gestión de mesas
-                <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+                </div>
               ) : (
                 // Admin y gerente: ven todas las sub-pestañas
                 <>
               {activeDashboardSubTab === 'summary' && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Panel de Control General</h2>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+                    Panel de Control General
+                  </h2>
                   <p className="text-gray-600 mb-6">Visualiza métricas clave y el rendimiento de tu negocio.</p>
-                  <DashboardStats sales={sales} orders={orders} products={products} /> {/* Pasa orders aquí */}
-                  {/* Aquí se pueden añadir más gráficos o componentes de resumen */}
+                  <DashboardStats sales={sales} orders={orders} products={products} />
                 </div>
               )}
               {activeDashboardSubTab === 'products' && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <ProductManagement products={products} categories={categories} currentUserRole={user.rol} idRestaurante={user.id_restaurante} />
                 </div>
               )}
               {activeDashboardSubTab === 'users' && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <UserManagement />
                 </div>
               )}
               {activeDashboardSubTab === 'mesas' && (
-                    <div className="px-4 md:px-8 mt-4 pb-8">
-                      <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
-                    </div>
-                  )}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+                </div>
+              )}
               {activeDashboardSubTab === 'categorias' && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <CategoryList />
                 </div>
               )}
               {activeDashboardSubTab === 'sucursales' && (user.rol === 'admin' || user.rol === 'super_admin') && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <SucursalManagement currentUserRole={user.rol} />
                 </div>
               )}
               {activeDashboardSubTab === 'membresia' && (
-                <div className="px-4 md:px-8 mt-4 pb-8">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <Membresia />
                 </div>
               )}
@@ -955,7 +1129,7 @@ export function POSSystem() {
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS */}
         {activeTab === 'pos' && (
-          <aside className="w-96 bg-white p-6 rounded-lg shadow-lg flex flex-col justify-between">
+          <aside className="w-96 bg-white/90 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-xl flex flex-col justify-between">
             <div>
               <Cart
                 items={cart}
@@ -967,7 +1141,7 @@ export function POSSystem() {
               <div className="mt-6 space-y-4">
                 {/* Selector de Tipo de Servicio */}
                 <div>
-                  <label htmlFor="service-type" className="block text-sm font-semibold text-gray-800 mb-2">
+                  <label htmlFor="service-type" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
                     Tipo de Servicio
                   </label>
                   <select
@@ -1030,6 +1204,9 @@ export function POSSystem() {
             </div>
           </aside>
         )}
+        {activeTab === 'mesero' && user?.rol === 'cajero' && (
+  <PedidosMeseroCajero />
+)}
       </main>
 
       {/* Modals Globales */}
@@ -1045,3 +1222,4 @@ export function POSSystem() {
     </div>
   );
 }
+

@@ -1,10 +1,10 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 const Sucursal = {
   async findAll(id_restaurante) {
     const query = 'SELECT id_sucursal, nombre, ciudad, direccion, activo, id_restaurante FROM sucursales WHERE activo = true AND id_restaurante = $1 ORDER BY nombre ASC;';
     try {
-      const { rows } = await db.query(query, [id_restaurante]);
+      const { rows } = await pool.query(query, [id_restaurante]);
       return rows;
     } catch (error) {
       console.error('Error al obtener todas las sucursales:', error);
@@ -15,7 +15,7 @@ const Sucursal = {
   async findById(id_sucursal, id_restaurante) {
     const query = 'SELECT id_sucursal, nombre, ciudad, direccion, activo, id_restaurante FROM sucursales WHERE id_sucursal = $1 AND id_restaurante = $2;';
     try {
-      const { rows } = await db.query(query, [id_sucursal, id_restaurante]);
+      const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
       return rows[0];
     } catch (error) {
       console.error(`Error al obtener sucursal con ID ${id_sucursal} para restaurante ${id_restaurante}:`, error);
@@ -31,7 +31,7 @@ const Sucursal = {
       RETURNING id_sucursal, nombre, ciudad, direccion, activo, id_restaurante;
     `;
     try {
-      const { rows } = await db.query(query, [nombre, ciudad, direccion, id_restaurante]);
+      const { rows } = await pool.query(query, [nombre, ciudad, direccion, id_restaurante]);
       return rows[0];
     } catch (error) {
       console.error('Error al crear sucursal:', error);
@@ -48,7 +48,7 @@ const Sucursal = {
       RETURNING id_sucursal, nombre, ciudad, direccion, activo, id_restaurante;
     `;
     try {
-      const { rows } = await db.query(query, [nombre, ciudad, direccion, activo, id_sucursal, id_restaurante]);
+      const { rows } = await pool.query(query, [nombre, ciudad, direccion, activo, id_sucursal, id_restaurante]);
       return rows[0];
     } catch (error) {
       console.error('Error al actualizar sucursal:', error);
@@ -64,7 +64,7 @@ const Sucursal = {
       RETURNING id_sucursal;
     `;
     try {
-      const { rows } = await db.query(query, [id_sucursal, id_restaurante]);
+      const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
       return rows[0];
     } catch (error) {
       console.error('Error al eliminar sucursal:', error);
@@ -82,7 +82,7 @@ const Sucursal = {
     }
     
     try {
-      const { rows } = await db.query(query, params);
+      const { rows } = await pool.query(query, params);
       return parseInt(rows[0].count) > 0;
     } catch (error) {
       console.error('Error al verificar si existe el nombre de sucursal:', error);

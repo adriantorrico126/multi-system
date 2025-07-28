@@ -12,7 +12,10 @@ exports.authenticateToken = (req, res, next) => {
 
   jwt.verify(token, envConfig.JWT_SECRET, (err, user) => {
     if (err) {
+      // Solo loguear errores que no sean expiración o formato inválido
+      if (err.name !== 'TokenExpiredError' && err.name !== 'JsonWebTokenError') {
       console.error('Error de verificación de token:', err.message);
+      }
       return res.status(403).json({ message: 'Token de autenticación inválido o expirado.' });
     } // Token inválido
     req.user = user; // Adjuntar el usuario al objeto de solicitud

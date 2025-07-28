@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/services/api';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -48,7 +48,7 @@ const InventoryPage: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem('jwtToken');
-      const inventoryResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
+      const inventoryResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -57,7 +57,7 @@ const InventoryPage: React.FC = () => {
       console.log('Frontend: Inventory data sample:', inventoryResponse.data.data?.slice(0, 2));
       setInventory(inventoryResponse.data.data || []);
 
-      const movementsResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
+      const movementsResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -94,7 +94,7 @@ const InventoryPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('jwtToken');
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/${selectedProduct.id_producto}/stock`, {
+      await api.post(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/${selectedProduct.id_producto}/stock`, {
         cantidad_cambio: amount,
         tipo_movimiento: movementType,
       }, {

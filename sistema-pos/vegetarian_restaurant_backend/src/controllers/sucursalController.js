@@ -1,5 +1,6 @@
 const Sucursal = require('../models/sucursalModel');
 const logger = require('../config/logger'); // Importar el logger
+const { pool } = require('../config/database');
 
 exports.getAllSucursales = async (req, res, next) => {
   try {
@@ -126,8 +127,7 @@ exports.deleteSucursal = async (req, res, next) => {
     }
 
     // Verificar si hay usuarios asignados a esta sucursal
-    const db = require('../config/database');
-    const usuariosResult = await db.query(
+    const usuariosResult = await pool.query(
       'SELECT COUNT(*) FROM vendedores WHERE id_sucursal = $1 AND id_restaurante = $2 AND activo = true',
       [id_sucursal, id_restaurante]
     );
@@ -139,7 +139,7 @@ exports.deleteSucursal = async (req, res, next) => {
     }
 
     // Verificar si hay mesas en esta sucursal
-    const mesasResult = await db.query(
+    const mesasResult = await pool.query(
       'SELECT COUNT(*) FROM mesas WHERE id_sucursal = $1 AND id_restaurante = $2',
       [id_sucursal, id_restaurante]
     );
