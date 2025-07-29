@@ -139,65 +139,251 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
+      console.log('🔄 Iniciando generación de informe profesional...');
+      
+      // Validar fechas
+      if (!fechaInicioPdf || !fechaFinPdf) {
+        toast({
+          title: "Error",
+          description: "Debe seleccionar fecha de inicio y fin",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const filtros = {
         fecha_inicio: fechaInicioPdf,
         fecha_fin: fechaFinPdf,
-        sucursal: sucursalPdf || null,
+        id_sucursal: sucursalPdf ? parseInt(sucursalPdf) : null,
         producto: null,
         metodo_pago: null,
         cajero: null
       };
 
+      console.log('📋 Filtros para informe:', filtros);
+
       const ventas = await exportVentasFiltradas(filtros);
+      console.log('✅ Ventas obtenidas para informe:', ventas.length);
+      console.log('🔍 Primera venta para debug:', JSON.stringify(ventas[0], null, 2));
       
+      if (ventas.length === 0) {
+        toast({
+          title: "Sin datos",
+          description: "No hay ventas para el período seleccionado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Importar jsPDF dinámicamente
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       
-      // Título
-      doc.setFontSize(20);
-      doc.text('Reporte de Ventas', 105, 20, { align: 'center' });
+      // ===== PÁGINA 1: RESUMEN EJECUTIVO =====
       
-      // Información del reporte
+      // Título principal
+      doc.setFontSize(24);
+      doc.setTextColor(44, 62, 80);
+      doc.text('INFORME DE VENTAS', 105, 25, { align: 'center' });
+      
+      // Subtítulo
+      doc.setFontSize(14);
+      doc.setTextColor(52, 73, 94);
+      doc.text('Análisis Profesional de Rendimiento Comercial', 105, 35, { align: 'center' });
+      
+      // Información del período
       doc.setFontSize(12);
-      doc.text(`Período: ${fechaInicioPdf} a ${fechaFinPdf}`, 20, 35);
-      doc.text(`Total de ventas: ${ventas.length}`, 20, 45);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`Período de Análisis: ${fechaInicioPdf} a ${fechaFinPdf}`, 20, 50);
+      doc.text(`Fecha de Generación: ${new Date().toLocaleDateString('es-ES')}`, 20, 60);
       
-      // Tabla de ventas
-      const headers = [['ID', 'Fecha', 'Cajero', 'Sucursal', 'Total', 'Método Pago']];
-      const data = ventas.map(venta => [
-        venta.id.toString(),
-        formatDate(venta.timestamp),
-        venta.cashier,
-        venta.branch,
-        `Bs${venta.total.toFixed(2)}`,
-        venta.paymentMethod
-      ]);
+      // Estadísticas principales
+      const totalGeneral = ventas.reduce((sum, venta) => sum + parseFloat(venta.total || 0), 0);
+      const promedioVenta = totalGeneral / ventas.length;
+      const ventaMaxima = Math.max(...ventas.map(v => parseFloat(v.total || 0)));
+      const ventaMinima = Math.min(...ventas.map(v => parseFloat(v.total || 0)));
       
-      (doc as any).autoTable({
-        head: headers,
-        body: data,
-        startY: 55,
-        styles: {
-          fontSize: 10,
-          cellPadding: 3
-        },
-        headStyles: {
-          fillColor: [59, 130, 246],
-          textColor: 255
-        }
+      // Resumen ejecutivo
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('RESUMEN EJECUTIVO', 20, 80);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`• Total de Transacciones: ${ventas.length} ventas`, 25, 95);
+      doc.text(`• Ingresos Totales: Bs${totalGeneral.toFixed(2)}`, 25, 105);
+      doc.text(`• Promedio por Venta: Bs${promedioVenta.toFixed(2)}`, 25, 115);
+      doc.text(`• Venta Máxima: Bs${ventaMaxima.toFixed(2)}`, 25, 125);
+      doc.text(`• Venta Mínima: Bs${ventaMinima.toFixed(2)}`, 25, 135);
+      
+      // Análisis por método de pago
+      const metodosPago: { [key: string]: number } = {};
+      ventas.forEach(venta => {
+        // Manejar tanto paymentmethod (minúsculas) como paymentMethod (camelCase)
+        const metodo = venta.paymentmethod || venta.paymentMethod || venta['paymentMethod'] || 'No especificado';
+        metodosPago[metodo] = (metodosPago[metodo] || 0) + parseFloat(venta.total || 0);
       });
       
-      const fileName = `reporte_ventas_${fechaInicioPdf}_a_${fechaFinPdf}.pdf`;
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('DISTRIBUCIÓN POR MÉTODO DE PAGO', 20, 155);
+      
+      let yPos = 170;
+      Object.entries(metodosPago).forEach(([metodo, total]) => {
+        const porcentaje = ((total / totalGeneral) * 100).toFixed(1);
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text(`• ${metodo}: Bs${total.toFixed(2)} (${porcentaje}%)`, 25, yPos);
+        yPos += 8;
+      });
+      
+      // Análisis por cajero
+      const cajeros: { [key: string]: { total: number; ventas: number } } = {};
+      ventas.forEach(venta => {
+        const cajero = venta.cashier || 'No especificado';
+        if (!cajeros[cajero]) {
+          cajeros[cajero] = { total: 0, ventas: 0 };
+        }
+        cajeros[cajero].total += parseFloat(venta.total || 0);
+        cajeros[cajero].ventas += 1;
+      });
+      
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('RENDIMIENTO POR CAJERO', 20, yPos + 10);
+      
+      yPos += 25;
+      Object.entries(cajeros).forEach(([cajero, datos]) => {
+        const promedio = datos.total / datos.ventas;
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text(`• ${cajero}: ${datos.ventas} ventas, Bs${datos.total.toFixed(2)} (promedio: Bs${promedio.toFixed(2)})`, 25, yPos);
+        yPos += 8;
+      });
+      
+      // ===== PÁGINA 2: ANÁLISIS DETALLADO =====
+      doc.addPage();
+      
+      doc.setFontSize(20);
+      doc.setTextColor(44, 62, 80);
+      doc.text('ANÁLISIS DETALLADO', 105, 25, { align: 'center' });
+      
+      // Análisis temporal
+      const ventasPorDia = {};
+      ventas.forEach(venta => {
+        const fecha = formatDate(venta.timestamp).split(' ')[0];
+        if (!ventasPorDia[fecha]) {
+          ventasPorDia[fecha] = { total: 0, ventas: 0 };
+        }
+        ventasPorDia[fecha].total += parseFloat(venta.total || 0);
+        ventasPorDia[fecha].ventas += 1;
+      });
+      
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('EVOLUCIÓN DIARIA', 20, 45);
+      
+      let yPos2 = 60;
+      Object.entries(ventasPorDia).sort().forEach(([fecha, datos]) => {
+        doc.setFontSize(11);
+        doc.setTextColor(44, 62, 80);
+        doc.text(`• ${fecha}: ${datos.ventas} ventas - Bs${datos.total.toFixed(2)}`, 25, yPos2);
+        yPos2 += 8;
+      });
+      
+      // Top productos (si hay datos de items)
+      if (ventas.some(v => v.items && v.items.length > 0)) {
+        const productos = {};
+        ventas.forEach(venta => {
+          venta.items?.forEach(item => {
+            const nombre = item.name || 'Producto desconocido';
+            productos[nombre] = (productos[nombre] || 0) + (item.quantity || 0);
+          });
+        });
+        
+        const topProductos = Object.entries(productos)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 10);
+        
+        doc.setFontSize(16);
+        doc.setTextColor(41, 128, 185);
+        doc.text('PRODUCTOS MÁS VENDIDOS', 20, yPos2 + 20);
+        
+        yPos2 += 35;
+        topProductos.forEach(([producto, cantidad]) => {
+          doc.setFontSize(11);
+          doc.setTextColor(44, 62, 80);
+          doc.text(`• ${producto}: ${cantidad} unidades`, 25, yPos2);
+          yPos2 += 8;
+        });
+      }
+      
+      // ===== PÁGINA 3: CONCLUSIONES Y RECOMENDACIONES =====
+      doc.addPage();
+      
+      doc.setFontSize(20);
+      doc.setTextColor(44, 62, 80);
+      doc.text('CONCLUSIONES Y RECOMENDACIONES', 105, 25, { align: 'center' });
+      
+      // Conclusiones automáticas
+      const mejorCajero = Object.entries(cajeros).reduce((a, b) => 
+        a[1].total > b[1].total ? a : b
+      );
+      
+      const mejorMetodo = Object.entries(metodosPago).reduce((a, b) => 
+        a[1] > b[1] ? a : b
+      );
+      
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('CONCLUSIONES PRINCIPALES', 20, 45);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`• El cajero más productivo fue ${mejorCajero[0]} con Bs${mejorCajero[1].total.toFixed(2)}`, 25, 60);
+      doc.text(`• El método de pago más utilizado fue ${mejorMetodo[0]}`, 25, 70);
+      doc.text(`• El promedio de venta de Bs${promedioVenta.toFixed(2)} indica un buen rendimiento`, 25, 80);
+      doc.text(`• Se procesaron ${ventas.length} transacciones exitosas`, 25, 90);
+      
+      // Recomendaciones
+      doc.setFontSize(16);
+      doc.setTextColor(41, 128, 185);
+      doc.text('RECOMENDACIONES', 20, 115);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`• Mantener el método de pago ${mejorMetodo[0]} como opción principal`, 25, 130);
+      doc.text(`• Replicar las mejores prácticas del cajero ${mejorCajero[0]}`, 25, 140);
+      doc.text(`• Considerar promociones para aumentar el ticket promedio`, 25, 150);
+      doc.text(`• Analizar productos de menor venta para optimizar inventario`, 25, 160);
+      
+      // Pie de página
+      doc.setFontSize(10);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Informe generado automáticamente el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}`, 105, 280, { align: 'center' });
+      
+      // Guardar archivo
+      const fileName = `informe_ventas_${fechaInicioPdf}_a_${fechaFinPdf}.pdf`;
+      console.log('💾 Guardando informe profesional:', fileName);
+      
       doc.save(fileName);
       
       toast({
-        title: "PDF generado",
-        description: `Se generó el reporte PDF con ${ventas.length} ventas`,
+        title: "Informe profesional generado",
+        description: `Se generó el informe PDF con análisis detallado de ${ventas.length} ventas. Total: Bs${totalGeneral.toFixed(2)}`,
       });
+      
     } catch (error) {
-      console.error('Error al generar PDF:', error);
+      console.error('❌ Error al generar informe:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
       toast({
-        title: "Error al generar PDF",
-        description: "No se pudo generar el reporte PDF",
+        title: "Error al generar informe",
+        description: `Error: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -206,8 +392,8 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
   };
 
   // Función para formatear fechas
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -433,10 +619,10 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      Exportar a PDF
+                      Generar Informe Profesional
                     </CardTitle>
                     <CardDescription>
-                      Genera un reporte PDF detallado de las ventas
+                      Crea un informe detallado con análisis, estadísticas y recomendaciones
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -488,12 +674,12 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
                       {isExporting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generando PDF...
+                          Generando reporte...
                         </>
                       ) : (
                         <>
                           <FileText className="h-4 w-4 mr-2" />
-                          Exportar a PDF
+                          Generar Informe Profesional
                         </>
                       )}
                     </Button>

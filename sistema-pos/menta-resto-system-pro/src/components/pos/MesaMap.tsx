@@ -37,6 +37,7 @@ import {
   Store,
   Sun,
   Moon,
+  AlertCircle, // Added for error state
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
@@ -50,6 +51,7 @@ import {
   getCategories,
   reasignarMesero, // NUEVO: import para reasignar mesero
   getUsers,
+  listarGruposActivosCompletos, // NUEVO: import para listar grupos activos
 } from '@/services/api'; // Ensure these API calls are robust and handle errors internally
 import { useAuth } from '@/context/AuthContext';
 import type { Mesa, Product, Category, CartItem, User } from '@/types/restaurant'; // Añadir CartItem
@@ -77,6 +79,16 @@ const MESA_STATE_BADGES: Record<string, MesaStateBadge> = {
     badge: 'bg-red-500 text-white', // Changed to red for 'ocupada'
     icon: <UserIcon className="w-4 h-4 mr-1" />,
   },
+  en_uso: {
+    label: 'En Uso',
+    badge: 'bg-orange-500 text-white', // Orange for 'en_uso'
+    icon: <UserIcon className="w-4 h-4 mr-1" />,
+  },
+  en_grupo: {
+    label: 'En Grupo',
+    badge: 'bg-purple-500 text-white', // Purple for 'en_grupo'
+    icon: <Link2 className="w-4 h-4 mr-1" />,
+  },
   reservada: {
     label: 'Reservada',
     badge: 'bg-blue-500 text-white',
@@ -97,6 +109,12 @@ const MESA_STATE_BADGES: Record<string, MesaStateBadge> = {
     label: 'En Preparación',
     badge: 'bg-orange-500 text-white',
     icon: <ChefHat className="w-4 h-4 mr-1" />,
+  },
+  // Add state for grouped tables
+  agrupada: {
+    label: 'Agrupada',
+    badge: 'bg-purple-500 text-white',
+    icon: <Link2 className="w-4 h-4 mr-1" />,
   },
 };
 
@@ -334,6 +352,13 @@ export default function MesaMap() {
   const id_sucursal = user?.sucursal?.id;
   const id_restaurante = user?.id_restaurante;
 
+  // DEBUG: Log user and sucursal info
+  useEffect(() => {
+    console.log('🔍 MesaMap Debug - user:', user);
+    console.log('🔍 MesaMap Debug - id_sucursal:', id_sucursal);
+    console.log('🔍 MesaMap Debug - id_restaurante:', id_restaurante);
+  }, [user, id_sucursal, id_restaurante]);
+
   const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isTakingOrder, setIsTakingOrder] = useState(false);
@@ -400,7 +425,7 @@ export default function MesaMap() {
 
   // Mesas Query
   const {
-    data: mesas,
+    data: mesas = [],
     isLoading: isLoadingMesas,
     isError: isErrorMesas,
     error: errorMesas,
@@ -414,6 +439,50 @@ export default function MesaMap() {
     placeholderData: [], // Show empty array while loading for smoother UX
   });
 
+  // Si no hay id_sucursal, mostrar mensaje de error
+  if (!id_sucursal) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
+        <div className="text-center p-8 bg-white rounded-xl shadow-2xl border border-red-200">
+          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-red-800 mb-2">
+            Error de Configuración
+          </h2>
+          <p className="text-red-600 mb-4">
+            No se pudo obtener la información de la sucursal.
+          </p>
+          <p className="text-sm text-red-500">
+            Por favor, contacta al administrador del sistema.
+          </p>
+          <div className="mt-4 p-3 bg-red-50 rounded-lg">
+            <p className="text-xs text-red-600">
+              <strong>Debug Info:</strong><br />
+              User: {JSON.stringify(user, null, 2)}<br />
+              Sucursal: {JSON.stringify(user?.sucursal, null, 2)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // DEBUG: Log mesas data when it changes
+  useEffect(() => {
+    if (mesas && mesas.length > 0) {
+      console.log('📊 Mesas data received:', mesas);
+      mesas.forEach(mesa => {
+        console.log(`Mesa ${mesa.numero}:`, {
+          estado: mesa.estado,
+          id_grupo_mesa: mesa.id_grupo_mesa,
+          nombre_mesero_grupo: mesa.nombre_mesero_grupo,
+          estado_grupo: mesa.estado_grupo
+        });
+      });
+    }
+  }, [mesas]);
+
   // Products Query
   const {
     data: products = [],
@@ -422,12 +491,30 @@ export default function MesaMap() {
     error: errorProducts,
     refetch: refetchProducts,
   } = useQuery<Product[]>({
-    queryKey: ['products', id_restaurante], // Associate products with restaurant for better caching
+    queryKey: ['products'],
     queryFn: getProducts,
-    staleTime: 5 * 60 * 1000, // Products are stable for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch products on window focus
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 15000, // Data is considered fresh for 15 seconds
     placeholderData: [],
   });
+
+  // Grupos de mesas Query
+  const {
+    data: gruposActivos = [],
+    isLoading: isLoadingGrupos,
+  } = useQuery({
+    queryKey: ['grupos-activos-completos', id_restaurante],
+    queryFn: () => listarGruposActivosCompletos(id_restaurante),
+    enabled: !!id_restaurante,
+    refetchInterval: 10000,
+  });
+
+  // Función para obtener el grupo de una mesa
+  const getGrupoDeMesa = useCallback((mesaId: number) => {
+    return gruposActivos.find(grupo => 
+      grupo.mesas.some(mesa => mesa.id_mesa === mesaId)
+    );
+  }, [gruposActivos]);
 
   // Categories Query
   const {
@@ -706,7 +793,12 @@ export default function MesaMap() {
   }, []);
 
   // Map backend table status to visual states
-  const getMesaState = useCallback((estado: string): MesaStateBadge => {
+  const getMesaState = useCallback((estado: string, id_grupo_mesa?: number): MesaStateBadge => {
+    // Si la mesa está en grupo, mostrar estado especial
+    if (id_grupo_mesa) {
+      return MESA_STATE_BADGES['en_grupo'];
+    }
+    
     if (MESA_STATE_BADGES[estado]) return MESA_STATE_BADGES[estado];
     if (estado === 'en_uso') return MESA_STATE_BADGES['ocupada'];
     if (estado === 'pagado') return MESA_STATE_BADGES['libre']; // Assuming 'pagado' means it becomes free
@@ -795,14 +887,47 @@ export default function MesaMap() {
         </div>
       )}
 
+      {/* DEBUG: Botón para forzar refresh */}
+      <div className="text-center mb-4">
+        <Button 
+          onClick={() => {
+            console.log('🔄 Forzando refresh de mesas...');
+            refetchMesas();
+          }}
+          variant="outline"
+          className="mb-4"
+        >
+          🔄 Refresh Mesas (Debug)
+        </Button>
+      </div>
+
       {/* NUEVO: Barra de selección múltiple */}
       {multiSelect.length > 0 && renderMultiSelectBar()}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 lg:gap-8 w-full max-w-screen-xl mx-auto">
         {Array.isArray(mesas) &&
           mesas.map((mesa) => {
-            const state = getMesaState(mesa.estado);
+            // DEBUG: Log mesa data
+            console.log('Mesa data:', {
+              id: mesa.id_mesa,
+              numero: mesa.numero,
+              estado: mesa.estado,
+              id_grupo_mesa: mesa.id_grupo_mesa,
+              nombre_mesero_grupo: mesa.nombre_mesero_grupo
+            });
+            
+            const state = getMesaState(mesa.estado, mesa.id_grupo_mesa);
             const isSelected = multiSelect.includes(mesa.id_mesa);
             const isGrouped = mesa.id_grupo_mesa; // NUEVO: verificar si está agrupada
+            
+            // DEBUG: Log state and grouped info
+            console.log('Mesa state:', {
+              mesa: mesa.numero,
+              estado: mesa.estado,
+              id_grupo_mesa: mesa.id_grupo_mesa,
+              isGrouped: isGrouped,
+              stateLabel: state.label,
+              stateBadge: state.badge
+            });
             return (
               <button
                 key={mesa.id_mesa}
@@ -861,11 +986,18 @@ export default function MesaMap() {
                     Seleccionada
                   </span>
                 )}
-                {/* NUEVO: Indicador de grupo */}
+                {/* NUEVO: Indicador de grupo mejorado */}
                 {isGrouped && (
-                  <span className="absolute top-2 right-2 bg-purple-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg z-30 animate-scale-in">
-                    Grupo
-                  </span>
+                  <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg z-30 animate-scale-in flex items-center gap-1">
+                    <Link2 className="w-3 h-3" />
+                    En Grupo
+                  </div>
+                )}
+                {/* Información adicional del grupo */}
+                {isGrouped && mesa.nombre_mesero_grupo && (
+                  <div className="absolute bottom-12 left-4 text-xs text-purple-600 dark:text-purple-300 font-medium z-10">
+                    Mesero: {mesa.nombre_mesero_grupo}
+                  </div>
                 )}
               </button>
             );
@@ -893,13 +1025,13 @@ export default function MesaMap() {
             <DrawerTitle>
               {selectedMesa && (
                 <span className="flex items-center gap-3 text-3xl font-bold text-gray-900 dark:text-white drop-shadow-sm">
-                  {getMesaState(selectedMesa.estado).icon} Mesa{' '}
+                  {getMesaState(selectedMesa.estado, selectedMesa.id_grupo_mesa).icon} Mesa{' '}
                   <span className="text-blue-600 dark:text-blue-400">
                     {selectedMesa.numero}
                   </span>{' '}
                   -{' '}
-                  <Badge className={cn('text-lg font-bold', getMesaState(selectedMesa.estado).badge)}>
-                    {getMesaState(selectedMesa.estado).label}
+                  <Badge className={cn('text-lg font-bold', getMesaState(selectedMesa.estado, selectedMesa.id_grupo_mesa).badge)}>
+                    {getMesaState(selectedMesa.estado, selectedMesa.id_grupo_mesa).label}
                   </Badge>
                 </span>
               )}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF Export</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h1>Test PDF Export</h1>
+    <button onclick="testPDF()">Generar PDF de Prueba</button>
+    
+    <script>
+        function testPDF() {
+            try {
+                console.log('🔄 Iniciando prueba de PDF...');
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Título
+                doc.setFontSize(20);
+                doc.text('Reporte de Prueba', 105, 20, { align: 'center' });
+                
+                // Información
+                doc.setFontSize(12);
+                doc.text('Fecha: ' + new Date().toLocaleDateString(), 20, 35);
+                doc.text('Total de ventas: 5', 20, 45);
+                
+                // Tabla de prueba
+                const headers = [['ID', 'Fecha', 'Cajero', 'Total', 'Método Pago']];
+                const data = [
+                    ['1', '25/07/2025', 'Admin', 'Bs105.00', 'Efectivo'],
+                    ['2', '25/07/2025', 'jhosep', 'Bs38.00', 'Tarjeta']
+                ];
+                
+                doc.autoTable({
+                    head: headers,
+                    body: data,
+                    startY: 55,
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 3
+                    },
+                    headStyles: {
+                        fillColor: [59, 130, 246],
+                        textColor: 255
+                    }
+                });
+                
+                const fileName = `test_pdf_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+                console.log('✅ PDF generado exitosamente:', fileName);
+                alert('PDF generado exitosamente: ' + fileName);
+                
+            } catch (error) {
+                console.error('❌ Error al generar PDF:', error);
+                alert('Error al generar PDF: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

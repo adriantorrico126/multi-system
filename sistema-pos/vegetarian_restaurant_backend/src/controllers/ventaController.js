@@ -341,7 +341,8 @@ exports.createVenta = async (req, res, next) => {
           total,
           id_mesa: idMesaFinal,
           mesa_numero: mesaNumero,
-          id_restaurante // Pasar id_restaurante a createVenta
+          id_restaurante, // Pasar id_restaurante a createVenta
+          rol_usuario: req.user.rol // Pasar el rol del usuario
         }, client);
       } catch (modelError) {
         await client.query('ROLLBACK');
@@ -985,6 +986,7 @@ exports.exportVentasFiltradas = async (req, res, next) => {
       cajero
     };
     const ventas = await require('../models/ventaModel').getVentasFiltradas(filtros, id_restaurante);
+    console.log('🔍 Controlador - Primera venta para debug:', ventas[0]);
     res.status(200).json({
       message: 'Ventas exportadas exitosamente.',
       data: ventas
@@ -1065,29 +1067,56 @@ exports.crearPedidoMesero = async (req, res, next) => {
   }
 };
 
-// Listar pedidos pendientes de aprobación (para cajero)
+/**
+ * Listar pedidos pendientes de aprobación (para cajero)
+ * GET /api/v1/ventas/pendientes-aprobacion
+ */
 exports.listarPedidosPendientesAprobacion = async (req, res, next) => {
   try {
-    const { id_sucursal, id_restaurante } = req.query;
-    let query = `
-      SELECT v.*, u.nombre AS mesero
+    const id_restaurante = req.user.id_restaurante;
+    
+    const query = `
+      SELECT 
+        v.id_venta,
+        v.fecha,
+        v.total,
+        v.tipo_servicio,
+        v.mesa_numero,
+        v.estado,
+        vend.nombre as nombre_mesero,
+        vend.username as username_mesero,
+        json_agg(
+          json_build_object(
+            'id_producto', p.id_producto,
+            'nombre_producto', p.nombre,
+            'cantidad', dv.cantidad,
+            'precio_unitario', dv.precio_unitario,
+            'observaciones', dv.observaciones
+          )
+        ) AS productos
       FROM ventas v
-      LEFT JOIN usuarios u ON v.id_vendedor = u.id_usuario
-      WHERE v.estado IN ('pendiente_caja', 'pendiente_aprobacion')
+      JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
+      JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
+      JOIN productos p ON dv.id_producto = p.id_producto
+      WHERE v.estado = 'pendiente_aprobacion' 
+        AND v.id_restaurante = $1
+        AND vend.rol = 'mesero'
+      GROUP BY 
+        v.id_venta, v.fecha, v.total, v.tipo_servicio, 
+        v.mesa_numero, v.estado, vend.nombre, vend.username
+      ORDER BY v.fecha ASC
     `;
-    const params = [];
-    if (id_sucursal) {
-      params.push(id_sucursal);
-      query += ` AND v.id_sucursal = $${params.length}`;
-    }
-    if (id_restaurante) {
-      params.push(id_restaurante);
-      query += ` AND v.id_restaurante = $${params.length}`;
-    }
-    query += ' ORDER BY v.created_at ASC';
-    const result = await pool.query(query, params);
-    res.status(200).json({ data: result.rows });
+    
+    const { rows } = await pool.query(query, [id_restaurante]);
+    
+    logger.info(`Pedidos pendientes de aprobación obtenidos para restaurante ${id_restaurante}. Total: ${rows.length}`);
+    
+    res.status(200).json({
+      message: 'Pedidos pendientes de aprobación obtenidos exitosamente.',
+      data: rows
+    });
   } catch (error) {
+    logger.error('Error al obtener pedidos pendientes de aprobación:', error);
     next(error);
   }
 };
@@ -1120,5 +1149,95 @@ exports.rechazarPedido = async (req, res, next) => {
     res.status(200).json({ data: result.rows[0] });
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * Aprobar pedido de mesero
+ * PATCH /api/v1/ventas/:id/aprobar
+ */
+exports.aprobarPedidoMesero = async (req, res, next) => {
+  const { id } = req.params;
+  const user = req.user;
+  const ventaId = parseInt(id, 10);
+  const id_restaurante = req.user.id_restaurante;
+
+  try {
+    // Verificar que la venta existe y está en estado pendiente_aprobacion
+    const ventaQuery = `
+      SELECT id_venta, estado, id_vendedor, id_restaurante 
+      FROM ventas 
+      WHERE id_venta = $1 AND id_restaurante = $2
+    `;
+    const ventaResult = await pool.query(ventaQuery, [ventaId, id_restaurante]);
+    
+    if (ventaResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Venta no encontrada.' });
+    }
+    
+    const venta = ventaResult.rows[0];
+    
+    if (venta.estado !== 'pendiente_aprobacion') {
+      return res.status(400).json({ message: 'Solo se pueden aprobar pedidos en estado pendiente_aprobacion.' });
+    }
+    
+    // Actualizar el estado a 'recibido'
+    const updated = await Venta.updateEstadoVenta(ventaId, 'recibido', id_restaurante);
+    
+    logger.info(`Pedido ${ventaId} aprobado por ${user?.username || 'desconocido'} para el restaurante ${id_restaurante}`);
+    
+    res.status(200).json({
+      message: 'Pedido aprobado exitosamente.',
+      data: updated
+    });
+  } catch (error) {
+    logger.error('Error al aprobar pedido de mesero:', error.message);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Rechazar pedido de mesero
+ * PATCH /api/v1/ventas/:id/rechazar
+ */
+exports.rechazarPedidoMesero = async (req, res, next) => {
+  const { id } = req.params;
+  const { motivo } = req.body;
+  const user = req.user;
+  const ventaId = parseInt(id, 10);
+  const id_restaurante = req.user.id_restaurante;
+
+  try {
+    // Verificar que la venta existe y está en estado pendiente_aprobacion
+    const ventaQuery = `
+      SELECT id_venta, estado, id_vendedor, id_restaurante 
+      FROM ventas 
+      WHERE id_venta = $1 AND id_restaurante = $2
+    `;
+    const ventaResult = await pool.query(ventaQuery, [ventaId, id_restaurante]);
+    
+    if (ventaResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Venta no encontrada.' });
+    }
+    
+    const venta = ventaResult.rows[0];
+    
+    if (venta.estado !== 'pendiente_aprobacion') {
+      return res.status(400).json({ message: 'Solo se pueden rechazar pedidos en estado pendiente_aprobacion.' });
+    }
+    
+    // Actualizar el estado a 'cancelado'
+    const updated = await Venta.updateEstadoVenta(ventaId, 'cancelado', id_restaurante);
+    
+    logger.info(`Pedido ${ventaId} rechazado por ${user?.username || 'desconocido'} para el restaurante ${id_restaurante}. Motivo: ${motivo || 'No especificado'}`);
+    
+    res.status(200).json({
+      message: 'Pedido rechazado exitosamente.',
+      data: updated,
+      motivo: motivo || 'No especificado'
+    });
+  } catch (error) {
+    logger.error('Error al rechazar pedido de mesero:', error.message);
+    res.status(400).json({ message: error.message });
   }
 };

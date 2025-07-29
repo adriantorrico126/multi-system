@@ -13,11 +13,16 @@ const Mesa = {
         m.hora_apertura,
         m.hora_cierre,
         m.id_restaurante,
+        m.id_grupo_mesa,
         v.id_venta as id_venta_actual,
         v.total as total_venta_actual,
-        v.fecha as fecha_venta_actual
+        v.fecha as fecha_venta_actual,
+        g.estado as estado_grupo,
+        vd.nombre as nombre_mesero_grupo
       FROM mesas m
       LEFT JOIN ventas v ON m.id_venta_actual = v.id_venta
+      LEFT JOIN grupos_mesas g ON m.id_grupo_mesa = g.id_grupo_mesa
+      LEFT JOIN vendedores vd ON g.id_mesero = vd.id_vendedor
       WHERE m.id_sucursal = $1 AND m.id_restaurante = $2
       ORDER BY m.numero
     `;

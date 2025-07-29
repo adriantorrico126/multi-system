@@ -1,17 +1,20 @@
 const { pool } = require('../config/database');
 
 const Venta = {
-  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante }, client = pool) {
+  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante, rol_usuario }, client = pool) {
     // Validación extra: si es venta por mesa, id_mesa y mesa_numero deben ser válidos
     if (tipo_servicio === 'Mesa' && (id_mesa == null || mesa_numero == null)) {
       throw new Error(`[VENTA MODEL] No se puede crear venta: id_mesa o mesa_numero es null o undefined. id_mesa: ${id_mesa}, mesa_numero: ${mesa_numero}`);
     }
     
-    // Estado inicial según el tipo de servicio
-    let estadoInicial = 'recibido';
-    if (tipo_servicio === 'Mesa') {
-      estadoInicial = 'pendiente_caja'; // Asegúrate que el constraint de la tabla ventas permita este valor
+    // Estado inicial según el rol del usuario
+    let estadoInicial = 'recibido'; // Por defecto para admin/cajero
+    
+    // Si es mesero, el pedido debe ser aprobado por cajero
+    if (rol_usuario === 'mesero') {
+      estadoInicial = 'pendiente_aprobacion';
     }
+    
     const query = `
       INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante)
       VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -314,22 +317,101 @@ const Venta = {
    * @returns {Promise<object>} Venta actualizada
    */
   async updateEstadoVenta(id_venta, nuevoEstado, id_restaurante) {
-    // Validar estados permitidos
-    const estadosPermitidos = ['recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado'];
-    if (!estadosPermitidos.includes(nuevoEstado)) {
-      throw new Error(`Estado no permitido: ${nuevoEstado}`);
-    }
     const query = `
-      UPDATE ventas
+      UPDATE ventas 
       SET estado = $1
       WHERE id_venta = $2 AND id_restaurante = $3
-      RETURNING id_venta, estado, id_restaurante;
+      RETURNING *;
     `;
     const { rows } = await pool.query(query, [nuevoEstado, id_venta, id_restaurante]);
+    
     if (rows.length === 0) {
-      throw new Error('Venta no encontrada');
+      throw new Error(`No se encontró la venta ${id_venta} para el restaurante ${id_restaurante}`);
     }
+    
     return rows[0];
+  },
+
+  async getVentasFiltradas(filtros, id_restaurante) {
+    try {
+      let query = `
+        SELECT 
+          v.id_venta as id,
+          v.fecha as timestamp,
+          u.nombre as cashier,
+          s.nombre as branch,
+          v.total,
+          COALESCE(mp.descripcion, 'No especificado') as "paymentMethod",
+          v.tipo_servicio,
+          v.estado,
+          v.mesa_numero,
+          v.created_at
+        FROM ventas v
+        JOIN usuarios u ON v.id_vendedor = u.id_usuario
+        JOIN sucursales s ON v.id_sucursal = s.id_sucursal
+        LEFT JOIN metodos_pago mp ON v.id_pago = mp.id_pago
+        WHERE v.id_restaurante = $1
+      `;
+      
+      const params = [id_restaurante];
+      let paramIndex = 2;
+      
+      // Filtros opcionales
+      if (filtros.fecha_inicio) {
+        query += ` AND v.fecha >= $${paramIndex}`;
+        params.push(filtros.fecha_inicio);
+        paramIndex++;
+      }
+      
+      if (filtros.fecha_fin) {
+        query += ` AND v.fecha <= $${paramIndex}`;
+        params.push(filtros.fecha_fin);
+        paramIndex++;
+      }
+      
+      if (filtros.id_sucursal) {
+        query += ` AND v.id_sucursal = $${paramIndex}`;
+        params.push(filtros.id_sucursal);
+        paramIndex++;
+      }
+      
+      if (filtros.metodo_pago) {
+        query += ` AND mp.descripcion ILIKE $${paramIndex}`;
+        params.push(`%${filtros.metodo_pago}%`);
+        paramIndex++;
+      }
+      
+      if (filtros.cajero) {
+        query += ` AND u.nombre ILIKE $${paramIndex}`;
+        params.push(`%${filtros.cajero}%`);
+        paramIndex++;
+      }
+      
+      query += ` ORDER BY v.fecha DESC`;
+      
+      const { rows } = await pool.query(query, params);
+      
+      // Para cada venta, obtener los productos
+      for (let venta of rows) {
+        const productosQuery = `
+          SELECT 
+            p.nombre as name,
+            dv.cantidad as quantity,
+            dv.precio_unitario as price,
+            dv.observaciones as notes
+          FROM detalle_ventas dv
+          JOIN productos p ON dv.id_producto = p.id_producto
+          WHERE dv.id_venta = $1 AND dv.id_restaurante = $2
+        `;
+        const productosResult = await pool.query(productosQuery, [venta.id, id_restaurante]);
+        venta.items = productosResult.rows;
+      }
+      
+      return rows;
+    } catch (error) {
+      console.error('Error en getVentasFiltradas:', error);
+      throw error;
+    }
   }
 };
 

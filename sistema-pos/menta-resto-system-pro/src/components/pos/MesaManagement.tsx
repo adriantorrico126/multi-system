@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Coffee, 
@@ -45,6 +45,7 @@ import {
   getUsers
 } from '@/services/api';
 import MesaConfiguration from './MesaConfiguration';
+import { GruposMesasManagement } from './GruposMesasManagement';
 import { useAuth } from '@/context/AuthContext';
 
 interface Mesa {
@@ -571,10 +572,14 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
         )}
 
         <Tabs defaultValue="management" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white shadow-sm border border-gray-200 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-3 bg-white shadow-sm border border-gray-200 rounded-lg p-1">
             <TabsTrigger value="management" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               <Activity className="h-4 w-4" />
               Gestión Operativa
+            </TabsTrigger>
+            <TabsTrigger value="grupos" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              <Users2 className="h-4 w-4" />
+              Grupos de Mesas
             </TabsTrigger>
             <TabsTrigger value="configuration" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               <Settings className="h-4 w-4" />
@@ -1143,7 +1148,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                                   <div key={mesa.id_mesa} className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
                                     <span className="text-sm font-medium">Mesa {mesa.numero}</span>
                                     <Button 
-                                      size="xs" 
+                                      size="sm" 
                                       variant="ghost" 
                                       onClick={() => removerMesaMutation.mutate({ id_grupo: grupo.id_grupo_mesa, id_mesa: mesa.id_mesa })}
                                       className="text-red-500 hover:text-red-700"
@@ -1211,6 +1216,10 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
             )}
           </TabsContent>
 
+          <TabsContent value="grupos" className="space-y-6 mt-6">
+            <GruposMesasManagement idRestaurante={idRestaurante} />
+          </TabsContent>
+
           <TabsContent value="configuration" className="space-y-6 mt-6">
             <MesaConfiguration sucursalId={sucursalId} />
           </TabsContent>
@@ -1228,9 +1237,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                   <DialogTitle className="text-lg font-bold text-gray-900">
                     Asignar Mesero al Grupo
                   </DialogTitle>
-                  <p className="text-sm text-gray-500">
+                  <DialogDescription className="text-sm text-gray-500">
                     Selecciona un mesero para el grupo de {selectedMesas.length} mesa{selectedMesas.length !== 1 ? 's' : ''}
-                  </p>
+                  </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
@@ -1345,9 +1354,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                   <DialogTitle className="text-lg font-bold text-gray-900">
                     Prefactura - Mesa {selectedMesa?.numero}
                   </DialogTitle>
-                  <p className="text-sm text-gray-500">
+                  <DialogDescription>
                     Detalles de productos y totales
-                  </p>
+                  </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
@@ -1371,23 +1380,40 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     <div>
                       <p className="text-sm font-medium text-gray-500">Total Acumulado</p>
                       <p className="text-lg font-bold text-green-600">
-                        ${(Number(selectedMesa?.total_acumulado) || 0).toFixed(2)}
+                        ${(Number(prefacturaData?.total_acumulado) || 0).toFixed(2)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Hora de Apertura</p>
+                      <p className="text-sm font-medium text-gray-500">Fecha de Apertura</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {selectedMesa?.hora_apertura 
-                          ? new Date(selectedMesa.hora_apertura).toLocaleTimeString() 
-                          : 'N/A'
-                        }
+                        {prefacturaData?.fecha_apertura || 'N/A'}
                       </p>
                     </div>
                   </div>
+                  {prefacturaData?.total_ventas && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-xs font-medium text-gray-500">Ventas Realizadas</p>
+                          <p className="text-sm font-bold text-blue-600">{prefacturaData.total_ventas}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
+                          <p className="text-sm font-bold text-purple-600">{prefacturaData?.historial?.length || 0}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500">Estado Prefactura</p>
+                          <p className="text-sm font-bold text-orange-600 capitalize">
+                            {(prefacturaData?.estado_prefactura || 'abierta').replace('_', ' ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Lista de productos */}
-                {prefacturaData.productos && prefacturaData.productos.length > 0 ? (
+                {prefacturaData?.historial && prefacturaData.historial.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Productos Consumidos</h3>
                     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -1401,12 +1427,12 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {prefacturaData.productos.map((producto: any, index: number) => (
+                          {prefacturaData.historial.map((producto: any, index: number) => (
                             <TableRow key={index} className="hover:bg-gray-50">
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-gray-900">{producto.nombre_producto}</div>
-                                  {producto.observaciones && (
+                                  {producto.observaciones && producto.observaciones !== '-' && (
                                     <div className="text-xs text-gray-500 mt-1">
                                       {producto.observaciones}
                                     </div>
@@ -1414,13 +1440,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                                 </div>
                               </TableCell>
                               <TableCell className="text-right font-medium">
-                                {producto.cantidad}
+                                {producto.cantidad_total}
                               </TableCell>
                               <TableCell className="text-right text-gray-600">
                                 ${Number(producto.precio_unitario).toFixed(2)}
                               </TableCell>
                               <TableCell className="text-right font-bold text-green-600">
-                                ${Number(producto.subtotal).toFixed(2)}
+                                ${Number(producto.subtotal_total).toFixed(2)}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1439,21 +1465,27 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 )}
 
                 {/* Totales */}
-                {prefacturaData.productos && prefacturaData.productos.length > 0 && (
+                {prefacturaData?.historial && prefacturaData.historial.length > 0 && (
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-green-800">Total Final:</span>
+                      <span className="text-lg font-semibold text-green-800">Total Acumulado:</span>
                       <span className="text-2xl font-bold text-green-900">
-                        ${(Number(prefacturaData.total_final) || 0).toFixed(2)}
+                        ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
                       </span>
                     </div>
+                    {prefacturaData.total_ventas && (
+                      <div className="mt-2 text-sm text-green-700">
+                        {prefacturaData.total_ventas} venta{prefacturaData.total_ventas !== 1 ? 's' : ''} • 
+                        {prefacturaData.fecha_apertura && ` Abierta desde: ${prefacturaData.fecha_apertura}`}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Acciones */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Mesa {selectedMesa?.numero} • {prefacturaData.productos?.length || 0} producto{prefacturaData.productos?.length !== 1 ? 's' : ''}
+                    Mesa {selectedMesa?.numero} • {prefacturaData?.historial?.length || 0} producto{prefacturaData?.historial?.length !== 1 ? 's' : ''}
                   </div>
                   <div className="flex space-x-2">
                     <Button

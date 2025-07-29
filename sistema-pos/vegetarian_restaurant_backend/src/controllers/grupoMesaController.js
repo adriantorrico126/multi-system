@@ -98,7 +98,7 @@ const grupoMesaController = {
       const { idMesa } = req.params;
       const grupo = await GrupoMesaModel.obtenerGrupoPorMesa(idMesa);
       if (!grupo) {
-        return res.status(404).json({ message: 'La mesa no pertenece a ningún grupo activo.' });
+        return res.status(404).json({ message: 'No se encontró grupo activo para esta mesa.' });
       }
       return res.status(200).json({ grupo });
     } catch (error) {
@@ -106,6 +106,51 @@ const grupoMesaController = {
       return res.status(500).json({ message: 'Error al consultar grupo por mesa.', error: error.message });
     }
   },
+
+  // Obtener información completa de un grupo
+  async obtenerGrupoCompleto(req, res) {
+    try {
+      const { id } = req.params; // id_grupo_mesa
+      const grupo = await GrupoMesaModel.obtenerGrupoCompleto(id);
+      if (!grupo) {
+        return res.status(404).json({ message: 'Grupo no encontrado.' });
+      }
+      return res.status(200).json({ grupo });
+    } catch (error) {
+      console.error('Error al obtener grupo completo:', error);
+      return res.status(500).json({ message: 'Error al obtener grupo completo.', error: error.message });
+    }
+  },
+
+  // Obtener todos los grupos activos con información completa
+  async listarGruposActivosCompletos(req, res) {
+    try {
+      const { id_restaurante } = req.query;
+      if (!id_restaurante) {
+        return res.status(400).json({ message: 'Se requiere id_restaurante.' });
+      }
+      const grupos = await GrupoMesaModel.obtenerGruposActivosCompletos(id_restaurante);
+      return res.status(200).json({ grupos });
+    } catch (error) {
+      console.error('Error al listar grupos activos completos:', error);
+      return res.status(500).json({ message: 'Error al listar grupos activos completos.', error: error.message });
+    }
+  },
+
+  // Generar prefactura para un grupo completo
+  async generarPrefacturaGrupo(req, res) {
+    try {
+      const { id } = req.params; // id_grupo_mesa
+      const prefactura = await GrupoMesaModel.generarPrefacturaGrupo(id);
+      if (!prefactura) {
+        return res.status(404).json({ message: 'Grupo no encontrado o sin productos.' });
+      }
+      return res.status(200).json({ prefactura });
+    } catch (error) {
+      console.error('Error al generar prefactura del grupo:', error);
+      return res.status(500).json({ message: 'Error al generar prefactura del grupo.', error: error.message });
+    }
+  }
 };
 
 module.exports = grupoMesaController; 

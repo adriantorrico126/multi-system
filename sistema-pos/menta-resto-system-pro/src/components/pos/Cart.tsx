@@ -48,6 +48,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout }: Cart
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Lista de productos */}
         <div className="space-y-3 mb-4">
           {items.map((item, index) => (
             <div key={`${item.id}-${index}-${item.notes || ''}`} className="flex items-center justify-between p-3 border border-gray-200/50 rounded-xl bg-white/50 backdrop-blur-sm">
@@ -104,6 +105,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout }: Cart
           ))}
         </div>
         
+        {/* Total y botón de checkout */}
         <div className="border-t border-gray-200/50 pt-4">
           <div className="flex justify-between items-center mb-4">
             <span className="font-semibold text-gray-700">Total:</span>

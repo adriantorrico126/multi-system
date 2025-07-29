@@ -21,4 +21,13 @@ router.get('/activos', authenticateToken, authorizeRoles('admin', 'cajero', 'sup
 // Consultar grupo por mesa
 router.get('/mesa/:idMesa', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.grupoPorMesa);
 
+// Obtener información completa de un grupo
+router.get('/:id/completo', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.obtenerGrupoCompleto);
+
+// Listar grupos activos con información completa
+router.get('/activos/completos', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.listarGruposActivosCompletos);
+
+// Generar prefactura para un grupo completo
+router.get('/:id/prefactura', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.generarPrefacturaGrupo);
+
 module.exports = router; 

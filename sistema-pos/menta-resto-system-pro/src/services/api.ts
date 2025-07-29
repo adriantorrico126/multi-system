@@ -490,14 +490,32 @@ export const updateOrderStatus = async (saleId: string, status: string) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    // Asegurar que el status sea válido
+    const validStatuses = ['recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Estado inválido: ${status}. Estados válidos: ${validStatuses.join(', ')}`);
+    }
+    
     console.log('API: Updating order status:', { saleId, status, restauranteId });
-    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${saleId}/estado?id_restaurante=${restauranteId}`, { estado: status });
+    
+    // Enviar el payload correcto al backend
+    const payload = { estado: status };
+    console.log('API: Sending payload:', payload);
+    
+    const response = await api.patch(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${saleId}/estado?id_restaurante=${restauranteId}`, 
+      payload
+    );
+    
     console.log('API: Update response:', response.data);
     return response.data.data;
   } catch (error) {
     console.error('API: Error updating order status:', error);
     if (error.response) {
       console.error('API: Error response:', error.response.data);
+      console.error('API: Error status:', error.response.status);
+      console.error('API: Error headers:', error.response.headers);
     }
     throw error;
   }
@@ -1064,6 +1082,24 @@ export const consultarGrupoPorMesa = async (id_mesa: number) => {
   return response.data.grupo;
 };
 
+// Obtener información completa de un grupo
+export const obtenerGrupoCompleto = async (id_grupo_mesa: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/${id_grupo_mesa}/completo`);
+  return response.data.grupo;
+};
+
+// Listar grupos activos con información completa
+export const listarGruposActivosCompletos = async (id_restaurante: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/activos/completos?id_restaurante=${id_restaurante}`);
+  return response.data.grupos;
+};
+
+// Generar prefactura para un grupo completo
+export const generarPrefacturaGrupo = async (id_grupo_mesa: number) => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/grupos-mesas/${id_grupo_mesa}/prefactura`);
+  return response.data.prefactura;
+};
+
 // Listar modificadores de un producto
 export const getModificadoresPorProducto = async (id_producto: number) => {
   const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/modificadores/producto/${id_producto}`);
@@ -1094,24 +1130,81 @@ export const aceptarPedidoMesero = async (id_venta: number) => {
   return response.data;
 };
 
-// Rechazar pedido de mesero
-export const rechazarPedidoMesero = async (id_venta: number, motivo?: string) => {
-  try {
-    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}/rechazar`, { motivo });
-    return response.data;
-  } catch (error) {
-    console.error('Error rechazando pedido de mesero:', error);
-    throw error;
-  }
-};
-
-// NUEVO: Función para reasignar mesero a una mesa
+// Función para reasignar mesero a una mesa
 export const reasignarMesero = async (id_mesa: number, id_mesero: number) => {
   try {
     const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/mesero`, { id_mesero });
     return response.data;
   } catch (error) {
     console.error('Error reasignando mesero:', error);
+    throw error;
+  }
+};
+
+// Aprobar pedido de mesero
+export const aprobarPedidoMesero = async (ventaId: number) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    console.log('API: Aprobando pedido de mesero:', { ventaId, restauranteId });
+    
+    const response = await api.patch(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${ventaId}/aprobar?id_restaurante=${restauranteId}`
+    );
+    
+    console.log('API: Aprobación exitosa:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('API: Error aprobando pedido:', error);
+    if (error.response) {
+      console.error('API: Error response:', error.response.data);
+    }
+    throw error;
+  }
+};
+
+// Rechazar pedido de mesero
+export const rechazarPedidoMesero = async (ventaId: number, motivo?: string) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    console.log('API: Rechazando pedido de mesero:', { ventaId, motivo, restauranteId });
+    
+    const payload = motivo ? { motivo } : {};
+    const response = await api.patch(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${ventaId}/rechazar?id_restaurante=${restauranteId}`,
+      payload
+    );
+    
+    console.log('API: Rechazo exitoso:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('API: Error rechazando pedido:', error);
+    if (error.response) {
+      console.error('API: Error response:', error.response.data);
+    }
+    throw error;
+  }
+};
+
+// Obtener pedidos pendientes de aprobación
+export const getPedidosPendientesAprobacion = async () => {
+  try {
+    console.log('API: Obteniendo pedidos pendientes de aprobación');
+    
+    const response = await api.get(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/pendientes-aprobacion`
+    );
+    
+    console.log('API: Pedidos pendientes obtenidos:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('API: Error obteniendo pedidos pendientes:', error);
+    if (error.response) {
+      console.error('API: Error response:', error.response.data);
+    }
     throw error;
   }
 };

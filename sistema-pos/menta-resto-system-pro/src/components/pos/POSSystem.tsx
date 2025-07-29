@@ -96,13 +96,14 @@ export function POSSystem() {
   }, []);
 
   // Estado para sucursal seleccionada (solo admin/gerente)
-  const { data: branches = [] } = useQuery({ queryKey: ['branches'], queryFn: getBranches });
+  const { data: branches = [], isLoading: branchesLoading } = useQuery({ queryKey: ['branches'], queryFn: getBranches });
   const isAdmin = user.rol === 'admin' || user.rol === 'super_admin';
   const [selectedBranchId, setSelectedBranchId] = React.useState<number | null>(null);
 
   // Debug logs para verificar la estructura de branches
   React.useEffect(() => {
     console.log('🔍 Branches Debug - branches:', branches);
+    console.log('🔍 Branches Debug - branchesLoading:', branchesLoading);
     console.log('🔍 Branches Debug - branches structure:', branches.map(b => ({
       id: b.id,
       id_sucursal: b.id_sucursal,
@@ -111,11 +112,17 @@ export function POSSystem() {
       ciudad: b.ciudad,
       location: b.location
     })));
-  }, [branches]);
+  }, [branches, branchesLoading]);
 
   // Al iniciar, setear sucursal seleccionada a la del usuario (o la primera si es admin)
   React.useEffect(() => {
-    console.log('🔄 Inicializando sucursal - isAdmin:', isAdmin, 'branches:', branches.length, 'user.sucursal:', user.sucursal);
+    console.log('🔄 Inicializando sucursal - isAdmin:', isAdmin, 'branches:', branches.length, 'user.sucursal:', user.sucursal, 'branchesLoading:', branchesLoading);
+    
+    // No inicializar hasta que branches se haya cargado
+    if (branchesLoading) {
+      console.log('⏳ Esperando a que se carguen las sucursales...');
+      return;
+    }
     
     if (isAdmin && branches.length > 0) {
       const savedSucursalId = localStorage.getItem('selectedSucursalId');
@@ -145,7 +152,7 @@ export function POSSystem() {
       setSelectedBranchId(user.sucursal.id);
       console.log('✅ Sucursal del usuario:', user.sucursal.id);
     }
-  }, [isAdmin, branches, user.sucursal?.id]);
+  }, [isAdmin, branches, user.sucursal?.id, branchesLoading]);
 
   // Función para manejar el cambio de sucursal
   const handleSucursalChange = React.useCallback((newSucursalId: number) => {
@@ -843,7 +850,7 @@ export function POSSystem() {
   
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
-      {showHeader ? (
+      {showHeader && !branchesLoading ? (
         <Header
           currentUser={{
             username: user.username,
@@ -858,6 +865,20 @@ export function POSSystem() {
           selectedBranchId={selectedBranchId ?? undefined}
           onSucursalChange={isAdmin ? handleSucursalChange : undefined}
         />
+      ) : showHeader && branchesLoading ? (
+        <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">D</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">DATY</h1>
+                <p className="text-sm text-gray-600 font-medium">Cargando sucursales...</p>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {/* Navegación de Pestañas Principales */}
@@ -887,6 +908,16 @@ export function POSSystem() {
             >
               <Users className="h-5 w-5 mr-2" />
               Mesero
+            </Button>
+          )}
+          {user.rol === 'cajero' && (
+            <Button
+              variant={activeTab === 'pedidos-pendientes' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('pedidos-pendientes')}
+              className="rounded-xl transition-all duration-200"
+            >
+              <Clock className="h-5 w-5 mr-2" />
+              Pedidos Pendientes
             </Button>
           )}
           {(user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin') && (
@@ -992,8 +1023,8 @@ export function POSSystem() {
           {/* Vista de Punto de Venta (POS) */}
           {activeTab === 'pos' && (
             <div className="flex flex-col h-full p-6">
-              {/* Buscador de productos - fijo en la parte superior */}
-              <div className="w-full mb-4 flex-shrink-0">
+              {/* Buscador de productos */}
+              <div className="w-full mb-4">
                 <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
@@ -1005,8 +1036,8 @@ export function POSSystem() {
                 </div>
               </div>
               
-              {/* Filtros de categoría - fijos debajo del buscador */}
-              <div className="w-full flex flex-wrap gap-2 items-center justify-start mb-6 flex-shrink-0">
+              {/* Filtros de categoría */}
+              <div className="w-full flex flex-wrap gap-2 items-center justify-start mb-6">
                 <CategoryFilter
                   selectedCategory={selectedCategory}
                   onSelectCategory={(categoryId: string) => setSelectedCategory(categoryId)}
@@ -1015,8 +1046,8 @@ export function POSSystem() {
                 />
               </div>
               
-              {/* Grid de productos - scrollable */}
-              <div className="flex-1 overflow-auto">
+              {/* Grid de productos */}
+              <div className="w-full">
                 {isLoadingProducts ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-pulse">
                     {Array.from({ length: 10 }).map((_, i) => (
@@ -1024,11 +1055,23 @@ export function POSSystem() {
                     ))}
                   </div>
                 ) : filteredProducts.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {filteredProducts.map((product) => (
-                      <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                      ))}
+                    </div>
+                    
+                    {/* Indicador de scroll cuando hay muchos productos */}
+                    {filteredProducts.length > 15 && (
+                      <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                        <span className="text-blue-600">📜</span>
+                        <p className="text-sm text-blue-700">
+                          <strong>Tip:</strong> Usa el scroll para ver todos los productos ({filteredProducts.length} productos encontrados)
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <Card className="mt-8">
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -1083,7 +1126,7 @@ export function POSSystem() {
                 // Admin y gerente: ven todas las sub-pestañas
                 <>
               {activeDashboardSubTab === 'summary' && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                <div className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
                     Panel de Control General
                   </h2>
@@ -1129,8 +1172,9 @@ export function POSSystem() {
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS */}
         {activeTab === 'pos' && (
-          <aside className="w-96 bg-white/90 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-xl flex flex-col justify-between">
-            <div>
+          <aside className="w-96 bg-white/90 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-xl flex flex-col">
+            {/* Contenedor scrollable para el carrito y opciones */}
+            <div className="flex-1 overflow-y-auto">
               <Cart
                 items={cart}
                 onUpdateQuantity={updateQuantity}
@@ -1200,6 +1244,16 @@ export function POSSystem() {
                     </div>
                   </div>
                 )}
+
+                {/* Indicador de scroll cuando hay muchos productos */}
+                {cart.length > 3 && (
+                  <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
+                    <span className="text-yellow-600">📜</span>
+                    <p className="text-xs text-yellow-700">
+                      <strong>Tip:</strong> Usa el scroll para ver todas las opciones de servicio
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -1207,6 +1261,9 @@ export function POSSystem() {
         {activeTab === 'mesero' && user?.rol === 'cajero' && (
   <PedidosMeseroCajero />
 )}
+        {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (
+          <PedidosPendientesCajero />
+        )}
       </main>
 
       {/* Modals Globales */}

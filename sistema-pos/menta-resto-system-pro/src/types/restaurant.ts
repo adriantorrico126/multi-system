@@ -82,6 +82,9 @@ export interface Mesa {
   id_mesero_actual?: number;
   id_restaurante?: number;
   id_sucursal?: number;
+  // NUEVO: propiedades del grupo
+  estado_grupo?: string;
+  nombre_mesero_grupo?: string;
 }
 
 export interface Prefactura {

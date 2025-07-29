@@ -57,4 +57,10 @@ router.patch('/:id_venta/rechazar', authenticateToken, authorizeRoles('cajero', 
 // Listar pedidos pendientes enviados por mesero (para el cajero)
 router.get('/pendientes-mesero', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.listarPedidosPendientesAprobacion);
 
+// Aprobar pedido de mesero
+router.patch('/:id/aprobar', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.aprobarPedidoMesero);
+
+// Rechazar pedido de mesero
+router.patch('/:id/rechazar', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.rechazarPedidoMesero);
+
 module.exports = router; 
