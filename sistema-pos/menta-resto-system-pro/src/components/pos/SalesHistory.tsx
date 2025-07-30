@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Edit, Trash2, FileText, Download, Calendar, Filter, BarChart3, TrendingUp, DollarSign, Users, Package, Building, CreditCard, Tag, Settings } from 'lucide-react';
+import { Search, Edit, Trash2, FileText, Download, Calendar, Filter, BarChart3, TrendingUp, DollarSign, Users, Package, Building, CreditCard, Tag, Settings, Eye, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportVentasFiltradas } from '@/services/api';
 import { exportSalesToCSV } from '@/utils/csvExport';
@@ -25,20 +25,20 @@ import { CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { FileSpreadsheet } from 'lucide-react';
 import { Sale } from '@/types/restaurant';
-import { EditSaleModal } from './EditSaleModal';
+import { SaleDetailsModal } from './SaleDetailsModal';
 import { getBranches, getProducts, getPaymentMethods, getUsers } from '@/services/api';
 
 interface SalesHistoryProps {
   sales: Sale[];
-  onEditSale: (sale: Sale) => void;
   onDeleteSale: (saleId: string) => void;
   userRole: 'cajero' | 'admin' | 'cocinero';
 }
 
-export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: SalesHistoryProps) {
+export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProps) {
   const [activeTab, setActiveTab] = useState<'historial' | 'avanzadas'>('historial');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [saleForDetails, setSaleForDetails] = useState<Sale | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [loadingExport, setLoadingExport] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -74,17 +74,13 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
     );
   });
 
-  const handleEditSale = (sale: Sale) => {
-    setSelectedSale(sale);
-  };
-
-  const handleSaveEdit = (updatedSale: Sale) => {
-    onEditSale(updatedSale);
-    setSelectedSale(null);
-  };
-
   const handleDeleteSale = (saleId: string) => {
     onDeleteSale(saleId);
+  };
+
+  const handleShowDetails = (sale: Sale) => {
+    setSaleForDetails(sale);
+    setShowDetailsModal(true);
   };
 
   // --- Exportación avanzada ---
@@ -493,18 +489,24 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
                       </Badge>
                     </TableCell>
                     <TableCell>{sale.paymentMethod}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')}
+                    <TableCell className="max-w-xs">
+                      <div className="text-sm text-gray-900">
+                        {sale.items.length <= 2 
+                          ? sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')
+                          : `${sale.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(' ')} +${sale.items.length - 2} más`
+                        }
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEditSale(sale)}
-                          className="rounded-lg transition-all duration-200"
+                          onClick={() => handleShowDetails(sale)}
+                          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
+                          Detalles
                         </Button>
                         <Button
                           variant="destructive"
@@ -527,13 +529,16 @@ export function SalesHistory({ sales, onEditSale, onDeleteSale, userRole }: Sale
             )}
           </div>
           
-          {selectedSale && (
-            <EditSaleModal
-              sale={selectedSale}
-              onSave={handleSaveEdit}
-              onCancel={() => setSelectedSale(null)}
-            />
-          )}
+          {/* Modal de Detalles de Venta */}
+          <SaleDetailsModal
+            sale={saleForDetails}
+            isOpen={showDetailsModal}
+            onClose={() => {
+              setShowDetailsModal(false);
+              setSaleForDetails(null);
+            }}
+            onDelete={handleDeleteSale}
+          />
         </div>
       )}
 

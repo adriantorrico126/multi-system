@@ -70,6 +70,56 @@ const GrupoMesaModel = {
     try {
       await client.query('BEGIN');
       
+      // Obtener información del grupo antes de cerrarlo
+      const grupoRes = await client.query(
+        `SELECT g.created_at, g.id_venta_principal
+         FROM grupos_mesas g
+         WHERE g.id_grupo_mesa = $1`,
+        [id_grupo_mesa]
+      );
+      
+      if (grupoRes.rows.length === 0) {
+        throw new Error('Grupo no encontrado');
+      }
+      
+      const grupo = grupoRes.rows[0];
+      const fechaCreacionGrupo = grupo.created_at;
+      
+      // Obtener todas las mesas del grupo
+      const mesasRes = await client.query(
+        `SELECT m.id_mesa, m.numero
+         FROM mesas m
+         JOIN mesas_en_grupo mg ON m.id_mesa = mg.id_mesa
+         WHERE mg.id_grupo_mesa = $1`,
+        [id_grupo_mesa]
+      );
+      
+      const mesas = mesasRes.rows;
+      
+      // Limpiar el total_acumulado de las mesas (solo las ventas de este grupo)
+      for (const mesa of mesas) {
+        // Calcular el total de ventas de este grupo específico
+        const totalGrupoRes = await client.query(
+          `SELECT COALESCE(SUM(dv.cantidad * dv.precio_unitario), 0) as total_grupo
+           FROM detalle_ventas dv
+           JOIN ventas v ON dv.id_venta = v.id_venta
+           WHERE v.id_mesa = $1 
+             AND v.estado != 'cancelado'
+             AND v.fecha >= $2`,
+          [mesa.id_mesa, fechaCreacionGrupo]
+        );
+        
+        const totalGrupo = parseFloat(totalGrupoRes.rows[0].total_grupo) || 0;
+        
+        // Restar el total del grupo del total_acumulado de la mesa
+        await client.query(
+          `UPDATE mesas 
+           SET total_acumulado = GREATEST(0, COALESCE(total_acumulado, 0) - $1)
+           WHERE id_mesa = $2`,
+          [totalGrupo, mesa.id_mesa]
+        );
+      }
+      
       // Actualizar el estado del grupo a CERRADO
       await client.query(
         `UPDATE grupos_mesas SET estado = 'CERRADO', updated_at = NOW() WHERE id_grupo_mesa = $1`,
@@ -198,6 +248,22 @@ const GrupoMesaModel = {
   async generarPrefacturaGrupo(id_grupo_mesa) {
     const client = await pool.connect();
     try {
+      // Obtener información del grupo (fecha de creación)
+      const grupoRes = await client.query(
+        `SELECT g.id_grupo_mesa, g.created_at, g.id_venta_principal
+         FROM grupos_mesas g
+         WHERE g.id_grupo_mesa = $1`,
+        [id_grupo_mesa]
+      );
+      
+      if (grupoRes.rows.length === 0) {
+        throw new Error('Grupo no encontrado');
+      }
+      
+      const grupo = grupoRes.rows[0];
+      const fechaCreacionGrupo = grupo.created_at;
+      console.log(`🔍 Grupo ${id_grupo_mesa} creado el: ${fechaCreacionGrupo}`);
+      
       // Obtener todas las mesas del grupo
       const mesasRes = await client.query(
         `SELECT m.id_mesa, m.numero
@@ -208,35 +274,76 @@ const GrupoMesaModel = {
       );
       
       const mesas = mesasRes.rows;
+      console.log(`📊 Mesas en el grupo: ${mesas.map(m => m.numero).join(', ')}`);
       let productos = [];
       let totalFinal = 0;
       
-      // Obtener productos de todas las mesas del grupo
+      // Obtener productos de todas las mesas del grupo, pero solo ventas creadas después de la creación del grupo
       for (const mesa of mesas) {
+        console.log(`🔍 Procesando mesa ${mesa.numero}...`);
+        
         const productosRes = await client.query(
           `SELECT 
             p.nombre as nombre_producto,
             dv.cantidad,
             dv.precio_unitario,
             (dv.cantidad * dv.precio_unitario) as subtotal,
-            dv.observaciones
+            dv.observaciones,
+            v.fecha as fecha_venta,
+            v.id_venta
            FROM detalle_ventas dv
            JOIN productos p ON dv.id_producto = p.id_producto
            JOIN ventas v ON dv.id_venta = v.id_venta
-           WHERE v.id_mesa = $1 AND v.estado != 'cancelado'`,
-          [mesa.id_mesa]
+           WHERE v.id_mesa = $1 
+             AND v.estado != 'cancelado'
+             AND v.fecha >= $2
+           ORDER BY v.fecha ASC`,
+          [mesa.id_mesa, fechaCreacionGrupo]
         );
+        
+        console.log(`  📦 Productos encontrados para mesa ${mesa.numero}: ${productosRes.rows.length}`);
+        productosRes.rows.forEach((prod, index) => {
+          console.log(`    ${index + 1}. ${prod.nombre_producto}: ${prod.cantidad} x $${prod.precio_unitario} = $${prod.subtotal} (${prod.fecha_venta})`);
+        });
         
         productos = productos.concat(productosRes.rows);
         totalFinal += productosRes.rows.reduce((sum, prod) => sum + Number(prod.subtotal), 0);
       }
       
+      console.log(`💰 Total final del grupo: $${totalFinal}`);
+      
+      // Agrupar productos por nombre y sumar cantidades
+      const productosAgrupados = {};
+      productos.forEach(producto => {
+        const key = producto.nombre_producto;
+        if (!productosAgrupados[key]) {
+          productosAgrupados[key] = {
+            nombre_producto: key,
+            cantidad_total: 0,
+            precio_unitario: parseFloat(producto.precio_unitario) || 0,
+            subtotal_total: 0,
+            observaciones: producto.observaciones || '-'
+          };
+        }
+        
+        const cantidad = parseInt(producto.cantidad) || 0;
+        const subtotal = parseFloat(producto.subtotal) || 0;
+        
+        productosAgrupados[key].cantidad_total += cantidad;
+        productosAgrupados[key].subtotal_total += subtotal;
+      });
+      
+      const historialAgrupado = Object.values(productosAgrupados);
+      console.log(`🍽️ Productos agrupados: ${historialAgrupado.length} productos diferentes`);
+      
       return {
         id_grupo_mesa,
         mesas: mesas.map(m => m.numero),
-        productos,
-        total_final: totalFinal,
-        cantidad_productos: productos.length
+        historial: historialAgrupado,
+        total_acumulado: totalFinal,
+        total_ventas: productos.length > 0 ? new Set(productos.map(p => p.id_venta)).size : 0,
+        fecha_apertura: fechaCreacionGrupo,
+        cantidad_productos: historialAgrupado.length
       };
     } finally {
       client.release();

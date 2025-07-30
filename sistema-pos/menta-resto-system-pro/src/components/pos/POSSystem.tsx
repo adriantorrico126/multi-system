@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { KitchenView } from '../../pages/KitchenView';
@@ -583,35 +583,77 @@ export function POSSystem() {
     });
   }, [logout, toast]);
 
+  // Mutación para editar venta
+  const editSaleMutation = useMutation({
+    mutationFn: ({ saleId, saleData }: { saleId: string; saleData: any }) => editSale(saleId, saleData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: '✏️ Venta Actualizada',
+        description: 'Los cambios han sido guardados correctamente.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Error al Actualizar',
+        description: error?.response?.data?.message || 'No se pudo actualizar la venta.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutación para eliminar venta
+  const deleteSaleMutation = useMutation({
+    mutationFn: (saleId: string) => deleteSale(saleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: '🗑️ Venta Eliminada',
+        description: 'La venta ha sido eliminada correctamente.',
+        variant: 'destructive',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '❌ Error al Eliminar',
+        description: error?.response?.data?.message || 'No se pudo eliminar la venta.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   /**
-   * Actualiza una venta existente en el estado local.
+   * Actualiza una venta existente.
    * @param editedSale - La venta con los cambios aplicados.
    */
   const handleEditSale = useCallback(
     (editedSale: Sale) => {
-      // setSales((currentSales) => currentSales.map((sale) => (sale.id === editedSale.id ? editedSale : sale))); // Eliminado: sales ahora es de React Query
-      toast({
-        title: '✏️ Venta Actualizada',
-        description: 'Los cambios han sido guardados.',
-      });
+      const saleData = {
+        items: editedSale.items.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price,
+          notes: item.notes
+        })),
+        total: editedSale.total,
+        paymentMethod: editedSale.paymentMethod,
+        notes: editedSale.notes || ''
+      };
+      
+      editSaleMutation.mutate({ saleId: editedSale.id, saleData });
     },
-    [toast]
+    [editSaleMutation]
   );
 
   /**
-   * Elimina una venta del estado local.
+   * Elimina una venta.
    * @param saleId - El ID de la venta a eliminar.
    */
   const handleDeleteSale = useCallback(
     (saleId: string) => {
-      // setSales((currentSales) => currentSales.filter((sale) => sale.id !== saleId)); // Eliminado: sales ahora es de React Query
-      toast({
-        title: '🗑️ Venta Eliminada',
-        description: 'La venta ha sido removida del sistema.',
-        variant: 'destructive',
-      });
+      deleteSaleMutation.mutate(saleId);
     },
-    [toast]
+    [deleteSaleMutation]
   );
 
   // --- Mutaciones de React Query ---
@@ -1106,7 +1148,6 @@ export function POSSystem() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
                 <SalesHistory
                   sales={sales}
-                  onEditSale={handleEditSale}
                   onDeleteSale={handleDeleteSale}
                   userRole={user.rol}
                 />

@@ -82,8 +82,19 @@ exports.abrirMesa = async (req, res, next) => {
       // Abrir la mesa
       const mesaAbierta = await Mesa.abrirMesa(id_mesa, id_vendedor, id_restaurante, client);
       
-      // Crear prefactura
-      const prefactura = await Mesa.crearPrefactura(mesaAbierta.id_mesa, null, id_restaurante, client);
+      // Verificar si ya existe una prefactura abierta
+      const prefacturaExistente = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
+      let prefactura;
+      
+      if (prefacturaExistente) {
+        // Usar la prefactura existente
+        prefactura = prefacturaExistente;
+        logger.info(`Usando prefactura existente para mesa ${id_mesa}`);
+      } else {
+        // Crear nueva prefactura
+        prefactura = await Mesa.crearPrefactura(mesaAbierta.id_mesa, null, id_restaurante, client);
+        logger.info(`Nueva prefactura creada para mesa ${id_mesa}`);
+      }
       
       await client.query('COMMIT');
       logger.info(`Mesa con ID ${id_mesa} abierta exitosamente por vendedor ${id_vendedor} para el restaurante ${id_restaurante}.`);
@@ -175,19 +186,28 @@ exports.liberarMesa = async (req, res, next) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      
       // Liberar la mesa (marcar como libre sin facturar)
       const mesaLiberada = await Mesa.liberarMesa(id_mesa, id_restaurante, client);
-      // Cerrar prefactura si existe (sin facturar)
+      
+      // Cerrar prefactura anterior si existe (sin facturar)
       const prefactura = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
       if (prefactura) {
         await Mesa.cerrarPrefactura(prefactura.id_prefactura, 0, id_restaurante, client); // Total 0 porque no se factura
+        logger.info(`Prefactura anterior cerrada para mesa ${id_mesa}`);
       }
+      
+      // Crear nueva prefactura limpia para la siguiente sesión
+      const nuevaPrefactura = await Mesa.crearPrefactura(id_mesa, null, id_restaurante, client);
+      logger.info(`Nueva prefactura creada para mesa ${id_mesa}`);
+      
       await client.query('COMMIT');
       logger.info(`Mesa con ID ${id_mesa} liberada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa liberada exitosamente.`,
         data: {
-          mesa: mesaLiberada
+          mesa: mesaLiberada,
+          nueva_prefactura: nuevaPrefactura
         }
       });
     } catch (error) {
@@ -359,12 +379,19 @@ exports.generarPrefactura = async (req, res, next) => {
     let fechaAperturaPrefactura = null;
     if (prefactura) {
       fechaAperturaPrefactura = prefactura.fecha_apertura;
+      logger.info(`Usando fecha de prefactura: ${fechaAperturaPrefactura}`);
+    } else {
+      // Si no hay prefactura abierta, usar la hora_apertura de la mesa
+      fechaAperturaPrefactura = mesa.hora_apertura;
+      logger.info(`No hay prefactura abierta, usando hora_apertura de mesa: ${fechaAperturaPrefactura}`);
     }
 
-    // Calcular total acumulado SOLO de la sesión actual (prefactura abierta)
+    // Calcular total acumulado SOLO de la sesión actual
     let totalAcumulado = 0;
     let totalVentas = 0;
     let totalItems = 0;
+    
+    // Siempre usar filtro de fecha para evitar mostrar ventas anteriores
     if (fechaAperturaPrefactura) {
       const totalSesionQuery = `
         SELECT 
@@ -383,6 +410,10 @@ exports.generarPrefactura = async (req, res, next) => {
       totalAcumulado = parseFloat(totalSesionResult.rows[0].total_acumulado) || 0;
       totalVentas = parseInt(totalSesionResult.rows[0].total_ventas) || 0;
       totalItems = parseInt(totalSesionResult.rows[0].total_items) || 0;
+      
+      logger.info(`Total calculado desde ${fechaAperturaPrefactura}: $${totalAcumulado}, ${totalVentas} ventas, ${totalItems} items`);
+    } else {
+      logger.warn('No se pudo determinar fecha de apertura, mostrando solo ventas recientes');
     }
 
     // Actualizar el total acumulado en la mesa SOLO con el de la sesión actual

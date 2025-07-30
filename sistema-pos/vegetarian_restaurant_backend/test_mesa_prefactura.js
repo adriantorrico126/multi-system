@@ -1,14 +1,15 @@
 const { pool } = require('./src/config/database');
 
-async function testPrefactura() {
+async function testMesaPrefactura() {
   try {
-    console.log('🔍 Probando función de prefactura...');
+    console.log('🔍 Probando lógica de prefactura de mesas individuales...');
     
     // 1. Buscar una mesa que tenga ventas
     const mesaQuery = `
-      SELECT m.id_mesa, m.numero, m.estado, m.total_acumulado
+      SELECT DISTINCT m.id_mesa, m.numero, m.estado, m.total_acumulado, m.hora_apertura
       FROM mesas m
-      WHERE m.total_acumulado > 0
+      JOIN ventas v ON m.numero = v.mesa_numero
+      WHERE v.estado IN ('abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'pagado', 'completada', 'pendiente', 'recibido')
       LIMIT 1
     `;
     
@@ -21,7 +22,26 @@ async function testPrefactura() {
     const mesa = mesaResult.rows[0];
     console.log(`✅ Mesa encontrada: ID=${mesa.id_mesa}, Número=${mesa.numero}, Total=${mesa.total_acumulado}`);
     
-    // 2. Verificar ventas de esta mesa
+    // 2. Verificar prefacturas de esta mesa
+    const prefacturasQuery = `
+      SELECT 
+        p.id_prefactura,
+        p.fecha_apertura,
+        p.fecha_cierre,
+        p.estado,
+        p.total_acumulado
+      FROM prefacturas p
+      WHERE p.id_mesa = $1
+      ORDER BY p.fecha_apertura DESC
+    `;
+    
+    const prefacturasResult = await pool.query(prefacturasQuery, [mesa.id_mesa]);
+    console.log(`📊 Prefacturas encontradas para mesa ${mesa.numero}: ${prefacturasResult.rows.length}`);
+    prefacturasResult.rows.forEach((prefactura, index) => {
+      console.log(`  Prefactura ${index + 1}: ID=${prefactura.id_prefactura}, Estado=${prefactura.estado}, Total=${prefactura.total_acumulado}, Apertura=${prefactura.fecha_apertura}, Cierre=${prefactura.fecha_cierre}`);
+    });
+    
+    // 3. Verificar ventas de esta mesa
     const ventasQuery = `
       SELECT 
         v.id_venta,
@@ -39,10 +59,10 @@ async function testPrefactura() {
     const ventasResult = await pool.query(ventasQuery, [mesa.numero]);
     console.log(`📊 Ventas encontradas para mesa ${mesa.numero}: ${ventasResult.rows.length}`);
     ventasResult.rows.forEach((venta, index) => {
-      console.log(`  Venta ${index + 1}: ID=${venta.id_venta}, Total=${venta.total}, Items=${venta.items_count}, Estado=${venta.estado}`);
+      console.log(`  Venta ${index + 1}: ID=${venta.id_venta}, Total=${venta.total}, Items=${venta.items_count}, Estado=${venta.estado}, Fecha=${venta.fecha}`);
     });
     
-    // 3. Verificar productos de esta mesa
+    // 4. Verificar productos de esta mesa
     const productosQuery = `
       SELECT 
         p.nombre as nombre_producto,
@@ -65,11 +85,11 @@ async function testPrefactura() {
       console.log(`  Producto ${index + 1}: ${producto.nombre_producto}, Cantidad=${producto.cantidad_total}, Subtotal=${producto.subtotal_total}`);
     });
     
-    // 4. Simular la función de prefactura
-    console.log('\n🔧 Simulando función de prefactura...');
+    // 5. Simular la función de prefactura de mesa individual
+    console.log('\n🔧 Simulando función de prefactura de mesa individual...');
     
     // Obtener prefactura abierta
-    const prefacturaQuery = `
+    const prefacturaAbiertaQuery = `
       SELECT id_prefactura, fecha_apertura
       FROM prefacturas
       WHERE id_mesa = $1 AND estado = 'abierta'
@@ -77,15 +97,18 @@ async function testPrefactura() {
       LIMIT 1
     `;
     
-    const prefacturaResult = await pool.query(prefacturaQuery, [mesa.id_mesa]);
-    const prefactura = prefacturaResult.rows[0];
+    const prefacturaAbiertaResult = await pool.query(prefacturaAbiertaQuery, [mesa.id_mesa]);
+    const prefacturaAbierta = prefacturaAbiertaResult.rows[0];
     let fechaAperturaPrefactura = null;
-    if (prefactura) {
-      fechaAperturaPrefactura = prefactura.fecha_apertura;
+    if (prefacturaAbierta) {
+      fechaAperturaPrefactura = prefacturaAbierta.fecha_apertura;
       console.log(`📅 Prefactura abierta desde: ${fechaAperturaPrefactura}`);
+    } else {
+      console.log(`📅 No hay prefactura abierta, usando hora_apertura de la mesa: ${mesa.hora_apertura}`);
+      fechaAperturaPrefactura = mesa.hora_apertura;
     }
     
-    // Calcular total acumulado
+    // Calcular total acumulado de la sesión actual
     let totalAcumulado = 0;
     let totalVentas = 0;
     if (fechaAperturaPrefactura) {
@@ -104,10 +127,10 @@ async function testPrefactura() {
       totalVentas = parseInt(totalSesionResult.rows[0].total_ventas) || 0;
     }
     
-    console.log(`💰 Total acumulado: ${totalAcumulado}`);
-    console.log(`📊 Total ventas: ${totalVentas}`);
+    console.log(`💰 Total acumulado de la sesión actual: ${totalAcumulado}`);
+    console.log(`📊 Total ventas de la sesión actual: ${totalVentas}`);
     
-    // Obtener historial completo
+    // Obtener historial de la sesión actual
     const historialQuery = `
       SELECT 
         v.id_venta,
@@ -138,7 +161,7 @@ async function testPrefactura() {
       : [mesa.numero];
     const historialResult = await pool.query(historialQuery, historialParams);
     
-    console.log(`📋 Historial completo: ${historialResult.rows.length} registros`);
+    console.log(`📋 Historial de la sesión actual: ${historialResult.rows.length} registros`);
     
     // Agrupar productos
     const productosAgrupados = {};
@@ -162,19 +185,70 @@ async function testPrefactura() {
     });
     
     const historialAgrupado = Object.values(productosAgrupados);
-    console.log(`🍽️ Productos agrupados: ${historialAgrupado.length} productos diferentes`);
+    console.log(`🍽️ Productos de la sesión actual: ${historialAgrupado.length} productos diferentes`);
     
     historialAgrupado.forEach((producto, index) => {
       console.log(`  ${index + 1}. ${producto.nombre_producto}: ${producto.cantidad_total} x $${producto.precio_unitario} = $${producto.subtotal_total}`);
     });
     
-    console.log('\n✅ Prueba de prefactura completada exitosamente');
+    // 6. Simular cierre y apertura de mesa
+    console.log('\n🔄 Simulando cierre y apertura de mesa...');
+    
+    // Simular cierre de mesa
+    const cerrarMesaQuery = `
+      UPDATE mesas 
+      SET estado = 'libre', 
+          hora_cierre = NOW(),
+          id_venta_actual = NULL,
+          total_acumulado = 0
+      WHERE id_mesa = $1
+      RETURNING *
+    `;
+    const cerrarMesaResult = await pool.query(cerrarMesaQuery, [mesa.id_mesa]);
+    console.log('✅ Mesa cerrada');
+    
+    // Cerrar prefactura si existe
+    if (prefacturaAbierta) {
+      const cerrarPrefacturaQuery = `
+        UPDATE prefacturas 
+        SET estado = 'cerrada', 
+            fecha_cierre = NOW(),
+            total_acumulado = $2
+        WHERE id_prefactura = $1
+      `;
+      await pool.query(cerrarPrefacturaQuery, [prefacturaAbierta.id_prefactura, totalAcumulado]);
+      console.log('✅ Prefactura cerrada');
+    }
+    
+    // Simular apertura de mesa
+    const abrirMesaQuery = `
+      UPDATE mesas 
+      SET estado = 'en_uso', 
+          hora_apertura = NOW(),
+          total_acumulado = 0,
+          id_venta_actual = NULL
+      WHERE id_mesa = $1
+      RETURNING *
+    `;
+    const abrirMesaResult = await pool.query(abrirMesaQuery, [mesa.id_mesa]);
+    console.log('✅ Mesa abierta nuevamente');
+    
+    // Crear nueva prefactura
+    const nuevaPrefacturaQuery = `
+      INSERT INTO prefacturas (id_mesa, id_venta_principal, total_acumulado, estado, id_restaurante)
+      VALUES ($1, NULL, 0, 'abierta', $2)
+      RETURNING *
+    `;
+    const nuevaPrefacturaResult = await pool.query(nuevaPrefacturaQuery, [mesa.id_mesa, 1]); // Asumiendo id_restaurante = 1
+    console.log('✅ Nueva prefactura creada');
+    
+    console.log('\n✅ Prueba de prefactura de mesa individual completada');
     
   } catch (error) {
-    console.error('❌ Error en la prueba de prefactura:', error);
+    console.error('❌ Error en la prueba:', error);
   } finally {
     await pool.end();
   }
 }
 
-testPrefactura(); 
+testMesaPrefactura(); 

@@ -448,6 +448,46 @@ export const createSale = async (sale: {
   }
 };
 
+// Editar venta
+export const editSale = async (saleId: string, saleData: {
+  items: Array<{ id: string; quantity: number; price: number; notes?: string }>;
+  total: number;
+  paymentMethod: string;
+  notes?: string;
+}) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    console.log('API: Editando venta:', saleId, saleData);
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${saleId}`, {
+      ...saleData,
+      id_restaurante: restauranteId
+    });
+    console.log('API: Venta editada:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error editando venta:', error);
+    throw error;
+  }
+};
+
+// Eliminar venta
+export const deleteSale = async (saleId: string) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    console.log('API: Eliminando venta:', saleId);
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${saleId}?id_restaurante=${restauranteId}`);
+    console.log('API: Venta eliminada:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error eliminando venta:', error);
+    throw error;
+  }
+};
+
 // Refrescar inventario después de una venta
 export const refreshInventory = async () => {
   const userStr = localStorage.getItem('currentUser');
@@ -686,9 +726,9 @@ export const agregarProductosAMesa = async (data: {
 // Generar prefactura de mesa
 export const generarPrefactura = async (id_mesa: number) => {
   try {
-    const restauranteId = getRestauranteId();
-    if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/prefactura?id_restaurante=${restauranteId}`);
+    console.log('API: Generando prefactura para mesa:', id_mesa);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/prefactura`);
+    console.log('API: Prefactura generada:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error generando prefactura:', error);

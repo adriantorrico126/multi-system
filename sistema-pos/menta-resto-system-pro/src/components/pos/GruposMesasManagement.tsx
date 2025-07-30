@@ -98,13 +98,18 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
   const generarPrefacturaMutation = useMutation({
     mutationFn: generarPrefacturaGrupo,
     onSuccess: (data) => {
+      console.log('🔍 Prefactura recibida:', data);
       setPrefacturaData(data);
       setShowPrefactura(true);
+      toast({
+        title: "✅ Prefactura generada",
+        description: "La prefactura del grupo se ha generado exitosamente.",
+      });
     },
     onError: (error: any) => {
       toast({
         title: "❌ Error",
-        description: error.response?.data?.message || "Error al generar prefactura",
+        description: error.response?.data?.message || "Error al generar la prefactura",
         variant: "destructive",
       });
     },
@@ -351,16 +356,36 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
                     <p className="text-lg font-bold text-blue-600">{prefacturaData.cantidad_productos || 0}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Final</p>
+                    <p className="text-sm font-medium text-gray-500">Total Acumulado</p>
                     <p className="text-lg font-bold text-green-600">
-                      ${(Number(prefacturaData.total_final) || 0).toFixed(2)}
+                      ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
                     </p>
                   </div>
                 </div>
+                {prefacturaData.total_ventas && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">Ventas Realizadas</p>
+                        <p className="text-sm font-bold text-blue-600">{prefacturaData.total_ventas}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
+                        <p className="text-sm font-bold text-purple-600">{prefacturaData.historial?.length || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">Fecha Apertura</p>
+                        <p className="text-sm font-bold text-orange-600">
+                          {prefacturaData.fecha_apertura ? new Date(prefacturaData.fecha_apertura).toLocaleString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Lista de productos */}
-              {prefacturaData.productos && prefacturaData.productos.length > 0 ? (
+              {prefacturaData.historial && prefacturaData.historial.length > 0 ? (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900">Productos del Grupo</h3>
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -374,12 +399,12 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {prefacturaData.productos.map((producto: any, index: number) => (
+                        {prefacturaData.historial.map((producto: any, index: number) => (
                           <TableRow key={index} className="hover:bg-gray-50">
                             <TableCell className="font-medium">
                               <div>
                                 <div className="text-gray-900">{producto.nombre_producto}</div>
-                                {producto.observaciones && (
+                                {producto.observaciones && producto.observaciones !== '-' && (
                                   <div className="text-xs text-gray-500 mt-1">
                                     {producto.observaciones}
                                   </div>
@@ -387,13 +412,13 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
                               </div>
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              {producto.cantidad}
+                              {producto.cantidad_total}
                             </TableCell>
                             <TableCell className="text-right text-gray-600">
                               ${Number(producto.precio_unitario).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right font-bold text-green-600">
-                              ${Number(producto.subtotal).toFixed(2)}
+                              ${Number(producto.subtotal_total).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -412,21 +437,27 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
               )}
 
               {/* Totales */}
-              {prefacturaData.productos && prefacturaData.productos.length > 0 && (
+              {prefacturaData.historial && prefacturaData.historial.length > 0 && (
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-green-800">Total Final del Grupo:</span>
+                    <span className="text-lg font-semibold text-green-800">Total Acumulado del Grupo:</span>
                     <span className="text-2xl font-bold text-green-900">
-                      ${(Number(prefacturaData.total_final) || 0).toFixed(2)}
+                      ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
                     </span>
                   </div>
+                  {prefacturaData.total_ventas && (
+                    <div className="mt-2 text-sm text-green-700">
+                      {prefacturaData.total_ventas} venta{prefacturaData.total_ventas !== 1 ? 's' : ''} • 
+                      {prefacturaData.fecha_apertura && ` Abierta desde: ${new Date(prefacturaData.fecha_apertura).toLocaleString()}`}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Acciones */}
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-600">
-                  Grupo {prefacturaData.id_grupo_mesa} • {prefacturaData.productos?.length || 0} producto{prefacturaData.productos?.length !== 1 ? 's' : ''}
+                  Grupo {prefacturaData.id_grupo_mesa} • {prefacturaData.historial?.length || 0} producto{prefacturaData.historial?.length !== 1 ? 's' : ''}
                 </div>
                 <div className="flex space-x-2">
                   <Button

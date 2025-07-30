@@ -164,9 +164,33 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   // Obtener prefactura
   const { data: prefacturaData } = useQuery({
     queryKey: ['prefactura', selectedMesa?.id_mesa],
-    queryFn: () => selectedMesa ? generarPrefactura(selectedMesa.id_mesa) : null,
+    queryFn: async () => {
+      if (!selectedMesa) return null;
+      console.log('🔍 MesaManagement: Generando prefactura para mesa:', selectedMesa.id_mesa);
+      try {
+        const result = await generarPrefactura(selectedMesa.id_mesa);
+        console.log('🔍 MesaManagement: Prefactura recibida:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ MesaManagement: Error generando prefactura:', error);
+        throw error;
+      }
+    },
     enabled: !!selectedMesa && showPrefactura,
   });
+
+  // DEBUG: Log prefactura data
+  useEffect(() => {
+    if (prefacturaData) {
+      console.log('🔍 MesaManagement: Prefactura data actualizada:', {
+        mesa: prefacturaData?.data?.mesa,
+        historial: prefacturaData?.data?.historial,
+        total_acumulado: prefacturaData?.data?.total_acumulado,
+        total_ventas: prefacturaData?.data?.total_ventas,
+        fecha_apertura: prefacturaData?.data?.fecha_apertura
+      });
+    }
+  }, [prefacturaData]);
 
   // Obtener grupos activos
   const { data: gruposActivos = [] } = useQuery({
@@ -1380,31 +1404,31 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     <div>
                       <p className="text-sm font-medium text-gray-500">Total Acumulado</p>
                       <p className="text-lg font-bold text-green-600">
-                        ${(Number(prefacturaData?.total_acumulado) || 0).toFixed(2)}
+                        ${(Number(prefacturaData?.data?.total_acumulado) || 0).toFixed(2)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500">Fecha de Apertura</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {prefacturaData?.fecha_apertura || 'N/A'}
+                        {prefacturaData?.data?.fecha_apertura || 'N/A'}
                       </p>
                     </div>
                   </div>
-                  {prefacturaData?.total_ventas && (
+                  {prefacturaData?.data?.total_ventas && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-xs font-medium text-gray-500">Ventas Realizadas</p>
-                          <p className="text-sm font-bold text-blue-600">{prefacturaData.total_ventas}</p>
+                          <p className="text-sm font-bold text-blue-600">{prefacturaData.data.total_ventas}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
-                          <p className="text-sm font-bold text-purple-600">{prefacturaData?.historial?.length || 0}</p>
+                          <p className="text-sm font-bold text-purple-600">{prefacturaData?.data?.historial?.length || 0}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Estado Prefactura</p>
                           <p className="text-sm font-bold text-orange-600 capitalize">
-                            {(prefacturaData?.estado_prefactura || 'abierta').replace('_', ' ')}
+                            {(prefacturaData?.data?.estado_prefactura || 'abierta').replace('_', ' ')}
                           </p>
                         </div>
                       </div>
@@ -1413,7 +1437,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 </div>
 
                 {/* Lista de productos */}
-                {prefacturaData?.historial && prefacturaData.historial.length > 0 ? (
+                {prefacturaData?.data?.historial && prefacturaData.data.historial.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Productos Consumidos</h3>
                     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -1427,7 +1451,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {prefacturaData.historial.map((producto: any, index: number) => (
+                          {prefacturaData.data.historial.map((producto: any, index: number) => (
                             <TableRow key={index} className="hover:bg-gray-50">
                               <TableCell className="font-medium">
                                 <div>
@@ -1465,18 +1489,18 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 )}
 
                 {/* Totales */}
-                {prefacturaData?.historial && prefacturaData.historial.length > 0 && (
+                {prefacturaData?.data?.historial && prefacturaData.data.historial.length > 0 && (
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-green-800">Total Acumulado:</span>
                       <span className="text-2xl font-bold text-green-900">
-                        ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
+                        ${(Number(prefacturaData.data.total_acumulado) || 0).toFixed(2)}
                       </span>
                     </div>
-                    {prefacturaData.total_ventas && (
+                    {prefacturaData.data.total_ventas && (
                       <div className="mt-2 text-sm text-green-700">
-                        {prefacturaData.total_ventas} venta{prefacturaData.total_ventas !== 1 ? 's' : ''} • 
-                        {prefacturaData.fecha_apertura && ` Abierta desde: ${prefacturaData.fecha_apertura}`}
+                        {prefacturaData.data.total_ventas} venta{prefacturaData.data.total_ventas !== 1 ? 's' : ''} • 
+                        {prefacturaData.data.fecha_apertura && ` Abierta desde: ${prefacturaData.data.fecha_apertura}`}
                       </div>
                     )}
                   </div>
@@ -1485,7 +1509,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 {/* Acciones */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Mesa {selectedMesa?.numero} • {prefacturaData?.historial?.length || 0} producto{prefacturaData?.historial?.length !== 1 ? 's' : ''}
+                    Mesa {selectedMesa?.numero} • {prefacturaData?.data?.historial?.length || 0} producto{prefacturaData?.data?.historial?.length !== 1 ? 's' : ''}
                   </div>
                   <div className="flex space-x-2">
                     <Button
