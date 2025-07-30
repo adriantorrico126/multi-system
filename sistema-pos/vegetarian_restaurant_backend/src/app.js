@@ -48,6 +48,8 @@ const modificadorRoutes = require('./routes/modificadorRoutes');
 startupLogger.logStep('modificadorRoutes', 'success');
 const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
 startupLogger.logStep('grupoMesaRoutes', 'success');
+const reservaRoutes = require('./routes/reservaRoutes');
+startupLogger.logStep('reservaRoutes', 'success');
 // const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
 // const pagoSuscripcionRoutes = require('./routes/pagoSuscripcionRoutes');
 
@@ -85,12 +87,45 @@ app.use('/api/v1/modificadores', modificadorRoutes);
 startupLogger.logStep('Ruta /api/v1/modificadores', 'success');
 app.use('/api/v1/grupos-mesas', grupoMesaRoutes);
 startupLogger.logStep('Ruta /api/v1/grupos-mesas', 'success');
+
+// Ruta de prueba para verificar que las rutas están funcionando (COMPLETAMENTE SEPARADA)
+app.get('/api/v1/test-reservas', (req, res) => {
+  console.log('🔍 [APP] Ruta de prueba /api/v1/test-reservas llamada');
+  res.json({ message: 'Rutas de reservas funcionando correctamente' });
+});
+startupLogger.logStep('Ruta de prueba /api/v1/test-reservas', 'success');
+
+app.use('/api/v1/reservas', reservaRoutes);
+startupLogger.logStep('Ruta /api/v1/reservas', 'success');
+
 // app.use('/api/v1/metodos_pago', metodoPagoRoutes);
 // app.use('/api/v1/pagos_suscripcion', pagoSuscripcionRoutes);
 
 // Middleware de logging de solicitudes
 app.use((req, res, next) => {
+  console.log(`🔍 [APP] ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
   logger.info(`[${req.method}] ${req.originalUrl} - IP: ${req.ip}`);
+  next();
+});
+
+// Middleware para listar todas las rutas registradas
+app.use((req, res, next) => {
+  if (req.path === '/debug/routes') {
+    console.log('🔍 [APP] Rutas registradas:');
+    console.log('🔍 [APP] - /api/v1/categorias');
+    console.log('🔍 [APP] - /api/v1/auth');
+    console.log('🔍 [APP] - /api/v1/sucursales');
+    console.log('🔍 [APP] - /api/v1/ventas');
+    console.log('🔍 [APP] - /api/v1/productos');
+    console.log('🔍 [APP] - /api/v1/mesas');
+    console.log('🔍 [APP] - /api/v1/dashboard');
+    console.log('🔍 [APP] - /api/v1/users');
+    console.log('🔍 [APP] - /api/v1/soporte');
+    console.log('🔍 [APP] - /api/v1/modificadores');
+    console.log('🔍 [APP] - /api/v1/grupos-mesas');
+    console.log('🔍 [APP] - /api/v1/reservas');
+    return res.json({ message: 'Rutas listadas en consola' });
+  }
   next();
 });
 

@@ -27,9 +27,9 @@ const GrupoMesaModel = {
           `INSERT INTO mesas_en_grupo (id_grupo_mesa, id_mesa) VALUES ($1, $2)`,
           [grupo.id_grupo_mesa, id_mesa]
         );
-        // Actualizar la mesa para que aparezca como ocupada y asociada al grupo
+        // Actualizar la mesa para que aparezca asociada al grupo pero mantenga su estado
         await client.query(
-          `UPDATE mesas SET id_grupo_mesa = $1, estado = 'en_uso' WHERE id_mesa = $2`,
+          `UPDATE mesas SET id_grupo_mesa = $1 WHERE id_mesa = $2`,
           [grupo.id_grupo_mesa, id_mesa]
         );
       }
@@ -49,7 +49,7 @@ const GrupoMesaModel = {
       [id_grupo_mesa, id_mesa]
     );
     await pool.query(
-      `UPDATE mesas SET id_grupo_mesa = $1, estado = 'en_uso' WHERE id_mesa = $2`,
+      `UPDATE mesas SET id_grupo_mesa = $1 WHERE id_mesa = $2`,
       [id_grupo_mesa, id_mesa]
     );
   },
@@ -60,7 +60,7 @@ const GrupoMesaModel = {
       [id_grupo_mesa, id_mesa]
     );
     await pool.query(
-      `UPDATE mesas SET id_grupo_mesa = NULL, estado = 'libre' WHERE id_mesa = $1`,
+      `UPDATE mesas SET id_grupo_mesa = NULL WHERE id_mesa = $1`,
       [id_mesa]
     );
   },
@@ -132,9 +132,9 @@ const GrupoMesaModel = {
         [id_grupo_mesa]
       );
       
-      // Limpiar las referencias en la tabla mesas y liberarlas
+      // Limpiar las referencias en la tabla mesas
       await client.query(
-        `UPDATE mesas SET id_grupo_mesa = NULL, estado = 'libre' WHERE id_grupo_mesa = $1`,
+        `UPDATE mesas SET id_grupo_mesa = NULL WHERE id_grupo_mesa = $1`,
         [id_grupo_mesa]
       );
       

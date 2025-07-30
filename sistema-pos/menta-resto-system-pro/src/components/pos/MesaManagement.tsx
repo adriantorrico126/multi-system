@@ -24,7 +24,12 @@ import {
   Users2,
   Target,
   TrendingUp,
-  Activity
+  Activity,
+  Calendar,
+  BookOpen,
+  Link2,
+  Unlink,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -42,11 +47,15 @@ import {
   cerrarGrupoMesas,
   consultarGrupoPorMesa,
   marcarMesaComoPagada,
-  getUsers
+  getUsers,
+  getReservasByMesa,
+  limpiarEstadosMesas
 } from '@/services/api';
 import MesaConfiguration from './MesaConfiguration';
 import { GruposMesasManagement } from './GruposMesasManagement';
+import { ReservaModal } from './ReservaModal';
 import { useAuth } from '@/context/AuthContext';
+import ReservaDetallesModal from './ReservaDetallesModal';
 
 interface Mesa {
   id_mesa: number;
@@ -56,6 +65,8 @@ interface Mesa {
   total_acumulado?: number;
   hora_apertura?: string;
   id_sucursal: number;
+  id_grupo_mesa?: number;
+  nombre_mesero_grupo?: string;
 }
 
 interface EstadisticasMesas {
@@ -96,6 +107,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   const [meseros, setMeseros] = useState<any[]>([]);
   const [isLoadingMeseros, setIsLoadingMeseros] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Estados para el sistema de reservas
+  const [showReservaModal, setShowReservaModal] = useState(false);
+  const [selectedMesaForReserva, setSelectedMesaForReserva] = useState<Mesa | null>(null);
+  const [showDetallesModal, setShowDetallesModal] = useState(false);
+  const [selectedMesaForDetalles, setSelectedMesaForDetalles] = useState<Mesa | null>(null);
+  const [reservaDetalles, setReservaDetalles] = useState<any>(null);
 
   // Log para depuración
   React.useEffect(() => {
@@ -330,6 +348,26 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
   });
 
+  // Mutación para limpiar estados de mesas
+  const limpiarEstadosMesasMutation = useMutation({
+    mutationFn: () => limpiarEstadosMesas(),
+    onSuccess: (data) => {
+      toast({
+        title: "Estados Limpiados",
+        description: `${data.data.mesasActualizadas} mesas actualizadas exitosamente.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] });
+      queryClient.invalidateQueries({ queryKey: ['estadisticas-mesas', sucursalId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Error al limpiar estados de mesas.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const cerrarConFacturaMutation = useMutation({
     mutationFn: (data: {
       mesa_numero: number;
@@ -433,6 +471,25 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
   });
 
+
+
+  const getMesaState = (mesa: Mesa) => {
+    if (mesa.id_grupo_mesa) return 'en_grupo';
+    if (reservasPorMesa?.has(mesa.id_mesa)) return 'reservada';
+    return mesa.estado;
+  };
+
+  const MESA_STATE_BADGES = {
+    libre: { label: 'Libre', color: 'bg-green-500', icon: null },
+    en_uso: { label: 'En Uso', color: 'bg-orange-500', icon: Users },
+    reservada: { label: 'Reservada', color: 'bg-blue-500', icon: Calendar },
+    en_grupo: { label: 'En Grupo', color: 'bg-purple-500', icon: Link2 },
+    mantenimiento: { label: 'Mantenimiento', color: 'bg-red-500', icon: null },
+    pendiente_cobro: { label: 'Pendiente Cobro', color: 'bg-yellow-500', icon: null },
+    ocupada_por_grupo: { label: 'Ocupada por Grupo', color: 'bg-purple-500', icon: Link2 },
+    pagado: { label: 'Pagado', color: 'bg-gray-500', icon: null }
+  };
+
   const getEstadoColor = (estado: string) => {
     switch (estado) {
       case 'libre':
@@ -484,11 +541,51 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   };
 
   const handleCerrarConFactura = (mesa: Mesa) => {
-    cerrarConFacturaMutation.mutate({
-      mesa_numero: mesa.numero,
-      id_sucursal: mesa.id_sucursal,
-      paymentMethod: 'efectivo'
-    });
+    // Implementar lógica para cerrar mesa con factura especial
+    console.log('Cerrando mesa con factura especial:', mesa);
+  };
+
+  // Función para abrir modal de reserva
+  const handleOpenReservaModal = (mesa: Mesa) => {
+    console.log('🔍 handleOpenReservaModal llamado con mesa:', mesa);
+    setSelectedMesaForReserva(mesa);
+    setShowReservaModal(true);
+    console.log('🔍 showReservaModal establecido a true');
+  };
+
+  const handleCloseDetallesModal = () => {
+    setShowDetallesModal(false);
+    setSelectedMesaForDetalles(null);
+    setReservaDetalles(null);
+  };
+
+  // Función para obtener detalles de reserva
+  const handleVerDetallesReserva = async (mesa: Mesa) => {
+    console.log('🔍 [handleVerDetallesReserva] Iniciando con mesa:', mesa);
+    try {
+      const response = await getReservasByMesa(mesa.id_mesa);
+      console.log('🔍 [handleVerDetallesReserva] Response:', response);
+      if (response.data && response.data.length > 0) {
+        console.log('🔍 [handleVerDetallesReserva] Reserva encontrada:', response.data[0]);
+        setReservaDetalles(response.data[0]); // Tomar la primera reserva activa
+        setSelectedMesaForDetalles(mesa);
+        setShowDetallesModal(true);
+        console.log('🔍 [handleVerDetallesReserva] Estados actualizados - showDetallesModal: true');
+      } else {
+        console.log('🔍 [handleVerDetallesReserva] No hay reservas activas');
+        toast({
+          title: "Sin reservas",
+          description: "Esta mesa no tiene reservas activas",
+        });
+      }
+    } catch (error) {
+      console.error('Error al obtener detalles de reserva:', error);
+      toast({
+        title: "Error",
+        description: "Error al obtener detalles de la reserva",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!sucursalId) {
@@ -712,6 +809,17 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     <Plus className="h-4 w-4" />
                     <span>Unir Mesas</span>
                   </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => limpiarEstadosMesasMutation.mutate()}
+                    disabled={limpiarEstadosMesasMutation.isPending}
+                    className="flex items-center space-x-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${limpiarEstadosMesasMutation.isPending ? 'animate-spin' : ''}`} />
+                    <span>Limpiar Estados</span>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -797,28 +905,56 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                       {/* Acciones según estado */}
                       <div className="space-y-2">
                         {mesa.estado === 'libre' && (
-                          <Button
-                            onClick={() => setSelectedMesas((prev) => 
-                              prev.includes(mesa.id_mesa) 
-                                ? prev.filter(id => id !== mesa.id_mesa) 
-                                : [...prev, mesa.id_mesa]
-                            )}
-                            variant={selectedMesas.includes(mesa.id_mesa) ? 'default' : 'outline'}
-                            className="w-full"
-                            size="sm"
-                          >
-                            {selectedMesas.includes(mesa.id_mesa) ? (
-                              <>
-                                <X className="h-4 w-4 mr-2" />
-                                Quitar de Selección
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Seleccionar para Unir
-                              </>
-                            )}
-                          </Button>
+                          <div className="space-y-2">
+                            <Button
+                              onClick={() => setSelectedMesas((prev) => 
+                                prev.includes(mesa.id_mesa) 
+                                  ? prev.filter(id => id !== mesa.id_mesa) 
+                                  : [...prev, mesa.id_mesa]
+                              )}
+                              variant={selectedMesas.includes(mesa.id_mesa) ? 'default' : 'outline'}
+                              className="w-full"
+                              size="sm"
+                            >
+                              {selectedMesas.includes(mesa.id_mesa) ? (
+                                <>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Quitar de Selección
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Seleccionar para Unir
+                                </>
+                              )}
+                            </Button>
+                            
+                            {/* NUEVO: Botón de reservas */}
+                            <Button
+                              onClick={() => handleOpenReservaModal(mesa)}
+                              variant="outline"
+                              className="w-full bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                              size="sm"
+                            >
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Reservas
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Botón para ver detalles de reserva si la mesa está reservada */}
+                        {mesa.estado === 'reservada' && (
+                          <div className="space-y-2">
+                            <Button
+                              onClick={() => handleVerDetallesReserva(mesa)}
+                              variant="outline"
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Reserva
+                            </Button>
+                          </div>
                         )}
 
                         {mesa.estado === 'en_uso' && (
@@ -1550,6 +1686,34 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
             )}
           </DialogContent>
         </Dialog>
+        
+        {/* NUEVO: Modal de Reservas */}
+        {showReservaModal && selectedMesaForReserva && (
+          <ReservaModal
+            isOpen={showReservaModal}
+            onClose={() => {
+              console.log('🔍 Cerrando modal de reservas');
+              setShowReservaModal(false);
+              setSelectedMesaForReserva(null);
+            }}
+            mesa={selectedMesaForReserva}
+            sucursalId={sucursalId}
+          />
+        )}
+
+        {/* Modal de Detalles de Reserva */}
+        {(() => {
+          console.log('🔍 [Modal Debug] showDetallesModal:', showDetallesModal);
+          console.log('🔍 [Modal Debug] selectedMesaForDetalles:', selectedMesaForDetalles);
+          console.log('🔍 [Modal Debug] reservaDetalles:', reservaDetalles);
+          return showDetallesModal && selectedMesaForDetalles && reservaDetalles && (
+            <ReservaDetallesModal
+              isOpen={showDetallesModal}
+              onClose={handleCloseDetallesModal}
+              reserva={reservaDetalles}
+            />
+          );
+        })()}
       </div>
     </div>
   );

@@ -99,7 +99,7 @@ export const PedidosMeseroCajero: React.FC<PedidosMeseroCajeroProps> = (props) =
                     <div className="font-semibold text-xs text-blue-900 dark:text-blue-200 mb-1">Productos:</div>
                     <ul className="text-xs text-gray-700 dark:text-gray-200 space-y-1">
                       {pedido.items.map((item: any, idx: number) => (
-                        <li key={idx} className="flex justify-between">
+                        <li key={`item-${idx}`} className="flex justify-between">
                           <span>{item.nombre || item.name} x{item.cantidad || item.quantity}</span>
                           <span>Bs {Number(item.precio_unitario || item.price).toFixed(2)}</span>
                         </li>

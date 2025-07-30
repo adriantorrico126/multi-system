@@ -61,7 +61,7 @@ exports.login = async (req, res, next) => {
         id_restaurante: user.id_restaurante
       },
       envConfig.JWT_SECRET,
-      { expiresIn: '8h' } // Aumentar expiración a 8 horas para pruebas
+      { expiresIn: '24h' } // Aumentar expiración a 24 horas
     );
 
     logger.info(`Login exitoso para usuario: ${username} (Rol: ${user.rol}, Sucursal: ${sucursal ? sucursal.nombre : 'N/A'}).`);

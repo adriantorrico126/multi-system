@@ -43,11 +43,25 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
+  // Solo pasar propiedades válidas y conocidas al ToastPrimitives.Root
+  const validProps = {
+    className: cn(toastVariants({ variant }), className),
+    ref,
+    // Solo incluir propiedades que sabemos que son válidas para ToastPrimitives.Root
+    ...(props.open !== undefined && { open: props.open }),
+    ...(props.onOpenChange && { onOpenChange: props.onOpenChange }),
+    ...(props.onEscapeKeyDown && { onEscapeKeyDown: props.onEscapeKeyDown }),
+    ...(props.onPointerDownOutside && { onPointerDownOutside: props.onPointerDownOutside }),
+    ...(props.onFocusOutside && { onFocusOutside: props.onFocusOutside }),
+    ...(props.onInteractOutside && { onInteractOutside: props.onInteractOutside }),
+    ...(props.forceMount && { forceMount: props.forceMount }),
+    ...(props.disableOutsidePointerEvents && { disableOutsidePointerEvents: props.disableOutsidePointerEvents }),
+    ...(props.asChild && { asChild: props.asChild }),
+  };
+
   return (
     <ToastPrimitives.Root
-      ref={ref}
-      className={cn(toastVariants({ variant }), className)}
-      {...props}
+      {...validProps}
     />
   )
 })

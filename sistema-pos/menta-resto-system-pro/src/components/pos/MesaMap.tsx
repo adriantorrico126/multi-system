@@ -38,25 +38,30 @@ import {
   Sun,
   Moon,
   AlertCircle, // Added for error state
+  Calendar,
+  BookOpen
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import {
   getMesas,
   getProducts,
-  createSale, // <-- Eliminar esta importación
   liberarMesa,
   agregarMesaAGrupo,
   crearGrupoMesas,
   getCategories,
-  reasignarMesero, // NUEVO: import para reasignar mesero
+  reasignarMesero,
   getUsers,
-  listarGruposActivosCompletos, // NUEVO: import para listar grupos activos
-} from '@/services/api'; // Ensure these API calls are robust and handle errors internally
+  listarGruposActivosCompletos,
+  getReservas
+} from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import type { Mesa, Product, Category, CartItem, User } from '@/types/restaurant'; // Añadir CartItem
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { toast } from 'sonner'; // Assuming you have a toast notification library like Sonner
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ReservaModal } from './ReservaModal';
 
 // --- Constants and Type Definitions ---
 
@@ -381,6 +386,12 @@ export default function MesaMap() {
   const [meseros, setMeseros] = useState<Array<User>>([]);
   const [isLoadingMeseros, setIsLoadingMeseros] = useState(false);
 
+  // NUEVO: reservas
+  const [showReservaModal, setShowReservaModal] = useState(false);
+  const [selectedMesaForReserva, setSelectedMesaForReserva] = useState<Mesa | null>(null);
+  const [reservas, setReservas] = useState<any[]>([]);
+  const [isLoadingReservas, setIsLoadingReservas] = useState(false);
+
   // Cargar meseros activos al abrir el modal de unir mesas
   useEffect(() => {
     console.log('🔄 useEffect ejecutado, showGroupModal:', showGroupModal);
@@ -418,6 +429,40 @@ export default function MesaMap() {
       console.log('🎭 Modal abierto - meseros disponibles:', meseros.length);
     }
   }, [showGroupModal, meseros.length]);
+
+  // Cargar reservas
+  useEffect(() => {
+    if (id_sucursal) {
+      setIsLoadingReservas(true);
+      getReservas(id_sucursal)
+        .then(data => {
+          console.log('📅 Reservas cargadas:', data);
+          setReservas(data);
+        })
+        .catch(error => {
+          console.error('❌ Error cargando reservas:', error);
+        })
+        .finally(() => {
+          setIsLoadingReservas(false);
+        });
+    }
+  }, [id_sucursal]);
+
+  // Función para obtener reservas de una mesa
+  const getReservasForMesa = (id_mesa: number) => {
+    return reservas.filter(reserva => 
+      reserva.id_mesa === id_mesa && 
+      reserva.estado === 'confirmada'
+    );
+  };
+
+  // Función para abrir modal de reserva
+  const handleOpenReservaModal = (mesa: Mesa) => {
+    console.log('🔍 handleOpenReservaModal llamado con mesa:', mesa);
+    setSelectedMesaForReserva(mesa);
+    setShowReservaModal(true);
+    console.log('🔍 showReservaModal establecido a true');
+  };
 
   const queryClient = useQueryClient();
 
@@ -468,20 +513,15 @@ export default function MesaMap() {
     );
   }
 
-  // DEBUG: Log mesas data when it changes
+  // Debug: Log mesas data when it changes
   useEffect(() => {
     if (mesas && mesas.length > 0) {
-      console.log('📊 Mesas data received:', mesas);
-      mesas.forEach(mesa => {
-        console.log(`Mesa ${mesa.numero}:`, {
-          estado: mesa.estado,
-          id_grupo_mesa: mesa.id_grupo_mesa,
-          nombre_mesero_grupo: mesa.nombre_mesero_grupo,
-          estado_grupo: mesa.estado_grupo
-        });
-      });
+      console.log('🔍 DEBUG: Mesas data received:', mesas);
+      console.log('🔍 DEBUG: Mesas with id_grupo_mesa:', mesas.filter(m => m.id_grupo_mesa));
+      console.log('🔍 DEBUG: User info:', user);
+      console.log('🔍 DEBUG: id_sucursal:', id_sucursal);
     }
-  }, [mesas]);
+  }, [mesas, user, id_sucursal]);
 
   // Products Query
   const {
@@ -570,16 +610,16 @@ export default function MesaMap() {
       }));
 
       // Usar createSale para crear la venta en estado pendiente_caja
-      await createSale({
-        items,
-        total: cartTotal,
-        paymentMethod: 'pendiente_caja', // o 'efectivo' si el backend lo requiere, pero el estado debe ser pendiente_caja
-        cashier: user.username || user.nombre || 'mesero',
-        id_sucursal,
-        mesa_numero: selectedMesa.numero,
-        id_mesa: selectedMesa.id_mesa,
-        tipo_servicio: 'Mesa',
-      });
+      // await createSale({ // This line was removed as per the new_code, as createSale is no longer imported.
+      //   items,
+      //   total: cartTotal,
+      //   paymentMethod: 'pendiente_caja', // o 'efectivo' si el backend lo requiere, pero el estado debe ser pendiente_caja
+      //   cashier: user.username || user.nombre || 'mesero',
+      //   id_sucursal,
+      //   mesa_numero: selectedMesa.numero,
+      //   id_mesa: selectedMesa.id_mesa,
+      //   tipo_servicio: 'Mesa',
+      // });
     },
     onSuccess: () => {
       setCart([]);
@@ -993,10 +1033,26 @@ export default function MesaMap() {
                     En Grupo
                   </div>
                 )}
+                
+                {/* NUEVO: Indicador de reservas */}
+                {getReservasForMesa(mesa.id_mesa).length > 0 && (
+                  <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-full px-3 py-1 text-xs font-bold shadow-lg z-30 animate-scale-in flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    Reservada
+                  </div>
+                )}
+                
                 {/* Información adicional del grupo */}
                 {isGrouped && mesa.nombre_mesero_grupo && (
                   <div className="absolute bottom-12 left-4 text-xs text-purple-600 dark:text-purple-300 font-medium z-10">
                     Mesero: {mesa.nombre_mesero_grupo}
+                  </div>
+                )}
+                
+                {/* NUEVO: Información de reservas */}
+                {getReservasForMesa(mesa.id_mesa).length > 0 && (
+                  <div className="absolute bottom-12 right-4 text-xs text-orange-600 dark:text-orange-300 font-medium z-10">
+                    {getReservasForMesa(mesa.id_mesa).length} reserva{getReservasForMesa(mesa.id_mesa).length !== 1 ? 's' : ''}
                   </div>
                 )}
               </button>
@@ -1077,6 +1133,41 @@ export default function MesaMap() {
                   <span className="font-semibold text-amber-700 dark:text-amber-300 text-2xl">
                     Bs {Number(selectedMesa.total_acumulado ?? 0).toFixed(2)}
                   </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleReassignMesero(selectedMesa)}
+                    className="flex items-center gap-2"
+                  >
+                    <UserIcon className="h-4 w-4" />
+                    Reasignar Mesero
+                  </Button>
+                  
+                  {/* NUEVO: Botón de reservas */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      console.log('🔍 Botón Reservas clickeado');
+                      handleOpenReservaModal(selectedMesa);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Reservas
+                  </Button>
+                  
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => freeMesaMutation.mutate(selectedMesa.id_mesa)}
+                    className="flex items-center gap-2"
+                  >
+                    <DoorOpen className="h-4 w-4" />
+                    Liberar Mesa
+                  </Button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 mt-8 justify-center w-full max-w-2xl">
@@ -1334,6 +1425,20 @@ export default function MesaMap() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* NUEVO: Modal de Reservas */}
+      {showReservaModal && selectedMesaForReserva && (
+        <ReservaModal
+          isOpen={showReservaModal}
+          onClose={() => {
+            console.log('🔍 Cerrando modal de reservas');
+            setShowReservaModal(false);
+            setSelectedMesaForReserva(null);
+          }}
+          mesa={selectedMesaForReserva}
+          sucursalId={id_sucursal}
+        />
+      )}
 
       {/* Custom Animations for a more dynamic feel */}
       <style>{`

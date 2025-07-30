@@ -149,10 +149,24 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
+  // Filtrar propiedades que no deberían pasarse al toast
+  const filteredProps = Object.fromEntries(
+    Object.entries(props).filter(([key, value]) => {
+      // Excluir propiedades que son números, valores nulos, o propiedades que no deberían ser atributos HTML
+      if (typeof value === 'number') return false;
+      if (value === null || value === undefined) return false;
+      if (typeof key === 'number') return false;
+      if (key === 'id' || key === 'title' || key === 'description' || key === 'action') return false;
+      // Excluir cualquier propiedad que contenga 'id' en el nombre
+      if (key.toLowerCase().includes('id')) return false;
+      return true;
+    })
+  );
+
   dispatch({
     type: "ADD_TOAST",
     toast: {
-      ...props,
+      ...filteredProps,
       id,
       open: true,
       onOpenChange: (open) => {

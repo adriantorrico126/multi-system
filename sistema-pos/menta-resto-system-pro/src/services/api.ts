@@ -7,11 +7,18 @@ const api = axios.create();
 api.interceptors.response.use(
   response => response,
   error => {
+    console.log('🔍 [API Interceptor] Error detectado:', error);
+    console.log('🔍 [API Interceptor] Error status:', error.response?.status);
+    console.log('🔍 [API Interceptor] Error data:', error.response?.data);
+    console.log('🔍 [API Interceptor] Error message:', error.response?.data?.message);
+    
     if (error.response && error.response.data && typeof error.response.data.message === 'string') {
       if (
         error.response.status === 401 || error.response.status === 403 ||
         error.response.data.message.toLowerCase().includes('jwt expired')
       ) {
+        console.log('🔍 [API Interceptor] Token expirado o error de autorización detectado');
+        console.log('🔍 [API Interceptor] Redirigiendo al login...');
         // Limpiar token y redirigir al login
         localStorage.removeItem('jwtToken');
         window.location.href = '/login?expired=1';
@@ -1245,6 +1252,148 @@ export const getPedidosPendientesAprobacion = async () => {
     if (error.response) {
       console.error('API: Error response:', error.response.data);
     }
+    throw error;
+  }
+};
+
+// ===== RESERVAS =====
+
+// Crear una nueva reserva
+export const crearReserva = async (reservaData: {
+  id_mesa: number;
+  id_cliente?: number;
+  fecha_hora_inicio: string;
+  fecha_hora_fin: string;
+  numero_personas: number;
+  observaciones?: string;
+  nombre_cliente?: string;
+  telefono_cliente?: string;
+  email_cliente?: string;
+}) => {
+  try {
+    console.log('API: Creando reserva:', reservaData);
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas`, reservaData);
+    console.log('API: Reserva creada:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creando reserva:', error);
+    throw error;
+  }
+};
+
+// Obtener reservas de una sucursal
+export const getReservas = async (id_sucursal: number, fecha?: string) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    let url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/sucursal/${id_sucursal}`;
+    if (fecha) {
+      url += `?fecha=${fecha}`;
+    }
+    
+    console.log('API: Obteniendo reservas para sucursal:', id_sucursal, 'fecha:', fecha);
+    const response = await api.get(url);
+    console.log('API: Reservas obtenidas:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo reservas:', error);
+    throw error;
+  }
+};
+
+// Obtener una reserva específica
+export const getReserva = async (id_reserva: number) => {
+  try {
+    console.log('API: Obteniendo reserva:', id_reserva);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/${id_reserva}`);
+    console.log('API: Reserva obtenida:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo reserva:', error);
+    throw error;
+  }
+};
+
+// Actualizar una reserva
+export const actualizarReserva = async (id_reserva: number, datosActualizados: any) => {
+  try {
+    console.log('API: Actualizando reserva:', id_reserva, datosActualizados);
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/${id_reserva}`, datosActualizados);
+    console.log('API: Reserva actualizada:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error actualizando reserva:', error);
+    throw error;
+  }
+};
+
+// Cancelar una reserva
+export const cancelarReserva = async (id_reserva: number, motivo?: string) => {
+  try {
+    const response = await api.patch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/${id_reserva}/cancelar`, { motivo });
+    return response.data;
+  } catch (error) {
+    console.error('Error al cancelar reserva:', error);
+    throw error;
+  }
+};
+
+// Eliminar una reserva
+export const eliminarReserva = async (id_reserva: number) => {
+  try {
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/${id_reserva}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar reserva:', error);
+    throw error;
+  }
+};
+
+// Obtener disponibilidad de mesas
+export const getDisponibilidadMesas = async (id_sucursal: number, fecha_hora_inicio: string, fecha_hora_fin: string) => {
+  try {
+    console.log('API: Obteniendo disponibilidad para sucursal:', id_sucursal, 'desde:', fecha_hora_inicio, 'hasta:', fecha_hora_fin);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/sucursal/${id_sucursal}/disponibilidad?fecha_hora_inicio=${fecha_hora_inicio}&fecha_hora_fin=${fecha_hora_fin}`);
+    console.log('API: Disponibilidad obtenida:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo disponibilidad:', error);
+    throw error;
+  }
+};
+
+// Obtener estadísticas de reservas
+export const getEstadisticasReservas = async (id_sucursal: number, fecha_inicio: string, fecha_fin: string) => {
+  try {
+    console.log('API: Obteniendo estadísticas de reservas para sucursal:', id_sucursal, 'desde:', fecha_inicio, 'hasta:', fecha_fin);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/sucursal/${id_sucursal}/estadisticas?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`);
+    console.log('API: Estadísticas obtenidas:', response.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    throw error;
+  }
+};
+
+// Obtener reservas por mesa
+export const getReservasByMesa = async (id_mesa: number) => {
+  try {
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/mesa/${id_mesa}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener reservas por mesa:', error);
+    throw error;
+  }
+};
+
+// Limpiar estados de mesas que no tienen reservas activas
+export const limpiarEstadosMesas = async () => {
+  try {
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/reservas/limpiar-estados-mesas`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al limpiar estados de mesas:', error);
     throw error;
   }
 };
