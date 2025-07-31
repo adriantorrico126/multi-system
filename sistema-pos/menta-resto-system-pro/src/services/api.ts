@@ -304,16 +304,27 @@ export const createUser = async (userData: {
 };
 
 // Productos
-export const getProducts = async () => {
+export const getProducts = async (aplicarDescuentos = true) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos?id_restaurante=${restauranteId}`);
+    
+    const params = new URLSearchParams();
+    params.append('id_restaurante', restauranteId.toString());
+    if (aplicarDescuentos) {
+      params.append('aplicarDescuentos', 'true');
+    }
+    
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos?${params.toString()}`);
+    
     // Map backend product structure to frontend Product interface
     return response.data.data.map((product: any) => ({
       id: product.id_producto.toString(),
       name: product.nombre,
-      price: parseFloat(product.precio),
+      price: parseFloat(product.precio_final || product.precio),
+      price_original: parseFloat(product.precio_original || product.precio),
+      discount_applied: product.descuento_aplicado || 0,
+      promotion_applied: product.promocion_aplicada || null,
       category: product.categoria_nombre, // Backend provides categoria_nombre
       id_categoria: product.id_categoria,
       stock_actual: product.stock_actual,
@@ -1394,6 +1405,142 @@ export const limpiarEstadosMesas = async () => {
     return response.data;
   } catch (error) {
     console.error('Error al limpiar estados de mesas:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// 🔹 SERVICIOS DE PROMOCIONES Y DESCUENTOS
+// ===================================
+
+// Crear una nueva promoción
+export const crearPromocion = async (promocionData: {
+  nombre: string;
+  tipo: 'porcentaje' | 'monto_fijo' | 'precio_fijo';
+  valor: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  id_producto: number;
+}) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones`, {
+      ...promocionData,
+      id_restaurante: restauranteId
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creando promoción:', error);
+    throw error;
+  }
+};
+
+// Obtener promociones activas
+export const getPromocionesActivas = async () => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/activas?id_restaurante=${restauranteId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo promociones activas:', error);
+    throw error;
+  }
+};
+
+// Obtener todas las promociones
+export const getTodasPromociones = async () => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones?id_restaurante=${restauranteId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo promociones:', error);
+    throw error;
+  }
+};
+
+// Calcular descuento para un producto
+export const calcularDescuento = async (id_producto: number, precio_original: number) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/calcular-descuento`, {
+      id_producto,
+      precio_original,
+      id_restaurante: restauranteId
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error calculando descuento:', error);
+    throw error;
+  }
+};
+
+// Aplicar descuentos a productos
+export const aplicarDescuentosAProductos = async (productos: any[]) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/aplicar-descuentos`, {
+      productos,
+      id_restaurante: restauranteId
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error aplicando descuentos:', error);
+    throw error;
+  }
+};
+
+// Actualizar promoción
+export const actualizarPromocion = async (id_promocion: number, datosActualizados: any) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/${id_promocion}`, {
+      ...datosActualizados,
+      id_restaurante: restauranteId
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error actualizando promoción:', error);
+    throw error;
+  }
+};
+
+// Eliminar promoción
+export const eliminarPromocion = async (id_promocion: number) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/${id_promocion}?id_restaurante=${restauranteId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error eliminando promoción:', error);
+    throw error;
+  }
+};
+
+// Verificar si un producto tiene promociones activas
+export const tienePromocionesActivas = async (id_producto: number) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/promociones/producto/${id_producto}/verificar?id_restaurante=${restauranteId}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error verificando promociones:', error);
     throw error;
   }
 };

@@ -50,6 +50,8 @@ const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
 startupLogger.logStep('grupoMesaRoutes', 'success');
 const reservaRoutes = require('./routes/reservaRoutes');
 startupLogger.logStep('reservaRoutes', 'success');
+const promocionRoutes = require('./routes/promocionRoutes');
+startupLogger.logStep('promocionRoutes', 'success');
 // const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
 // const pagoSuscripcionRoutes = require('./routes/pagoSuscripcionRoutes');
 
@@ -97,6 +99,8 @@ startupLogger.logStep('Ruta de prueba /api/v1/test-reservas', 'success');
 
 app.use('/api/v1/reservas', reservaRoutes);
 startupLogger.logStep('Ruta /api/v1/reservas', 'success');
+app.use('/api/v1/promociones', promocionRoutes);
+startupLogger.logStep('Ruta /api/v1/promociones', 'success');
 
 // app.use('/api/v1/metodos_pago', metodoPagoRoutes);
 // app.use('/api/v1/pagos_suscripcion', pagoSuscripcionRoutes);
@@ -124,6 +128,7 @@ app.use((req, res, next) => {
     console.log('🔍 [APP] - /api/v1/modificadores');
     console.log('🔍 [APP] - /api/v1/grupos-mesas');
     console.log('🔍 [APP] - /api/v1/reservas');
+    console.log('🔍 [APP] - /api/v1/promociones');
     return res.json({ message: 'Rutas listadas en consola' });
   }
   next();

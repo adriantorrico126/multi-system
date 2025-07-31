@@ -1,4 +1,5 @@
 const Producto = require('../models/productoModel');
+const PromocionModel = require('../models/promocionModel');
 const { validationResult } = require('express-validator');
 const logger = require('../config/logger'); // Importar el logger
 
@@ -6,6 +7,7 @@ exports.getAllProductos = async (req, res, next) => {
   try {
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
     const includeInactive = req.query.includeInactive === 'true';
+    const aplicarDescuentos = req.query.aplicarDescuentos === 'true';
     
     let productos;
     if (includeInactive) {
@@ -14,7 +16,18 @@ exports.getAllProductos = async (req, res, next) => {
       productos = await Producto.getAllProductos(id_restaurante);
     }
     
-    logger.info('Productos obtenidos exitosamente.', { id_restaurante, includeInactive });
+    // Aplicar descuentos si se solicita
+    if (aplicarDescuentos) {
+      try {
+        const id_sucursal = req.query.id_sucursal ? parseInt(req.query.id_sucursal) : null;
+        productos = await PromocionModel.aplicarDescuentosAProductos(productos, id_restaurante, id_sucursal);
+      } catch (error) {
+        logger.warn('Error aplicando descuentos a productos:', error);
+        // Continuar sin descuentos si hay error
+      }
+    }
+    
+    logger.info('Productos obtenidos exitosamente.', { id_restaurante, includeInactive, aplicarDescuentos });
     res.status(200).json({
       message: 'Productos obtenidos exitosamente.',
       data: productos

@@ -1,51 +1,59 @@
-const db = require('./src/config/database');
+const { pool } = require('./src/config/database');
 
 async function checkProducts() {
   try {
-    console.log('🔍 Verificando productos en la base de datos...');
+    console.log('🔍 Verificando productos existentes...');
     
-    // Verificar todos los productos
-    const result = await db.query('SELECT * FROM productos ORDER BY id_producto');
+    // Verificar productos disponibles
+    const productsQuery = `
+      SELECT id_producto, nombre, precio, activo
+      FROM productos
+      ORDER BY id_producto
+      LIMIT 10;
+    `;
     
-    console.log('\n📊 Productos encontrados:');
-    console.log('Total de productos:', result.rows.length);
-    
-    if (result.rows.length === 0) {
-      console.log('❌ No hay productos registrados en la base de datos.');
-      console.log('💡 Insertando productos de ejemplo...');
-      
-      // Insertar productos de ejemplo
-      const insertResult = await db.query(`
-        INSERT INTO productos (nombre, precio, id_categoria, stock_actual, activo, id_restaurante) VALUES 
-        ('Hamburguesa Vegetariana', 25.00, 1, 10, true, 1),
-        ('Pizza Margherita', 30.00, 1, 8, true, 1),
-        ('Ensalada César', 15.00, 2, 15, true, 1),
-        ('Sopa de Verduras', 12.00, 2, 20, true, 1),
-        ('Refresco Natural', 8.00, 3, 25, true, 1)
-        ON CONFLICT (id_restaurante, nombre) DO NOTHING
-        RETURNING *
-      `);
-      
-      console.log('✅ Productos insertados:', insertResult.rows);
-    } else {
-      console.log('\n📋 Lista de productos:');
-      result.rows.forEach((row, index) => {
-        console.log(`${index + 1}. ID: ${row.id_producto}, Nombre: "${row.nombre}", Precio: Bs ${row.precio}, Categoría: ${row.id_categoria}, Stock: ${row.stock_actual}, Activo: ${row.activo}`);
-      });
-    }
-    
-    // Verificar categorías
-    console.log('\n📂 Categorías disponibles:');
-    const categoriasResult = await db.query('SELECT * FROM categorias WHERE id_restaurante = 1 ORDER BY id_categoria');
-    categoriasResult.rows.forEach((cat, index) => {
-      console.log(`${index + 1}. ID: ${cat.id_categoria}, Nombre: "${cat.nombre}", Activo: ${cat.activo}`);
+    const { rows: products } = await pool.query(productsQuery);
+    console.log('📋 Productos disponibles:');
+    products.forEach(product => {
+      console.log(`   - ID: ${product.id_producto}, Nombre: ${product.nombre}, Precio: $${product.precio}, Activo: ${product.activo}`);
     });
+    
+    // Contar total de productos
+    const countQuery = `
+      SELECT COUNT(*) as total_productos
+      FROM productos;
+    `;
+    
+    const { rows: count } = await pool.query(countQuery);
+    console.log(`📊 Total de productos: ${count[0].total_productos}`);
+    
+    // Verificar productos activos
+    const activeQuery = `
+      SELECT COUNT(*) as activos
+      FROM productos
+      WHERE activo = true;
+    `;
+    
+    const { rows: active } = await pool.query(activeQuery);
+    console.log(`📊 Productos activos: ${active[0].activos}`);
+    
+    if (products.length === 0) {
+      console.log('⚠️  No hay productos en la base de datos');
+      console.log('💡 Necesitas crear productos antes de crear promociones');
+    } else {
+      console.log('✅ Productos encontrados, puedes usar estos IDs para las promociones');
+    }
     
   } catch (error) {
     console.error('❌ Error verificando productos:', error);
   } finally {
-    await db.pool.end();
+    await pool.end();
   }
 }
 
-checkProducts(); 
+// Ejecutar si se llama directamente
+if (require.main === module) {
+  checkProducts();
+}
+
+module.exports = { checkProducts }; 

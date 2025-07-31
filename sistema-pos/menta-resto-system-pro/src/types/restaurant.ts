@@ -1,12 +1,15 @@
 export interface Product {
   id: string; // Mapped from id_producto
   name: string; // Mapped from nombre
-  price: number; // Mapped from precio
+  price: number; // Mapped from precio_final or precio
+  price_original?: number; // Mapped from precio_original
   category: string; // Mapped from id_categoria (nombre de la categoria)
   id_categoria: number; // Backend category ID
   stock_actual: number; // Mapped from stock_actual
   available: boolean; // Mapped from activo
   imagen_url?: string; // Mapped from imagen_url
+  discount_applied?: number; // Mapped from descuento_aplicado
+  promotion_applied?: any; // Mapped from promocion_aplicada
 }
 
 export interface Category {
@@ -18,6 +21,7 @@ export interface CartItem extends Product {
   quantity: number;
   notes?: string;
   originalId?: string; // ID original del producto (para cuando el item del carrito tiene un ID único)
+  originalPrice?: number; // ✅ Precio original del producto (antes de descuentos)
   modificadores?: any[]; // Modificadores seleccionados para este ítem
 }
 
@@ -32,6 +36,21 @@ export interface Sale {
   mesa_numero?: number;
   tipo_servicio?: 'Mesa' | 'Delivery' | 'Para Llevar';
   invoiceData?: InvoiceData;
+  // Información de promociones aplicadas
+  appliedPromociones?: Promocion[];
+  subtotal?: number; // Subtotal antes de descuentos
+  totalDescuentos?: number; // Total de descuentos aplicados
+}
+
+export interface Promocion {
+  id_promocion: number;
+  nombre: string;
+  tipo: 'porcentaje' | 'monto_fijo' | 'precio_fijo';
+  valor: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  id_producto: number;
+  nombre_producto?: string;
 }
 
 export interface InvoiceData {

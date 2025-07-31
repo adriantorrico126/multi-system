@@ -40,11 +40,17 @@ import {
   DollarSign,
   User,
   Shield,
-  Zap
+  Zap,
+  Sparkles,
+  TrendingDown,
+  Minus,
+  Plus,
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { KitchenView } from '../../pages/KitchenView';
@@ -56,6 +62,8 @@ import { Switch } from '@/components/ui/switch';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import { PedidosMeseroCajero } from './PedidosMeseroCajero';
+import { PromocionManagement } from '../promociones/PromocionManagement';
+import { PromocionCart } from '../promociones/PromocionCart';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -203,6 +211,7 @@ export function POSSystem() {
   const [mesaNumero, setMesaNumero] = useState<number | null>(null);
   const [tipoServicio, setTipoServicio] = useState<'Mesa' | 'Delivery' | 'Para Llevar'>('Mesa');
   const [activeDashboardSubTab, setActiveDashboardSubTab] = useState<string>('summary');
+  const [appliedPromociones, setAppliedPromociones] = useState<any[]>([]);
 
   // --- React Query: Gestión de Datos Asíncronos ---
 
@@ -223,6 +232,12 @@ export function POSSystem() {
     queryFn: getProducts,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+  });
+
+  // Obtener promociones activas
+  const { data: promociones = [], isLoading: promocionesLoading } = useQuery({
+    queryKey: ['promociones-activas'],
+    queryFn: getPromocionesActivas,
   });
 
   // Obtener categorías de productos
@@ -331,6 +346,7 @@ export function POSSystem() {
   /**
    * Añade un producto al carrito. Si el producto ya existe (con las mismas notas),
    * incrementa su cantidad; de lo contrario, lo añade como un nuevo ítem.
+   * Las promociones se aplican automáticamente.
    */
   const addToCart = useCallback((product: Product, notes?: string) => {
     setCart((currentCart) => {
@@ -340,17 +356,73 @@ export function POSSystem() {
           item.id === product.id && item.notes === notes ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
+      
       // Crear un ID único para el item del carrito
       const cartItemId = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      return [...currentCart, { 
+      
+      // ✅ Verificar si el producto ya viene con descuento del backend
+      const precioOriginal = product.price_original || product.price;
+      const precioConDescuento = product.price;
+      const tieneDescuentoBackend = product.price_original && product.price_original !== product.price;
+      
+      const newItem = { 
         ...product, 
         id: cartItemId, // Usar el ID único del carrito
         originalId: product.id, // Mantener el ID original del producto
+        originalPrice: precioOriginal, // ✅ Usar precio original del backend
+        price: precioConDescuento, // ✅ Usar precio con descuento del backend
         quantity: 1, 
         notes: notes || '' 
-      }];
+      };
+      
+      // ✅ Solo aplicar promociones si NO viene con descuento del backend
+      if (!tieneDescuentoBackend) {
+        const promocionesAplicables = promociones.filter(promocion => 
+          promocion.id_producto.toString() === product.id || 
+          promocion.id_producto === parseInt(product.id)
+        );
+        
+        if (promocionesAplicables.length > 0) {
+          // Aplicar la primera promoción disponible automáticamente
+          const promocion = promocionesAplicables[0];
+          let newPrice = precioOriginal;
+          
+          switch (promocion.tipo) {
+            case 'porcentaje':
+              newPrice = precioOriginal * (1 - promocion.valor / 100);
+              break;
+            case 'monto_fijo':
+              newPrice = Math.max(0, precioOriginal - promocion.valor);
+              break;
+            case 'precio_fijo':
+              newPrice = promocion.valor;
+              break;
+            default:
+              newPrice = precioOriginal;
+          }
+          
+          const itemConPromocion = {
+            ...newItem,
+            price: newPrice,
+            originalPrice: precioOriginal,
+            appliedPromocion: promocion
+          };
+          
+          // Agregar la promoción a la lista de promociones aplicadas
+          setAppliedPromociones(prev => [...prev, promocion]);
+          
+          return [...currentCart, itemConPromocion];
+        }
+      } else {
+        // ✅ Si viene con descuento del backend, agregar la promoción aplicada
+        if (product.promotion_applied) {
+          setAppliedPromociones(prev => [...prev, product.promotion_applied]);
+        }
+      }
+      
+      return [...currentCart, newItem];
     });
-  }, []);
+  }, [promociones]);
 
   /**
    * Actualiza la cantidad de un ítem específico en el carrito.
@@ -361,7 +433,12 @@ export function POSSystem() {
       setCart((currentCart) => currentCart.filter((item) => item.id !== id));
       return;
     }
-    setCart((currentCart) => currentCart.map((item) => (item.id === id ? { ...item, quantity } : item)));
+    setCart((currentCart) => currentCart.map((item) => (item.id === id ? { 
+      ...item, 
+      quantity,
+      // ✅ Mantener el precio original al actualizar cantidad
+      originalPrice: item.originalPrice || item.price
+    } : item)));
   }, []);
 
   /**
@@ -370,6 +447,10 @@ export function POSSystem() {
   const removeFromCart = useCallback((id: string) => {
     setCart((currentCart) => currentCart.filter((item) => item.id !== id));
   }, []);
+
+
+
+
 
   // --- Funciones de Gestión de Ventas y Pedidos ---
 
@@ -420,6 +501,34 @@ export function POSSystem() {
           return;
         }
       }
+      
+      // Calcular subtotal y descuentos
+      const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const totalDescuentos = appliedPromociones.reduce((sum, promocion) => {
+                                    const itemsAplicables = cart.filter(item => 
+                              item.id === promocion.id_producto.toString() || 
+                              item.originalId === promocion.id_producto.toString() || 
+                              parseInt(item.id) === promocion.id_producto
+                            );
+        return sum + itemsAplicables.reduce((itemSum, item) => {
+          let descuento = 0;
+          switch (promocion.tipo) {
+            case 'porcentaje':
+              descuento = (item.price * promocion.valor / 100) * item.quantity;
+              break;
+            case 'monto_fijo':
+              descuento = Math.min(promocion.valor, item.price) * item.quantity;
+              break;
+            case 'precio_fijo':
+              descuento = Math.max(0, item.price - promocion.valor) * item.quantity;
+              break;
+          }
+          return itemSum + descuento;
+        }, 0);
+      }, 0);
+      
+      const totalFinal = subtotal - totalDescuentos;
+
       // Log del payload antes de enviar
       console.log('Payload a enviar:', {
         items: cart.map((item) => ({
@@ -429,7 +538,10 @@ export function POSSystem() {
           notes: item.notes,
           modificadores: item.modificadores || []
         })),
-        total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        total: totalFinal,
+        subtotal: subtotal,
+        totalDescuentos: totalDescuentos,
+        appliedPromociones: appliedPromociones.length > 0 ? appliedPromociones : undefined,
         paymentMethod,
         cashier: user?.username || 'Desconocido',
         id_sucursal: selectedBranchId!,
@@ -442,7 +554,10 @@ export function POSSystem() {
       const newSale: Sale = {
         id: Date.now().toString(), // ID temporal, será reemplazado por el del backend
         items: [...cart],
-        total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        total: totalFinal,
+        subtotal: subtotal,
+        totalDescuentos: totalDescuentos,
+        appliedPromociones: appliedPromociones.length > 0 ? [...appliedPromociones] : undefined,
         paymentMethod,
         timestamp: new Date(),
         cashier: user?.username || 'Desconocido',
@@ -982,6 +1097,16 @@ export function POSSystem() {
               Dashboard
             </Button>
           )}
+          {(user.rol === 'admin' || user.rol === 'super_admin') && (
+            <Button
+              variant={activeTab === 'promociones' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('promociones')}
+              className="rounded-xl transition-all duration-200"
+            >
+              <Tag className="h-5 w-5 mr-2" />
+              Promociones
+            </Button>
+          )}
         </div>
       </nav>
 
@@ -1064,7 +1189,7 @@ export function POSSystem() {
         <div className="flex-1 overflow-auto">
           {/* Vista de Punto de Venta (POS) */}
           {activeTab === 'pos' && (
-            <div className="flex flex-col h-full p-6">
+            <div className="flex flex-col h-full p-6 min-w-0">
               {/* Buscador de productos */}
               <div className="w-full mb-4">
                 <div className="relative w-full">
@@ -1209,105 +1334,325 @@ export function POSSystem() {
               )}
             </div>
           )}
+
+          {/* Vista de Mesero */}
+          {activeTab === 'mesero' && user?.rol === 'cajero' && (
+            <div className="p-6">
+              <PedidosMeseroCajero />
+            </div>
+          )}
+
+          {/* Vista de Pedidos Pendientes */}
+          {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (
+            <div className="p-6">
+              <PedidosPendientesCajero />
+            </div>
+          )}
+
+          {/* Vista de Promociones */}
+          {activeTab === 'promociones' && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
+            <div className="p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                <PromocionManagement />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS */}
         {activeTab === 'pos' && (
-          <aside className="w-96 bg-white/90 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-xl flex flex-col">
-            {/* Contenedor scrollable para el carrito y opciones */}
-            <div className="flex-1 overflow-y-auto">
-              <Cart
-                items={cart}
-                onUpdateQuantity={updateQuantity}
-                onRemoveItem={removeFromCart}
-                onCheckout={() => setShowCheckout(true)}
-              />
+          <aside className="w-95 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex flex-col flex-shrink-0">
+            {/* Header del Carrito */}
+            <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                    <ShoppingCart className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-800">Carrito de Compras</h3>
+                    <p className="text-xs text-gray-600">{cart.length} producto{cart.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                {appliedPromociones.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Sparkles className="h-3 w-3 text-yellow-500" />
+                    <span className="text-xs text-yellow-600 font-medium">{appliedPromociones.length}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Total Principal */}
+              <div className="text-right">
+                <div className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  <span translate="no">Bs</span> {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                </div>
+                {appliedPromociones.length > 0 && (
+                  <div className="flex items-center justify-end gap-1 text-xs text-green-600">
+                    <TrendingDown className="h-2.5 w-2.5" />
+                    <span>Promociones aplicadas</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-              <div className="mt-6 space-y-4">
-                {/* Selector de Tipo de Servicio */}
+            {/* Contenido Scrollable */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="p-4 space-y-3">
+                {/* Lista de Productos */}
+                {cart.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <ShoppingCart className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-1">Carrito Vacío</h3>
+                    <p className="text-gray-500 text-xs">Agrega productos para comenzar</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {cart.map((item, index) => {
+                      const promocionesAplicadas = appliedPromociones.filter(promocion => 
+                        item.id_producto === promocion.id_producto || 
+                        parseInt(item.id) === promocion.id_producto
+                      );
+                      
+                      const tienePromocion = promocionesAplicadas.length > 0;
+                      
+                      return (
+                        <div 
+                          key={`${item.id}-${index}-${item.notes || ''}`} 
+                          className={`relative p-3 rounded-lg transition-all duration-300 ${
+                            tienePromocion 
+                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 shadow-sm' 
+                              : 'bg-white border border-gray-200 shadow-sm hover:shadow-md'
+                          }`}
+                        >
+                          {/* Badge de Promoción */}
+                          {tienePromocion && (
+                            <div className="absolute -top-1 -right-1 z-10">
+                              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-1 py-0.5 shadow-lg">
+                                <Sparkles className="h-2 w-2 mr-0.5" />
+                                Promo
+                              </Badge>
+                            </div>
+                          )}
+                          
+                                                     <div className="flex items-start gap-3">
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-start justify-between mb-1">
+                                 <h4 className={`font-semibold text-sm truncate ${tienePromocion ? 'text-green-800' : 'text-gray-800'}`}>
+                                   {item.name}
+                                 </h4>
+                                 <div className="text-right flex-shrink-0">
+                                   <p className={`text-sm font-semibold ${tienePromocion ? 'text-green-600' : 'text-gray-600'}`}>
+                                     Bs {item.price}
+                                   </p>
+                                   {tienePromocion && (
+                                     <p className="text-xs text-green-600 font-bold">
+                                       -{promocionesAplicadas[0].valor}%
+                                     </p>
+                                   )}
+                                 </div>
+                               </div>
+                              
+                              {/* Notas */}
+                              {item.notes && (
+                                <p className="text-xs text-gray-600 italic mb-1 bg-gray-50 px-1.5 py-0.5 rounded">
+                                  📝 {item.notes}
+                                </p>
+                              )}
+                              
+                              {/* Modificadores */}
+                              {item.modificadores && item.modificadores.length > 0 && (
+                                <div className="mb-1">
+                                  <ul className="text-xs text-blue-600 space-y-0.5">
+                                    {item.modificadores.slice(0, 2).map((mod, idx) => (
+                                      <li key={mod.id_modificador || idx} className="flex items-center gap-1">
+                                        <CheckCircle className="h-2 w-2" />
+                                        <span className="truncate">{mod.nombre_modificador}</span>
+                                        {mod.precio_extra > 0 && (
+                                          <span className="text-green-600 font-medium text-xs">
+                                            +Bs {mod.precio_extra}
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))}
+                                    {item.modificadores.length > 2 && (
+                                      <li className="text-xs text-gray-500">
+                                        +{item.modificadores.length - 2} más...
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                            
+                                                         {/* Controles */}
+                             <div className="flex items-center gap-1.5 flex-shrink-0">
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                                 className="h-6 w-6 p-0 bg-white border-gray-300 shadow-sm hover:shadow-md"
+                               >
+                                 <Minus className="h-3 w-3" />
+                               </Button>
+                               
+                               <span className="w-8 text-center text-sm font-bold text-gray-700">
+                                 {item.quantity}
+                               </span>
+                               
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                 className="h-6 w-6 p-0 bg-white border-gray-300 shadow-sm hover:shadow-md"
+                               >
+                                 <Plus className="h-3 w-3" />
+                               </Button>
+                               
+                               <Button
+                                 variant="destructive"
+                                 size="sm"
+                                 onClick={() => removeFromCart(item.id)}
+                                 className="h-6 w-6 p-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-sm hover:shadow-md"
+                               >
+                                 <Trash2 className="h-3 w-3" />
+                               </Button>
+                             </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* Promociones */}
+                                {cart.length > 0 && (
+                  <div className="border-t border-gray-200/50 pt-3">
+                    <PromocionCart
+                      cartItems={cart}
+                      appliedPromociones={appliedPromociones}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer con Opciones de Servicio */}
+            {cart.length > 0 && (
+              <div className="border-t border-gray-200/50 bg-gradient-to-r from-gray-50 to-white p-3 space-y-3">
+                {/* Resumen de Total */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-600">Subtotal:</span>
+                    <span className="text-xs font-semibold text-gray-700">
+                      <span translate="no">Bs</span> {cart.reduce((sum, item) => {
+                        // Usar el precio original si existe, sino el precio actual
+                        const precioOriginal = item.originalPrice || item.price;
+                        return sum + (precioOriginal * item.quantity);
+                      }, 0).toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  {appliedPromociones.length > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium text-green-600 flex items-center gap-1">
+                        <TrendingDown className="h-2.5 w-2.5" />
+                        Descuentos:
+                      </span>
+                      <span className="text-xs font-semibold text-green-600">
+                        -<span translate="no">Bs</span> {appliedPromociones.reduce((sum, promocion) => {
+                          const itemsAplicables = cart.filter(item => 
+                            item.id === promocion.id_producto.toString() || 
+                            item.originalId === promocion.id_producto.toString() || 
+                            parseInt(item.id) === promocion.id_producto
+                          );
+                          
+                          return sum + itemsAplicables.reduce((itemSum, item) => {
+                            // Usar el precio original para calcular el descuento
+                            const precioOriginal = item.originalPrice || item.price;
+                            let descuento = 0;
+                            switch (promocion.tipo) {
+                              case 'porcentaje':
+                                descuento = (precioOriginal * promocion.valor / 100) * item.quantity;
+                                break;
+                              case 'monto_fijo':
+                                descuento = Math.min(promocion.valor, precioOriginal) * item.quantity;
+                                break;
+                              case 'precio_fijo':
+                                descuento = Math.max(0, precioOriginal - promocion.valor) * item.quantity;
+                                break;
+                            }
+                            return itemSum + descuento;
+                          }, 0);
+                        }, 0).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center pt-1 border-t border-gray-200">
+                    <span className="text-sm font-bold text-gray-800">Total Final:</span>
+                    <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                      <span translate="no">Bs</span> {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tipo de Servicio */}
                 <div>
-                  <label htmlFor="service-type" className="block text-sm font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Tipo de Servicio
                   </label>
                   <select
-                    id="service-type"
                     value={tipoServicio}
                     onChange={(e) => {
                       const newTipo = e.target.value as 'Mesa' | 'Delivery' | 'Para Llevar';
                       setTipoServicio(newTipo);
                       if (newTipo !== 'Mesa') {
-                        setMesaNumero(null); // Limpiar número de mesa si no es servicio de mesa
+                        setMesaNumero(null);
                       }
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all"
+                    className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all text-xs"
                   >
                     <option value="Mesa">🍽️ En Mesa</option>
-                    <option value="Delivery">🚚 Delivery (Entrega a domicilio)</option>
-                    <option value="Para Llevar">📦 Para Llevar (Cliente recoge)</option>
+                    <option value="Delivery">🚚 Delivery</option>
+                    <option value="Para Llevar">📦 Para Llevar</option>
                   </select>
                 </div>
 
-                {/* Input de Número de Mesa (Condicional) */}
+                {/* Número de Mesa */}
                 {tipoServicio === 'Mesa' && (
                   <div>
-                    <label htmlFor="mesa-numero" className="block text-sm font-semibold text-gray-800 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Número de Mesa <span className="text-red-500">*</span>
                     </label>
-                    <Input
-                      id="mesa-numero"
+                    <input
                       type="number"
                       placeholder="Ej. 5"
                       value={mesaNumero === null ? '' : mesaNumero}
                       onChange={(e) => setMesaNumero(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm text-xs"
                       required
                       min="1"
                     />
                   </div>
                 )}
 
-                {/* Indicadores de Tipo de Servicio */}
-                {tipoServicio === 'Delivery' && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
-                    <span className="text-2xl">🚚</span>
-                    <div>
-                      <p className="text-sm text-blue-800 font-bold">Servicio a Domicilio</p>
-                      <p className="text-xs text-blue-600">Prepara el pedido para ser enviado al cliente.</p>
-                    </div>
+                {/* Botón de Checkout */}
+                <Button
+                  onClick={() => setShowCheckout(true)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg transition-all duration-200 py-2 text-sm font-semibold"
+                  size="sm"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-1" />
+                  Procesar Venta
+                </Button>
                   </div>
                 )}
-                {tipoServicio === 'Para Llevar' && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                    <span className="text-2xl">🛍️</span>
-                    <div>
-                      <p className="text-sm text-green-800 font-bold">Para Recoger en Local</p>
-                      <p className="text-xs text-green-600">El cliente pasará a recoger su pedido.</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Indicador de scroll cuando hay muchos productos */}
-                {cart.length > 3 && (
-                  <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
-                    <span className="text-yellow-600">📜</span>
-                    <p className="text-xs text-yellow-700">
-                      <strong>Tip:</strong> Usa el scroll para ver todas las opciones de servicio
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
           </aside>
         )}
-        {activeTab === 'mesero' && user?.rol === 'cajero' && (
-  <PedidosMeseroCajero />
-)}
-        {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (
-          <PedidosPendientesCajero />
-        )}
       </main>
-
-      {/* Modals Globales */}
       {showCheckout && (
         <CheckoutModal
           items={cart}
