@@ -30,6 +30,185 @@ interface Movement {
   vendedor_username: string;
 }
 
+interface Lote {
+  id_lote: number;
+  id_producto: number;
+  numero_lote: string;
+  cantidad_inicial: number;
+  cantidad_actual: number;
+  fecha_fabricacion: string;
+  fecha_caducidad: string;
+  precio_compra: number;
+  id_restaurante: number;
+}
+
+const InventarioLotesManagement: React.FC = () => {
+  const [lotes, setLotes] = useState<Lote[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedLote, setSelectedLote] = useState<Lote | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const fetchLotes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/inventario-lotes`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setLotes(response.data.data || []);
+    } catch (err) {
+      setError('Error al cargar los lotes.');
+      toast.error('Error', { description: 'Error al cargar los lotes.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLotes();
+  }, []);
+
+  const handleSave = async (loteData: Lote) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('jwtToken');
+      if (selectedLote) {
+        await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${selectedLote.id_lote}`, loteData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        toast.success('Lote actualizado');
+      } else {
+        await api.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/inventario-lotes`, loteData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        toast.success('Lote creado');
+      }
+      fetchLotes();
+      setIsDialogOpen(false);
+    } catch (err) {
+      setError('Error al guardar el lote.');
+      toast.error('Error', { description: 'Error al guardar el lote.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex justify-between items-center">
+        <CardTitle>Gestión de Lotes de Inventario</CardTitle>
+        <Button onClick={() => {
+          setSelectedLote(null);
+          setIsDialogOpen(true);
+        }}>Crear Lote</Button>
+      </CardHeader>
+      <CardContent>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {loading ? (
+          <p>Cargando...</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Producto ID</TableHead>
+                <TableHead>Número de Lote</TableHead>
+                <TableHead>Cantidad Actual</TableHead>
+                <TableHead>Fecha de Caducidad</TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lotes.map((lote) => (
+                <TableRow key={lote.id_lote}>
+                  <TableCell>{lote.id_producto}</TableCell>
+                  <TableCell>{lote.numero_lote}</TableCell>
+                  <TableCell>{lote.cantidad_actual}</TableCell>
+                  <TableCell>{new Date(lote.fecha_caducidad).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedLote(lote);
+                      setIsDialogOpen(true);
+                    }}>
+                      Editar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+      <LoteDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSave={handleSave}
+        lote={selectedLote}
+      />
+    </Card>
+  );
+};
+
+interface LoteDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (lote: Lote) => void;
+  lote: Lote | null;
+}
+
+const LoteDialog: React.FC<LoteDialogProps> = ({ isOpen, onClose, onSave, lote }) => {
+  const [formData, setFormData] = useState<Partial<Lote>>(lote || {});
+
+  useEffect(() => {
+    setFormData(lote || {});
+  }, [lote]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSave = () => {
+    onSave(formData as Lote);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{lote ? 'Editar Lote' : 'Crear Lote'}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Label>Producto ID</Label>
+          <Input name="id_producto" type="number" value={formData.id_producto || ''} onChange={handleChange} />
+          <Label>Número de Lote</Label>
+          <Input name="numero_lote" value={formData.numero_lote || ''} onChange={handleChange} />
+          <Label>Cantidad Inicial</Label>
+          <Input name="cantidad_inicial" type="number" value={formData.cantidad_inicial || ''} onChange={handleChange} />
+          <Label>Cantidad Actual</Label>
+          <Input name="cantidad_actual" type="number" value={formData.cantidad_actual || ''} onChange={handleChange} />
+          <Label>Fecha de Fabricación</Label>
+          <Input name="fecha_fabricacion" type="date" value={formData.fecha_fabricacion || ''} onChange={handleChange} />
+          <Label>Fecha de Caducidad</Label>
+          <Input name="fecha_caducidad" type="date" value={formData.fecha_caducidad || ''} onChange={handleChange} />
+          <Label>Precio de Compra</Label>
+          <Input name="precio_compra" type="number" value={formData.precio_compra || ''} onChange={handleChange} />
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSave}>Guardar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const InventoryPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +221,7 @@ const InventoryPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [changeAmount, setChangeAmount] = useState<string>('');
   const [movementType, setMovementType] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'productos' | 'lotes'>('productos');
 
   const fetchInventoryData = async () => {
     setLoading(true);
@@ -53,8 +233,6 @@ const InventoryPage: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Frontend: Inventory response:', inventoryResponse.data);
-      console.log('Frontend: Inventory data sample:', inventoryResponse.data.data?.slice(0, 2));
       setInventory(inventoryResponse.data.data || []);
 
       const movementsResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
@@ -75,9 +253,11 @@ const InventoryPage: React.FC = () => {
 
   useEffect(() => {
     if (role === 'admin' || role === 'gerente') {
-      fetchInventoryData();
+      if (activeTab === 'productos') {
+        fetchInventoryData();
+      }
     }
-  }, [role]);
+  }, [role, activeTab]);
 
   const handleUpdateStock = async () => {
     if (!selectedProduct || !changeAmount || !movementType) {
@@ -132,17 +312,33 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Inventario</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Gestión de Inventario</h1>
+        <div className="flex gap-2">
+          <Button
+            variant={activeTab === 'productos' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('productos')}
+          >
+            Productos
+          </Button>
+          <Button
+            variant={activeTab === 'lotes' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('lotes')}
+          >
+            Lotes
+          </Button>
+        </div>
+      </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {loading && (
         <div className="flex items-center justify-center p-8">
-          <p>Cargando datos de inventario...</p>
+          <p>Cargando datos...</p>
         </div>
       )}
 
-      {!loading && (
+      {!loading && activeTab === 'productos' && (
         <>
           <Card className="mb-6">
             <CardHeader>
@@ -256,6 +452,9 @@ const InventoryPage: React.FC = () => {
             </CardContent>
           </Card>
         </>
+      )}
+      {!loading && activeTab === 'lotes' && (
+        <InventarioLotesManagement />
       )}
     </div>
   );

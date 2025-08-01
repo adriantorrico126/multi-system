@@ -1,12 +1,35 @@
+admin_users	id	integer
+admin_users	username	character varying
+admin_users	password_hash	character varying
+admin_users	nombre	character varying
+admin_users	activo	boolean
+admin_users	creado_en	timestamp without time zone
+admin_users	actualizado_en	timestamp without time zone
+auditoria_admin	id_auditoria	integer
+auditoria_admin	id_usuario	integer
+auditoria_admin	accion	character varying
+auditoria_admin	tabla_afectada	character varying
+auditoria_admin	id_registro	integer
+auditoria_admin	datos_anteriores	jsonb
+auditoria_admin	datos_nuevos	jsonb
+auditoria_admin	fecha_accion	timestamp without time zone
 categorias	id_categoria	integer
 categorias	nombre	character varying
 categorias	activo	boolean
 categorias	created_at	timestamp without time zone
+categorias	id_restaurante	integer
 clientes	id_cliente	integer
 clientes	nombre	character varying
 clientes	telefono	character varying
 clientes	email	character varying
 clientes	fecha_registro	timestamp without time zone
+detalle_pedido_proveedor	id_detalle_pedido	integer
+detalle_pedido_proveedor	id_pedido_proveedor	integer
+detalle_pedido_proveedor	id_ingrediente	integer
+detalle_pedido_proveedor	cantidad_solicitada	numeric
+detalle_pedido_proveedor	cantidad_recibida	numeric
+detalle_pedido_proveedor	precio_compra	numeric
+detalle_pedido_proveedor	created_at	timestamp without time zone
 detalle_ventas	id_detalle	integer
 detalle_ventas	id_venta	integer
 detalle_ventas	id_producto	integer
@@ -15,6 +38,11 @@ detalle_ventas	precio_unitario	numeric
 detalle_ventas	subtotal	numeric
 detalle_ventas	observaciones	text
 detalle_ventas	created_at	timestamp without time zone
+detalle_ventas	id_restaurante	integer
+detalle_ventas_modificadores	id_detalle_venta	integer
+detalle_ventas_modificadores	id_modificador	integer
+detalle_ventas_modificadores	precio_aplicado	numeric
+detalle_ventas_modificadores	created_at	timestamp without time zone
 dim_tiempo	id_tiempo	integer
 dim_tiempo	fecha	date
 dim_tiempo	dia	integer
@@ -31,6 +59,63 @@ facturas	razon_social	character varying
 facturas	total	numeric
 facturas	fecha	timestamp without time zone
 facturas	id_venta	integer
+grupos_mesas	id_grupo_mesa	integer
+grupos_mesas	id_restaurante	integer
+grupos_mesas	id_sucursal	integer
+grupos_mesas	id_venta_principal	integer
+grupos_mesas	estado	character varying
+grupos_mesas	created_at	timestamp without time zone
+grupos_mesas	updated_at	timestamp without time zone
+grupos_mesas	id_mesero	integer
+ingredientes	id_ingrediente	integer
+ingredientes	nombre	character varying
+ingredientes	unidad_medida	character varying
+ingredientes	stock_actual	numeric
+ingredientes	stock_minimo	numeric
+ingredientes	costo_unitario	numeric
+ingredientes	activo	boolean
+ingredientes	id_restaurante	integer
+ingredientes	created_at	timestamp without time zone
+ingredientes	updated_at	timestamp without time zone
+ingredientes	fecha_adquisicion	date
+ingredientes	fecha_caducidad	date
+ingredientes	lote_numero	character varying
+ingredientes	proveedor_id	integer
+ingredientes	precio_adquisicion	numeric
+ingredientes_stock_bajo	id_ingrediente	integer
+ingredientes_stock_bajo	nombre	character varying
+ingredientes_stock_bajo	stock_actual	numeric
+ingredientes_stock_bajo	stock_minimo	numeric
+ingredientes_stock_bajo	unidad_medida	character varying
+ingredientes_stock_bajo	id_restaurante	integer
+insumos	id_insumo	integer
+insumos	nombre	character varying
+insumos	stock_actual	numeric
+insumos	unidades	character varying
+insumos	precio	numeric
+insumos	id_categoria	integer
+insumos	fecha_compra	date
+insumos	fecha_vencimiento	date
+insumos	created_at	timestamp without time zone
+insumos	updated_at	timestamp without time zone
+inventario_lotes	id_lote	integer
+inventario_lotes	id_producto	integer
+inventario_lotes	numero_lote	character varying
+inventario_lotes	cantidad_inicial	numeric
+inventario_lotes	cantidad_actual	numeric
+inventario_lotes	fecha_fabricacion	date
+inventario_lotes	fecha_caducidad	date
+inventario_lotes	precio_compra	numeric
+inventario_lotes	activo	boolean
+inventario_lotes	id_restaurante	integer
+inventario_lotes	created_at	timestamp without time zone
+lotes_proximos_caducar	id_lote	integer
+lotes_proximos_caducar	numero_lote	character varying
+lotes_proximos_caducar	producto_nombre	character varying
+lotes_proximos_caducar	cantidad_actual	numeric
+lotes_proximos_caducar	fecha_caducidad	date
+lotes_proximos_caducar	id_restaurante	integer
+lotes_proximos_caducar	dias_restantes	integer
 mesas	id_mesa	integer
 mesas	numero	integer
 mesas	id_sucursal	integer
@@ -42,9 +127,28 @@ mesas	hora_cierre	timestamp without time zone
 mesas	total_acumulado	numeric
 mesas	created_at	timestamp without time zone
 mesas	updated_at	timestamp without time zone
+mesas	id_restaurante	integer
+mesas	id_mesero_actual	integer
+mesas	id_grupo_mesa	integer
+mesas_en_grupo	id_mesa_en_grupo	integer
+mesas_en_grupo	id_grupo_mesa	integer
+mesas_en_grupo	id_mesa	integer
+mesas_en_grupo	created_at	timestamp without time zone
 metodos_pago	id_pago	integer
 metodos_pago	descripcion	character varying
 metodos_pago	activo	boolean
+metodos_pago	id_restaurante	integer
+movimientos_ingredientes	id_movimiento	integer
+movimientos_ingredientes	id_ingrediente	integer
+movimientos_ingredientes	tipo_movimiento	character varying
+movimientos_ingredientes	cantidad	numeric
+movimientos_ingredientes	stock_anterior	numeric
+movimientos_ingredientes	stock_actual	numeric
+movimientos_ingredientes	fecha_movimiento	timestamp with time zone
+movimientos_ingredientes	id_vendedor	integer
+movimientos_ingredientes	id_restaurante	integer
+movimientos_ingredientes	id_lote	integer
+movimientos_ingredientes	observaciones	text
 movimientos_inventario	id_movimiento	integer
 movimientos_inventario	id_producto	integer
 movimientos_inventario	tipo_movimiento	character varying
@@ -53,6 +157,25 @@ movimientos_inventario	stock_anterior	integer
 movimientos_inventario	stock_actual	integer
 movimientos_inventario	fecha_movimiento	timestamp with time zone
 movimientos_inventario	id_vendedor	integer
+movimientos_inventario	id_restaurante	integer
+pagos_restaurantes	id	integer
+pagos_restaurantes	id_restaurante	integer
+pagos_restaurantes	monto	numeric
+pagos_restaurantes	fecha_pago	timestamp without time zone
+pagos_restaurantes	metodo_pago	character varying
+pagos_restaurantes	observaciones	text
+pagos_restaurantes	registrado_por	integer
+pagos_restaurantes	creado_en	timestamp without time zone
+pedidos_proveedor	id_pedido_proveedor	integer
+pedidos_proveedor	id_proveedor	integer
+pedidos_proveedor	fecha_pedido	timestamp without time zone
+pedidos_proveedor	fecha_entrega_esperada	date
+pedidos_proveedor	fecha_entrega_real	date
+pedidos_proveedor	estado	character varying
+pedidos_proveedor	total	numeric
+pedidos_proveedor	observaciones	text
+pedidos_proveedor	id_restaurante	integer
+pedidos_proveedor	created_at	timestamp without time zone
 prefacturas	id_prefactura	integer
 prefacturas	id_mesa	integer
 prefacturas	id_venta_principal	integer
@@ -62,6 +185,7 @@ prefacturas	fecha_apertura	timestamp without time zone
 prefacturas	fecha_cierre	timestamp without time zone
 prefacturas	observaciones	text
 prefacturas	created_at	timestamp without time zone
+prefacturas	id_restaurante	integer
 productos	id_producto	integer
 productos	nombre	character varying
 productos	precio	numeric
@@ -70,36 +194,7 @@ productos	stock_actual	integer
 productos	activo	boolean
 productos	imagen_url	text
 productos	created_at	timestamp without time zone
-promociones	id_promocion	integer
-promociones	nombre	character varying
-promociones	tipo	character varying
-promociones	valor	numeric
-promociones	fecha_inicio	date
-promociones	fecha_fin	date
-promociones	id_producto	integer
-sucursales	id_sucursal	integer
-sucursales	nombre	character varying
-sucursales	ciudad	character varying
-sucursales	direccion	text
-sucursales	activo	boolean
-sucursales	created_at	timestamp without time zone
-vendedores	id_vendedor	integer
-vendedores	nombre	character varying
-vendedores	username	character varying
-vendedores	email	character varying
-vendedores	password_hash	character varying
-vendedores	rol	character varying
-vendedores	activo	boolean
-vendedores	created_at	timestamp without time zone
-vendedores	id_sucursal	integer
-ventas	id_venta	integer
-ventas	fecha	timestamp without time zone
-ventas	id_vendedor	integer
-ventas	id_pago	integer
-ventas	id_sucursal	integer
-ventas	tipo_servicio	character varying
-ventas	total	numeric
-ventas	mesa_numero	integer
-ventas	created_at	timestamp without time zone
-ventas	estado	character varying
-
+productos	id_restaurante	integer
+productos	stock_minimo	integer
+productos	stock_maximo	integer
+productos	unidad_medida	character varying
