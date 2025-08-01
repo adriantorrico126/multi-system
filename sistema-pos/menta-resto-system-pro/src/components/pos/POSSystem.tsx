@@ -64,6 +64,7 @@ import 'dayjs/locale/es';
 import { PedidosMeseroCajero } from './PedidosMeseroCajero';
 import { PromocionManagement } from '../promociones/PromocionManagement';
 import { PromocionCart } from '../promociones/PromocionCart';
+import { useCart } from '@/hooks/useCart';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -202,7 +203,7 @@ export function POSSystem() {
   const showAdminFeatures = user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin';
 
   // --- Estado Local del Componente ---
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, totalDescuentos, total, appliedPromociones } = useCart();
   const [activeTab, setActiveTab] = useState('pos');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -211,7 +212,6 @@ export function POSSystem() {
   const [mesaNumero, setMesaNumero] = useState<number | null>(null);
   const [tipoServicio, setTipoServicio] = useState<'Mesa' | 'Delivery' | 'Para Llevar'>('Mesa');
   const [activeDashboardSubTab, setActiveDashboardSubTab] = useState<string>('summary');
-  const [appliedPromociones, setAppliedPromociones] = useState<any[]>([]);
 
   // --- React Query: Gestión de Datos Asíncronos ---
 
@@ -232,12 +232,6 @@ export function POSSystem() {
     queryFn: getProducts,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-  });
-
-  // Obtener promociones activas
-  const { data: promociones = [], isLoading: promocionesLoading } = useQuery({
-    queryKey: ['promociones-activas'],
-    queryFn: getPromocionesActivas,
   });
 
   // Obtener categorías de productos
@@ -341,117 +335,6 @@ export function POSSystem() {
     });
   }, [products, selectedCategory, searchTerm]);
 
-  // --- Funciones de Gestión del Carrito (Memoizadas con useCallback) ---
-
-  /**
-   * Añade un producto al carrito. Si el producto ya existe (con las mismas notas),
-   * incrementa su cantidad; de lo contrario, lo añade como un nuevo ítem.
-   * Las promociones se aplican automáticamente.
-   */
-  const addToCart = useCallback((product: Product, notes?: string) => {
-    setCart((currentCart) => {
-      const existingItem = currentCart.find((item) => item.id === product.id && item.notes === notes);
-      if (existingItem) {
-        return currentCart.map((item) =>
-          item.id === product.id && item.notes === notes ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      
-      // Crear un ID único para el item del carrito
-      const cartItemId = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // ✅ Verificar si el producto ya viene con descuento del backend
-      const precioOriginal = product.price_original || product.price;
-      const precioConDescuento = product.price;
-      const tieneDescuentoBackend = product.price_original && product.price_original !== product.price;
-      
-      const newItem = { 
-        ...product, 
-        id: cartItemId, // Usar el ID único del carrito
-        originalId: product.id, // Mantener el ID original del producto
-        originalPrice: precioOriginal, // ✅ Usar precio original del backend
-        price: precioConDescuento, // ✅ Usar precio con descuento del backend
-        quantity: 1, 
-        notes: notes || '' 
-      };
-      
-      // ✅ Solo aplicar promociones si NO viene con descuento del backend
-      if (!tieneDescuentoBackend) {
-        const promocionesAplicables = promociones.filter(promocion => 
-          promocion.id_producto.toString() === product.id || 
-          promocion.id_producto === parseInt(product.id)
-        );
-        
-        if (promocionesAplicables.length > 0) {
-          // Aplicar la primera promoción disponible automáticamente
-          const promocion = promocionesAplicables[0];
-          let newPrice = precioOriginal;
-          
-          switch (promocion.tipo) {
-            case 'porcentaje':
-              newPrice = precioOriginal * (1 - promocion.valor / 100);
-              break;
-            case 'monto_fijo':
-              newPrice = Math.max(0, precioOriginal - promocion.valor);
-              break;
-            case 'precio_fijo':
-              newPrice = promocion.valor;
-              break;
-            default:
-              newPrice = precioOriginal;
-          }
-          
-          const itemConPromocion = {
-            ...newItem,
-            price: newPrice,
-            originalPrice: precioOriginal,
-            appliedPromocion: promocion
-          };
-          
-          // Agregar la promoción a la lista de promociones aplicadas
-          setAppliedPromociones(prev => [...prev, promocion]);
-          
-          return [...currentCart, itemConPromocion];
-        }
-      } else {
-        // ✅ Si viene con descuento del backend, agregar la promoción aplicada
-        if (product.promotion_applied) {
-          setAppliedPromociones(prev => [...prev, product.promotion_applied]);
-        }
-      }
-      
-      return [...currentCart, newItem];
-    });
-  }, [promociones]);
-
-  /**
-   * Actualiza la cantidad de un ítem específico en el carrito.
-   * Si la cantidad es 0, el ítem se elimina del carrito.
-   */
-  const updateQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity === 0) {
-      setCart((currentCart) => currentCart.filter((item) => item.id !== id));
-      return;
-    }
-    setCart((currentCart) => currentCart.map((item) => (item.id === id ? { 
-      ...item, 
-      quantity,
-      // ✅ Mantener el precio original al actualizar cantidad
-      originalPrice: item.originalPrice || item.price
-    } : item)));
-  }, []);
-
-  /**
-   * Elimina un ítem del carrito.
-   */
-  const removeFromCart = useCallback((id: string) => {
-    setCart((currentCart) => currentCart.filter((item) => item.id !== id));
-  }, []);
-
-
-
-
-
   // --- Funciones de Gestión de Ventas y Pedidos ---
 
   /**
@@ -501,33 +384,6 @@ export function POSSystem() {
           return;
         }
       }
-      
-      // Calcular subtotal y descuentos
-      const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const totalDescuentos = appliedPromociones.reduce((sum, promocion) => {
-                                    const itemsAplicables = cart.filter(item => 
-                              item.id === promocion.id_producto.toString() || 
-                              item.originalId === promocion.id_producto.toString() || 
-                              parseInt(item.id) === promocion.id_producto
-                            );
-        return sum + itemsAplicables.reduce((itemSum, item) => {
-          let descuento = 0;
-          switch (promocion.tipo) {
-            case 'porcentaje':
-              descuento = (item.price * promocion.valor / 100) * item.quantity;
-              break;
-            case 'monto_fijo':
-              descuento = Math.min(promocion.valor, item.price) * item.quantity;
-              break;
-            case 'precio_fijo':
-              descuento = Math.max(0, item.price - promocion.valor) * item.quantity;
-              break;
-          }
-          return itemSum + descuento;
-        }, 0);
-      }, 0);
-      
-      const totalFinal = subtotal - totalDescuentos;
 
       // Log del payload antes de enviar
       console.log('Payload a enviar:', {
@@ -538,7 +394,7 @@ export function POSSystem() {
           notes: item.notes,
           modificadores: item.modificadores || []
         })),
-        total: totalFinal,
+        total: total,
         subtotal: subtotal,
         totalDescuentos: totalDescuentos,
         appliedPromociones: appliedPromociones.length > 0 ? appliedPromociones : undefined,
@@ -554,7 +410,7 @@ export function POSSystem() {
       const newSale: Sale = {
         id: Date.now().toString(), // ID temporal, será reemplazado por el del backend
         items: [...cart],
-        total: totalFinal,
+        total: total,
         subtotal: subtotal,
         totalDescuentos: totalDescuentos,
         appliedPromociones: appliedPromociones.length > 0 ? [...appliedPromociones] : undefined,
@@ -632,7 +488,7 @@ export function POSSystem() {
 
         // Actualiza el estado local de ventas y órdenes
         // setSales((currentSales) => [updatedSale, ...currentSales]); // Eliminado: sales ahora es de React Query
-        setCart([]); // Limpia el carrito después de la venta
+        clearCart(); // Limpia el carrito después de la venta
         setShowCheckout(false); // Cierra el modal de checkout
         await refetchVentas(); // Refresca el historial de ventas desde el backend
 
@@ -682,7 +538,7 @@ export function POSSystem() {
         });
       }
     },
-    [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas]
+    [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas, clearCart, total, subtotal, totalDescuentos, appliedPromociones]
   );
 
   /**
@@ -690,13 +546,13 @@ export function POSSystem() {
    */
   const handleLogout = useCallback(() => {
     logout(); // Llama a la función de logout del contexto de autenticación
-    setCart([]); // Limpia el carrito al cerrar sesión
+    clearCart(); // Limpia el carrito al cerrar sesión
     setActiveTab('pos'); // Vuelve a la pestaña POS
     toast({
       title: '👋 Hasta luego',
       description: 'Sesión cerrada correctamente.',
     });
-  }, [logout, toast]);
+  }, [logout, toast, clearCart]);
 
   // Mutación para editar venta
   const editSaleMutation = useMutation({
@@ -1385,7 +1241,7 @@ export function POSSystem() {
               {/* Total Principal */}
               <div className="text-right">
                 <div className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  <span translate="no">Bs</span> {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                  <span translate="no">Bs</span> {total.toFixed(2)}
                 </div>
                 {appliedPromociones.length > 0 && (
                   <div className="flex items-center justify-end gap-1 text-xs text-green-600">
@@ -1547,11 +1403,7 @@ export function POSSystem() {
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-medium text-gray-600">Subtotal:</span>
                     <span className="text-xs font-semibold text-gray-700">
-                      <span translate="no">Bs</span> {cart.reduce((sum, item) => {
-                        // Usar el precio original si existe, sino el precio actual
-                        const precioOriginal = item.originalPrice || item.price;
-                        return sum + (precioOriginal * item.quantity);
-                      }, 0).toFixed(2)}
+                      <span translate="no">Bs</span> {subtotal.toFixed(2)}
                     </span>
                   </div>
                   
@@ -1562,31 +1414,7 @@ export function POSSystem() {
                         Descuentos:
                       </span>
                       <span className="text-xs font-semibold text-green-600">
-                        -<span translate="no">Bs</span> {appliedPromociones.reduce((sum, promocion) => {
-                          const itemsAplicables = cart.filter(item => 
-                            item.id === promocion.id_producto.toString() || 
-                            item.originalId === promocion.id_producto.toString() || 
-                            parseInt(item.id) === promocion.id_producto
-                          );
-                          
-                          return sum + itemsAplicables.reduce((itemSum, item) => {
-                            // Usar el precio original para calcular el descuento
-                            const precioOriginal = item.originalPrice || item.price;
-                            let descuento = 0;
-                            switch (promocion.tipo) {
-                              case 'porcentaje':
-                                descuento = (precioOriginal * promocion.valor / 100) * item.quantity;
-                                break;
-                              case 'monto_fijo':
-                                descuento = Math.min(promocion.valor, precioOriginal) * item.quantity;
-                                break;
-                              case 'precio_fijo':
-                                descuento = Math.max(0, precioOriginal - promocion.valor) * item.quantity;
-                                break;
-                            }
-                            return itemSum + descuento;
-                          }, 0);
-                        }, 0).toFixed(2)}
+                        -<span translate="no">Bs</span> {totalDescuentos.toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -1594,7 +1422,7 @@ export function POSSystem() {
                   <div className="flex justify-between items-center pt-1 border-t border-gray-200">
                     <span className="text-sm font-bold text-gray-800">Total Final:</span>
                     <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                      <span translate="no">Bs</span> {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                      <span translate="no">Bs</span> {total.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -1665,4 +1493,3 @@ export function POSSystem() {
     </div>
   );
 }
-

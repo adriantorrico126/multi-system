@@ -10,18 +10,18 @@ const apiPrefix = envConfig.API_PREFIX; // Obtener el prefijo de la API de envCo
 beforeEach(async () => {
   try {
     // Limpiar tablas en orden inverso de dependencia para evitar errores de FK
-    await db.query('DELETE FROM detalle_ventas CASCADE;'); // CASCADE para eliminar dependientes
-    await db.query('DELETE FROM ventas CASCADE;');
-    await db.query('DELETE FROM mesas CASCADE;');
-    await db.query('DELETE FROM productos CASCADE;');
-    await db.query('DELETE FROM promociones CASCADE;');
-    await db.query('DELETE FROM categorias CASCADE;');
-    await db.query('DELETE FROM vendedores CASCADE;');
-    await db.query('DELETE FROM sucursales CASCADE;');
-    await db.query('DELETE FROM metodos_pago CASCADE;');
+    await db.pool.query('DELETE FROM detalle_ventas CASCADE;'); // CASCADE para eliminar dependientes
+    await db.pool.query('DELETE FROM ventas CASCADE;');
+    await db.pool.query('DELETE FROM mesas CASCADE;');
+    await db.pool.query('DELETE FROM productos CASCADE;');
+    await db.pool.query('DELETE FROM promociones CASCADE;');
+    await db.pool.query('DELETE FROM categorias CASCADE;');
+    await db.pool.query('DELETE FROM vendedores CASCADE;');
+    await db.pool.query('DELETE FROM sucursales CASCADE;');
+    await db.pool.query('DELETE FROM metodos_pago CASCADE;');
 
     // Opcional: Reiniciar secuencias de IDs si es necesario para consistencia en los tests
-    // await db.query('ALTER SEQUENCE categorias_id_categoria_seq RESTART WITH 1;');
+    // await db.pool.query('ALTER SEQUENCE categorias_id_categoria_seq RESTART WITH 1;');
 
   } catch (error) {
     console.error("Error limpiando tablas:", error);

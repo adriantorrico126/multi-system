@@ -30,4 +30,7 @@ router.get('/activos/completos', authenticateToken, authorizeRoles('admin', 'caj
 // Generar prefactura para un grupo completo
 router.get('/:id/prefactura', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.generarPrefacturaGrupo);
 
-module.exports = router; 
+// Disolver un grupo de mesas
+router.post('/:id/disolver', authenticateToken, authorizeRoles('admin', 'super_admin', 'mesero'), ensureTenantContext, grupoMesaController.disolverGrupo);
+
+module.exports = router;

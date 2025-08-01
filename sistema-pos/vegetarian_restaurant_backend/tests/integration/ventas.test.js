@@ -19,34 +19,34 @@ let metodoPagoId; // ID de método de pago de prueba
 beforeEach(async () => {
   // Limpieza de la base de datos y configuración inicial
   try {
-    await db.query('DELETE FROM detalle_ventas CASCADE;');
-    await db.query('DELETE FROM facturas CASCADE;');
-    await db.query('DELETE FROM prefacturas CASCADE;');
+    await db.pool.query('DELETE FROM detalle_ventas CASCADE;');
+    await db.pool.query('DELETE FROM facturas CASCADE;');
+    await db.pool.query('DELETE FROM prefacturas CASCADE;');
     // Poner a NULL las referencias de ventas en mesas antes de borrar ventas
-    await db.query('UPDATE mesas SET id_venta_actual = NULL;');
-    await db.query('DELETE FROM ventas CASCADE;');
-    await db.query('DELETE FROM mesas CASCADE;');
-    await db.query('DELETE FROM productos CASCADE;');
-    await db.query('DELETE FROM promociones CASCADE;');
-    await db.query('DELETE FROM categorias CASCADE;');
-    await db.query('DELETE FROM vendedores CASCADE;');
-    await db.query('DELETE FROM sucursales CASCADE;');
-    await db.query('DELETE FROM metodos_pago CASCADE;');
+    await db.pool.query('UPDATE mesas SET id_venta_actual = NULL;');
+    await db.pool.query('DELETE FROM ventas CASCADE;');
+    await db.pool.query('DELETE FROM mesas CASCADE;');
+    await db.pool.query('DELETE FROM productos CASCADE;');
+    await db.pool.query('DELETE FROM promociones CASCADE;');
+    await db.pool.query('DELETE FROM categorias CASCADE;');
+    await db.pool.query('DELETE FROM vendedores CASCADE;');
+    await db.pool.query('DELETE FROM sucursales CASCADE;');
+    await db.pool.query('DELETE FROM metodos_pago CASCADE;');
 
     // Insertar datos básicos
-    const sucursalRes = await db.query(`
+    const sucursalRes = await db.pool.query(`
       INSERT INTO sucursales (nombre, ciudad) VALUES ('Sucursal Principal', 'Ciudad Test') RETURNING id_sucursal;
     `);
     sucursalId = sucursalRes.rows[0].id_sucursal;
 
-    const metodoPagoRes = await db.query(`
+    const metodoPagoRes = await db.pool.query(`
       INSERT INTO metodos_pago (descripcion) VALUES ('Efectivo') RETURNING id_pago;
     `);
     metodoPagoId = metodoPagoRes.rows[0].id_pago;
 
     // Crear usuario admin
     const hashedPassword = await bcrypt.hash('password123', parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    const adminRes = await db.query(
+    const adminRes = await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
       ['Admin Test', 'admintest', 'admin@test.com', hashedPassword, 'admin', sucursalId]
     );
@@ -54,7 +54,7 @@ beforeEach(async () => {
 
     // Crear usuario cajero
     const hashedCashierPassword = await bcrypt.hash('password123', parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    await db.query(
+    await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6)',
       ['Cajero Test', 'cajerotest', 'cajero@test.com', hashedCashierPassword, 'cajero', sucursalId]
     );
@@ -116,7 +116,7 @@ describe('Endpoints de Ventas', () => {
 
     it('debería crear una nueva venta (Mesa) y abrir la mesa si está libre', async () => {
       // Crear una mesa libre
-      const mesaRes = await db.query(
+      const mesaRes = await db.pool.query(
         'INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES ($1, $2, $3, $4) RETURNING id_mesa;',
         [101, sucursalId, 4, 'libre']
       );
@@ -143,13 +143,13 @@ describe('Endpoints de Ventas', () => {
       expect(response.body.message).toBe('Venta registrada exitosamente');
 
       // Verificar que la mesa ahora está en uso
-      const mesaEnDB = await db.query('SELECT estado FROM mesas WHERE numero = $1 AND id_sucursal = $2', [mesaNumero, sucursalId]);
+      const mesaEnDB = await db.pool.query('SELECT estado FROM mesas WHERE numero = $1 AND id_sucursal = $2', [mesaNumero, sucursalId]);
       expect(mesaEnDB.rows[0].estado).toBe('en_uso');
     });
 
     it('debería agregar productos a una mesa existente en uso', async () => {
       // Crear una mesa y abrirla (simulando una venta previa)
-      const mesaRes = await db.query(
+      const mesaRes = await db.pool.query(
         'INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES ($1, $2, $3, $4, $5) RETURNING id_mesa;',
         [102, sucursalId, 4, 'en_uso', 20.00] // Mesa ya en uso con un total acumulado
       );
@@ -176,7 +176,7 @@ describe('Endpoints de Ventas', () => {
       expect(response.body.message).toBe('Venta registrada exitosamente');
 
       // Verificar que el total acumulado de la mesa se actualizó
-      const mesaEnDB = await db.query('SELECT total_acumulado FROM mesas WHERE numero = $1 AND id_sucursal = $2', [mesaNumero, sucursalId]);
+      const mesaEnDB = await db.pool.query('SELECT total_acumulado FROM mesas WHERE numero = $1 AND id_sucursal = $2', [mesaNumero, sucursalId]);
       expect(parseFloat(mesaEnDB.rows[0].total_acumulado)).toBe(35.00); // 20.00 + 15.00
     });
 
@@ -355,7 +355,7 @@ describe('Endpoints de Ventas', () => {
 
     beforeEach(async () => {
       // Crear una mesa y abrirla con una venta
-      const mesaRes = await db.query(
+      const mesaRes = await db.pool.query(
         'INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES ($1, $2, $3, $4, $5) RETURNING id_mesa;',
         [201, sucursalId, 4, 'en_uso', 50.00] // Mesa en uso con total acumulado
       );
@@ -363,11 +363,11 @@ describe('Endpoints de Ventas', () => {
       mesaNumero = 201;
 
       // Asociar una venta a la mesa (simulando que ya se agregaron productos)
-      const ventaRes = await db.query(
+      const ventaRes = await db.pool.query(
         'INSERT INTO ventas (id_vendedor, id_pago, id_sucursal, tipo_servicio, total, mesa_numero, estado) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id_venta;',
         [adminUser.id_vendedor, metodoPagoId, sucursalId, 'Mesa', 50.00, mesaNumero, 'entregado']
       );
-      await db.query('UPDATE mesas SET id_venta_actual = $1 WHERE id_mesa = $2;', [ventaRes.rows[0].id_venta, mesaId]);
+      await db.pool.query('UPDATE mesas SET id_venta_actual = $1 WHERE id_mesa = $2;', [ventaRes.rows[0].id_venta, mesaId]);
     });
 
     it('debería cerrar una mesa con facturación y retornar 200', async () => {
@@ -394,7 +394,7 @@ describe('Endpoints de Ventas', () => {
 
     it('debería retornar 400 si la mesa no está en uso', async () => {
       // Poner la mesa en estado libre
-      await db.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
+      await db.pool.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
 
       const closeData = {
         mesa_numero: mesaNumero,

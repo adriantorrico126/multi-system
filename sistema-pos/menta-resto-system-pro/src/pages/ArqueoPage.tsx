@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import { getArqueoData } from '../services/api';
 
 interface SalesSummary {
@@ -25,81 +26,36 @@ interface DailyCashFlow {
 
 const ArqueoPage: React.FC = () => {
   const { user } = useAuth();
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [salesSummary, setSalesSummary] = useState<SalesSummary[]>([]);
-  const [dailyCashFlow, setDailyCashFlow] = useState<DailyCashFlow[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const [startDate, setStartDate] = useState<string>(today);
+  const [endDate, setEndDate] = useState<string>(today);
 
-  useEffect(() => {
-    // Set default dates to today
-    const today = format(new Date(), 'yyyy-MM-dd');
-    setStartDate(today);
-    setEndDate(today);
-    
-    // Auto-load data for today
-    if (user?.rol === 'admin') {
-      setTimeout(() => {
-        fetchArqueoData();
-      }, 100);
+  const { data: arqueoData, isLoading, error, refetch } = useQuery({
+    queryKey: ['arqueoData', startDate, endDate],
+    queryFn: () => getArqueoData(startDate, endDate),
+    enabled: !!startDate && !!endDate, // Only run if dates are set
+    onSuccess: (data) => {
+      if (data?.message?.includes('No se encontraron datos para su sucursal')) {
+        toast.info('Información', {
+          description: 'No se encontraron datos para tu sucursal, mostrando datos de todas las sucursales.'
+        });
+      }
+    },
+    onError: (err: any) => {
+      let errorMessage = 'Error al cargar los datos de arqueo.';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      toast.error('Error', { description: errorMessage });
     }
-  }, [user]);
+  });
 
-  const fetchArqueoData = async () => {
+  const handleFetchClick = () => {
     if (!startDate || !endDate) {
       toast.error('Error', { description: 'Por favor, selecciona una fecha de inicio y fin.' });
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    try {
-      console.log('Fetching arqueo data with:', { startDate, endDate });
-      
-      const responseData = await getArqueoData(startDate, endDate);
-      
-      console.log('Arqueo response:', responseData);
-      
-      // Validar que la respuesta tenga la estructura esperada
-      if (responseData) {
-        setSalesSummary(responseData.salesSummary || []);
-        setDailyCashFlow(responseData.dailyCashFlow || []);
-        
-        // Mostrar mensaje si se usaron datos de todas las sucursales
-        if (responseData.message && responseData.message.includes('No se encontraron datos para su sucursal')) {
-          toast.info('Información', { 
-            description: 'No se encontraron datos para tu sucursal, mostrando datos de todas las sucursales.' 
-          });
-        }
-      } else {
-        console.error('Invalid response structure:', responseData);
-        setError('Estructura de respuesta inválida del servidor.');
-        setSalesSummary([]);
-        setDailyCashFlow([]);
-      }
-    } catch (err: any) {
-      console.error('Error fetching arqueo data:', err);
-      
-      let errorMessage = 'Error al cargar los datos de arqueo.';
-      if (err.response) {
-        console.error('Error response:', err.response.data);
-        if (err.response.status === 401) {
-          errorMessage = 'No tienes permisos para acceder a esta función.';
-        } else if (err.response.status === 400) {
-          errorMessage = 'Fechas inválidas. Verifica el formato de las fechas.';
-        } else if (err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message;
-        }
-      }
-      
-      setError(errorMessage);
-      toast.error('Error', { description: errorMessage });
-      setSalesSummary([]);
-      setDailyCashFlow([]);
-    } finally {
-      setLoading(false);
-    }
+    refetch();
   };
 
   if (user?.rol !== 'admin') {
@@ -138,21 +94,21 @@ const ArqueoPage: React.FC = () => {
             onChange={(e) => setEndDate(e.target.value)}
             className="flex-1"
           />
-          <Button onClick={fetchArqueoData} disabled={loading} className="md:w-auto">
-            {loading ? 'Cargando...' : 'Generar Arqueo'}
+          <Button onClick={handleFetchClick} disabled={isLoading} className="md:w-auto">
+            {isLoading ? 'Cargando...' : 'Generar Arqueo'}
           </Button>
         </CardContent>
       </Card>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {error && <p className="text-red-500 mb-4">{(error as any).message || 'Ocurrió un error'}</p>}
 
-      {loading && (
+      {isLoading && (
         <div className="flex items-center justify-center p-8">
           <p>Cargando datos de arqueo...</p>
         </div>
       )}
 
-      {!loading && salesSummary.length > 0 && (
+      {!isLoading && arqueoData?.salesSummary?.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Resumen de Ventas por Método de Pago</CardTitle>
@@ -168,7 +124,7 @@ const ArqueoPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salesSummary.map((summary, index) => (
+                {arqueoData.salesSummary.map((summary, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(summary.fecha_venta), 'dd/MM/yyyy', { locale: es })}</TableCell>
                     <TableCell>{summary.metodo_pago}</TableCell>
@@ -182,7 +138,7 @@ const ArqueoPage: React.FC = () => {
         </Card>
       )}
 
-      {!loading && dailyCashFlow.length > 0 && (
+      {!isLoading && arqueoData?.dailyCashFlow?.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Flujo de Caja Diario</CardTitle>
@@ -198,7 +154,7 @@ const ArqueoPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dailyCashFlow.map((flow, index) => (
+                {arqueoData.dailyCashFlow.map((flow, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(flow.fecha), 'dd/MM/yyyy', { locale: es })}</TableCell>
                     <TableCell>${Number(flow.ingresos_efectivo).toFixed(2)}</TableCell>
@@ -212,7 +168,7 @@ const ArqueoPage: React.FC = () => {
         </Card>
       )}
 
-      {!loading && salesSummary.length === 0 && dailyCashFlow.length === 0 && !error && (
+      {!isLoading && !error && (!arqueoData || (arqueoData.salesSummary.length === 0 && arqueoData.dailyCashFlow.length === 0)) && (
         <Card>
           <CardHeader>
             <CardTitle>Sin Datos</CardTitle>

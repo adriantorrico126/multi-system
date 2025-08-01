@@ -16,29 +16,29 @@ let adminUser; // Objeto de usuario administrador
 beforeEach(async () => {
   // Limpieza de la base de datos y configuración inicial
   try {
-    await db.query('DELETE FROM detalle_ventas CASCADE;');
-    await db.query('DELETE FROM ventas CASCADE;');
-    await db.query('DELETE FROM mesas CASCADE;');
-    await db.query('DELETE FROM productos CASCADE;');
-    await db.query('DELETE FROM promociones CASCADE;');
-    await db.query('DELETE FROM categorias CASCADE;');
-    await db.query('DELETE FROM vendedores CASCADE;');
-    await db.query('DELETE FROM sucursales CASCADE;');
-    await db.query('DELETE FROM metodos_pago CASCADE;');
+    await db.pool.query('DELETE FROM detalle_ventas CASCADE;');
+    await db.pool.query('DELETE FROM ventas CASCADE;');
+    await db.pool.query('DELETE FROM mesas CASCADE;');
+    await db.pool.query('DELETE FROM productos CASCADE;');
+    await db.pool.query('DELETE FROM promociones CASCADE;');
+    await db.pool.query('DELETE FROM categorias CASCADE;');
+    await db.pool.query('DELETE FROM vendedores CASCADE;');
+    await db.pool.query('DELETE FROM sucursales CASCADE;');
+    await db.pool.query('DELETE FROM metodos_pago CASCADE;');
 
     // Insertar datos básicos
-    const sucursalRes = await db.query(`
+    const sucursalRes = await db.pool.query(`
       INSERT INTO sucursales (nombre, ciudad) VALUES ('Sucursal Principal', 'Ciudad Test') RETURNING id_sucursal;
     `);
     sucursalId = sucursalRes.rows[0].id_sucursal;
 
-    await db.query(`
+    await db.pool.query(`
       INSERT INTO metodos_pago (id_pago, descripcion) VALUES (1, 'Efectivo');
     `);
 
     // Crear usuario admin
     const hashedPassword = await bcrypt.hash('password123', parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    const adminRes = await db.query(
+    const adminRes = await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;',
       ['Admin Test', 'admintest', 'admin@test.com', hashedPassword, 'admin', sucursalId]
     );
@@ -46,7 +46,7 @@ beforeEach(async () => {
 
     // Crear usuario cajero
     const hashedCashierPassword = await bcrypt.hash('password123', parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    await db.query(
+    await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6)',
       ['Cajero Test', 'cajerotest', 'cajero@test.com', hashedCashierPassword, 'cajero', sucursalId]
     );
@@ -70,7 +70,7 @@ describe('Endpoints de Mesas', () => {
   describe('GET /mesas/:id_sucursal', () => {
     it('debería obtener todas las mesas de una sucursal', async () => {
       // Crear algunas mesas
-      await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (1, $1, 4, 'libre'), (2, $1, 6, 'en_uso');", [sucursalId]);
+      await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (1, $1, 4, 'libre'), (2, $1, 6, 'en_uso');", [sucursalId]);
 
       const response = await request(app)
         .get(`${apiPrefix}/mesas/${sucursalId}`)
@@ -94,7 +94,7 @@ describe('Endpoints de Mesas', () => {
   // Test para GET /mesas/:numero/:id_sucursal
   describe('GET /mesas/:numero/:id_sucursal', () => {
     it('debería obtener una mesa específica', async () => {
-      await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (10, $1, 4, 'libre');', [sucursalId]);
+      await db.pool.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (10, $1, 4, $2);', [sucursalId, 'libre']);
 
       const response = await request(app)
         .get(`${apiPrefix}/mesas/10/${sucursalId}`)
@@ -117,7 +117,7 @@ describe('Endpoints de Mesas', () => {
   describe('POST /mesas/abrir', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (30, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
+      const res = await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (30, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -133,7 +133,7 @@ describe('Endpoints de Mesas', () => {
     });
 
     it('debería retornar 400 si la mesa no está libre', async () => {
-      await db.query('UPDATE mesas SET estado = 'en_uso' WHERE id_mesa = $1;', [mesaId]);
+      await db.pool.query('UPDATE mesas SET estado = 'en_uso' WHERE id_mesa = $1;', [mesaId]);
 
       const response = await request(app)
         .post(`${apiPrefix}/mesas/abrir`)
@@ -149,7 +149,7 @@ describe('Endpoints de Mesas', () => {
   describe('POST /mesas/cerrar/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (40, $1, 4, 'en_uso', 50.00) RETURNING id_mesa;", [sucursalId]);
+      const res = await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (40, $1, 4, 'en_uso', 50.00) RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -165,7 +165,7 @@ describe('Endpoints de Mesas', () => {
 
     it('debería retornar 400 si la mesa no está en uso (o no existe)', async () => {
       // Poner la mesa en estado libre
-      await db.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
+      await db.pool.query("UPDATE mesas SET estado = 'libre' WHERE id_mesa = $1;", [mesaId]);
 
       const response = await request(app)
         .post(`${apiPrefix}/mesas/cerrar/${mesaId}`)
@@ -182,13 +182,13 @@ describe('Endpoints de Mesas', () => {
 
     beforeEach(async () => {
       // Crear una mesa en uso
-      await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (50, $1, 4, 'en_uso', 10.00);", [sucursalId]);
+      await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado, total_acumulado) VALUES (50, $1, 4, 'en_uso', 10.00);", [sucursalId]);
       mesaNumero = 50;
 
       // Crear un producto
-      const categoriaRes = await db.query('INSERT INTO categorias (nombre) VALUES ('Bebidas') RETURNING id_categoria;');
+      const categoriaRes = await db.pool.query('INSERT INTO categorias (nombre) VALUES ($1) RETURNING id_categoria;', ['Bebidas']);
       const categoriaId = categoriaRes.rows[0].id_categoria;
-      const productoRes = await db.query('INSERT INTO productos (nombre, precio, id_categoria, stock_actual) VALUES ('Refresco', 2.50, $1, 100) RETURNING id_producto;', [categoriaId]);
+      const productoRes = await db.pool.query('INSERT INTO productos (nombre, precio, id_categoria, stock_actual) VALUES ($1, $2, $3, $4) RETURNING id_producto;', ['Refresco', 2.50, categoriaId, 100]);
       productoId = productoRes.rows[0].id_producto;
     });
 
@@ -209,7 +209,7 @@ describe('Endpoints de Mesas', () => {
     });
 
     it('debería retornar 400 si la mesa no está en uso', async () => {
-      await db.query("UPDATE mesas SET estado = 'libre' WHERE numero = $1 AND id_sucursal = $2;", [mesaNumero, sucursalId]);
+      await db.pool.query("UPDATE mesas SET estado = 'libre' WHERE numero = $1 AND id_sucursal = $2;", [mesaNumero, sucursalId]);
 
       const items = [
         { id_producto: productoId, cantidad: 1, precio_unitario: 2.50 }
@@ -241,7 +241,7 @@ describe('Endpoints de Mesas', () => {
     });
 
     it('debería retornar 400 si el número de mesa ya existe', async () => {
-      await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (60, $1, 4, 'libre');', [sucursalId]);
+      await db.pool.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (60, $1, 4, 'libre');', [sucursalId]);
 
       const newMesa = { numero: 60, id_sucursal: sucursalId, capacidad: 4 };
       const response = await request(app)
@@ -258,7 +258,7 @@ describe('Endpoints de Mesas', () => {
   describe('PUT /mesas/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (70, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
+      const res = await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (70, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 
@@ -275,7 +275,7 @@ describe('Endpoints de Mesas', () => {
     });
 
     it('debería retornar 400 si el nuevo número de mesa ya existe', async () => {
-      await db.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (71, $1, 4, 'libre');', [sucursalId]);
+      await db.pool.query('INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (71, $1, 4, 'libre');', [sucursalId]);
 
       const updatedData = { numero: 71 };
       const response = await request(app)
@@ -292,7 +292,7 @@ describe('Endpoints de Mesas', () => {
   describe('DELETE /mesas/:id_mesa', () => {
     let mesaId;
     beforeEach(async () => {
-      const res = await db.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (80, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
+      const res = await db.pool.query("INSERT INTO mesas (numero, id_sucursal, capacidad, estado) VALUES (80, $1, 4, 'libre') RETURNING id_mesa;", [sucursalId]);
       mesaId = res.rows[0].id_mesa;
     });
 

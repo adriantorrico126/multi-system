@@ -31,34 +31,34 @@ let cashierToken; // Para almacenar el token del cajero
 beforeEach(async () => {
   try {
     // Limpiar tablas en orden inverso de dependencia
-    await db.query('DELETE FROM detalle_ventas CASCADE;');
-    await db.query('DELETE FROM facturas CASCADE;');
-    await db.query('DELETE FROM prefacturas CASCADE;');
-    await db.query('DELETE FROM ventas CASCADE;');
-    await db.query('DELETE FROM mesas CASCADE;');
-    await db.query('DELETE FROM productos CASCADE;');
-    await db.query('DELETE FROM promociones CASCADE;');
-    await db.query('DELETE FROM categorias CASCADE;');
-    await db.query('DELETE FROM vendedores CASCADE;');
-    await db.query('DELETE FROM sucursales CASCADE;');
-    await db.query('DELETE FROM metodos_pago CASCADE;');
+    await db.pool.query('DELETE FROM detalle_ventas CASCADE;');
+    await db.pool.query('DELETE FROM facturas CASCADE;');
+    await db.pool.query('DELETE FROM prefacturas CASCADE;');
+    await db.pool.query('DELETE FROM ventas CASCADE;');
+    await db.pool.query('DELETE FROM mesas CASCADE;');
+    await db.pool.query('DELETE FROM productos CASCADE;');
+    await db.pool.query('DELETE FROM promociones CASCADE;');
+    await db.pool.query('DELETE FROM categorias CASCADE;');
+    await db.pool.query('DELETE FROM vendedores CASCADE;');
+    await db.pool.query('DELETE FROM sucursales CASCADE;');
+    await db.pool.query('DELETE FROM metodos_pago CASCADE;');
 
     // Insertar datos básicos para que los tests funcionen
-    await db.query(`
+    await db.pool.query(`
       INSERT INTO sucursales (id_sucursal, nombre, ciudad) VALUES (1, 'Sucursal Test', 'Ciudad Test');
       INSERT INTO metodos_pago (id_pago, descripcion) VALUES (1, 'Efectivo');
     `);
 
     // Crear usuario admin de prueba
     const hashedPassword = await bcrypt.hash(testUser.password, parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    await db.query(
+    await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6)',
       [testUser.nombre, testUser.username, testUser.email, hashedPassword, testUser.rol, testUser.id_sucursal]
     );
 
     // Crear usuario cajero de prueba
     const hashedCashierPassword = await bcrypt.hash(testCashier.password, parseInt(envConfig.SALT_ROUNDS || '10', 10));
-    await db.query(
+    await db.pool.query(
       'INSERT INTO vendedores (nombre, username, email, password_hash, rol, id_sucursal) VALUES ($1, $2, $3, $4, $5, $6)',
       [testCashier.nombre, testCashier.username, testCashier.email, hashedCashierPassword, testCashier.rol, testCashier.id_sucursal]
     );

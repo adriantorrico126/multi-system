@@ -1,7 +1,13 @@
 // vegetarian_restaurant_backend/src/config/envConfig.js
 
+const path = require('path');
+
 // Carga las variables de entorno desde .env al objeto process.env
-require('dotenv').config();
+if (process.env.NODE_ENV === 'test') {
+  require('dotenv').config({ path: path.resolve(process.cwd(), '.env.test') });
+} else {
+  require('dotenv').config();
+}
 
 const envConfig = {
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -14,18 +20,6 @@ const envConfig = {
   DB_PORT: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
 };
-
-// Debug: mostrar las variables cargadas
-console.log('Variables de entorno cargadas:', {
-  NODE_ENV: envConfig.NODE_ENV,
-  PORT: envConfig.PORT,
-  API_PREFIX: envConfig.API_PREFIX,
-  DB_HOST: envConfig.DB_HOST,
-  DB_USER: envConfig.DB_USER,
-  DB_NAME: envConfig.DB_NAME,
-  DB_PORT: envConfig.DB_PORT,
-  DB_PASSWORD: envConfig.DB_PASSWORD ? '[HIDDEN]' : 'undefined'
-});
 
 // Validar que las variables esenciales de la base de datos estén definidas
 const requiredDbVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];

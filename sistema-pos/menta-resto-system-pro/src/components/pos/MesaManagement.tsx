@@ -115,15 +115,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   const [selectedMesaForDetalles, setSelectedMesaForDetalles] = useState<Mesa | null>(null);
   const [reservaDetalles, setReservaDetalles] = useState<any>(null);
 
-  // Log para depuración
-  React.useEffect(() => {
-    console.log('[MesaManagement] sucursalId:', sucursalId, 'idRestaurante:', idRestaurante, 'user:', user);
-  }, [sucursalId, idRestaurante, user]);
-
   // Cargar meseros cuando se abre el modal
   useEffect(() => {
     if (showMeseroModal) {
-      console.log('🔍 Abriendo modal de meseros...');
       setIsLoadingMeseros(true);
       
       // Usar meseros hardcodeados para evitar problemas de permisos
@@ -131,28 +125,19 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
         { id: 29, nombre: 'jhosep', username: 'jhosep', rol: 'mesero' }
       ];
       
-      console.log('👨‍💼 Meseros disponibles:', meserosHardcodeados);
       setMeseros(meserosHardcodeados);
       setIsLoadingMeseros(false);
-      console.log('✅ Meseros cargados exitosamente');
     }
   }, [showMeseroModal]);
 
   // Función para manejar la creación del grupo
   const handleCrearGrupo = () => {
-    console.log('🔍 [handleCrearGrupo] selectedMesas:', selectedMesas);
-    console.log('🔍 [handleCrearGrupo] selectedMesero:', selectedMesero);
-    console.log('🔍 [handleCrearGrupo] sucursalId:', sucursalId);
-    console.log('🔍 [handleCrearGrupo] idRestaurante:', idRestaurante);
-    
     const data = {
       id_restaurante: idRestaurante,
       id_sucursal: sucursalId,
       mesas: selectedMesas,
       id_mesero: selectedMesero
     };
-    
-    console.log('🔍 [handleCrearGrupo] Datos a enviar:', data);
     
     crearGrupoMutation.mutate(data);
     setShowMeseroModal(false);
@@ -166,12 +151,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     enabled: !!sucursalId,
   });
 
-  // Log para depuración de mesas
-  React.useEffect(() => {
-    console.log('🔍 [MesaManagement] Mesas recibidas:', mesas);
-    console.log('🔍 [MesaManagement] IDs de mesas:', mesas.map(m => ({ id: m.id_mesa, numero: m.numero })));
-  }, [mesas]);
-
   // Obtener estadísticas
   const { data: estadisticas } = useQuery({
     queryKey: ['estadisticas-mesas', sucursalId],
@@ -184,10 +163,8 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     queryKey: ['prefactura', selectedMesa?.id_mesa],
     queryFn: async () => {
       if (!selectedMesa) return null;
-      console.log('🔍 MesaManagement: Generando prefactura para mesa:', selectedMesa.id_mesa);
       try {
         const result = await generarPrefactura(selectedMesa.id_mesa);
-        console.log('🔍 MesaManagement: Prefactura recibida:', result);
         return result;
       } catch (error) {
         console.error('❌ MesaManagement: Error generando prefactura:', error);
@@ -196,19 +173,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
     enabled: !!selectedMesa && showPrefactura,
   });
-
-  // DEBUG: Log prefactura data
-  useEffect(() => {
-    if (prefacturaData) {
-      console.log('🔍 MesaManagement: Prefactura data actualizada:', {
-        mesa: prefacturaData?.data?.mesa,
-        historial: prefacturaData?.data?.historial,
-        total_acumulado: prefacturaData?.data?.total_acumulado,
-        total_ventas: prefacturaData?.data?.total_ventas,
-        fecha_apertura: prefacturaData?.data?.fecha_apertura
-      });
-    }
-  }, [prefacturaData]);
 
   // Obtener grupos activos
   const { data: gruposActivos = [] } = useQuery({
@@ -233,8 +197,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
               [grupo.id_grupo_mesa]: grupoEncontrado.mesas
             }));
           } else {
-            // Si no encontramos el grupo, intentar obtener las mesas de otra manera
-            console.log(`No se encontraron mesas para el grupo ${grupo.id_grupo_mesa}`);
             setMesasEnGrupo(prev => ({
               ...prev,
               [grupo.id_grupo_mesa]: []
@@ -542,15 +504,12 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
 
   const handleCerrarConFactura = (mesa: Mesa) => {
     // Implementar lógica para cerrar mesa con factura especial
-    console.log('Cerrando mesa con factura especial:', mesa);
   };
 
   // Función para abrir modal de reserva
   const handleOpenReservaModal = (mesa: Mesa) => {
-    console.log('🔍 handleOpenReservaModal llamado con mesa:', mesa);
     setSelectedMesaForReserva(mesa);
     setShowReservaModal(true);
-    console.log('🔍 showReservaModal establecido a true');
   };
 
   const handleCloseDetallesModal = () => {
@@ -561,18 +520,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
 
   // Función para obtener detalles de reserva
   const handleVerDetallesReserva = async (mesa: Mesa) => {
-    console.log('🔍 [handleVerDetallesReserva] Iniciando con mesa:', mesa);
     try {
       const response = await getReservasByMesa(mesa.id_mesa);
-      console.log('🔍 [handleVerDetallesReserva] Response:', response);
       if (response.data && response.data.length > 0) {
-        console.log('🔍 [handleVerDetallesReserva] Reserva encontrada:', response.data[0]);
         setReservaDetalles(response.data[0]); // Tomar la primera reserva activa
         setSelectedMesaForDetalles(mesa);
         setShowDetallesModal(true);
-        console.log('🔍 [handleVerDetallesReserva] Estados actualizados - showDetallesModal: true');
       } else {
-        console.log('🔍 [handleVerDetallesReserva] No hay reservas activas');
         toast({
           title: "Sin reservas",
           description: "Esta mesa no tiene reservas activas",
@@ -833,7 +787,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${
                       selectedMesas.includes(mesa.id_mesa) 
                         ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50' 
-                        : 'hover:bg-gray-50'
+                        : mesa.id_grupo_mesa ? 'border-2 border-purple-500' : 'hover:bg-gray-50'
                     }`}
                   >
                     {/* Indicador de selección */}
@@ -842,6 +796,15 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                         <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                           <CheckCircle className="h-4 w-4 text-white" />
                         </div>
+                      </div>
+                    )}
+                    {/* Indicador de grupo */}
+                    {mesa.id_grupo_mesa && (
+                      <div className="absolute top-2 left-2">
+                        <Badge className="bg-purple-500 text-white text-xs px-1 py-0.5 shadow-lg">
+                          <Link2 className="h-2 w-2 mr-0.5" />
+                          Grupo {mesa.id_grupo_mesa}
+                        </Badge>
                       </div>
                     )}
 
@@ -1692,7 +1655,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
           <ReservaModal
             isOpen={showReservaModal}
             onClose={() => {
-              console.log('🔍 Cerrando modal de reservas');
               setShowReservaModal(false);
               setSelectedMesaForReserva(null);
             }}
@@ -1703,9 +1665,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
 
         {/* Modal de Detalles de Reserva */}
         {(() => {
-          console.log('🔍 [Modal Debug] showDetallesModal:', showDetallesModal);
-          console.log('🔍 [Modal Debug] selectedMesaForDetalles:', selectedMesaForDetalles);
-          console.log('🔍 [Modal Debug] reservaDetalles:', reservaDetalles);
           return showDetallesModal && selectedMesaForDetalles && reservaDetalles && (
             <ReservaDetallesModal
               isOpen={showDetallesModal}
