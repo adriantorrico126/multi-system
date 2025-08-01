@@ -114,7 +114,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onAppl
               >
                 {/* Indicador de promoción */}
                 {tienePromocion && (
-                  <div className="absolute -top-1 -right-1 z-10">
+                  <div className="absolute top-1 left-1 z-10">
                     <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-1.5 py-0.5 shadow-lg">
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       Promo
@@ -176,12 +176,31 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onAppl
                     
                     {/* Información de promoción aplicada */}
                     {tienePromocion && (
-                      <div className="mt-1 p-1.5 bg-green-100 rounded border border-green-200">
-                        <div className="flex items-center gap-1">
-                          <Tag className="h-2.5 w-2.5 text-green-600" />
-                          <span className="text-xs font-medium text-green-700">
-                            {promocionesAplicadas[0].nombre} - {promocionesAplicadas[0].valor}% descuento
-                          </span>
+                      <div className="mt-2 mb-2 p-2 bg-green-100 rounded border border-green-200 flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1 min-w-0">
+                            <Tag className="h-3 w-3 text-green-600 shrink-0" />
+                            <span className="text-xs font-medium text-green-700 truncate max-w-[110px]">
+                              {promocionesAplicadas[0].nombre}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Badge className="bg-green-200 text-green-800 text-[10px] px-1 py-0.5 font-semibold border border-green-300">
+                              {promocionesAplicadas[0].tipo === 'porcentaje' && '%'}
+                              {promocionesAplicadas[0].tipo === 'monto_fijo' && 'Bs'}
+                              {promocionesAplicadas[0].tipo === 'precio_fijo' && 'Fijo'}
+                            </Badge>
+                            <Badge className="bg-green-500 text-white text-[11px] px-1.5 py-0.5 font-bold border border-green-600">
+                              {promocionesAplicadas[0].tipo === 'porcentaje' && `-${promocionesAplicadas[0].valor}%`}
+                              {promocionesAplicadas[0].tipo === 'monto_fijo' && `-Bs${promocionesAplicadas[0].valor}`}
+                              {promocionesAplicadas[0].tipo === 'precio_fijo' && `Bs${promocionesAplicadas[0].valor}`}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-green-700">
+                          <span className="line-through">Bs {item.originalPrice || item.price}</span>
+                          <span className="font-bold">Bs {item.price}</span>
+                          <span className="ml-2 text-green-600 font-semibold">Ahorras Bs {(item.originalPrice && (item.originalPrice - item.price) > 0) ? (item.originalPrice - item.price).toFixed(2) : ''}</span>
                         </div>
                       </div>
                     )}
