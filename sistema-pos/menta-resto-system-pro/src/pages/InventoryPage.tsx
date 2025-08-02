@@ -53,8 +53,8 @@ const InventarioLotesManagement: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/inventario-lotes`, {
+      const token = localStorage.getItem("jwtToken");
+      const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -75,16 +75,16 @@ const InventarioLotesManagement: React.FC = () => {
   const handleSave = async (loteData: Lote) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('jwtToken');
+      const token = localStorage.getItem("jwtToken");
       if (selectedLote) {
         await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${selectedLote.id_lote}`, loteData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        toast.success('Lote actualizado');
+        toast.success("Lote actualizado");
       } else {
-        await api.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/inventario-lotes`, loteData, {
+        await api.post(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, loteData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
