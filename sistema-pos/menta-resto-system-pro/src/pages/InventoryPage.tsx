@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '@/services/api';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -40,58 +40,81 @@ interface Lote {
   fecha_caducidad: string;
   precio_compra: number;
   id_restaurante: number;
+  // Campos de auditoría opcionales que pueden venir de la API
+  created_at?: string;
+  updated_at?: string;
 }
 
 const InventarioLotesManagement: React.FC = () => {
   const [lotes, setLotes] = useState<Lote[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLote, setSelectedLote] = useState<Lote | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const fetchLotes = async () => {
+  const productMap = useMemo(() => {
+    return products.reduce((map, product) => {
+      map[product.id_producto] = product.nombre;
+      return map;
+    }, {} as Record<number, string>);
+  }, [products]);
+
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("jwtToken");
-      const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setLotes(response.data.data || []);
+      const [lotesResponse, productsResponse] = await Promise.all([
+        api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setLotes(lotesResponse.data.data || []);
+      setProducts(productsResponse.data.data || []);
+
     } catch (err) {
-      setError('Error al cargar los lotes.');
-      toast.error('Error', { description: 'Error al cargar los lotes.' });
+      setError('Error al cargar los datos.');
+      toast.error('Error', { description: 'Error al cargar lotes o productos.' });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLotes();
+    fetchData();
   }, []);
 
   const handleSave = async (loteData: Lote) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("jwtToken");
+      const dataToSend = { ...loteData };
+      // La tabla 'inventario_lotes' no tiene una columna 'updated_at'.
+      // Al editar, el objeto 'loteData' que viene de la API sí contiene este campo.
+      // Debemos eliminarlo antes de enviarlo al backend para evitar el error.
+      delete dataToSend.updated_at;
+
       if (selectedLote) {
-        await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${selectedLote.id_lote}`, loteData, {
+        await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${selectedLote.id_lote}`, dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         toast.success("Lote actualizado");
       } else {
-        await api.post(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, loteData, {
+        await api.post(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, dataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         toast.success('Lote creado');
       }
-      fetchLotes();
+      fetchData();
       setIsDialogOpen(false);
     } catch (err) {
       setError('Error al guardar el lote.');
@@ -118,7 +141,7 @@ const InventarioLotesManagement: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Producto ID</TableHead>
+                <TableHead>Producto</TableHead>
                 <TableHead>Número de Lote</TableHead>
                 <TableHead>Cantidad Actual</TableHead>
                 <TableHead>Fecha de Caducidad</TableHead>
@@ -128,7 +151,7 @@ const InventarioLotesManagement: React.FC = () => {
             <TableBody>
               {lotes.map((lote) => (
                 <TableRow key={lote.id_lote}>
-                  <TableCell>{lote.id_producto}</TableCell>
+                  <TableCell>{productMap[lote.id_producto] || lote.id_producto}</TableCell>
                   <TableCell>{lote.numero_lote}</TableCell>
                   <TableCell>{lote.cantidad_actual}</TableCell>
                   <TableCell>{new Date(lote.fecha_caducidad).toLocaleDateString()}</TableCell>
@@ -150,6 +173,7 @@ const InventarioLotesManagement: React.FC = () => {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onSave={handleSave}
+        products={products}
         lote={selectedLote}
       />
     </Card>
@@ -161,18 +185,28 @@ interface LoteDialogProps {
   onClose: () => void;
   onSave: (lote: Lote) => void;
   lote: Lote | null;
+  products: Product[];
 }
 
-const LoteDialog: React.FC<LoteDialogProps> = ({ isOpen, onClose, onSave, lote }) => {
+const LoteDialog: React.FC<LoteDialogProps> = ({ isOpen, onClose, onSave, lote, products }) => {
   const [formData, setFormData] = useState<Partial<Lote>>(lote || {});
 
   useEffect(() => {
-    setFormData(lote || {});
-  }, [lote]);
+    const initialData = lote ? {
+      ...lote,
+      fecha_fabricacion: lote.fecha_fabricacion ? new Date(lote.fecha_fabricacion).toISOString().split('T')[0] : '',
+      fecha_caducidad: lote.fecha_caducidad ? new Date(lote.fecha_caducidad).toISOString().split('T')[0] : '',
+    } : {};
+    setFormData(initialData);
+  }, [lote, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData({ ...formData, id_producto: parseInt(value, 10) });
   };
 
   const handleSave = () => {
@@ -186,20 +220,59 @@ const LoteDialog: React.FC<LoteDialogProps> = ({ isOpen, onClose, onSave, lote }
           <DialogTitle>{lote ? 'Editar Lote' : 'Crear Lote'}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Label>Producto ID</Label>
-          <Input name="id_producto" type="number" value={formData.id_producto || ''} onChange={handleChange} />
-          <Label>Número de Lote</Label>
-          <Input name="numero_lote" value={formData.numero_lote || ''} onChange={handleChange} />
-          <Label>Cantidad Inicial</Label>
-          <Input name="cantidad_inicial" type="number" value={formData.cantidad_inicial || ''} onChange={handleChange} />
-          <Label>Cantidad Actual</Label>
-          <Input name="cantidad_actual" type="number" value={formData.cantidad_actual || ''} onChange={handleChange} />
-          <Label>Fecha de Fabricación</Label>
-          <Input name="fecha_fabricacion" type="date" value={formData.fecha_fabricacion || ''} onChange={handleChange} />
-          <Label>Fecha de Caducidad</Label>
-          <Input name="fecha_caducidad" type="date" value={formData.fecha_caducidad || ''} onChange={handleChange} />
-          <Label>Precio de Compra</Label>
-          <Input name="precio_compra" type="number" value={formData.precio_compra || ''} onChange={handleChange} />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="id_producto" className="text-right">Producto</Label>
+            <Select onValueChange={handleSelectChange} value={formData.id_producto?.toString() || ''}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Selecciona un producto" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((product) => (
+                  <SelectItem key={product.id_producto} value={product.id_producto.toString()}>
+                    {product.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="numero_lote" className="text-right">Número de Lote</Label>
+            <Input id="numero_lote" name="numero_lote" value={formData.numero_lote || ''} onChange={handleChange} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="cantidad_inicial" className="text-right">Cantidad Inicial</Label>
+            <Input id="cantidad_inicial" name="cantidad_inicial" type="number" value={formData.cantidad_inicial || ''} onChange={handleChange} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="cantidad_actual" className="text-right">Cantidad Actual</Label>
+            <Input id="cantidad_actual" name="cantidad_actual" type="number" value={formData.cantidad_actual || ''} onChange={handleChange} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fecha_fabricacion" className="text-right">Fecha de Fabricación</Label>
+            <Input
+              id="fecha_fabricacion"
+              name="fecha_fabricacion"
+              type="date"
+              value={formData.fecha_fabricacion || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fecha_caducidad" className="text-right">Fecha de Caducidad</Label>
+            <Input
+              id="fecha_caducidad"
+              name="fecha_caducidad"
+              type="date"
+              value={formData.fecha_caducidad || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="precio_compra" className="text-right">Precio de Compra</Label>
+            <Input id="precio_compra" name="precio_compra" type="number" value={formData.precio_compra || ''} onChange={handleChange} className="col-span-3" />
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={handleSave}>Guardar</Button>
