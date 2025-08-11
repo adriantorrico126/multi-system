@@ -11,6 +11,9 @@ const loginValidationRules = [
 
 router.post('/login', loginValidationRules, authController.login);
 
+// Verificar el estado de la sesión actual del token
+router.get('/status', authenticateToken, authController.getSessionStatus);
+
 // Obtener usuarios (solo admin)
 router.get('/users', authenticateToken, authorizeRoles('admin'), authController.getUsers);
 

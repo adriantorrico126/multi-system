@@ -7,13 +7,8 @@ const Venta = {
       throw new Error(`[VENTA MODEL] No se puede crear venta: id_mesa o mesa_numero es null o undefined. id_mesa: ${id_mesa}, mesa_numero: ${mesa_numero}`);
     }
     
-    // Estado inicial según el rol del usuario
-    let estadoInicial = 'recibido'; // Por defecto para admin/cajero
-    
-    // Si es mesero, el pedido debe ser aprobado por cajero
-    if (rol_usuario === 'mesero') {
-      estadoInicial = 'pendiente_aprobacion';
-    }
+    // Estado inicial unificado: permitir a mesero enviar pedidos directamente a cocina
+    let estadoInicial = 'recibido';
     
     const query = `
       INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante)

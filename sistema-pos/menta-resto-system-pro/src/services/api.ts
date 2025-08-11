@@ -8,23 +8,26 @@ api.interceptors.response.use(
   response => response,
   error => {
     console.log('🔍 [API Interceptor] Error detectado:', error);
-    console.log('🔍 [API Interceptor] Error status:', error.response?.status);
-    console.log('🔍 [API Interceptor] Error data:', error.response?.data);
-    console.log('🔍 [API Interceptor] Error message:', error.response?.data?.message);
-    
-    if (error.response && error.response.data && typeof error.response.data.message === 'string') {
-      if (
-        error.response.status === 401 || error.response.status === 403 ||
-        error.response.data.message.toLowerCase().includes('jwt expired')
-      ) {
-        console.log('🔍 [API Interceptor] Token expirado o error de autorización detectado');
-        console.log('🔍 [API Interceptor] Redirigiendo al login...');
-        // Limpiar token y redirigir al login
-        localStorage.removeItem('jwtToken');
-        window.location.href = '/login?expired=1';
-        return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
-      }
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message?.toLowerCase?.() || '';
+
+    // Solo forzar logout en 401 con token inválido/expirado
+    const isAuthFailure = status === 401 && (
+      message.includes('jwt expired') ||
+      message.includes('invalid token') ||
+      message.includes('token invalid') ||
+      message.includes('no token provided') ||
+      message.includes('token requerido')
+    );
+
+    if (isAuthFailure) {
+      console.log('🔍 [API Interceptor] Token inválido/expirado. Redirigiendo al login...');
+      localStorage.removeItem('jwtToken');
+      window.location.href = '/login?expired=1';
+      return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
     }
+
+    // Para 403 (forbidden) u otros errores, no cerrar sesión automáticamente
     return Promise.reject(error);
   }
 );
@@ -1543,4 +1546,30 @@ export const tienePromocionesActivas = async (id_producto: number) => {
     console.error('Error verificando promociones:', error);
     throw error;
   }
+};
+
+// Transferir ítem individual entre mesas
+export const transferirItemMesa = async (id_detalle: number, id_mesa_destino: number) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/transferir-item`, {
+    id_detalle,
+    id_mesa_destino,
+  });
+  return response.data;
+};
+
+// Transferir orden completa entre mesas
+export const transferirOrdenMesa = async (id_venta: number, id_mesa_destino: number) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/transferir-orden`, {
+    id_venta,
+    id_mesa_destino,
+  });
+  return response.data;
+};
+
+// Dividir cuenta (split bill)
+export const splitBillMesa = async (id_mesa: number, asignaciones: { id_detalle: number; subcuenta: string }[]) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/${id_mesa}/split-bill`, {
+    asignaciones,
+  });
+  return response.data;
 };

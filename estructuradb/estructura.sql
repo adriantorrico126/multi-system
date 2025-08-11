@@ -1,0 +1,245 @@
+admin_users	id	integer
+admin_users	username	character varying
+admin_users	password_hash	character varying
+admin_users	nombre	character varying
+admin_users	activo	boolean
+admin_users	creado_en	timestamp without time zone
+admin_users	actualizado_en	timestamp without time zone
+auditoria_admin	id_auditoria	integer
+auditoria_admin	id_usuario	integer
+auditoria_admin	accion	character varying
+auditoria_admin	tabla_afectada	character varying
+auditoria_admin	id_registro	integer
+auditoria_admin	datos_anteriores	jsonb
+auditoria_admin	datos_nuevos	jsonb
+auditoria_admin	fecha_accion	timestamp without time zone
+auditoria_pos	id_auditoria	bigint
+auditoria_pos	id_vendedor	integer
+auditoria_pos	accion	character varying
+auditoria_pos	tabla_afectada	character varying
+auditoria_pos	id_registro	bigint
+auditoria_pos	datos_anteriores	jsonb
+auditoria_pos	datos_nuevos	jsonb
+auditoria_pos	fecha_accion	timestamp with time zone
+auditoria_pos	id_restaurante	integer
+auditoria_pos	ip_origen	inet
+auditoria_pos	user_agent	character varying
+auditoria_pos	descripcion	text
+auditoria_pos	exito	boolean
+auditoria_pos	error_msg	text
+categorias	id_categoria	integer
+categorias	nombre	character varying
+categorias	activo	boolean
+categorias	created_at	timestamp without time zone
+categorias	id_restaurante	integer
+clientes	id_cliente	integer
+clientes	nombre	character varying
+clientes	telefono	character varying
+clientes	email	character varying
+clientes	fecha_registro	timestamp without time zone
+detalle_ventas	id_detalle	integer
+detalle_ventas	id_venta	integer
+detalle_ventas	id_producto	integer
+detalle_ventas	cantidad	integer
+detalle_ventas	precio_unitario	numeric
+detalle_ventas	subtotal	numeric
+detalle_ventas	observaciones	text
+detalle_ventas	created_at	timestamp without time zone
+detalle_ventas	id_restaurante	integer
+detalle_ventas_modificadores	id_detalle_venta	integer
+detalle_ventas_modificadores	id_modificador	integer
+detalle_ventas_modificadores	precio_aplicado	numeric
+detalle_ventas_modificadores	created_at	timestamp without time zone
+dim_tiempo	id_tiempo	integer
+dim_tiempo	fecha	date
+dim_tiempo	dia	integer
+dim_tiempo	mes	integer
+dim_tiempo	anio	integer
+dim_tiempo	nombre_mes	character varying
+dim_tiempo	nombre_dia	character varying
+dim_tiempo	es_fin_de_semana	boolean
+dim_tiempo	turno	character varying
+facturas	id_factura	integer
+facturas	numero	character varying
+facturas	nit_cliente	character varying
+facturas	razon_social	character varying
+facturas	total	numeric
+facturas	fecha	timestamp without time zone
+facturas	id_venta	integer
+grupos_mesas	id_grupo_mesa	integer
+grupos_mesas	id_restaurante	integer
+grupos_mesas	id_sucursal	integer
+grupos_mesas	id_venta_principal	integer
+grupos_mesas	estado	character varying
+grupos_mesas	created_at	timestamp without time zone
+grupos_mesas	updated_at	timestamp without time zone
+grupos_mesas	id_mesero	integer
+mesas	id_mesa	integer
+mesas	numero	integer
+mesas	id_sucursal	integer
+mesas	capacidad	integer
+mesas	estado	character varying
+mesas	id_venta_actual	integer
+mesas	hora_apertura	timestamp without time zone
+mesas	hora_cierre	timestamp without time zone
+mesas	total_acumulado	numeric
+mesas	created_at	timestamp without time zone
+mesas	updated_at	timestamp without time zone
+mesas	id_restaurante	integer
+mesas	id_mesero_actual	integer
+mesas	id_grupo_mesa	integer
+mesas_en_grupo	id_mesa_en_grupo	integer
+mesas_en_grupo	id_grupo_mesa	integer
+mesas_en_grupo	id_mesa	integer
+mesas_en_grupo	created_at	timestamp without time zone
+metodos_pago	id_pago	integer
+metodos_pago	descripcion	character varying
+metodos_pago	activo	boolean
+metodos_pago	id_restaurante	integer
+movimientos_inventario	id_movimiento	integer
+movimientos_inventario	id_producto	integer
+movimientos_inventario	tipo_movimiento	character varying
+movimientos_inventario	cantidad	integer
+movimientos_inventario	stock_anterior	integer
+movimientos_inventario	stock_actual	integer
+movimientos_inventario	fecha_movimiento	timestamp with time zone
+movimientos_inventario	id_vendedor	integer
+movimientos_inventario	id_restaurante	integer
+pagos_restaurantes	id	integer
+pagos_restaurantes	id_restaurante	integer
+pagos_restaurantes	monto	numeric
+pagos_restaurantes	fecha_pago	timestamp without time zone
+pagos_restaurantes	metodo_pago	character varying
+pagos_restaurantes	observaciones	text
+pagos_restaurantes	registrado_por	integer
+pagos_restaurantes	creado_en	timestamp without time zone
+prefacturas	id_prefactura	integer
+prefacturas	id_mesa	integer
+prefacturas	id_venta_principal	integer
+prefacturas	total_acumulado	numeric
+prefacturas	estado	character varying
+prefacturas	fecha_apertura	timestamp without time zone
+prefacturas	fecha_cierre	timestamp without time zone
+prefacturas	observaciones	text
+prefacturas	created_at	timestamp without time zone
+prefacturas	id_restaurante	integer
+productos	id_producto	integer
+productos	nombre	character varying
+productos	precio	numeric
+productos	id_categoria	integer
+productos	stock_actual	integer
+productos	activo	boolean
+productos	imagen_url	text
+productos	created_at	timestamp without time zone
+productos	id_restaurante	integer
+productos_modificadores	id_modificador	integer
+productos_modificadores	id_producto	integer
+productos_modificadores	nombre_modificador	character varying
+productos_modificadores	precio_extra	numeric
+productos_modificadores	tipo_modificador	character varying
+productos_modificadores	activo	boolean
+productos_modificadores	created_at	timestamp without time zone
+productos_modificadores	updated_at	timestamp without time zone
+promociones	id_promocion	integer
+promociones	nombre	character varying
+promociones	tipo	character varying
+promociones	valor	numeric
+promociones	fecha_inicio	date
+promociones	fecha_fin	date
+promociones	id_producto	integer
+promociones	creada_en	timestamp without time zone
+promociones	activa	boolean
+promociones	id_restaurante	integer
+promociones_sucursales	id_relacion	integer
+promociones_sucursales	id_promocion	integer
+promociones_sucursales	id_sucursal	integer
+promociones_sucursales	aplicada_en	timestamp without time zone
+reservas	id_reserva	integer
+reservas	id_restaurante	integer
+reservas	id_sucursal	integer
+reservas	id_mesa	integer
+reservas	id_cliente	integer
+reservas	nombre_cliente	character varying
+reservas	telefono_cliente	character varying
+reservas	email_cliente	character varying
+reservas	fecha_hora_inicio	timestamp with time zone
+reservas	fecha_hora_fin	timestamp with time zone
+reservas	numero_personas	integer
+reservas	estado	character varying
+reservas	observaciones	text
+reservas	created_at	timestamp without time zone
+reservas	updated_at	timestamp without time zone
+reservas	registrado_por	integer
+restaurantes	id_restaurante	integer
+restaurantes	nombre	character varying
+restaurantes	direccion	text
+restaurantes	ciudad	character varying
+restaurantes	telefono	character varying
+restaurantes	email	character varying
+restaurantes	activo	boolean
+restaurantes	created_at	timestamp without time zone
+roles_admin	id_rol	integer
+roles_admin	nombre	character varying
+roles_admin	descripcion	character varying
+roles_admin	permisos	jsonb
+roles_admin	creado_en	timestamp without time zone
+servicios_restaurante	id	integer
+servicios_restaurante	id_restaurante	integer
+servicios_restaurante	nombre_plan	character varying
+servicios_restaurante	descripcion_plan	text
+servicios_restaurante	fecha_inicio	date
+servicios_restaurante	fecha_fin	date
+servicios_restaurante	estado_suscripcion	character varying
+servicios_restaurante	precio_mensual	numeric
+servicios_restaurante	ultimo_pago	date
+servicios_restaurante	funcionalidades_json	jsonb
+servicios_restaurante	creado_en	timestamp with time zone
+servicios_restaurante	actualizado_en	timestamp with time zone
+soporte_tickets	id_ticket	integer
+soporte_tickets	id_vendedor	integer
+soporte_tickets	id_restaurante	integer
+soporte_tickets	asunto	character varying
+soporte_tickets	descripcion	text
+soporte_tickets	estado	character varying
+soporte_tickets	fecha_creacion	timestamp without time zone
+soporte_tickets	fecha_resuelto	timestamp without time zone
+soporte_tickets	respuesta	text
+sucursales	id_sucursal	integer
+sucursales	nombre	character varying
+sucursales	ciudad	character varying
+sucursales	direccion	text
+sucursales	activo	boolean
+sucursales	created_at	timestamp without time zone
+sucursales	id_restaurante	integer
+usuarios	id_usuario	integer
+usuarios	nombre	character varying
+usuarios	email	character varying
+usuarios	password_hash	character varying
+usuarios	rol_id	integer
+usuarios	id_sucursal	integer
+usuarios	activo	boolean
+usuarios	creado_en	timestamp without time zone
+usuarios	actualizado_en	timestamp without time zone
+vendedores	id_vendedor	integer
+vendedores	nombre	character varying
+vendedores	username	character varying
+vendedores	email	character varying
+vendedores	password_hash	character varying
+vendedores	rol	character varying
+vendedores	activo	boolean
+vendedores	created_at	timestamp without time zone
+vendedores	id_sucursal	integer
+vendedores	id_restaurante	integer
+vendedores	rol_admin_id	integer
+ventas	id_venta	integer
+ventas	fecha	timestamp without time zone
+ventas	id_vendedor	integer
+ventas	id_pago	integer
+ventas	id_sucursal	integer
+ventas	tipo_servicio	character varying
+ventas	total	numeric
+ventas	mesa_numero	integer
+ventas	created_at	timestamp without time zone
+ventas	estado	character varying
+ventas	id_restaurante	integer
+ventas	id_mesa	integer

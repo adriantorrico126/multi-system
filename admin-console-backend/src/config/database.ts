@@ -28,6 +28,21 @@ export async function initAdminUsersTable() {
   `);
 }
 
+// Inicializar tabla de restaurantes si no existe
+export async function initRestaurantesTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS restaurantes (
+      id_restaurante SERIAL PRIMARY KEY,
+      nombre VARCHAR(255) NOT NULL,
+      direccion VARCHAR(255),
+      telefono VARCHAR(50),
+      activo BOOLEAN DEFAULT true,
+      creado_en TIMESTAMP DEFAULT NOW(),
+      actualizado_en TIMESTAMP DEFAULT NOW()
+    )
+  `);
+}
+
 // Inicializar tabla de pagos de restaurantes si no existe
 export async function initPagosRestaurantesTable() {
   await pool.query(`

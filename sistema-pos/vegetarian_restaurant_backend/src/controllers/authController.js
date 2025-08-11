@@ -114,3 +114,34 @@ exports.getUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getSessionStatus = async (req, res, next) => {
+  try {
+    // La información del usuario (rol, sucursal, etc.) ya fue decodificada
+    // del token por el middleware authenticateToken y está en req.user
+    const userInfo = req.user;
+
+    // Puedes enriquecer esta información si es necesario, por ejemplo, 
+    // obteniendo detalles frescos de la base de datos, pero para este caso
+    // con devolver la info del token es suficiente y más rápido.
+
+    logger.info(`Estado de sesión consultado por: ${userInfo.username}`);
+
+    res.status(200).json({
+      message: 'Sesión activa.',
+      isAuthenticated: true,
+      user: {
+        id: userInfo.id,
+        username: userInfo.username,
+        rol: userInfo.rol,
+        id_sucursal: userInfo.id_sucursal,
+        sucursal_nombre: userInfo.sucursal_nombre,
+        id_restaurante: userInfo.id_restaurante
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error al obtener el estado de la sesión:', error);
+    next(error);
+  }
+};

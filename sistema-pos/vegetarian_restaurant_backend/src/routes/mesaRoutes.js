@@ -12,44 +12,44 @@ router.use(authenticateToken);
 // ===================================
 
 // Obtener configuración de mesas
-router.get('/configuracion/sucursal/:id_sucursal', mesaController.getConfiguracionMesas);
+router.get('/configuracion/sucursal/:id_sucursal', authorizeRoles('admin', 'super_admin'), mesaController.getConfiguracionMesas);
 
 // Crear nueva mesa
-router.post('/configuracion', mesaController.crearMesa);
+router.post('/configuracion', authorizeRoles('admin', 'super_admin'), mesaController.crearMesa);
 
 // Actualizar mesa
-router.put('/configuracion/:id_mesa', mesaController.actualizarMesa);
+router.put('/configuracion/:id_mesa', authorizeRoles('admin', 'super_admin'), mesaController.actualizarMesa);
 
 // Eliminar mesa
-router.delete('/configuracion/:id_mesa', mesaController.eliminarMesa);
+router.delete('/configuracion/:id_mesa', authorizeRoles('admin', 'super_admin'), mesaController.eliminarMesa);
 
 // ===================================
 // 🔹 RUTAS OPERATIVAS DE MESAS
 // ===================================
 
 // Obtener todas las mesas de una sucursal
-router.get('/sucursal/:id_sucursal', mesaController.getMesas);
+router.get('/sucursal/:id_sucursal', authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), mesaController.getMesas);
 
 // Obtener estadísticas de mesas
-router.get('/sucursal/:id_sucursal/estadisticas', mesaController.getEstadisticasMesas);
+router.get('/sucursal/:id_sucursal/estadisticas', authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), mesaController.getEstadisticasMesas);
 
 // Abrir mesa (iniciar servicio)
-router.post('/abrir', mesaController.abrirMesa);
+router.post('/abrir', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.abrirMesa);
 
 // Agregar productos a mesa existente
-router.post('/agregar-productos', mesaController.agregarProductosAMesa);
+router.post('/agregar-productos', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.agregarProductosAMesa);
 
 // Generar prefactura de mesa
-router.get('/:id_mesa/prefactura', mesaController.generarPrefactura);
+router.get('/:id_mesa/prefactura', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.generarPrefactura);
 
 // Obtener historial de mesa
-router.get('/:id_mesa/historial', mesaController.getHistorialMesa);
+router.get('/:id_mesa/historial', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.getHistorialMesa);
 
 // Cerrar mesa (finalizar servicio)
-router.put('/:id_mesa/cerrar', mesaController.cerrarMesa);
+router.put('/:id_mesa/cerrar', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.cerrarMesa);
 
 // Liberar mesa (marcar como libre sin facturar)
-router.patch('/:id_mesa/liberar', mesaController.liberarMesa);
+router.patch('/:id_mesa/liberar', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.liberarMesa);
 
 // Marcar mesa como pagada (nuevo flujo)
 router.post('/marcar-pagado', mesaController.marcarMesaComoPagada);
@@ -78,6 +78,9 @@ router.patch('/detalle/:id_detalle', authorizeRoles('mesero', 'admin', 'cajero',
 
 // Endpoint para listar todas las mesas (con query params)
 router.get('/', authorizeRoles('admin', 'cajero', 'mesero', 'super_admin'), mesaController.listarMesas);
+
+// Eliminar mesas duplicadas por sucursal (solo admin/super_admin)
+router.delete('/duplicadas', authorizeRoles('admin', 'super_admin'), mesaController.eliminarMesasDuplicadas);
 
 // Obtener una mesa específica (MÁS ESPECÍFICA AL FINAL)
 router.get('/:numero/sucursal/:id_sucursal', mesaController.getMesa);

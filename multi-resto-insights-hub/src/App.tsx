@@ -10,6 +10,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { AuthLogin } from "@/components/auth/AuthLogin";
 
+import { AddRestaurantePage } from "./pages/AddRestaurante";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -28,6 +30,7 @@ function App() {
         <TooltipProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/add-restaurante" element={<AddRestaurantePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

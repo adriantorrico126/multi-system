@@ -1107,3 +1107,61 @@ exports.reasignarMesero = async (req, res, next) => {
     next(error);
   }
 };
+
+// Eliminar mesas duplicadas por (id_restaurante, id_sucursal, numero)
+exports.eliminarMesasDuplicadas = async (req, res, next) => {
+  try {
+    const id_restaurante = req.user.id_restaurante;
+    const { id_sucursal } = req.query;
+    if (!id_sucursal) {
+      return res.status(400).json({ message: 'id_sucursal es requerido' });
+    }
+
+    // Buscar grupos de números de mesa duplicados
+    const dupQuery = `
+      SELECT numero, COUNT(*) as total,
+             ARRAY_AGG(id_mesa ORDER BY created_at DESC) as ids_desc,
+             ARRAY_AGG(id_mesa ORDER BY created_at ASC) as ids_asc
+      FROM mesas
+      WHERE id_restaurante = $1 AND id_sucursal = $2
+      GROUP BY numero
+      HAVING COUNT(*) > 1
+    `;
+    const { rows: duplicados } = await pool.query(dupQuery, [id_restaurante, id_sucursal]);
+
+    let eliminadas = 0;
+    const detalles = [];
+
+    for (const dup of duplicados) {
+      const numero = dup.numero;
+      const idsAsc = dup.ids_asc; // más antiguas primero
+      // Mantener la más reciente, eliminar las antiguas que estén libres
+      // Evitar eliminar mesas en uso o pendientes
+      const candidates = idsAsc.slice(0, -1); // todas menos la más reciente
+      if (candidates.length === 0) continue;
+
+      const estadoRows = await pool.query(
+        `SELECT id_mesa, estado FROM mesas WHERE id_mesa = ANY($1::int[])`,
+        [candidates]
+      );
+      const eliminables = estadoRows.rows
+        .filter(r => r.estado === 'libre' || r.estado === 'mantenimiento' || r.estado === 'pagado')
+        .map(r => r.id_mesa);
+
+      if (eliminables.length > 0) {
+        await pool.query(`DELETE FROM mesas WHERE id_mesa = ANY($1::int[])`, [eliminables]);
+        eliminadas += eliminables.length;
+        detalles.push({ numero, eliminadas: eliminables });
+      } else {
+        detalles.push({ numero, eliminadas: [] });
+      }
+    }
+
+    return res.status(200).json({
+      message: 'Limpieza de mesas duplicadas completada',
+      data: { grupos_duplicados: duplicados.length, total_eliminadas: eliminadas, detalles }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

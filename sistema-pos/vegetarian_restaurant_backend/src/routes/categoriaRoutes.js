@@ -38,7 +38,7 @@ router.post(
 
 // GET /api/v1/categorias - Obtener todas las categorías (activas por defecto)
 // GET /api/v1/categorias?includeInactive=true - Obtener todas las categorías (incluyendo inactivas)
-router.get('/', authenticateToken, cache('1 minute'), categoriaController.getAllCategorias);
+router.get('/', authenticateToken, authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), cache('1 minute'), categoriaController.getAllCategorias);
 
 // GET /api/v1/categorias/:id - Obtener una categoría por ID
 router.get('/:id', categoriaController.getCategoriaById);

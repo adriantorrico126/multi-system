@@ -49,7 +49,10 @@ import {
   marcarMesaComoPagada,
   getUsers,
   getReservasByMesa,
-  limpiarEstadosMesas
+  limpiarEstadosMesas,
+  transferirItemMesa,
+  transferirOrdenMesa,
+  splitBillMesa,
 } from '@/services/api';
 import MesaConfiguration from './MesaConfiguration';
 import { GruposMesasManagement } from './GruposMesasManagement';
@@ -541,6 +544,11 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       });
     }
   };
+
+  // Definir productos a partir de la prefactura para evitar referencia no definida
+  const productos = prefacturaData?.data?.historial ?? [];
+  const idVentaActual = prefacturaData?.data?.id_venta || productos?.[0]?.id_venta || null;
+  const [processingTransfer, setProcessingTransfer] = useState(false);
 
   if (!sucursalId) {
     return <div className="p-6 text-center text-red-600 font-bold">Error: sucursalId inválido. No se puede mostrar la gestión de mesas.</div>;

@@ -198,9 +198,9 @@ export function POSSystem() {
   });
 
   // Determina si el usuario solo puede ver mesas (cajero)
-  const onlyMesas = user.rol === 'cajero';
+  const onlyMesas = user.rol === 'cajero' || user.rol === 'mesero';
   // Determina si se deben mostrar las pestañas de administración
-  const showAdminFeatures = user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin';
+  const showAdminFeatures = user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin' || user.rol === 'mesero';
 
   // --- Estado Local del Componente ---
   const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, totalDescuentos, total, appliedPromociones } = useCart();
@@ -762,6 +762,16 @@ export function POSSystem() {
     }
   }, [onlyMesas]);
 
+  // Si el usuario es mesero, forzar la pestaña por defecto a 'mesero'
+  React.useEffect(() => {
+    if (user.rol === 'mesero') {
+      setActiveTab('pos');
+    }
+  }, [user.rol]);
+ 
+  // Siempre usar el header global para una experiencia unificada (incluye mesero)
+  // const showHeader = true; // <- se deja la definición activa más abajo
+
   // Determinar la sucursal actual para el Header
   const currentBranchForHeader = React.useMemo(() => {
     const branch = selectedBranch
@@ -820,47 +830,16 @@ export function POSSystem() {
   );
   }
 
-  // Si el usuario es mesero, mostrar el mapa visual de mesas como vista principal
-  if (user.rol === 'mesero') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-blue-950 flex flex-col">
-        <header className="flex items-center justify-between px-6 py-3 border-b bg-white/90 dark:bg-gray-900/90 shadow-sm">
-          <div className="flex items-center gap-4">
-            <img src="/logos/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full shadow-md" />
-            <div className="flex flex-col">
-              <span className="font-extrabold text-lg tracking-tight text-gray-900 dark:text-white">DATY</span>
-              <span className="text-xs text-gray-500 dark:text-gray-300">Sistema POS Profesional</span>
-            </div>
-            <div className="ml-6 px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col shadow-sm">
-              <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{user.sucursal?.nombre || 'Sucursal'}</span>
-              <span className="text-xs text-gray-500 dark:text-gray-300">{user.sucursal?.ciudad} - {user.sucursal?.direccion}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-bold shadow">{user.nombre}</span>
-            <span className="px-2 py-1 rounded-md bg-pink-100 text-pink-700 text-xs font-bold shadow">Mesero</span>
-            <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-mono shadow flex items-center gap-1"><Clock className="w-4 h-4" />{now.locale('es').format('HH:mm')}</span>
-            <span className="text-sm">{theme === 'dark' ? '🌙' : '☀️'}</span>
-            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
-            <button
-              onClick={logout}
-              className="ml-2 px-3 py-1 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center gap-1 text-sm font-semibold transition-colors shadow"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4" /> Salir
-            </button>
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center">
-          <MesaMap />
-        </main>
-      </div>
-    );
-  }
-  
-  // Renderizar el header global solo si el rol NO es mesero
-  const showHeader = user.rol !== 'mesero';
-  
+  // Si el usuario es mesero, forzar la pestaña por defecto a 'mesero'
+  React.useEffect(() => {
+    if (user.rol === 'mesero') {
+      setActiveTab('pos');
+    }
+  }, [user.rol]);
+ 
+  // Siempre usar el header global para una experiencia unificada (incluye mesero)
+  const showHeader = true;
+
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
       {showHeader && !branchesLoading ? (
@@ -913,7 +892,7 @@ export function POSSystem() {
             <ClipboardList className="h-5 w-5 mr-2" />
             Pedidos
           </Button>
-          {user.rol === 'cajero' && (
+          {(user.rol === 'cajero') && (
             <Button
               variant={activeTab === 'mesero' ? 'default' : 'outline'}
               onClick={() => handleTabChange('mesero')}
@@ -1191,12 +1170,8 @@ export function POSSystem() {
             </div>
           )}
 
-          {/* Vista de Mesero */}
-          {activeTab === 'mesero' && user?.rol === 'cajero' && (
-            <div className="p-6">
-              <PedidosMeseroCajero />
-            </div>
-          )}
+          {/* Vista de Mesero - rol mesero */}
+          {/* El rol mesero ahora usa POS + gestión de mesas dentro de Dashboard/Mesas */}
 
           {/* Vista de Pedidos Pendientes */}
           {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (

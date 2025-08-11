@@ -960,6 +960,23 @@ exports.updateEstadoVenta = async (req, res, next) => {
     // ...
     const updated = await Venta.updateEstadoVenta(ventaId, estado, id_restaurante);
     logger.info(`Venta ${ventaId} actualizada a estado: ${estado} por usuario ${user?.username || 'desconocido'} para el restaurante ${id_restaurante}`);
+
+    // Notificar a la sala de la mesa si la venta está asociada a una
+    if (updated.id_mesa) {
+      try {
+        const { getIO } = require('../socket');
+        const room = `restaurante_${id_restaurante}_mesa_${updated.id_mesa}`;
+        getIO().to(room).emit('orden_actualizada', { 
+          ventaId: ventaId, 
+          nuevoEstado: estado, 
+          id_mesa: updated.id_mesa 
+        });
+        logger.info(`Socket event 'orden_actualizada' emitido a room ${room}`);
+      } catch (socketError) {
+        logger.warn('No se pudo emitir evento socket para actualizar orden:', socketError.message);
+      }
+    }
+
     res.status(200).json({
       message: 'Estado de venta actualizado correctamente.',
       data: updated

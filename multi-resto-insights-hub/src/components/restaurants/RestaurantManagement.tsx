@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 import { 
   Building2, 
   Search, 
@@ -24,7 +25,8 @@ import {
   Clock,
   AlertTriangle,
   FileText,
-  Settings
+  Settings,
+  PlusCircle
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -45,6 +47,7 @@ export const RestaurantManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -202,9 +205,15 @@ export const RestaurantManagement: React.FC = () => {
 
       {/* Filtros y Búsqueda */}
       <Card>
-        <CardHeader>
-          <CardTitle>Gestión de Restaurantes</CardTitle>
-          <CardDescription>Administra todos los restaurantes que usan el sistema POS</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-2xl font-bold">Gestión de Restaurantes</CardTitle>
+            <CardDescription>Administra todos los restaurantes que usan el sistema POS</CardDescription>
+          </div>
+          <Button onClick={() => navigate('/add-restaurante')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Añadir Restaurante
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">

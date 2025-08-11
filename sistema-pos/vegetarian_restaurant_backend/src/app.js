@@ -54,6 +54,8 @@ const promocionRoutes = require('./routes/promocionRoutes');
 startupLogger.logStep('promocionRoutes', 'success');
 const inventarioLotesRoutes = require('./routes/inventarioLotesRoutes');
 startupLogger.logStep('inventarioLotesRoutes', 'success');
+const cocinaRoutes = require('./routes/cocinaRoutes');
+startupLogger.logStep('cocinaRoutes', 'success');
 
 // const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
 // const pagoSuscripcionRoutes = require('./routes/pagoSuscripcionRoutes');
@@ -106,6 +108,8 @@ app.use('/api/v1/promociones', promocionRoutes);
 startupLogger.logStep('Ruta /api/v1/promociones', 'success');
 app.use('/api/v1/inventario-lotes', inventarioLotesRoutes);
 startupLogger.logStep('Ruta /api/v1/inventario-lotes', 'success');
+app.use('/api/v1/cocina', cocinaRoutes);
+startupLogger.logStep('Ruta /api/v1/cocina', 'success');
 
 
 
