@@ -58,7 +58,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import type { Mesa, Product, Category, CartItem, User } from '@/types/restaurant'; // Añadir CartItem
 import { cn } from '@/lib/utils'; // Utility for conditional class names
-import { toast } from 'sonner'; // Assuming you have a toast notification library like Sonner
+import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ReservaModal } from './ReservaModal';

@@ -1,0 +1,21 @@
+{
+  "name": "agente-impresion",
+  "version": "1.0.0",
+  "description": "Agente local para manejar la impresión de tickets desde el sistema POS.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "pos",
+    "printer",
+    "agent"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "node-thermal-printer": "^4.1.2",
+    "socket.io-client": "^4.7.5"
+  }
+}

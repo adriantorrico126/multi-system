@@ -14,7 +14,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      "fixed bottom-4 right-4 z-[100] flex max-h-screen w-full flex-col p-4 md:max-w-[420px] pointer-events-none",
       className
     )}
     {...props}
@@ -27,7 +27,7 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "border bg-background text-foreground bg-white text-gray-900 dark:bg-neutral-900 dark:text-neutral-50",
         destructive:
           "destructive group border-destructive bg-destructive text-destructive-foreground",
       },
@@ -42,7 +42,7 @@ const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
->(({ className, variant, ...props }, ref) => {
+>(({ className, variant, children, ...props }, ref) => {
   // Solo pasar propiedades válidas y conocidas al ToastPrimitives.Root
   const validProps = {
     className: cn(toastVariants({ variant }), className),
@@ -57,12 +57,13 @@ const Toast = React.forwardRef<
     ...(props.forceMount && { forceMount: props.forceMount }),
     ...(props.disableOutsidePointerEvents && { disableOutsidePointerEvents: props.disableOutsidePointerEvents }),
     ...(props.asChild && { asChild: props.asChild }),
-  };
+    duration: 5000,
+  } as any;
 
   return (
-    <ToastPrimitives.Root
-      {...validProps}
-    />
+    <ToastPrimitives.Root {...validProps}>
+      {children}
+    </ToastPrimitives.Root>
   )
 })
 Toast.displayName = ToastPrimitives.Root.displayName
@@ -106,7 +107,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold", className)}
+    className={cn("text-sm font-semibold text-gray-900 dark:text-gray-100", className)}
     {...props}
   />
 ))
@@ -118,7 +119,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm opacity-90", className)}
+    className={cn("text-sm opacity-90 text-gray-700 dark:text-gray-300", className)}
     {...props}
   />
 ))

@@ -4,6 +4,7 @@ import React, { lazy, Suspense } from "react"; // Import lazy and Suspense
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
+import { OrientationBanner } from "./components/OrientationBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -21,6 +22,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <OrientationBanner />
         <AuthProvider>
           <BrowserRouter>
             <Suspense fallback={<div>Cargando...</div>}> {/* Add Suspense fallback */}

@@ -33,7 +33,8 @@ import {
   Link2,
   Unlink,
   Eye,
-  MoveRight
+  MoveRight,
+  Printer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -689,6 +690,59 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   // Función para manejar la transferencia de producto desde el modal
   const handleProductTransfer = (id_detalle: number, id_mesa_destino: number) => {
     transferirItemMutation.mutate({ id_detalle, id_mesa_destino });
+  };
+
+  const handleImprimirComanda = async () => {
+    if (!prefacturaData?.data) {
+      toast({
+        title: "Error",
+        description: "No hay datos de prefactura para imprimir.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pedidoParaImprimir = {
+      id_pedido: prefacturaData.data.historial_detallado[0]?.id_venta || selectedMesa?.id_mesa,
+      mesa: selectedMesa?.numero,
+      mesero: user?.nombre || 'N/A',
+      productos: prefacturaData.data.historial_detallado.map(p => ({
+        cantidad: p.cantidad,
+        nombre: p.nombre_producto,
+        notas: p.observaciones
+      }))
+    };
+
+    try {
+      const printServerUrl = (import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001');
+      const response = await fetch(`${printServerUrl}/api/pedidos/imprimir`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          pedido: pedidoParaImprimir, 
+          restauranteId: idRestaurante 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('El servidor de impresión no pudo procesar la solicitud.');
+      }
+
+      toast({
+        title: "Impresión Solicitada",
+        description: "La comanda ha sido enviada a la impresora.",
+      });
+
+    } catch (error) {
+      console.error('Error al solicitar la impresión:', error);
+      toast({
+        title: "Error de Impresión",
+        description: "No se pudo conectar con el servidor de impresión. Verifique que el agente esté funcionando.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Definir productos a partir de la prefactura para evitar referencia no definida
@@ -1794,6 +1848,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     </Button>
                     {selectedMesa && (
                       <>
+                        <Button
+                          variant="outline"
+                          onClick={handleImprimirComanda}
+                        >
+                          <Printer className="h-4 w-4 mr-2" />
+                          Imprimir Comanda
+                        </Button>
                         <Button
                           onClick={() => handleMarcarComoPagado(selectedMesa)}
                           disabled={marcarComoPagadoMutation.isPending}

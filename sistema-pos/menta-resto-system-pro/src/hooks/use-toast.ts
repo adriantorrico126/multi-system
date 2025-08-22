@@ -5,8 +5,8 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -156,7 +156,7 @@ function toast({ ...props }: Toast) {
       if (typeof value === 'number') return false;
       if (value === null || value === undefined) return false;
       if (typeof key === 'number') return false;
-      if (key === 'id' || key === 'title' || key === 'description' || key === 'action') return false;
+      if (key === 'id') return false;
       // Excluir cualquier propiedad que contenga 'id' en el nombre
       if (key.toLowerCase().includes('id')) return false;
       return true;
@@ -168,6 +168,10 @@ function toast({ ...props }: Toast) {
     toast: {
       ...filteredProps,
       id,
+      // Asegurar que el contenido se muestre
+      title: props.title ?? 'Notificación',
+      description: props.description ?? 'Operación realizada correctamente.',
+      action: props.action,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()

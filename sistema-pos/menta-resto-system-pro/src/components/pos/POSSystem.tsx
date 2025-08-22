@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { KitchenView } from '../../pages/KitchenView';
@@ -98,10 +98,26 @@ export function POSSystem() {
   const queryClient = useQueryClient();
   const { theme, toggleTheme } = useTheme();
   const [now, setNow] = React.useState(dayjs());
+  const [config, setConfig] = React.useState<any>({});
+  const [configOpen, setConfigOpen] = useState(false);
+  const [draftConfig, setDraftConfig] = useState<any>({});
   
   React.useEffect(() => {
     const interval = setInterval(() => setNow(dayjs()), 1000 * 30);
     return () => clearInterval(interval);
+  }, []);
+
+  // Cargar configuración al iniciar
+  React.useEffect(() => {
+    (async () => {
+      const cfg = await getConfiguracion();
+      setConfig(cfg || {});
+      setDraftConfig(cfg || {});
+      console.log('🔧 Configuración cargada:', cfg);
+      const ts = cfg?.tiposServicio || { mesa: true, pickup: true, delivery: false };
+      if (!ts.mesa && ts.pickup) setTipoServicio('Para Llevar');
+      if (!ts.mesa && !ts.pickup && ts.delivery) setTipoServicio('Delivery');
+    })();
   }, []);
 
   // Estado para sucursal seleccionada (solo admin/gerente)
@@ -198,9 +214,11 @@ export function POSSystem() {
   });
 
   // Determina si el usuario solo puede ver mesas (cajero)
-  const onlyMesas = user.rol === 'cajero' || user.rol === 'mesero';
+  const gestionMesasHabilitada = config?.gestionMesas?.habilitado !== false; // por defecto true
+  const onlyMesas = (user.rol === 'cajero' || user.rol === 'mesero') && gestionMesasHabilitada;
   // Determina si se deben mostrar las pestañas de administración
-  const showAdminFeatures = user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin' || user.rol === 'mesero';
+  const showAdminFeatures = ['admin', 'cajero', 'cocinero', 'super_admin'].includes(user.rol as any);
+  const canSeeSales = ['admin', 'cajero', 'cocinero', 'super_admin'].includes(user.rol as any);
 
   // --- Estado Local del Componente ---
   const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, totalDescuentos, total, appliedPromociones } = useCart();
@@ -229,7 +247,7 @@ export function POSSystem() {
   // Obtener productos disponibles
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ['products'],
-    queryFn: getProducts,
+    queryFn: () => getProducts(),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -237,14 +255,15 @@ export function POSSystem() {
   // Obtener categorías de productos
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ['categories', user?.id_restaurante],
-    queryFn: getCategories,
+    queryFn: () => getCategories(),
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
   // Obtener pedidos para la vista de cocina/gestión de pedidos
   // Profesional: permitir también al rol 'mesero' ver el feed unificado de cocina
-  const canViewOrders = ['cocinero', 'admin', 'cajero', 'mesero'].includes(user.rol);
+  const flujoCocinaModo = config?.flujoCocina?.modo || 'Completo';
+  const canViewOrders = ['cocinero', 'admin', 'cajero', 'mesero'].includes(user.rol) && flujoCocinaModo !== 'Simplificado';
   const {
     data: backendOrders = [],
     isError: isErrorOrders,
@@ -257,12 +276,20 @@ export function POSSystem() {
     staleTime: 3000,
   });
 
+  // Si el modo cambia a "Simplificado", forzar salida de la pestaña Pedidos y limpiar cache de órdenes
+  useEffect(() => {
+    if (!canViewOrders) {
+      if (activeTab === 'orders') setActiveTab('pos');
+      queryClient.setQueryData(['orders-pos'], []);
+    }
+  }, [canViewOrders, activeTab, queryClient]);
+
   // Filtrar pedidos para el cajero: solo los de su sucursal
   const filteredOrders = React.useMemo(() => {
     if (user.rol === 'cajero') {
       return (backendOrders || []).filter((order: any) => {
-        const orderSucursalId = parseInt(order.id_sucursal) || parseInt(order.sucursal_id);
-        const userSucursalId = parseInt(user.sucursal?.id);
+        const orderSucursalId = Number(order.id_sucursal ?? order.sucursal_id);
+        const userSucursalId = Number(user.sucursal?.id);
         return orderSucursalId === userSucursalId;
       });
     }
@@ -317,7 +344,7 @@ export function POSSystem() {
       status,
       timestamp: new Date(order.fecha),
       table: order.mesa_numero ? order.mesa_numero.toString() : order.tipo_servicio,
-      cashier: order.nombre_cajero || 'Desconocido', // Asegúrate de obtener el nombre del cajero si está disponible
+      cashier: order.nombre_cajero || 'Desconocido',
       priority: 'normal', // Podría derivarse de algún campo en el backend si existe
     };
   }, []);
@@ -514,6 +541,9 @@ export function POSSystem() {
         toast({
           title: '✅ Venta Registrada',
           description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
+          // Fallback defensivo por si alguna capa intermedia filtra props
+          variant: 'default' as any,
+          open: true as any,
         });
       } catch (error: any) {
         // LOG DETALLADO PARA DEPURACIÓN
@@ -600,16 +630,16 @@ export function POSSystem() {
    */
   const handleEditSale = useCallback(
     (editedSale: Sale) => {
-      const saleData = {
+      const saleData: any = {
         items: editedSale.items.map(item => ({
           id: item.id,
           quantity: item.quantity,
           price: item.price,
-          notes: item.notes
+          notes: (item as any).notes
         })),
         total: editedSale.total,
         paymentMethod: editedSale.paymentMethod,
-        notes: editedSale.notes || ''
+        notes: (editedSale as any).notes || ''
       };
       
       editSaleMutation.mutate({ saleId: editedSale.id, saleData });
@@ -631,8 +661,8 @@ export function POSSystem() {
   // --- Mutaciones de React Query ---
 
   const { mutate: updateOrderStatusMutation } = useMutation({
-    mutationFn: ({ orderId, status, id_restaurante }: { orderId: string; status: Order['status']; id_restaurante: number }) =>
-      updateOrderStatus(orderId, status, id_restaurante), // Asume que tienes esta función en api.ts
+    mutationFn: ({ orderId, status }: { orderId: string; status: Order['status'] }) =>
+      updateOrderStatus(orderId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders-pos'] });
       toast({
@@ -656,8 +686,8 @@ export function POSSystem() {
    * @param status - El nuevo estado de la orden.
    */
   const handleUpdateOrderStatus = useCallback((orderId: string, status: Order['status']) => {
-    updateOrderStatusMutation({ orderId, status, id_restaurante: user?.id_restaurante });
-  }, [updateOrderStatusMutation, user?.id_restaurante]);
+    updateOrderStatusMutation({ orderId, status });
+  }, [updateOrderStatusMutation]);
 
   /**
    * Exporta las ventas del día actual a un archivo CSV.
@@ -724,8 +754,9 @@ export function POSSystem() {
   // SOLUCIÓN: Deriva `orders` directamente de `backendOrders` usando `useMemo`.
   // Esto evita el estado local redundante y el bucle de re-renderizado.
   const orders = useMemo(() => {
+    if (!canViewOrders) return [] as Order[];
     return (filteredOrders || []).map(mapBackendOrderToOrder);
-  }, [filteredOrders, mapBackendOrderToOrder]);
+  }, [filteredOrders, mapBackendOrderToOrder, canViewOrders]);
 
   // useEffect para hidratar ventas desde el backend al abrir la pestaña 'sales'
   useEffect(() => {
@@ -777,13 +808,13 @@ export function POSSystem() {
   const currentBranchForHeader = React.useMemo(() => {
     const branch = selectedBranch
       ? {
-          id: selectedBranch.id_sucursal?.toString() || selectedBranch.id?.toString() || 'N/A',
+          id: Number(selectedBranch.id_sucursal ?? selectedBranch.id ?? 0),
           name: selectedBranch.nombre || selectedBranch.name,
           location: `${selectedBranch.ciudad || selectedBranch.location || ''} ${selectedBranch.direccion ? '- ' + selectedBranch.direccion : ''}`,
         }
       : user.sucursal
       ? {
-          id: user.sucursal.id?.toString() || 'N/A',
+          id: Number(user.sucursal.id ?? 0),
           name: user.sucursal.nombre,
           location: `${user.sucursal.ciudad} - ${user.sucursal.direccion}`,
         }
@@ -813,7 +844,7 @@ export function POSSystem() {
         currentBranch={
           user.sucursal
             ? {
-                id: user.sucursal.id.toString(),
+                id: Number(user.sucursal.id ?? 0),
                 name: user.sucursal.nombre,
                 location: `${user.sucursal.ciudad} - ${user.sucursal.direccion}`,
               }
@@ -840,6 +871,9 @@ export function POSSystem() {
  
   // Siempre usar el header global para una experiencia unificada (incluye mesero)
   const showHeader = true;
+  const headerRole = user.rol === 'super_admin' ? 'admin' : user.rol;
+  const roleForOrderMgmt = user.rol === 'super_admin' ? 'admin' : (user.rol === 'mesero' ? 'cajero' : user.rol);
+  const roleForSales = user.rol === 'super_admin' ? 'admin' : user.rol;
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
@@ -847,12 +881,12 @@ export function POSSystem() {
         <Header
           currentUser={{
             username: user.username,
-            role: user.rol,
+            role: headerRole as any,
             branch: user.sucursal?.nombre || ''
           }}
           currentBranch={currentBranchForHeader}
           salesCount={sales.length}
-          onExportSales={() => exportSalesToCSV(sales)}
+          onExportSales={exportDailySales}
           onLogout={logout}
           branches={branches}
           selectedBranchId={selectedBranchId ?? undefined}
@@ -885,14 +919,28 @@ export function POSSystem() {
             <ShoppingCart className="h-5 w-5 mr-2" />
             Punto de Venta
           </Button>
-          <Button
-            variant={activeTab === 'orders' ? 'default' : 'outline'}
-            onClick={() => handleTabChange('orders')}
-            className="rounded-xl transition-all duration-200"
-          >
-            <ClipboardList className="h-5 w-5 mr-2" />
-            Pedidos
-          </Button>
+          {gestionMesasHabilitada && (
+            <>
+              <Button
+                variant={activeTab === 'orders' ? 'default' : 'outline'}
+                onClick={() => handleTabChange('orders')}
+                className="rounded-xl transition-all duration-200"
+              >
+                <ClipboardList className="h-5 w-5 mr-2" />
+                Pedidos
+              </Button>
+              {(user.rol === 'admin' || user.rol === 'super_admin') && (
+                <Button
+                  variant={configOpen ? 'default' : 'outline'}
+                  onClick={() => setConfigOpen(true)}
+                  className="rounded-xl transition-all duration-200"
+                >
+                  <Settings className="h-5 w-5 mr-2" />
+                  Configuraciones
+                </Button>
+              )}
+            </>
+          )}
           {(user.rol === 'cajero') && (
             <Button
               variant={activeTab === 'mesero' ? 'default' : 'outline'}
@@ -913,7 +961,7 @@ export function POSSystem() {
               Pedidos Pendientes
             </Button>
           )}
-          {(user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin') && (
+          {canSeeSales && (
             <Button
               variant={activeTab === 'sales' ? 'default' : 'outline'}
               onClick={() => handleTabChange('sales')}
@@ -1061,7 +1109,7 @@ export function POSSystem() {
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                       {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                        <ProductCard key={String(product.id)} product={product} onAddToCart={addToCart} />
                       ))}
                     </div>
                     
@@ -1091,26 +1139,26 @@ export function POSSystem() {
           )}
 
           {/* Vista de Gestión de Pedidos */}
-          {activeTab === 'orders' && (
+          {activeTab === 'orders' && gestionMesasHabilitada && (
             <div className="p-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                 <OrderManagement
                   orders={orders}
                   onUpdateOrderStatus={handleUpdateOrderStatus}
-                  userRole={user.rol}
+                  userRole={roleForOrderMgmt as any}
                 />
               </div>
             </div>
           )}
 
           {/* Vista de Historial de Ventas */}
-          {activeTab === 'sales' && (user.rol === 'admin' || user.rol === 'cajero' || user.rol === 'cocinero' || user.rol === 'super_admin') && (
+          {activeTab === 'sales' && canSeeSales && (
             <div className="p-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
                 <SalesHistory
                   sales={sales}
                   onDeleteSale={handleDeleteSale}
-                  userRole={user.rol}
+                  userRole={roleForSales as any}
                 />
               </div>
             </div>
@@ -1138,7 +1186,7 @@ export function POSSystem() {
               )}
               {activeDashboardSubTab === 'products' && (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                  <ProductManagement products={products} categories={categories} currentUserRole={user.rol} idRestaurante={user.id_restaurante} />
+                  <ProductManagement products={products} categories={categories} currentUserRole={(user.rol === 'super_admin' ? 'admin' : user.rol) as any} idRestaurante={user.id_restaurante} />
                 </div>
               )}
               {activeDashboardSubTab === 'users' && (
@@ -1158,7 +1206,7 @@ export function POSSystem() {
               )}
               {activeDashboardSubTab === 'sucursales' && (user.rol === 'admin' || user.rol === 'super_admin') && (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                  <SucursalManagement currentUserRole={user.rol} />
+                  <SucursalManagement currentUserRole={(user.rol === 'super_admin' ? 'admin' : user.rol) as any} />
                 </div>
               )}
               {activeDashboardSubTab === 'membresia' && (
@@ -1243,9 +1291,9 @@ export function POSSystem() {
                 ) : (
                   <div className="space-y-2">
                     {cart.map((item, index) => {
+                      const itemIdNum = Number((item as any).id_producto ?? item.id);
                       const promocionesAplicadas = appliedPromociones.filter(promocion => 
-                        item.id_producto === promocion.id_producto || 
-                        parseInt(item.id) === promocion.id_producto
+                        itemIdNum === promocion.id_producto
                       );
                       
                       const tienePromocion = promocionesAplicadas.length > 0;
@@ -1419,9 +1467,9 @@ export function POSSystem() {
                     }}
                     className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all text-xs"
                   >
-                    <option value="Mesa">🍽️ En Mesa</option>
-                    <option value="Delivery">🚚 Delivery</option>
-                    <option value="Para Llevar">📦 Para Llevar</option>
+                    {(config?.tiposServicio?.mesa ?? true) && <option value="Mesa">🍽️ En Mesa</option>}
+                    {(config?.tiposServicio?.delivery ?? false) && <option value="Delivery">🚚 Delivery</option>}
+                    {(config?.tiposServicio?.pickup ?? true) && <option value="Para Llevar">📦 Para Llevar</option>}
                   </select>
                 </div>
 
@@ -1466,6 +1514,66 @@ export function POSSystem() {
         />
       )}
       {selectedInvoice && <InvoiceModal sale={selectedInvoice} onClose={() => setSelectedInvoice(null)} />}
+      {configOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Configuraciones</h2>
+              <Button variant="outline" onClick={() => setConfigOpen(false)}>Cerrar</Button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold mb-2">Operación y Flujos de Pedidos</h3>
+                <label className="block text-sm font-medium mb-1">Modo de Flujo de Cocina</label>
+                <select
+                  className="w-full p-2 border rounded"
+                  value={draftConfig?.flujoCocina?.modo || 'Completo'}
+                  onChange={(e) => setDraftConfig((d:any) => ({ ...d, flujoCocina: { ...(d.flujoCocina||{}), modo: e.target.value } }))}
+                >
+                  <option value="Completo">Completo (KDS)</option>
+                  <option value="Directo">Directo (Impresión)</option>
+                  <option value="Simplificado">Simplificado (Mostrador)</option>
+                </select>
+                {(draftConfig?.flujoCocina?.modo === 'Directo') && (
+                  <label className="inline-flex items-center gap-2 mt-2">
+                    <input type="checkbox" checked={!!draftConfig?.flujoCocina?.autoImprimir} onChange={(e) => setDraftConfig((d:any)=>({ ...d, flujoCocina: { ...(d.flujoCocina||{}), autoImprimir: e.target.checked } }))} />
+                    <span className="text-sm">Imprimir automáticamente al crear el pedido</span>
+                  </label>
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Tipos de Servicio Habilitados</h3>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" checked={draftConfig?.tiposServicio?.mesa ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), mesa: e.target.checked } }))} /> En Mesa
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" checked={draftConfig?.tiposServicio?.pickup ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), pickup: e.target.checked } }))} /> Para Llevar
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" checked={draftConfig?.tiposServicio?.delivery ?? false} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), delivery: e.target.checked } }))} /> Delivery
+                  </label>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Gestión de Mesas</h3>
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={draftConfig?.gestionMesas?.habilitado ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, gestionMesas: { ...(d.gestionMesas||{}), habilitado: e.target.checked } }))} /> Habilitar gestión de mesas
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={()=>{ setDraftConfig(config); setConfigOpen(false); }}>Cancelar</Button>
+              <Button onClick={async ()=>{
+                await saveConfiguracion(draftConfig);
+                setConfig(draftConfig);
+                setConfigOpen(false);
+                toast({ title: 'Configuración guardada', description: 'Los cambios se aplicaron.' });
+              }}>Guardar</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

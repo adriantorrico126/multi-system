@@ -14,6 +14,7 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
+        try { console.log('[Toaster] Render', { id, title, description, props }); } catch (e) {}
         // Filtrar propiedades que no deberían pasarse al componente Toast
         const filteredProps = Object.fromEntries(
           Object.entries(props).filter(([key, value]) => {
@@ -28,12 +29,20 @@ export function Toaster() {
           })
         );
         
+        const hasContent = Boolean(title) || Boolean(description)
         return (
           <Toast key={id} {...filteredProps}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
+            <div className="grid gap-1 pointer-events-auto">
+              {hasContent ? (
+                <>
+                  {title ? <ToastTitle>{title}</ToastTitle> : null}
+                  {description ? <ToastDescription>{description}</ToastDescription> : null}
+                </>
+              ) : (
+                <>
+                  <ToastTitle>Notificación</ToastTitle>
+                  <ToastDescription>Operación realizada correctamente.</ToastDescription>
+                </>
               )}
             </div>
             {action}

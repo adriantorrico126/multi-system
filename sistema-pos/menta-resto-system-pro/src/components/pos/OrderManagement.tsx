@@ -16,7 +16,7 @@ interface Order {
   cashier: string;
   priority: 'normal' | 'high';
 }
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderManagementProps {
   orders: Order[];
@@ -26,6 +26,7 @@ interface OrderManagementProps {
 
 export function OrderManagement({ orders, onUpdateOrderStatus, userRole }: OrderManagementProps) {
   const [selectedStatus, setSelectedStatus] = useState<Order['status'] | 'all'>('all');
+  const { toast } = useToast();
 
   const filteredOrders = selectedStatus === 'all' 
     ? orders 
@@ -186,9 +187,9 @@ export function OrderManagement({ orders, onUpdateOrderStatus, userRole }: Order
                           if (window.confirm('¿Estás seguro de que deseas cancelar esta venta?')) {
                             try {
                               await updateOrderStatus(order.id, 'cancelado');
-                              toast.success('Venta cancelada', { description: 'La venta ha sido cancelada exitosamente.' });
+                              toast({ title: 'Venta cancelada', description: 'La venta ha sido cancelada exitosamente.' });
                             } catch (err) {
-                              toast.error('Error al cancelar', { description: 'No se pudo cancelar la venta.' });
+                              toast({ title: 'Error al cancelar', description: 'No se pudo cancelar la venta.', variant: 'destructive' });
                             }
                           }
                         }}

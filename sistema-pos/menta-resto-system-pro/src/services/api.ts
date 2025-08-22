@@ -546,6 +546,45 @@ export const getKitchenOrders = async () => {
   }
 };
 
+// Configuración por restaurante (MVP)
+export const getConfiguracion = async () => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/configuracion?id_restaurante=${restauranteId}`);
+    return response.data.data || {};
+  } catch (error) {
+    console.error('Error fetching configuracion:', error);
+    return {};
+  }
+};
+
+// Enviar comanda al servidor de impresión
+export const printComanda = async (pedido: any) => {
+  try {
+    const restauranteId = getRestauranteId();
+    const printServerUrl = (import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001');
+    const res = await fetch(`${printServerUrl}/api/pedidos/imprimir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pedido, restauranteId })
+    });
+    if (!res.ok) throw new Error('Servidor de impresión no disponible');
+    return await res.json();
+  } catch (e) {
+    console.error('Error printing comanda:', e);
+    throw e;
+  }
+};
+
+// Guardar configuración por restaurante (MVP)
+export const saveConfiguracion = async (configuracion: any) => {
+  const restauranteId = getRestauranteId();
+  const url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/configuracion`;
+  const res = await api.post(url, { id_restaurante: restauranteId, configuracion });
+  return res.data;
+};
+
 // Actualizar el estado de un pedido
 export const updateOrderStatus = async (saleId: string, status: string) => {
   try {

@@ -55,6 +55,7 @@ startupLogger.logStep('promocionRoutes', 'success');
 const inventarioLotesRoutes = require('./routes/inventarioLotesRoutes');
 startupLogger.logStep('inventarioLotesRoutes', 'success');
 const cocinaRoutes = require('./routes/cocinaRoutes');
+const { pool } = require('./config/database');
 startupLogger.logStep('cocinaRoutes', 'success');
 
 // const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
@@ -148,6 +149,48 @@ app.use((req, res, next) => {
 // Healthcheck
 app.get('/api/v1/healthcheck', (req, res) => res.json({ status: 'ok' }));
 startupLogger.logStep('Healthcheck endpoint', 'success');
+
+// ====== Configuración por restaurante (MVP) ======
+app.get('/api/v1/configuracion', async (req, res, next) => {
+  try {
+    const { id_restaurante } = req.query;
+    if (!id_restaurante) return res.status(400).json({ message: 'id_restaurante es requerido' });
+    await pool.query(`CREATE TABLE IF NOT EXISTS configuraciones_restaurante (
+      id_config SERIAL PRIMARY KEY,
+      id_restaurante INTEGER NOT NULL,
+      clave_config TEXT NOT NULL,
+      valor_config JSONB NOT NULL,
+      UNIQUE(id_restaurante, clave_config)
+    );`);
+    const { rows } = await pool.query('SELECT clave_config, valor_config FROM configuraciones_restaurante WHERE id_restaurante = $1', [id_restaurante]);
+    const cfg = rows.reduce((acc, r) => { acc[r.clave_config] = r.valor_config; return acc; }, {});
+    res.json({ data: cfg });
+  } catch (e) { next(e); }
+});
+
+app.post('/api/v1/configuracion', async (req, res, next) => {
+  try {
+    const { id_restaurante, configuracion } = req.body || {};
+    if (!id_restaurante || !configuracion || typeof configuracion !== 'object') return res.status(400).json({ message: 'id_restaurante y configuracion (objeto) son requeridos' });
+    await pool.query(`CREATE TABLE IF NOT EXISTS configuraciones_restaurante (
+      id_config SERIAL PRIMARY KEY,
+      id_restaurante INTEGER NOT NULL,
+      clave_config TEXT NOT NULL,
+      valor_config JSONB NOT NULL,
+      UNIQUE(id_restaurante, clave_config)
+    );`);
+    const entries = Object.entries(configuracion);
+    for (const [clave, valor] of entries) {
+      await pool.query(
+        `INSERT INTO configuraciones_restaurante (id_restaurante, clave_config, valor_config)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (id_restaurante, clave_config) DO UPDATE SET valor_config = EXCLUDED.valor_config`,
+        [id_restaurante, clave, valor]
+      );
+    }
+    res.status(200).json({ message: 'Configuración guardada' });
+  } catch (e) { next(e); }
+});
 
 startupLogger.logSection('Finalización');
 startupLogger.logStep('App.js completado', 'success');
