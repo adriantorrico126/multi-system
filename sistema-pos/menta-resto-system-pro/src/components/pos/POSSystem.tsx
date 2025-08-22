@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { KitchenView } from '../../pages/KitchenView';
@@ -65,6 +65,7 @@ import { PedidosMeseroCajero } from './PedidosMeseroCajero';
 import { PromocionManagement } from '../promociones/PromocionManagement';
 import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
+// import { useNavigate } from 'react-router-dom';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -101,6 +102,10 @@ export function POSSystem() {
   const [config, setConfig] = React.useState<any>({});
   const [configOpen, setConfigOpen] = useState(false);
   const [draftConfig, setDraftConfig] = useState<any>({});
+  const [arqueoActual, setArqueoActual] = useState<any>(null);
+  const [showArqueoModal, setShowArqueoModal] = useState(false);
+  const [montoApertura, setMontoApertura] = useState<string>('');
+  const [showCajaBanner, setShowCajaBanner] = useState<boolean>(true);
   
   React.useEffect(() => {
     const interval = setInterval(() => setNow(dayjs()), 1000 * 30);
@@ -119,6 +124,49 @@ export function POSSystem() {
       if (!ts.mesa && !ts.pickup && ts.delivery) setTipoServicio('Delivery');
     })();
   }, []);
+
+  // Verificar si hay caja abierta al iniciar
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const data = await getArqueoActualPOS();
+        setArqueoActual(data);
+        const skipOnce = sessionStorage.getItem('skipCajaModalOnce') === '1';
+        const autoPromptDone = sessionStorage.getItem('cajaAutoPromptDone') === '1';
+        if (!data && user?.rol !== 'cocinero' && !skipOnce && !autoPromptDone) {
+          setShowArqueoModal(true);
+          try { sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
+        }
+        if (skipOnce) try { sessionStorage.removeItem('skipCajaModalOnce'); } catch {}
+        // Control de banner auto-ocultable
+        setShowCajaBanner(true);
+        if (data) {
+          window.setTimeout(() => setShowCajaBanner(false), 3000);
+        }
+      } catch (e:any) {
+        console.warn('No se pudo verificar arqueo actual:', e?.message || e);
+      }
+    })();
+  }, [user?.rol]);
+
+  const handleAbrirArqueo = async () => {
+    try {
+      const monto = Number(montoApertura.replace(',', '.'));
+      if (isNaN(monto)) {
+        toast({ title: 'Validación', description: 'Monto inicial inválido.' });
+        return;
+      }
+      const res = await abrirArqueoPOS(monto);
+      setArqueoActual(res);
+      setShowArqueoModal(false);
+      try { sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
+      toast({ title: 'Caja abierta', description: 'Apertura registrada.' });
+    } catch (e:any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo abrir la caja.' });
+    }
+  };
+
+  // Cierre automático: no se muestra opción manual; el backend autocierra a medianoche
 
   // Estado para sucursal seleccionada (solo admin/gerente)
   const { data: branches = [], isLoading: branchesLoading } = useQuery({ queryKey: ['branches'], queryFn: getBranches });
@@ -458,119 +506,129 @@ export function POSSystem() {
         if (mesaObj) idMesaSeleccionada = mesaObj.id_mesa;
       }
 
-      try {
-        // Log del payload antes de enviar
-        console.log('POSSystem: Payload enviado a createSale:', {
-          items: cart.map((item) => ({
-            id: item.originalId || item.id,
-            quantity: item.quantity,
-            price: item.price,
-            notes: item.notes,
-            modificadores: item.modificadores || []
-          })),
-          total: newSale.total,
-          paymentMethod,
-          cashier: newSale.cashier,
-          id_sucursal: selectedBranchId!,
-          mesa_numero: newSale.mesa_numero,
-          // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
-          tipo_servicio: tipoServicio,
-          invoiceData,
-        });
-        // Envía la venta al backend
-        const backendResponse = await createSale({
-          items: cart.map((item) => ({
-            id: item.originalId || item.id,
-            quantity: item.quantity,
-            price: item.price,
-            notes: item.notes,
-            modificadores: item.modificadores || []
-          })),
-          total: newSale.total,
-          paymentMethod,
-          cashier: newSale.cashier,
-          id_sucursal: selectedBranchId!,
-          mesa_numero: newSale.mesa_numero,
-          // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
-          tipo_servicio: tipoServicio,
-          invoiceData,
-        });
-
-        // Usa el ID real de la venta devuelto por el backend
-        const realSaleId = backendResponse.venta?.id_venta?.toString() || newSale.id;
-        const updatedSale = { ...newSale, id: realSaleId };
-
-        // Crea una nueva orden para la gestión de cocina
-        // Se asume que el backend gestionará la creación de la orden de cocina.
-        // Aquí solo la reflejamos en el frontend si es necesario para la vista de "Pedidos" local.
-        const newOrder: Order = {
-          id: realSaleId,
-          saleId: realSaleId,
-          items: cart.map((item) => ({ name: item.name, quantity: item.quantity, notes: item.notes })),
-          status: 'pending', // Estado inicial para pedidos de cocina
-          timestamp: new Date(),
-          cashier: user?.username || 'Desconocido',
-          priority: 'normal',
-          table: mesaNumero ? mesaNumero.toString() : tipoServicio,
-        };
-
-        // Actualiza el estado local de ventas y órdenes
-        // setSales((currentSales) => [updatedSale, ...currentSales]); // Eliminado: sales ahora es de React Query
-        clearCart(); // Limpia el carrito después de la venta
-        setShowCheckout(false); // Cierra el modal de checkout
-        await refetchVentas(); // Refresca el historial de ventas desde el backend
-
-        // Invalida la query de órdenes para que se actualice desde el backend
-        // Refresca el inventario y los productos en caché
-        try {
-          if (user?.rol === 'admin' || user?.rol === 'super_admin') {
-          await refreshInventory();
-          }
-          queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalida caché de productos
-          queryClient.invalidateQueries({ queryKey: ['orders-pos'] }); // Invalida caché de órdenes
-          // Nueva línea: Invalida la query de mesas para actualizar el total acumulado en tiempo real
-          queryClient.invalidateQueries({ queryKey: ['mesas', user?.sucursal?.id] });
-          // Nueva línea: Invalida todas las queries de prefactura para actualización automática
-          queryClient.invalidateQueries({ queryKey: ['prefactura'], exact: false });
-          console.log('Frontend: Inventory, orders, mesas, and prefactura refreshed after sale');
-        } catch (inventoryError) {
-          console.error('Frontend: Error refreshing inventory or orders:', inventoryError);
-          // Opcional: mostrar un toast si el refresh falla
-        }
-
-        toast({
-          title: '✅ Venta Registrada',
-          description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
-          // Fallback defensivo por si alguna capa intermedia filtra props
-          variant: 'default' as any,
-          open: true as any,
-        });
-      } catch (error: any) {
-        // LOG DETALLADO PARA DEPURACIÓN
-        console.error('Error al registrar venta (DETALLE):', error);
-        if (error.response?.data) {
-          console.error('Backend error message:', error.response.data.message);
-          console.error('Backend error details:', error.response.data.details);
-        }
-        // Manejar errores específicos del backend
-        let errorTitle = '❌ Error al Registrar Venta';
-        let errorDescription = 'No se pudo registrar la venta en el sistema. Intenta nuevamente.';
-        if (error.response?.data?.message) {
-          errorDescription = error.response.data.message;
-          if (error.response?.data?.details) {
-            errorDescription += ' ' + error.response.data.details;
-          }
-        }
-        
-        toast({
-          title: errorTitle,
-          description: errorDescription,
-          variant: 'destructive',
-        });
+      // Bloquear si no hay caja abierta
+      if (!arqueoActual) {
+        toast({ title: 'Caja no abierta', description: 'Debes aperturar caja antes de registrar ventas.' });
+        setShowArqueoModal(true);
+        return;
       }
-    },
-    [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas, clearCart, total, subtotal, totalDescuentos, appliedPromociones]
-  );
+
+      // Normalizar método de pago a etiquetas canónicas
+      const pm = (paymentMethod || '').trim().toLowerCase();
+      const paymentMethodCanon = pm === 'efectivo' ? 'Efectivo' : pm === 'tarjeta' ? 'Tarjeta' : pm === 'transferencia' ? 'Transferencia' : paymentMethod;
+
+      try {
+      console.log('POSSystem: Payload enviado a createSale:', {
+        items: cart.map((item) => ({
+          id: item.originalId || item.id,
+          quantity: item.quantity,
+          price: item.price,
+          notes: item.notes,
+          modificadores: item.modificadores || []
+        })),
+        total: newSale.total,
+        paymentMethod: paymentMethodCanon,
+        cashier: newSale.cashier,
+        id_sucursal: selectedBranchId!,
+        mesa_numero: newSale.mesa_numero,
+        // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
+        tipo_servicio: tipoServicio,
+        invoiceData,
+      });
+      // Envía la venta al backend
+      const backendResponse = await createSale({
+        items: cart.map((item) => ({
+          id: item.originalId || item.id,
+          quantity: item.quantity,
+          price: item.price,
+          notes: item.notes,
+          modificadores: item.modificadores || []
+        })),
+        total: newSale.total,
+        paymentMethod: paymentMethodCanon,
+        cashier: newSale.cashier,
+        id_sucursal: selectedBranchId!,
+        mesa_numero: newSale.mesa_numero,
+        // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
+        tipo_servicio: tipoServicio,
+        invoiceData,
+      });
+
+      // Usa el ID real de la venta devuelto por el backend
+      const realSaleId = backendResponse.venta?.id_venta?.toString() || newSale.id;
+      const updatedSale = { ...newSale, id: realSaleId };
+
+      // Crea una nueva orden para la gestión de cocina
+      // Se asume que el backend gestionará la creación de la orden de cocina.
+      // Aquí solo la reflejamos en el frontend si es necesario para la vista de "Pedidos" local.
+      const newOrder: Order = {
+        id: realSaleId,
+        saleId: realSaleId,
+        items: cart.map((item) => ({ name: item.name, quantity: item.quantity, notes: item.notes })),
+        status: 'pending', // Estado inicial para pedidos de cocina
+        timestamp: new Date(),
+        cashier: user?.username || 'Desconocido',
+        priority: 'normal',
+        table: mesaNumero ? mesaNumero.toString() : tipoServicio,
+      };
+
+      // Actualiza el estado local de ventas y órdenes
+      // setSales((currentSales) => [updatedSale, ...currentSales]); // Eliminado: sales ahora es de React Query
+      clearCart(); // Limpia el carrito después de la venta
+      setShowCheckout(false); // Cierra el modal de checkout
+      await refetchVentas(); // Refresca el historial de ventas desde el backend
+
+      // Invalida la query de órdenes para que se actualice desde el backend
+      // Refresca el inventario y los productos en caché
+      try {
+        if (user?.rol === 'admin' || user?.rol === 'super_admin') {
+        await refreshInventory();
+        }
+        queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalida caché de productos
+        queryClient.invalidateQueries({ queryKey: ['orders-pos'] }); // Invalida caché de órdenes
+        // Nueva línea: Invalida la query de mesas para actualizar el total acumulado en tiempo real
+        queryClient.invalidateQueries({ queryKey: ['mesas', user?.sucursal?.id] });
+        // Nueva línea: Invalida todas las queries de prefactura para actualización automática
+        queryClient.invalidateQueries({ queryKey: ['prefactura'], exact: false });
+        console.log('Frontend: Inventory, orders, mesas, and prefactura refreshed after sale');
+      } catch (inventoryError) {
+        console.error('Frontend: Error refreshing inventory or orders:', inventoryError);
+        // Opcional: mostrar un toast si el refresh falla
+      }
+
+      toast({
+        title: '✅ Venta Registrada',
+        description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
+        // Fallback defensivo por si alguna capa intermedia filtra props
+        variant: 'default',
+        open: true,
+      });
+    } catch (error: any) {
+      // LOG DETALLADO PARA DEPURACIÓN
+      console.error('Error al registrar venta (DETALLE):', error);
+      if (error.response?.data) {
+        console.error('Backend error message:', error.response.data.message);
+        console.error('Backend error details:', error.response.data.details);
+      }
+      // Manejar errores específicos del backend
+      let errorTitle = '❌ Error al Registrar Venta';
+      let errorDescription = 'No se pudo registrar la venta en el sistema. Intenta nuevamente.';
+      if (error.response?.data?.message) {
+        errorDescription = error.response.data.message;
+        if (error.response?.data?.details) {
+          errorDescription += ' ' + error.response.data.details;
+        }
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorDescription,
+        variant: 'destructive',
+      });
+    }
+  },
+  [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas, clearCart, total, subtotal, totalDescuentos, appliedPromociones, arqueoActual]
+);
 
   /**
    * Maneja el cierre de sesión del usuario.
@@ -851,7 +909,6 @@ export function POSSystem() {
             : undefined
         }
         salesCount={sales.length}
-        onExportSales={exportDailySales}
         onLogout={handleLogout}
       />
       <main className="p-6">
@@ -874,6 +931,17 @@ export function POSSystem() {
   const headerRole = user.rol === 'super_admin' ? 'admin' : user.rol;
   const roleForOrderMgmt = user.rol === 'super_admin' ? 'admin' : (user.rol === 'mesero' ? 'cajero' : user.rol);
   const roleForSales = user.rol === 'super_admin' ? 'admin' : user.rol;
+  // const navigate = useNavigate();
+  const goCaja = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Abrir UI de Caja local (sin navegar a /arqueo)
+    if (!arqueoActual) {
+      setShowArqueoModal(true);
+    }
+  };
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
@@ -886,11 +954,11 @@ export function POSSystem() {
           }}
           currentBranch={currentBranchForHeader}
           salesCount={sales.length}
-          onExportSales={exportDailySales}
           onLogout={logout}
           branches={branches}
           selectedBranchId={selectedBranchId ?? undefined}
           onSucursalChange={isAdmin ? handleSucursalChange : undefined}
+          onOpenConfig={() => setConfigOpen(true)}
         />
       ) : showHeader && branchesLoading ? (
         <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm px-6 py-4">
@@ -907,6 +975,31 @@ export function POSSystem() {
           </div>
         </div>
       ) : null}
+      {/* Modal de Apertura de Caja */}
+      {showArqueoModal && (
+        <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Apertura de Caja</h3>
+            <p className="text-sm text-gray-600 mb-4">Ingresa el monto inicial de caja para iniciar el turno.</p>
+            <div className="space-y-3">
+              <Input placeholder="Monto inicial" value={montoApertura} onChange={(e) => setMontoApertura(e.target.value)} />
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowArqueoModal(false)}>Cancelar</Button>
+                <Button onClick={handleAbrirArqueo}>Abrir Caja</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner de caja abierta (informativo, cierre automático) */}
+      {arqueoActual && showCajaBanner && (
+        <div className="fixed bottom-4 right-4 z-[150] bg-white shadow-lg border rounded-lg p-3">
+          <div className="text-sm">Caja abierta desde {new Date(arqueoActual.fecha_apertura).toLocaleString()}</div>
+          <div className="text-sm text-gray-600">Monto inicial: ${Number(arqueoActual.monto_inicial||0).toLocaleString()}</div>
+          <div className="mt-2 text-xs text-gray-500">El cierre es automático a las 23:59.</div>
+        </div>
+      )}
 
       {/* Navegación de Pestañas Principales */}
       <nav className="border-b border-gray-200/50 bg-white/80 backdrop-blur-sm px-6 py-3 shadow-lg flex-shrink-0">
@@ -929,18 +1022,9 @@ export function POSSystem() {
                 <ClipboardList className="h-5 w-5 mr-2" />
                 Pedidos
               </Button>
-              {(user.rol === 'admin' || user.rol === 'super_admin') && (
-                <Button
-                  variant={configOpen ? 'default' : 'outline'}
-                  onClick={() => setConfigOpen(true)}
-                  className="rounded-xl transition-all duration-200"
-                >
-                  <Settings className="h-5 w-5 mr-2" />
-                  Configuraciones
-                </Button>
-              )}
             </>
           )}
+          <Button onClick={goCaja} variant="outline" className="rounded-xl transition-all duration-200">Caja</Button>
           {(user.rol === 'cajero') && (
             <Button
               variant={activeTab === 'mesero' ? 'default' : 'outline'}

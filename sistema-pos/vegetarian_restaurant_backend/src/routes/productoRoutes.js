@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productoController = require('../controllers/productoController');
-const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizeRoles, ensureTenantContext } = require('../middlewares/authMiddleware');
 const { check } = require('express-validator');
 const apicache = require('apicache');
 
@@ -38,8 +38,8 @@ const updateStockValidationRules = [
   check('tipo_movimiento').isIn(['entrada', 'salida']).withMessage('El tipo de movimiento debe ser \'entrada\' o \'salida\'.'),
 ];
 
-// Obtener todos los productos (con caché de 1 minuto)
-router.get('/', authenticateToken, cache('1 minute'), productoController.getAllProductos);
+// Obtener todos los productos (multitenant: NO usar cache global para evitar mezcla entre restaurantes)
+router.get('/', authenticateToken, ensureTenantContext, productoController.getAllProductos);
 
 // Crear un nuevo producto (limpia la caché de productos)
 router.post('/', authenticateToken, authorizeRoles('admin', 'super_admin'), createProductValidationRules, clearCache('productos'), productoController.createProducto);

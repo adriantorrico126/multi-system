@@ -49,6 +49,7 @@ startupLogger.logStep('modificadorRoutes', 'success');
 const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
 startupLogger.logStep('grupoMesaRoutes', 'success');
 const reservaRoutes = require('./routes/reservaRoutes');
+const arqueoRoutes = require('./routes/arqueoRoutes');
 startupLogger.logStep('reservaRoutes', 'success');
 const promocionRoutes = require('./routes/promocionRoutes');
 startupLogger.logStep('promocionRoutes', 'success');
@@ -64,7 +65,13 @@ startupLogger.logStep('cocinaRoutes', 'success');
 const app = express();
 startupLogger.logSection('Configuración de middleware');
 app.use(cors({
-  origin: 'http://localhost:8080', // Cambia esto si tu frontend usa otro puerto
+  origin: (origin, callback) => {
+    const allowed = (process.env.CORS_ORIGINS || 'http://localhost:8080,http://localhost:5173,http://localhost:8081').split(',').map(s => s.trim());
+    if (!origin || allowed.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 startupLogger.logStep('CORS middleware', 'success');
@@ -95,6 +102,48 @@ app.use('/api/v1/modificadores', modificadorRoutes);
 startupLogger.logStep('Ruta /api/v1/modificadores', 'success');
 app.use('/api/v1/grupos-mesas', grupoMesaRoutes);
 startupLogger.logStep('Ruta /api/v1/grupos-mesas', 'success');
+app.use('/api/v1/arqueo', arqueoRoutes);
+startupLogger.logStep('Ruta /api/v1/arqueo', 'success');
+
+// Crear tabla de arqueos al iniciar
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS arqueos_caja (
+        id_arqueo SERIAL PRIMARY KEY,
+        id_restaurante INTEGER NOT NULL,
+        id_sucursal INTEGER,
+        id_vendedor INTEGER,
+        monto_inicial NUMERIC(12,2) NOT NULL,
+        fecha_apertura TIMESTAMP NOT NULL DEFAULT NOW(),
+        monto_final NUMERIC(12,2),
+        fecha_cierre TIMESTAMP,
+        diferencia NUMERIC(12,2),
+        estado VARCHAR(20) NOT NULL DEFAULT 'abierto',
+        observaciones TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_arqueo_rest_suc_estado ON arqueos_caja(id_restaurante, id_sucursal, estado);
+      
+      -- Tabla para tickets de soporte
+      CREATE TABLE IF NOT EXISTS soporte_tickets (
+        id_ticket SERIAL PRIMARY KEY,
+        id_vendedor INTEGER NOT NULL,
+        id_restaurante INTEGER NOT NULL,
+        asunto TEXT NOT NULL,
+        descripcion TEXT NOT NULL,
+        estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+        fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_soporte_tickets_vendedor_fecha ON soporte_tickets(id_vendedor, fecha_creacion);
+      CREATE INDEX IF NOT EXISTS idx_soporte_tickets_restaurante_fecha ON soporte_tickets(id_restaurante, fecha_creacion);
+    `);
+    startupLogger.logStep('Tabla arqueos_caja (init)', 'success');
+    startupLogger.logStep('Tabla soporte_tickets (init)', 'success');
+  } catch (e) {
+    startupLogger.logStep('Tabla arqueos_caja (init error)', 'error');
+    console.error('Error creando tabla arqueos_caja:', e);
+  }
+})();
 
 // Ruta de prueba para verificar que las rutas están funcionando (COMPLETAMENTE SEPARADA)
 app.get('/api/v1/test-reservas', (req, res) => {

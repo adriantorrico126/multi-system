@@ -28,7 +28,8 @@ import {
   Settings,
   PlusCircle,
   Upload,
-  FileDown
+  FileDown,
+  UserPlus
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -63,6 +64,11 @@ export const RestaurantManagement: React.FC = () => {
   const [fileBusy, setFileBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [templateFormat, setTemplateFormat] = useState<'xlsx' | 'csv'>('xlsx');
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUser, setNewUser] = useState({ nombre: '', username: '', email: '', password: '' });
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -248,6 +254,38 @@ export const RestaurantManagement: React.FC = () => {
       setDataProducts(res?.data || []);
     } catch (e:any) {
       setDataProducts([]);
+    }
+  };
+
+  const handleOpenUsers = async (restaurant: any) => {
+    try {
+      setSelectedRestaurant(restaurant);
+      setUsersDialogOpen(true);
+      setUsers([]);
+      // Cargar sucursales para este restaurante
+      const br = await apiFetch<any>(`/sucursales`, {}, token || undefined);
+      const arr = (br?.data || []).filter((s:any) => s.id_restaurante === restaurant.id);
+      setBranches(arr);
+    } catch {
+      setBranches([]);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      if (!newUser.nombre || !newUser.password || !(newUser.username || newUser.email)) {
+        toast({ title: 'Validación', description: 'Nombre, usuario/email y contraseña son requeridos.' });
+        return;
+      }
+      setCreatingUser(true);
+      // Usar el PATCH de restaurante para crear primer usuario (ya soportado en backend)
+      await apiFetch(`/restaurantes/${selectedRestaurant.id}`, { method: 'PATCH', body: JSON.stringify({ first_user: newUser }) }, token || undefined);
+      toast({ title: 'Listo', description: 'Usuario creado.' });
+      setNewUser({ nombre: '', username: '', email: '', password: '' });
+    } catch (e:any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo crear el usuario.' });
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -578,6 +616,10 @@ export const RestaurantManagement: React.FC = () => {
                             <FileText className="mr-2 h-4 w-4" />
                             Datos (Productos)
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenUsers(restaurant)}>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Usuarios / Sucursales
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => handleSuspendReactivate(restaurant)}
@@ -867,6 +909,87 @@ export const RestaurantManagement: React.FC = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Usuarios / Sucursales */}
+      <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Usuarios y Sucursales - {selectedRestaurant?.name}
+            </DialogTitle>
+            <DialogDescription>Administra usuarios y crea el admin inicial</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Crear usuario admin</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Input placeholder="Nombre (obligatorio)" value={newUser.nombre} onChange={(e) => setNewUser(v => ({ ...v, nombre: e.target.value }))} />
+                    <div className="text-xs text-gray-500 mt-1">Requerido</div>
+                  </div>
+                  <div>
+                    <Input placeholder="Usuario (obligatorio)" value={newUser.username} onChange={(e) => setNewUser(v => ({ ...v, username: e.target.value }))} />
+                    <div className="text-xs text-gray-500 mt-1">Requerido para login en POS</div>
+                  </div>
+                  <div>
+                    <Input placeholder="Email (opcional)" value={newUser.email} onChange={(e) => setNewUser(v => ({ ...v, email: e.target.value }))} />
+                  </div>
+                  <div className="relative">
+                    <Input id="adminPass" type="password" placeholder="Contraseña (obligatoria)" value={newUser.password} onChange={(e) => setNewUser(v => ({ ...v, password: e.target.value }))} />
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2"
+                      onClick={() => {
+                        const el = document.getElementById('adminPass') as HTMLInputElement | null;
+                        if (!el) return;
+                        el.type = el.type === 'password' ? 'text' : 'password';
+                      }}
+                    >
+                      👁️
+                    </Button>
+                    <div className="text-xs text-gray-500 mt-1">Se almacena hasheada</div>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleCreateUser} disabled={creatingUser}>{creatingUser ? 'Creando...' : 'Crear usuario'}</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Sucursales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Ciudad</TableHead>
+                        <TableHead>Dirección</TableHead>
+                        <TableHead>Estado</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {branches.map((b:any) => (
+                        <TableRow key={b.id_sucursal}>
+                          <TableCell className="font-medium">{b.nombre}</TableCell>
+                          <TableCell>{b.ciudad}</TableCell>
+                          <TableCell>{b.direccion}</TableCell>
+                          <TableCell>{b.activo ? <Badge className="bg-green-100 text-green-800">Activa</Badge> : <Badge variant="secondary">Inactiva</Badge>}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </DialogContent>
       </Dialog>

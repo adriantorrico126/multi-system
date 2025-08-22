@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React, { lazy, Suspense } from "react"; // Import lazy and Suspense
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "./context/AuthContext";
 import { OrientationBanner } from "./components/OrientationBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -23,22 +22,20 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <OrientationBanner />
-        <AuthProvider>
-          <BrowserRouter>
-            <Suspense fallback={<div>Cargando...</div>}> {/* Add Suspense fallback */}
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/cocina" element={<KitchenView />} />
-                <Route path="/arqueo" element={<ArqueoPage />} />
-                <Route path="/inventario" element={<InventoryPage />} />
-                <Route path="/soporte" element={<SupportPage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+          <Suspense fallback={<div>Cargando...</div>}> {/* Add Suspense fallback */}
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/cocina" element={<KitchenView />} />
+              <Route path="/arqueo" element={<ArqueoPage />} />
+              <Route path="/inventario" element={<InventoryPage />} />
+              <Route path="/soporte" element={<SupportPage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>

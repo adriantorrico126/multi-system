@@ -37,6 +37,14 @@ clientes	nombre	character varying
 clientes	telefono	character varying
 clientes	email	character varying
 clientes	fecha_registro	timestamp without time zone
+configuraciones_restaurante	id_config	integer
+configuraciones_restaurante	id_restaurante	integer
+configuraciones_restaurante	clave_config	text
+configuraciones_restaurante	valor_config	jsonb
+configuraciones_sistema	clave_config	character varying
+configuraciones_sistema	valor_config	jsonb
+configuraciones_sistema	creado_en	timestamp without time zone
+configuraciones_sistema	actualizado_en	timestamp without time zone
 detalle_ventas	id_detalle	integer
 detalle_ventas	id_venta	integer
 detalle_ventas	id_producto	integer
@@ -243,3 +251,17 @@ ventas	created_at	timestamp without time zone
 ventas	estado	character varying
 ventas	id_restaurante	integer
 ventas	id_mesa	integer
+-- ============================
+-- Tabla de arqueos de caja
+-- ============================
+arqueos_caja	id_arqueo	integer
+arqueos_caja	id_restaurante	integer
+arqueos_caja	id_sucursal	integer
+arqueos_caja	id_vendedor	integer
+arqueos_caja	monto_inicial	numeric
+arqueos_caja	fecha_apertura	timestamp without time zone
+arqueos_caja	monto_final	numeric
+arqueos_caja	fecha_cierre	timestamp without time zone
+arqueos_caja	diferencia	numeric
+arqueos_caja	estado	character varying
+arqueos_caja	observaciones	text

@@ -10,7 +10,15 @@ exports.createCategoria = async (req, res, next) => {
       logger.warn('Intento de crear categoría sin nombre.');
       return res.status(400).json({ message: 'El campo nombre es obligatorio.' });
     }
-    const nuevaCategoria = await Categoria.create({ nombre, id_restaurante });
+    // Normalizar nombre (trim) y evitar duplicados por restaurante (case-insensitive)
+    const nombreNorm = String(nombre).trim();
+    const dupQuery = `SELECT 1 FROM categorias WHERE LOWER(nombre) = LOWER($1) AND id_restaurante = $2 LIMIT 1`;
+    const dup = await require('../config/database').pool.query(dupQuery, [nombreNorm, id_restaurante]);
+    if (dup.rows.length) {
+      logger.warn('Intento de crear categoría duplicada:', { nombre: nombreNorm, id_restaurante });
+      return res.status(409).json({ message: 'Ya existe una categoría con ese nombre.' });
+    }
+    const nuevaCategoria = await Categoria.create({ nombre: nombreNorm, id_restaurante });
     logger.info('Categoría creada exitosamente:', { id: nuevaCategoria.id_categoria, nombre: nuevaCategoria.nombre, id_restaurante: nuevaCategoria.id_restaurante });
     res.status(201).json({
       message: 'Categoría creada exitosamente.',

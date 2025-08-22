@@ -56,13 +56,57 @@ export const SupportCenter: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const resp = await apiFetch<any>('/soporte/tickets', {}, token || undefined);
-        const rows = Array.isArray(resp)
-          ? resp
-          : (resp && Array.isArray(resp.data))
-            ? resp.data
-            : [];
-        setSupportTickets(rows);
+        const hubKey = import.meta.env.VITE_HUB_ADMIN_KEY || 'dev-key';
+        const candidates: string[] = [];
+        const posHubUrl = import.meta.env.VITE_POS_API_URL as string | undefined;
+        if (posHubUrl) {
+          candidates.push(`${posHubUrl}/soporte/tickets/hub?key=${encodeURIComponent(hubKey)}`);
+        }
+        // Fallback de desarrollo si no hay env configurado
+        candidates.push(`http://localhost:3000/api/v1/soporte/tickets/hub?key=${encodeURIComponent(hubKey)}`);
+
+        const normalize = (t: any, idx: number) => ({
+          id: t?.id ?? t?.id_ticket ?? idx + 1,
+          restaurantName: t?.restaurantName ?? t?.restaurante ?? 'Restaurante',
+          subject: t?.subject ?? t?.asunto ?? '',
+          description: t?.description ?? t?.descripcion ?? '',
+          priority: t?.priority ?? 'normal',
+          status: t?.status ?? 'open',
+          assignedTo: t?.assignedTo ?? t?.asignado_a ?? '',
+          contact: t?.contact ?? t?.vendedor_username ?? t?.username ?? '',
+          createdAt: t?.createdAt ?? t?.fecha ?? t?.fecha_creacion ?? '',
+          updatedAt: t?.updatedAt ?? t?.fecha ?? t?.fecha_creacion ?? '',
+          category: t?.category ?? 'technical'
+        });
+
+        let rows: any[] | null = null;
+        let lastErr: any = null;
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, { credentials: 'include' });
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}`);
+            }
+            const data = await res.json();
+            const raw = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+            rows = raw.map((t: any, i: number) => normalize(t, i));
+            if (Array.isArray(rows)) break;
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+
+        if (!rows) {
+          // Fallback final: backend del hub
+          const resp = await apiFetch<any>('/soporte/tickets', {}, token || undefined);
+          const raw = Array.isArray(resp)
+            ? resp
+            : (resp && Array.isArray(resp.data))
+              ? resp.data
+              : [];
+          rows = raw.map((t: any, i: number) => normalize(t, i));
+        }
+        setSupportTickets(rows || []);
       } catch (err: any) {
         setError(err.message || 'Error al cargar tickets de soporte.');
         setSupportTickets([]);
@@ -70,7 +114,7 @@ export const SupportCenter: React.FC = () => {
         setLoading(false);
       }
     };
-    if (token) fetchTickets();
+    fetchTickets();
   }, [token]);
 
   const safeTickets = Array.isArray(supportTickets) ? supportTickets : [];
@@ -135,9 +179,22 @@ export const SupportCenter: React.FC = () => {
   const unassignedTickets = safeTickets.filter(t => !t.assignedTo).length;
 
   const handleResponseSubmit = () => {
-    console.log('Enviando respuesta:', responseText);
-    setResponseText('');
-    setIsResponseDialogOpen(false);
+    (async () => {
+      try {
+        if (!selectedTicket || !responseText.trim()) return;
+        const key = import.meta.env.VITE_HUB_ADMIN_KEY || 'dev-key';
+        const posHubUrl = import.meta.env.VITE_POS_API_URL || 'http://localhost:3000/api/v1';
+        await fetch(`${posHubUrl}/soporte/tickets/${selectedTicket.id}/respuestas?key=${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mensaje: responseText })
+        });
+        setIsResponseDialogOpen(false);
+        setResponseText('');
+      } catch (e) {
+        console.error('Error enviando respuesta:', e);
+      }
+    })();
   };
 
   return (
@@ -309,26 +366,41 @@ export const SupportCenter: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => setSelectedTicket(ticket)}
-                          >
+                          <DropdownMenuItem onClick={() => setSelectedTicket(ticket)}>
                             <FileText className="mr-2 h-4 w-4" />
                             Ver Detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              setSelectedTicket(ticket);
-                              setIsResponseDialogOpen(true);
-                            }}
-                          >
+                          <DropdownMenuItem onClick={() => { setSelectedTicket(ticket); setIsResponseDialogOpen(true); }}>
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Responder
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <User className="mr-2 h-4 w-4" />
-                            Asignar
+                          <DropdownMenuItem onClick={async () => {
+                            try {
+                              const key = import.meta.env.VITE_HUB_ADMIN_KEY || 'dev-key';
+                              const posHubUrl = import.meta.env.VITE_POS_API_URL || 'http://localhost:3000/api/v1';
+                              await fetch(`${posHubUrl}/soporte/tickets/${ticket.id}/estado?key=${encodeURIComponent(key)}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: ticket.status === 'open' ? 'in_progress' : 'open' })
+                              });
+                              setSupportTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: t.status === 'open' ? 'in_progress' : 'open' } : t));
+                            } catch (e) { console.error(e); }
+                          }}>
+                            <Clock className="mr-2 h-4 w-4" />
+                            Marcar En Proceso
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={async () => {
+                            try {
+                              const key = import.meta.env.VITE_HUB_ADMIN_KEY || 'dev-key';
+                              const posHubUrl = import.meta.env.VITE_POS_API_URL || 'http://localhost:3000/api/v1';
+                              await fetch(`${posHubUrl}/soporte/tickets/${ticket.id}/estado?key=${encodeURIComponent(key)}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'resolved' })
+                              });
+                              setSupportTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: 'resolved' } : t));
+                            } catch (e) { console.error(e); }
+                          }}>
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Marcar Resuelto
                           </DropdownMenuItem>

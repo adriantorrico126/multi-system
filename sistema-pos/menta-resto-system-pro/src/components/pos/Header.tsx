@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, User, Clock, Download, LogOut, Bell, DollarSign, Package } from 'lucide-react';
+import { Store, User, Clock, LogOut, Bell, DollarSign, Package, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { refreshInventory } from '@/services/api';
@@ -28,11 +28,11 @@ interface HeaderProps {
   currentUser: AuthUser;
   currentBranch: Branch | undefined;
   salesCount: number;
-  onExportSales: () => void;
   onLogout: () => void;
   branches?: Branch[];
   selectedBranchId?: number;
   onSucursalChange?: (id: number) => void;
+  onOpenConfig?: () => void;
 }
 
 interface Notification {
@@ -45,11 +45,11 @@ export const Header = React.memo(({
   currentUser, 
   currentBranch, 
   salesCount, 
-  onExportSales, 
   onLogout,
   branches,
   selectedBranchId,
-  onSucursalChange
+  onSucursalChange,
+  onOpenConfig
 }: HeaderProps) => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = React.useState(new Date());
@@ -136,10 +136,12 @@ export const Header = React.memo(({
   }, []);
 
   const handleArqueoClick = React.useCallback(() => {
+    try { sessionStorage.setItem('skipCajaModalOnce', '1'); sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
     navigate('/arqueo');
   }, [navigate]);
 
   const handleInventoryClick = React.useCallback(() => {
+    try { sessionStorage.setItem('skipCajaModalOnce', '1'); sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
     navigate('/inventario');
   }, [navigate]);
 
@@ -178,7 +180,7 @@ export const Header = React.memo(({
                   <div className="text-gray-600">{currentBranch.location}</div>
                 </div>
                 {/* Selector de sucursal solo para admin/cocinero */}
-                {branches && branches.length > 1 && (currentUser.role === 'admin' || currentUser.role === 'cocinero' || currentUser.role === 'super_admin') && onSucursalChange && (
+                {branches && branches.length > 1 && (currentUser.role === 'admin' || currentUser.role === 'cocinero') && onSucursalChange && (
                   <Select 
                     value={selectedBranchId?.toString()} 
                     onValueChange={v => {
@@ -301,16 +303,18 @@ export const Header = React.memo(({
                   Inventario
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onExportSales}
-                disabled={salesCount === 0}
-                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <Download className="h-4 w-4" />
-                Exportar
-              </Button>
+              {currentUser.role === 'admin' && onOpenConfig && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenConfig}
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Settings className="h-4 w-4" />
+                  Configuración
+                </Button>
+              )}
+              {/* Exportación movida a Historial/Configuraciones avanzadas */}
 
               <Button 
                 variant="outline" 

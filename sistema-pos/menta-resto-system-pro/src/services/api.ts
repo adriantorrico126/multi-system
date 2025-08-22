@@ -1128,7 +1128,14 @@ export const createSupportTicket = async (asunto: string, descripcion: string) =
 
 export const getSupportTickets = async () => {
   const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/soporte/tickets`);
-  return response.data.data;
+  // Normalizar para el frontend: asegurar id y fecha estables
+  return (response.data.data || []).map((t: any) => ({
+    id: t.id ?? t.id_ticket,
+    asunto: t.asunto,
+    descripcion: t.descripcion,
+    estado: t.estado,
+    fecha: t.fecha ?? t.fecha_creacion
+  }));
 };
 
 // ===================================
@@ -1611,4 +1618,19 @@ export const splitBillMesa = async (id_mesa: number, asignaciones: { id_detalle:
     asignaciones,
   });
   return response.data;
+};
+
+export const getArqueoActualPOS = async () => {
+  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/actual`);
+  return response.data.data;
+};
+
+export const abrirArqueoPOS = async (monto_inicial: number, observaciones?: string) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/abrir`, { monto_inicial, observaciones });
+  return response.data.data;
+};
+
+export const cerrarArqueoPOS = async (monto_final: number, observaciones?: string) => {
+  const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/cerrar`, { monto_final, observaciones });
+  return response.data.data;
 };

@@ -30,7 +30,13 @@ export const GlobalAnalytics: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiFetch<any>(`/dashboard/global`, {}, token || undefined);
+        // Mapear timeRange a fechas
+        const now = new Date();
+        const endDate = now.toISOString().slice(0,10);
+        const deltaDays = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
+        const start = new Date(now.getTime() - deltaDays*24*60*60*1000);
+        const startDate = start.toISOString().slice(0,10);
+        const data = await apiFetch<any>(`/dashboard/analytics?startDate=${startDate}&endDate=${endDate}`, {}, token || undefined);
         setAnalytics(data);
       } catch (err: any) {
         setError(err.message || 'Error al cargar analíticas globales.');

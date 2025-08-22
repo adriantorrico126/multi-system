@@ -1,7 +1,7 @@
 const express = require('express');
 const categoriaController = require('../controllers/categoriaController');
 const apicache = require('apicache');
-const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizeRoles, ensureTenantContext } = require('../middlewares/authMiddleware');
 const { check } = require('express-validator');
 
 let cache = apicache.middleware;
@@ -38,7 +38,8 @@ router.post(
 
 // GET /api/v1/categorias - Obtener todas las categorías (activas por defecto)
 // GET /api/v1/categorias?includeInactive=true - Obtener todas las categorías (incluyendo inactivas)
-router.get('/', authenticateToken, authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), cache('1 minute'), categoriaController.getAllCategorias);
+// Evitar cache global para no mezclar categorías entre restaurantes
+router.get('/', authenticateToken, authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), ensureTenantContext, categoriaController.getAllCategorias);
 
 // GET /api/v1/categorias/:id - Obtener una categoría por ID
 router.get('/:id', categoriaController.getCategoriaById);

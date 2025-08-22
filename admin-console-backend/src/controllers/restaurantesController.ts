@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import pool from '../config/database';
 import logger from '../config/logger';
 import { registrarAuditoria } from '../services/auditoriaService';
+import bcrypt from 'bcryptjs';
 
 // Listar restaurantes con paginación y búsqueda
 export const getAllRestaurantes = async (req: Request, res: Response) => {
@@ -74,6 +75,7 @@ export const updateRestauranteStatus = async (req: Request, res: Response) => {
 export const createRestaurante = async (req: Request, res: Response) => {
   try {
     const { nombre, direccion, ciudad, telefono, email } = req.body;
+    const first_user = (req.body && (req.body.first_user || req.body.admin_user)) || null;
     if (!nombre || !direccion || !ciudad) {
       return res.status(400).json({ message: 'Faltan campos requeridos: nombre, direccion, ciudad' });
     }
@@ -91,7 +93,41 @@ export const createRestaurante = async (req: Request, res: Response) => {
       datos_nuevos: result.rows[0]
     });
     logger.info('Restaurante creado: %s', nombre);
-    res.status(201).json({ data: result.rows[0] });
+    const restaurante = result.rows[0];
+
+    let createdSucursal: any = null;
+    let createdUser: any = null;
+
+    // Crear sucursal principal automáticamente
+    try {
+      const suc = await pool.query(
+        `INSERT INTO sucursales (nombre, ciudad, direccion, activo, created_at, id_restaurante)
+         VALUES ($1, $2, $3, true, NOW(), $4) RETURNING *`,
+        ['Sucursal Principal', ciudad, direccion, restaurante.id_restaurante]
+      );
+      createdSucursal = suc.rows[0];
+    } catch (e) {
+      // Continuar aunque no se pueda crear la sucursal
+    }
+
+    // Crear primer usuario admin del restaurante (en tabla vendedores del POS)
+    if (first_user && first_user.nombre && (first_user.username || first_user.email) && first_user.password) {
+      try {
+        const username = first_user.username || (first_user.email || '').split('@')[0] || `admin_${restaurante.id_restaurante}`;
+        const password_hash = await bcrypt.hash(String(first_user.password), 10);
+        const vend = await pool.query(
+          `INSERT INTO vendedores (nombre, username, email, password_hash, rol, activo, created_at, id_sucursal, id_restaurante)
+           VALUES ($1, $2, $3, $4, 'admin', true, NOW(), $5, $6)
+           RETURNING id_vendedor, nombre, username, email, rol, id_sucursal, id_restaurante`,
+          [first_user.nombre, username, first_user.email || null, password_hash, createdSucursal ? createdSucursal.id_sucursal : null, restaurante.id_restaurante]
+        );
+        createdUser = vend.rows[0];
+      } catch (e) {
+        // Ignorar fallo de creación de usuario inicial, pero devolver advertencia
+      }
+    }
+
+    res.status(201).json({ data: restaurante, sucursal: createdSucursal, first_user: createdUser });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const code = typeof error === 'object' && error !== null && 'code' in error ? (error as any).code : undefined;
@@ -108,6 +144,7 @@ export const updateRestaurante = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { nombre, direccion, ciudad, telefono, email } = req.body;
+    const first_user = (req.body && (req.body.first_user || req.body.admin_user)) || null;
     // Obtener datos anteriores para auditoría
     const prev = await pool.query('SELECT * FROM restaurantes WHERE id_restaurante = $1', [id]);
     if (prev.rows.length === 0) {
@@ -121,23 +158,72 @@ export const updateRestaurante = async (req: Request, res: Response) => {
     if (ciudad) { fields.push(`ciudad = $${idx++}`); values.push(ciudad); }
     if (telefono !== undefined) { fields.push(`telefono = $${idx++}`); values.push(telefono); }
     if (email !== undefined) { fields.push(`email = $${idx++}`); values.push(email); }
-    if (fields.length === 0) {
-      return res.status(400).json({ message: 'Nada que actualizar' });
+    let updatedRow = null as any;
+    if (fields.length > 0) {
+      const query = `UPDATE restaurantes SET ${fields.join(', ')} WHERE id_restaurante = $${idx} RETURNING *`;
+      values.push(id);
+      const result = await pool.query(query, values);
+      updatedRow = result.rows[0] || null;
     }
-    const query = `UPDATE restaurantes SET ${fields.join(', ')} WHERE id_restaurante = $${idx} RETURNING *`;
-    values.push(id);
-    const result = await pool.query(query, values);
+
+    // Crear primer usuario (admin) si se envía en el payload
+    let createdUser: any = null;
+    if (first_user) {
+      const username: string | undefined = first_user.username;
+      const password: string | undefined = first_user.password;
+      const nombreUser: string | undefined = first_user.nombre;
+      const emailUser: string | null = first_user.email || null;
+      if (!username || !password || !nombreUser) {
+        return res.status(400).json({ message: 'Para crear el usuario se requiere nombre, username y password' });
+      }
+      // Buscar o crear una sucursal del restaurante
+      let id_sucursal: number | null = null;
+      try {
+        const suc = await pool.query('SELECT id_sucursal FROM sucursales WHERE id_restaurante = $1 AND activo = true ORDER BY created_at ASC LIMIT 1', [id]);
+        if (suc.rows.length) {
+          id_sucursal = suc.rows[0].id_sucursal;
+        } else {
+          const newSuc = await pool.query(
+            `INSERT INTO sucursales (nombre, ciudad, direccion, activo, created_at, id_restaurante)
+             SELECT 'Sucursal Principal', ciudad, direccion, true, NOW(), id_restaurante FROM restaurantes WHERE id_restaurante = $1
+             RETURNING id_sucursal`,
+            [id]
+          );
+          id_sucursal = newSuc.rows[0].id_sucursal;
+        }
+      } catch (e) {
+        // Si falla crear/obtener sucursal, mantener null y continuar (por si la columna permite null)
+      }
+      try {
+        const password_hash = await bcrypt.hash(String(password), 10);
+        const vend = await pool.query(
+          `INSERT INTO vendedores (nombre, username, email, password_hash, rol, activo, created_at, id_sucursal, id_restaurante)
+           VALUES ($1, $2, $3, $4, 'admin', true, NOW(), $5, $6)
+           RETURNING id_vendedor, nombre, username, email, rol, id_sucursal, id_restaurante`,
+          [nombreUser, username, emailUser, password_hash, id_sucursal, id]
+        );
+        createdUser = vend.rows[0];
+      } catch (e: any) {
+        const code = e && typeof e === 'object' && 'code' in e ? (e as any).code : undefined;
+        if (code === '23505') {
+          return res.status(409).json({ message: 'El username ya existe en el sistema.' });
+        }
+        throw e;
+      }
+    }
     // Auditoría
-    await registrarAuditoria({
-      id_usuario: (req as any).admin?.id,
-      accion: 'editar',
-      tabla_afectada: 'restaurantes',
-      id_registro: Number(id),
-      datos_anteriores: prev.rows[0],
-      datos_nuevos: result.rows[0]
-    });
-    logger.info('Restaurante editado: %s', result.rows[0].nombre);
-    res.json({ data: result.rows[0] });
+    if (updatedRow) {
+      await registrarAuditoria({
+        id_usuario: (req as any).admin?.id,
+        accion: 'editar',
+        tabla_afectada: 'restaurantes',
+        id_registro: Number(id),
+        datos_anteriores: prev.rows[0],
+        datos_nuevos: updatedRow
+      });
+      logger.info('Restaurante editado: %s', updatedRow.nombre);
+    }
+    res.json({ data: updatedRow, first_user: createdUser });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error('Error al editar restaurante: %s', message);

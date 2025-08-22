@@ -80,6 +80,19 @@ exports.createVenta = async (req, res, next) => {
 
     logger.info('Backend: Parsed data:', { items, total, paymentMethod, cashier, branch, id_sucursal, tipo_servicio, id_mesa, mesa_numero, id_restaurante });
 
+    // Requerir caja abierta para el día actual (solo para roles operativos, no mesero)
+    if (!['mesero'].includes(req.user.rol)) {
+      const hoy = new Date();
+      const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+      const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+      const q = `SELECT id_arqueo FROM arqueos_caja WHERE id_restaurante = $1 AND (id_sucursal = $2 OR $2 IS NULL) AND estado = 'abierto' AND fecha_apertura BETWEEN $3 AND $4 LIMIT 1`;
+      const vals = [id_restaurante, req.user.id_sucursal || null, inicio, fin];
+      const { rows: caja } = await pool.query(q, vals);
+      if (caja.length === 0) {
+        return res.status(403).json({ message: 'Debe aperturar caja para registrar ventas hoy.' });
+      }
+    }
+
     // Buscar sucursal directamente - usar ID de sucursal del usuario si está disponible
     let sucursal;
     // Primero intentar con id_sucursal si está disponible
@@ -152,6 +165,45 @@ exports.createVenta = async (req, res, next) => {
     // Log explícito antes de crear la venta
     logger.info(`[VENTA] Mesa encontrada para venta: ${JSON.stringify(mesa)} (mesa_numero: ${mesa_numero})`);
     
+    // Asegurar tabla de métodos de pago y sembrar valores por defecto si no existen para el restaurante
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS metodos_pago (
+          id_pago SERIAL PRIMARY KEY,
+          descripcion TEXT NOT NULL,
+          activo BOOLEAN DEFAULT TRUE,
+          id_restaurante INTEGER NOT NULL,
+          CONSTRAINT metodos_pago_unique UNIQUE(descripcion, id_restaurante)
+        );
+      `);
+      // Migración suave: eliminar antiguo índice único por solo descripcion si existe
+      // Intentar eliminar constraint antigua (si existe)
+      await pool.query(`ALTER TABLE metodos_pago DROP CONSTRAINT IF EXISTS metodos_pago_descripcion_key;`);
+      // Asegurar el índice único compuesto
+      await pool.query(`ALTER TABLE metodos_pago ADD CONSTRAINT IF NOT EXISTS metodos_pago_unique UNIQUE(descripcion, id_restaurante);`);
+      // Sembrado idempotente por descripcion (única a nivel tabla)
+      await pool.query(
+        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
+         VALUES ('Efectivo', true, $1)
+         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
+        [id_restaurante]
+      );
+      await pool.query(
+        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
+         VALUES ('Tarjeta', true, $1)
+         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
+        [id_restaurante]
+      );
+      await pool.query(
+        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
+         VALUES ('Transferencia', true, $1)
+         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
+        [id_restaurante]
+      );
+    } catch (e) {
+      logger.warn('No se pudo asegurar/sembrar metodos_pago:', e.message);
+    }
+
     // Buscar vendedor/cajero
     let vendedor;
     if (req.user.id_vendedor && req.user.username === cashier) {
@@ -173,12 +225,19 @@ exports.createVenta = async (req, res, next) => {
     
     // Buscar método de pago directamente
     let pago = null;
-    if (paymentMethod === 'pendiente_caja') {
+    const paymentMethodNorm = (paymentMethod || '').trim();
+    if (paymentMethodNorm.toLowerCase() === 'pendiente_caja') {
       // Buscar el id_pago real de 'pendiente_caja' en la base de datos
-      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE descripcion = $1 AND id_restaurante = $2 LIMIT 1', ['pendiente_caja', id_restaurante]);
+      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['pendiente_caja', id_restaurante]);
       if (pagoResult.rows.length === 0) {
-        // Si no existe, crearlo automáticamente
-        const insertResult = await pool.query('INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) RETURNING *', ['pendiente_caja', true, id_restaurante]);
+        // Inserción idempotente por constraint compuesta
+        const insertResult = await pool.query(
+          `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo
+           RETURNING *`,
+          ['pendiente_caja', true, id_restaurante]
+        );
         pago = insertResult.rows[0];
         logger.info('Backend: Método de pago pendiente_caja creado automáticamente:', pago);
       } else {
@@ -186,15 +245,24 @@ exports.createVenta = async (req, res, next) => {
         logger.info('Backend: Método de pago pendiente_caja encontrado:', pago);
       }
     } else {
-      logger.info('Backend: Searching for payment method:', paymentMethod, 'in restaurant:', id_restaurante);
-      const pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE descripcion = $1 AND id_restaurante = $2 LIMIT 1', [paymentMethod, id_restaurante]);
+      logger.info('Backend: Searching for payment method:', paymentMethodNorm, 'in restaurant:', id_restaurante);
+      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
       pago = pagoResult.rows[0];
-      logger.info('Backend: Pago found:', pago);
+      logger.info('Backend: Pago found (scoped):', pago);
       if (!pago) {
-        logger.error('Backend: Payment method not found. Available methods:');
-        const allMethodsResult = await pool.query('SELECT descripcion FROM metodos_pago WHERE id_restaurante = $1', [id_restaurante]);
-        logger.error('Backend: Available methods:', allMethodsResult.rows);
-        return res.status(400).json({ message: 'Método de pago no encontrado' });
+        // Intentar insertar para el restaurante actual, y ante conflicto por descripción global, recuperar existente
+        try {
+          const insertResult = await pool.query(
+            'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo RETURNING *',
+            [paymentMethodNorm, true, id_restaurante]
+          );
+          pago = insertResult.rows[0];
+        } catch (dupErr) {
+          // En caso de que la tabla aún no tenga el índice único correcto en algunas instalaciones
+          const fallback = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
+          pago = fallback.rows[0];
+        }
+        logger.info('Backend: Método de pago creado/recuperado:', pago);
       }
     }
 

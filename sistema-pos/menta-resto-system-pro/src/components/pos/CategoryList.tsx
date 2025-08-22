@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { getCategories } from '../../services/api';
+import { getCategories, createCategory } from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
 import { Plus, Edit, Trash, Tag } from 'lucide-react';
 
 interface Category {
@@ -18,6 +21,9 @@ const CategoryList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -39,6 +45,23 @@ const CategoryList: React.FC = () => {
     );
   }, [categories, searchTerm]);
 
+  const addMutation = useMutation({
+    mutationFn: (nombre: string) => createCategory({ nombre }),
+    onSuccess: async (data: any) => {
+      toast({ title: 'Categoría creada', description: 'Se agregó correctamente.' });
+      setAddOpen(false);
+      setNewCatName('');
+      try {
+        const refreshed = await getCategories();
+        setCategories(refreshed);
+      } catch {}
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'No se pudo crear la categoría.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    }
+  });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -48,7 +71,7 @@ const CategoryList: React.FC = () => {
               <Tag className="h-5 w-5" />
               Gestión de Categorías
             </CardTitle>
-            <Button>
+            <Button onClick={() => setAddOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Agregar Categoría
             </Button>
@@ -121,6 +144,34 @@ const CategoryList: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nueva Categoría</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Nombre de la categoría"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
+            <Button onClick={() => {
+              const name = newCatName.trim();
+              if (!name) {
+                toast({ title: 'Validación', description: 'Ingresa un nombre.', variant: 'destructive' });
+                return;
+              }
+              addMutation.mutate(name);
+            }} disabled={addMutation.isPending}>
+              {addMutation.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

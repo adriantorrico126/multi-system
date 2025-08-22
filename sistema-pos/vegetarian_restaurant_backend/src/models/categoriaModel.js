@@ -3,8 +3,8 @@ const { pool } = require('../config/database');
 const Categoria = {
   async create({ nombre, id_restaurante }) {
     const query = `
-      INSERT INTO categorias (nombre, id_restaurante)
-      VALUES ($1, $2)
+      INSERT INTO categorias (nombre, id_restaurante, activo)
+      VALUES ($1, $2, true)
       RETURNING id_categoria, nombre, activo, created_at, id_restaurante;
     `;
     const values = [nombre, id_restaurante];
@@ -21,7 +21,7 @@ const Categoria = {
     let query = 'SELECT id_categoria, nombre, activo, created_at, id_restaurante FROM categorias WHERE id_restaurante = $1';
     const values = [id_restaurante];
     if (!includeInactive) {
-      query += ' AND activo = true';
+      query += ' AND COALESCE(activo, true) = true';
     }
     query += ' ORDER BY nombre ASC;';
     try {
