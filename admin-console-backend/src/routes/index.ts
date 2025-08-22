@@ -8,6 +8,8 @@ import sucursalesRouter from './sucursales';
 import reportesRouter from './reportes';
 import pagosRouter from './pagos';
 import soporteRoutes from './soporte';
+import configuracionRouter from './configuracion';
+import productosAdminRouter from './productosAdmin';
 import * as rolesAdminController from '../controllers/rolesAdminController';
 import { authenticateAdmin, authorizePerm } from '../middlewares/authMiddleware';
 
@@ -22,6 +24,8 @@ router.use('/sucursales', authenticateAdmin, sucursalesRouter);
 router.use('/reportes', authenticateAdmin, reportesRouter);
 router.use('/pagos', authenticateAdmin, pagosRouter);
 router.use('/soporte', soporteRoutes);
+router.use('/configuracion', configuracionRouter);
+router.use('/productos', productosAdminRouter);
 router.get('/roles-admin', authenticateAdmin, authorizePerm('roles_admin', 'ver'), rolesAdminController.getAllRoles);
 router.post('/roles-admin', authenticateAdmin, authorizePerm('roles_admin', 'crear'), rolesAdminController.createRole);
 router.patch('/roles-admin/:id', authenticateAdmin, authorizePerm('roles_admin', 'editar'), rolesAdminController.updateRole);

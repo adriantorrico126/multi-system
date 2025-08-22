@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,9 @@ import {
   AlertTriangle,
   FileText,
   Settings,
-  PlusCircle
+  PlusCircle,
+  Upload,
+  FileDown
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -37,17 +39,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { apiFetch } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 export const RestaurantManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [dataDialogOpen, setDataDialogOpen] = useState(false);
+  const [dataProducts, setDataProducts] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [sampleUrl] = useState<string>('');
+  const [fileBusy, setFileBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [templateFormat, setTemplateFormat] = useState<'xlsx' | 'csv'>('xlsx');
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -131,9 +146,88 @@ export const RestaurantManagement: React.FC = () => {
     }
   };
 
-  const handleViewDetails = (restaurant: any) => {
+  const handleViewDetails = async (restaurant: any) => {
     setSelectedRestaurant(restaurant);
     setDialogOpen(true);
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const t = token || undefined;
+      const [restoRes, serviciosRes, pagosEstadoRes, pagosListRes] = await Promise.all([
+        apiFetch<any>(`/restaurantes/${restaurant.id}`, {}, t),
+        apiFetch<any>(`/restaurantes/${restaurant.id}/servicios`, {}, t),
+        apiFetch<any>(`/pagos/estado/${restaurant.id}`, {}, t),
+        apiFetch<any>(`/pagos/${restaurant.id}`, {}, t),
+      ]);
+      const resto = restoRes?.data || restoRes || {};
+      const servicios = (serviciosRes?.data || []) as any[];
+      const pagos = (pagosListRes?.data || []) as any[];
+      const ultimoPago = pagosEstadoRes?.ultimo_pago || null;
+
+      const monthlyRevenue = pagos
+        .filter((p: any) => {
+          const d = new Date(p.fecha_pago).getTime();
+          return Date.now() - d <= 30 * 24 * 60 * 60 * 1000;
+        })
+        .reduce((sum: number, p: any) => sum + Number(p.monto || 0), 0);
+
+      // Seleccionar servicio "actual"
+      const today = new Date();
+      const candidates = servicios.filter((s: any) => ['activo','prueba'].includes((s.estado_suscripcion || '').toLowerCase()) && (!s.fecha_fin || new Date(s.fecha_fin) >= today));
+      const byFechaInicioDesc = (a: any, b: any) => new Date(b.fecha_inicio || 0).getTime() - new Date(a.fecha_inicio || 0).getTime();
+      const currentService = (candidates.length ? candidates : servicios).slice().sort(byFechaInicioDesc)[0] || null;
+
+      // Último pago real (fallback a lista)
+      const lastPayDateIso = ultimoPago?.fecha_pago || (pagos.length ? pagos.slice().sort((a: any,b: any) => new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime())[0]?.fecha_pago : null);
+      const lastPayment = lastPayDateIso ? new Date(lastPayDateIso).toLocaleString() : '-';
+
+      // Próximo pago: fecha_fin del servicio actual si es futura
+      let nextPayment = 'Indefinida';
+      let daysUntilExpiry = null as null | number;
+      if (currentService?.fecha_fin) {
+        const fin = new Date(currentService.fecha_fin);
+        daysUntilExpiry = Math.ceil((fin.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        nextPayment = fin.toLocaleDateString();
+      }
+
+      // Estado de pago
+      let paymentStatus = 'pending';
+      const estadoServ = (currentService?.estado_suscripcion || '').toLowerCase();
+      if (estadoServ === 'prueba') paymentStatus = 'trial';
+      else if (currentService?.fecha_fin && new Date(currentService.fecha_fin) < today) paymentStatus = 'overdue';
+      else if (lastPayDateIso) {
+        const days = (Date.now() - new Date(lastPayDateIso).getTime()) / (1000 * 60 * 60 * 24);
+        paymentStatus = days <= 35 ? 'paid' : 'overdue';
+      }
+
+      const registrationDate = resto.created_at ? new Date(resto.created_at).toLocaleString() : '-';
+      const lastActivity = ultimoPago?.fecha_pago
+        ? new Date(ultimoPago.fecha_pago).toLocaleString()
+        : (restaurant.lastActivity || '-');
+
+      setSelectedRestaurant((prev: any) => ({
+        ...prev,
+        address: resto.direccion || prev?.address || '-',
+        city: resto.ciudad || prev?.city || '-',
+        email: resto.email || prev?.email || '-',
+        phone: resto.telefono || prev?.phone || '-',
+        status: resto.activo ? 'active' : 'suspended',
+        plan: currentService?.nombre_plan || '-',
+        planPrice: Number(currentService?.precio_mensual ?? 0),
+        planStatus: currentService?.estado_suscripcion || '-',
+        paymentStatus,
+        lastPayment,
+        nextPayment,
+        daysUntilExpiry: daysUntilExpiry === null ? '-' : daysUntilExpiry,
+        monthlyRevenue,
+        registrationDate,
+        lastActivity,
+      }));
+    } catch (e: any) {
+      setDetailError(e.message || 'No se pudieron cargar los detalles.');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleSuspendReactivate = (restaurant: any) => {
@@ -146,9 +240,177 @@ export const RestaurantManagement: React.FC = () => {
     // Aquí iría la lógica para mostrar historial de pagos
   };
 
-  const handleSystemConfig = (restaurant: any) => {
-    console.log('Configurar sistema para:', restaurant.name);
-    // Aquí iría la lógica para configuración del sistema
+  const handleOpenData = async (restaurant: any) => {
+    try {
+      setSelectedRestaurant(restaurant);
+      setDataDialogOpen(true);
+      const res = await apiFetch<any>(`/productos/${restaurant.id}`, {}, token || undefined);
+      setDataProducts(res?.data || []);
+    } catch (e:any) {
+      setDataProducts([]);
+    }
+  };
+
+  const handleImportProducts = async (restaurantId: number, file: File) => {
+    try {
+      setImporting(true);
+      // Parse simple CSV/Excel? Aquí esperamos JSON ya estructurado desde el frontend.
+      // Para este MVP, soportaremos JSON pegado desde textarea o un archivo CSV procesado por el cliente en el futuro.
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleImportJson = async (restaurantId: number, text: string) => {
+    try {
+      const payload = JSON.parse(text);
+      if (!Array.isArray(payload)) throw new Error('El contenido debe ser un arreglo de productos');
+      const res = await apiFetch(`/productos/${restaurantId}/import`, {
+        method: 'POST',
+        body: JSON.stringify({ productos: payload })
+      }, token || undefined);
+      toast({ title: 'Importación', description: 'Productos importados correctamente.' });
+      const list = await apiFetch<any>(`/productos/${restaurantId}`, {}, token || undefined);
+      setDataProducts(list?.data || []);
+    } catch (e:any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo importar.' });
+    }
+  };
+
+  const csvToRows = (csv: string) => {
+    const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim() !== '');
+    if (lines.length === 0) return [] as any[];
+    const parseLine = (line: string) => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current);
+      return result.map(s => s.trim());
+    };
+    const header = parseLine(lines[0]).map(h => h.toLowerCase());
+    const rows = [] as any[];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseLine(lines[i]);
+      if (cols.length === 1 && cols[0] === '') continue;
+      const obj: any = {};
+      header.forEach((h, idx) => { obj[h] = cols[idx]; });
+      rows.push(obj);
+    }
+    return rows;
+  };
+
+  const normalizeProducts = (rows: any[]) => {
+    return rows.map(r => ({
+      nombre: String(r.nombre ?? r.producto ?? '').trim(),
+      precio: Number(String(r.precio ?? r.price ?? '0').replace(',', '.')),
+      categoria_nombre: r.categoria_nombre ?? r.categoria ?? '',
+      stock: r.stock !== undefined ? Number(r.stock) : undefined,
+      activo: r.activo !== undefined ? (String(r.activo).toLowerCase() === 'true' || String(r.activo) === '1') : undefined,
+      imagen_url: r.imagen_url ?? r.imagen ?? undefined,
+    })).filter(p => p.nombre && !isNaN(p.precio));
+  };
+
+  const handleFileUpload = async (restaurantId: number, file: File) => {
+    try {
+      setFileBusy(true);
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (ext === 'csv') {
+        const text = await file.text();
+        const rows = csvToRows(text);
+        const productos = normalizeProducts(rows);
+        await apiFetch(`/productos/${restaurantId}/import`, { method: 'POST', body: JSON.stringify({ productos }) }, token || undefined);
+        toast({ title: 'Importación', description: `Importados ${productos.length} productos desde CSV.` });
+        const list = await apiFetch<any>(`/productos/${restaurantId}`, {}, token || undefined);
+        setDataProducts(list?.data || []);
+        return;
+      }
+      if (ext === 'xlsx' || ext === 'xls') {
+        try {
+          // @ts-ignore
+          const XLSX = await import('xlsx');
+          const buf = await file.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          const productos = normalizeProducts(rows as any[]);
+          await apiFetch(`/productos/${restaurantId}/import`, { method: 'POST', body: JSON.stringify({ productos }) }, token || undefined);
+          toast({ title: 'Importación', description: `Importados ${productos.length} productos desde Excel.` });
+          const list = await apiFetch<any>(`/productos/${restaurantId}`, {}, token || undefined);
+          setDataProducts(list?.data || []);
+          return;
+        } catch (e:any) {
+          toast({ title: 'Dependencia faltante', description: 'Instala el paquete "xlsx" en el frontend: npm i xlsx' });
+          return;
+        }
+      }
+      toast({ title: 'Formato no soportado', description: 'Sube un archivo .csv, .xlsx o .xls' });
+    } catch (e:any) {
+      toast({ title: 'Error', description: e.message || 'No se pudo procesar el archivo.' });
+    } finally {
+      setFileBusy(false);
+    }
+  };
+
+  const downloadTemplate = async () => {
+    const rows = [
+      {
+        nombre: 'Hamburguesa Clásica',
+        precio: 25.5,
+        categoria_nombre: 'Hamburguesas',
+        stock: 100,
+        activo: true,
+        imagen_url: ''
+      },
+      {
+        nombre: 'Papas Fritas',
+        precio: 8.9,
+        categoria_nombre: 'Acompañamientos',
+        stock: 200,
+        activo: true,
+        imagen_url: ''
+      }
+    ];
+    if (templateFormat === 'csv') {
+      const headers = ['nombre','precio','categoria_nombre','stock','activo','imagen_url'];
+      const escape = (v: any) => {
+        const s = String(v ?? '');
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+        return s;
+      };
+      const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => escape((r as any)[h])).join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'plantilla_productos.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    try {
+      // @ts-ignore
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+      XLSX.writeFile(wb, 'plantilla_productos.xlsx');
+    } catch (e) {
+      // Fallback a CSV si xlsx no está disponible
+      setTemplateFormat('csv');
+      await downloadTemplate();
+    }
   };
 
   return (
@@ -312,23 +574,11 @@ export const RestaurantManagement: React.FC = () => {
                             <Eye className="mr-2 h-4 w-4" />
                             Ver Detalles Completos
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleViewPayments(restaurant)}>
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Historial de Pagos
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Activity className="mr-2 h-4 w-4" />
-                            Actividad del Sistema
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenData(restaurant)}>
                             <FileText className="mr-2 h-4 w-4" />
-                            Tickets de Soporte
+                            Datos (Productos)
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleSystemConfig(restaurant)}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            Configurar Sistema
-                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleSuspendReactivate(restaurant)}
                             className={restaurant.status === 'suspended' ? 'text-green-600' : 'text-red-600'}
@@ -356,6 +606,8 @@ export const RestaurantManagement: React.FC = () => {
               Detalles Administrativos - {selectedRestaurant?.name}
             </DialogTitle>
           </DialogHeader>
+          {detailLoading && <div className="text-sm text-slate-600">Cargando detalles...</div>}
+          {detailError && <div className="text-sm text-red-600">{detailError}</div>}
           
           {selectedRestaurant && (
             <div className="space-y-6">
@@ -371,16 +623,28 @@ export const RestaurantManagement: React.FC = () => {
                       <span className="text-sm font-medium">{selectedRestaurant.id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Propietario:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.owner}</span>
+                      <span className="text-sm text-gray-600">Nombre:</span>
+                      <span className="text-sm font-medium">{selectedRestaurant.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Empleados:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.employees}</span>
+                      <span className="text-sm text-gray-600">Dirección:</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.address ?? '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Ciudad:</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.city ?? '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Email:</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.email ?? '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Teléfono:</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.phone ?? '-'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Registro:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.registrationDate}</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.registrationDate ?? '-'}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -395,16 +659,8 @@ export const RestaurantManagement: React.FC = () => {
                       {getStatusBadge(selectedRestaurant.status)}
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Uso del Sistema:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.systemUsage}%</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Última Actividad:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.lastActivity}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Tickets Abiertos:</span>
-                      <span className="text-sm font-medium">{selectedRestaurant.supportTickets}</span>
+                      <span className="text-sm font-medium">{selectedRestaurant?.lastActivity ?? '-'}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -426,13 +682,30 @@ export const RestaurantManagement: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <span className="text-sm text-gray-600">Último Pago</span>
-                      <p className="text-sm font-medium">{selectedRestaurant.lastPayment}</p>
+                      <p className="text-sm font-medium">{selectedRestaurant?.lastPayment ?? '-'}</p>
                     </div>
                     <div className="space-y-2">
                       <span className="text-sm text-gray-600">Próximo Pago</span>
-                      <p className="text-sm font-medium">{selectedRestaurant.nextPayment}</p>
+                      <p className="text-sm font-medium">{selectedRestaurant?.nextPayment ?? '-'}</p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-600">Plan</span>
+                      <p className="text-sm font-medium">{selectedRestaurant?.plan || '-'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-600">Precio Mensual</span>
+                      <p className="text-sm font-medium">${Number(selectedRestaurant?.planPrice ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-sm text-gray-600">Estado de Suscripción</span>
+                      <p className="text-sm font-medium">{selectedRestaurant?.planStatus || '-'}</p>
+                    </div>
+                  </div>
+                  {selectedRestaurant?.daysUntilExpiry !== undefined && selectedRestaurant?.daysUntilExpiry !== '-' && (
+                    <div className="mt-2 text-xs text-gray-500">Vence en {selectedRestaurant.daysUntilExpiry} días</div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -443,7 +716,7 @@ export const RestaurantManagement: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Ingresos/Mes</p>
-                        <p className="text-lg font-bold">${selectedRestaurant.monthlyRevenue.toLocaleString()}</p>
+                        <p className="text-lg font-bold">${Number(selectedRestaurant?.monthlyRevenue ?? 0).toLocaleString()}</p>
                       </div>
                       <DollarSign className="h-8 w-8 text-green-500" />
                     </div>
@@ -488,6 +761,113 @@ export const RestaurantManagement: React.FC = () => {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Datos (Productos) */}
+      <Dialog open={dataDialogOpen} onOpenChange={setDataDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Datos del Restaurante - {selectedRestaurant?.name}
+            </DialogTitle>
+            <DialogDescription>Lista de productos y migración masiva</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead>Precio</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Activo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dataProducts.map((p:any) => (
+                    <TableRow key={p.id_producto}>
+                      <TableCell className="font-medium">{p.nombre}</TableCell>
+                      <TableCell>{p.id_categoria || '-'}</TableCell>
+                      <TableCell>${Number(p.precio||0).toLocaleString()}</TableCell>
+                      <TableCell>{p.stock_actual ?? '-'}</TableCell>
+                      <TableCell>{p.activo ? <Badge className="bg-green-100 text-green-800">Sí</Badge> : <Badge variant="secondary">No</Badge>}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Migrar productos desde Excel/CSV (subir JSON generado o pegar JSON)</p>
+              <p className="text-xs text-gray-500">Formato requerido por fila:</p>
+              <pre className="text-xs bg-gray-50 p-3 rounded border overflow-auto">
+{`[
+  {
+    "nombre": "Hamburguesa Clásica",
+    "precio": 25.50,
+    "categoria_nombre": "Hamburguesas",
+    "stock": 100,
+    "activo": true,
+    "imagen_url": "https://.../hamburguesa.jpg"
+  }
+]`}
+              </pre>
+              <p className="text-xs text-gray-500">Columnas mínimas: nombre (string), precio (number). Opcionales: categoria_nombre (string), stock (number), activo (boolean), imagen_url (string).</p>
+              <Textarea id="jsonImport" placeholder="Pega aquí el JSON de productos" className="h-40" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f || !selectedRestaurant?.id) return;
+                  await handleFileUpload(selectedRestaurant.id, f);
+                  e.currentTarget.value = '';
+                }}
+                disabled={fileBusy}
+              />
+              <div className="flex items-center gap-3 flex-wrap">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={fileBusy}
+                  className="inline-flex items-center"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {fileBusy ? 'Procesando...' : 'Subir Excel/CSV'}
+                </Button>
+                <span className="text-xs text-gray-500">Formatos: CSV, XLSX, XLS</span>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Select value={templateFormat} onValueChange={(v) => setTemplateFormat(v as any)}>
+                    <SelectTrigger className="w-28 h-9">
+                      <SelectValue placeholder="Formato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="xlsx">XLSX</SelectItem>
+                      <SelectItem value="csv">CSV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" onClick={downloadTemplate} className="inline-flex items-center">
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Descargar plantilla
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={async () => {
+                  const el = document.getElementById('jsonImport') as HTMLTextAreaElement;
+                  await handleImportJson(selectedRestaurant.id, el.value);
+                }} disabled={importing}>
+                  {importing ? 'Importando...' : 'Importar JSON'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

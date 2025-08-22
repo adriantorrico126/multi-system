@@ -56,10 +56,16 @@ export const SupportCenter: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiFetch<any[]>('/soporte/tickets', {}, token || undefined);
-        setSupportTickets(data);
+        const resp = await apiFetch<any>('/soporte/tickets', {}, token || undefined);
+        const rows = Array.isArray(resp)
+          ? resp
+          : (resp && Array.isArray(resp.data))
+            ? resp.data
+            : [];
+        setSupportTickets(rows);
       } catch (err: any) {
         setError(err.message || 'Error al cargar tickets de soporte.');
+        setSupportTickets([]);
       } finally {
         setLoading(false);
       }
@@ -67,7 +73,8 @@ export const SupportCenter: React.FC = () => {
     if (token) fetchTickets();
   }, [token]);
 
-  const filteredTickets = supportTickets.filter(ticket => {
+  const safeTickets = Array.isArray(supportTickets) ? supportTickets : [];
+  const filteredTickets = safeTickets.filter(ticket => {
     const matchesSearch = ticket.restaurantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          ticket.subject.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPriority = priorityFilter === 'all' || ticket.priority === priorityFilter;
@@ -122,10 +129,10 @@ export const SupportCenter: React.FC = () => {
     }
   };
 
-  const openTickets = supportTickets.filter(t => t.status === 'open').length;
-  const inProgressTickets = supportTickets.filter(t => t.status === 'in_progress').length;
-  const urgentTickets = supportTickets.filter(t => t.priority === 'urgent').length;
-  const unassignedTickets = supportTickets.filter(t => !t.assignedTo).length;
+  const openTickets = safeTickets.filter(t => t.status === 'open').length;
+  const inProgressTickets = safeTickets.filter(t => t.status === 'in_progress').length;
+  const urgentTickets = safeTickets.filter(t => t.priority === 'urgent').length;
+  const unassignedTickets = safeTickets.filter(t => !t.assignedTo).length;
 
   const handleResponseSubmit = () => {
     console.log('Enviando respuesta:', responseText);

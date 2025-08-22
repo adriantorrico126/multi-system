@@ -58,3 +58,36 @@ export async function initPagosRestaurantesTable() {
     )
   `);
 } 
+
+// Inicializar tabla de configuraciones del sistema
+export async function initConfiguracionesSistemaTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS configuraciones_sistema (
+      clave_config VARCHAR(100) PRIMARY KEY,
+      valor_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+      creado_en TIMESTAMP DEFAULT NOW(),
+      actualizado_en TIMESTAMP DEFAULT NOW()
+    )
+  `);
+}
+
+// Inicializar tabla de servicios (suscripciones) por restaurante
+export async function initServiciosRestauranteTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS servicios_restaurante (
+      id SERIAL PRIMARY KEY,
+      id_restaurante INTEGER NOT NULL REFERENCES restaurantes(id_restaurante) ON DELETE CASCADE,
+      nombre_plan VARCHAR(100) NOT NULL,
+      descripcion_plan TEXT,
+      fecha_inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      fecha_fin TIMESTAMP WITH TIME ZONE,
+      estado_suscripcion VARCHAR(50) NOT NULL DEFAULT 'activo',
+      precio_mensual NUMERIC(10,2),
+      funcionalidades_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+      creado_en TIMESTAMP DEFAULT NOW(),
+      actualizado_en TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_servicios_restaurante_rest ON servicios_restaurante(id_restaurante);
+    CREATE INDEX IF NOT EXISTS idx_servicios_restaurante_estado ON servicios_restaurante(estado_suscripcion);
+  `);
+}

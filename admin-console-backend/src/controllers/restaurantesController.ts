@@ -94,6 +94,10 @@ export const createRestaurante = async (req: Request, res: Response) => {
     res.status(201).json({ data: result.rows[0] });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const code = typeof error === 'object' && error !== null && 'code' in error ? (error as any).code : undefined;
+    if (code === '23505') {
+      return res.status(409).json({ message: 'El restaurante ya existe' });
+    }
     logger.error('Error al crear restaurante: %s', message);
     res.status(500).json({ error: 'Error al crear restaurante', detail: message });
   }
@@ -165,10 +169,23 @@ export const createServicioRestaurante = async (req: Request, res: Response) => 
     if (!nombre_plan) {
       return res.status(400).json({ message: 'El campo nombre_plan es requerido' });
     }
+    // Asegurar fecha_inicio por defecto ahora si no viene en el payload, para no anular el DEFAULT del DB con NULL
+    const fechaInicioValue = fecha_inicio ? new Date(fecha_inicio).toISOString() : new Date().toISOString();
+    const fechaFinValue = fecha_fin ? new Date(fecha_fin).toISOString() : null;
+
     const result = await pool.query(
       `INSERT INTO servicios_restaurante (id_restaurante, nombre_plan, descripcion_plan, fecha_inicio, fecha_fin, estado_suscripcion, precio_mensual, funcionalidades_json)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [id, nombre_plan, descripcion_plan || null, fecha_inicio || null, fecha_fin || null, estado_suscripcion || 'activo', precio_mensual || null, funcionalidades_json ? JSON.stringify(funcionalidades_json) : '{}']
+      [
+        id,
+        nombre_plan,
+        descripcion_plan || null,
+        fechaInicioValue,
+        fechaFinValue,
+        estado_suscripcion || 'activo',
+        precio_mensual !== undefined && precio_mensual !== null ? precio_mensual : null,
+        funcionalidades_json ? JSON.stringify(funcionalidades_json) : '{}'
+      ]
     );
     await registrarAuditoria({
       id_usuario: (req as any).admin?.id,

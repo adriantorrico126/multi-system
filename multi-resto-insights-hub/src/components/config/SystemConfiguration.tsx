@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { AdminUsers } from '@/components/admin/AdminUsers';
 
 export const SystemConfiguration: React.FC = () => {
   const [config, setConfig] = useState<any>(null);
@@ -315,40 +316,7 @@ export const SystemConfiguration: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Usuarios Admin</CardTitle>
-                <CardDescription>Administradores del sistema</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Users className="h-4 w-4" />
-                      <div>
-                        <p className="font-medium">Juan Pérez</p>
-                        <p className="text-sm text-gray-500">admin@possolutions.com</p>
-                      </div>
-                    </div>
-                    <Badge>Super Admin</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Users className="h-4 w-4" />
-                      <div>
-                        <p className="font-medium">María García</p>
-                        <p className="text-sm text-gray-500">maria@possolutions.com</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Soporte</Badge>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full">
-                  <Users className="h-4 w-4 mr-2" />
-                  Agregar Administrador
-                </Button>
-              </CardContent>
-            </Card>
+            <AdminUsers />
           </div>
         </TabsContent>
 

@@ -5,7 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
-import { initAdminUsersTable, initPagosRestaurantesTable, initRestaurantesTable } from './config/database';
+import { initAdminUsersTable, initPagosRestaurantesTable, initRestaurantesTable, initConfiguracionesSistemaTable, initServiciosRestauranteTable } from './config/database';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger.json';
 
@@ -30,6 +30,8 @@ app.get('/', (req, res) => {
   await initAdminUsersTable();
   await initRestaurantesTable();
   await initPagosRestaurantesTable();
+  await initConfiguracionesSistemaTable();
+  await initServiciosRestauranteTable();
   app.listen(PORT, () => {
     console.log(`Admin Console Backend escuchando en el puerto ${PORT}`);
   });

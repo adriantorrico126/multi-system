@@ -10,6 +10,7 @@ import { SubscriptionControl } from "@/components/subscriptions/SubscriptionCont
 import { SupportCenter } from "@/components/support/SupportCenter";
 import { GlobalAnalytics } from "@/components/analytics/GlobalAnalytics";
 import { SystemConfiguration } from "@/components/config/SystemConfiguration";
+import { POSManager } from "@/components/pos-manager/POSManager";
 import { AuthLogin } from "@/components/auth/AuthLogin";
 import { 
   Shield, 
@@ -81,7 +82,7 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Navigation Tabs */}
-          <TabsList className="grid w-full grid-cols-6 bg-white p-1 shadow-sm rounded-lg">
+          <TabsList className="grid w-full grid-cols-7 bg-white p-1 shadow-sm rounded-lg">
             <TabsTrigger 
               value="dashboard" 
               className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -124,6 +125,14 @@ const Index = () => {
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Sistema</span>
             </TabsTrigger>
+            {userRole === 'admin' && (
+              <TabsTrigger 
+                value="pos-manager"
+                className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              >
+                <span className="hidden sm:inline">POS Manager</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Content Sections */}
@@ -150,6 +159,12 @@ const Index = () => {
           <TabsContent value="config" className="space-y-6">
             <SystemConfiguration />
           </TabsContent>
+
+          {userRole === 'admin' && (
+            <TabsContent value="pos-manager" className="space-y-6">
+              <POSManager />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
