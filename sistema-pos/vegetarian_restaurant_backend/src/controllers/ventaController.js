@@ -559,7 +559,8 @@ exports.getPedidosParaCocina = async (req, res, next) => {
       JOIN
           productos p ON dv.id_producto = p.id_producto
       WHERE
-          v.estado IN ('pendiente_caja', 'recibido', 'en_preparacion', 'listo_para_servir') AND v.id_restaurante = $1
+          v.id_restaurante = $1
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
       GROUP BY
           v.id_venta, v.fecha, v.id_mesa, v.mesa_numero, v.tipo_servicio, v.estado, v.total, v.id_sucursal
       ORDER BY

@@ -104,7 +104,7 @@ const Mesa = {
 
   // Obtener mesa por ID
   async getMesaById(id_mesa, id_sucursal, id_restaurante) {
-    const query = `
+    let query = `
       SELECT 
         m.*,
         v.id_venta as id_venta_actual,
@@ -113,9 +113,16 @@ const Mesa = {
         v.estado as estado_venta_actual
       FROM mesas m
       LEFT JOIN ventas v ON m.id_venta_actual = v.id_venta
-      WHERE m.id_mesa = $1 AND m.id_sucursal = $2 AND m.id_restaurante = $3
+      WHERE m.id_mesa = $1 AND m.id_restaurante = $2
     `;
-    const { rows } = await pool.query(query, [id_mesa, id_sucursal, id_restaurante]);
+    const params = [id_mesa, id_restaurante];
+
+    if (id_sucursal) {
+      params.push(id_sucursal);
+      query += ` AND m.id_sucursal = $${params.length}`;
+    }
+    
+    const { rows } = await pool.query(query, params);
     return rows[0];
   },
 
@@ -181,6 +188,29 @@ const Mesa = {
       RETURNING *
     `;
     const { rows } = await client.query(query, [id_mesa, id_venta_principal, id_restaurante]);
+    return rows[0];
+  },
+
+  // Crear prefactura con fecha_apertura explícita (para preservar la sesión cuando ya existen ventas)
+  async crearPrefacturaConFecha(id_mesa, id_venta_principal, fecha_apertura, id_restaurante, client = pool) {
+    const query = `
+      INSERT INTO prefacturas (id_mesa, id_venta_principal, total_acumulado, estado, fecha_apertura, id_restaurante)
+      VALUES ($1, $2, 0, 'abierta', $3, $4)
+      RETURNING *
+    `;
+    const { rows } = await client.query(query, [id_mesa, id_venta_principal, fecha_apertura, id_restaurante]);
+    return rows[0];
+  },
+
+  // Actualizar fecha_apertura de una prefactura existente
+  async actualizarFechaAperturaPrefactura(id_prefactura, nueva_fecha, id_restaurante, client = pool) {
+    const query = `
+      UPDATE prefacturas
+      SET fecha_apertura = $2
+      WHERE id_prefactura = $1 AND id_restaurante = $3
+      RETURNING *
+    `;
+    const { rows } = await client.query(query, [id_prefactura, nueva_fecha, id_restaurante]);
     return rows[0];
   },
 
@@ -382,6 +412,19 @@ const Mesa = {
     `;
     const { rows } = await client.query(query, [id_mesa, estado, id_restaurante]);
     return rows[0];
+  },
+
+  // Método para cerrar prefacturas existentes de una mesa (usado en transferencias)
+  async cerrarPrefacturaExistente(id_mesa, id_restaurante, client = pool) {
+    const query = `
+      UPDATE prefacturas
+      SET estado = 'cerrada',
+          fecha_cierre = NOW()
+      WHERE id_mesa = $1 AND id_restaurante = $2 AND estado = 'abierta'
+      RETURNING *;
+    `;
+    const { rows } = await client.query(query, [id_mesa, id_restaurante]);
+    return rows;
   }
 };
 

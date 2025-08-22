@@ -5,6 +5,7 @@ const logger = require('../config/logger');
 exports.getPedidosPendientes = async (req, res, next) => {
   try {
     const id_sucursal = req.user.id_sucursal;
+    const id_restaurante = req.user.id_restaurante;
 
     const query = `
       SELECT 
@@ -21,12 +22,13 @@ exports.getPedidosPendientes = async (req, res, next) => {
       JOIN ventas v ON dv.id_venta = v.id_venta
       JOIN mesas m ON v.id_mesa = m.id_mesa
       WHERE v.id_sucursal = $1
+        AND v.id_restaurante = $2
         AND dv.estado_preparacion IN ('pendiente', 'en_preparacion')
-        AND v.estado = 'abierta'
-      ORDER BY v.fecha_creacion ASC, dv.id_detalle ASC;
+        AND v.estado IN ('recibido', 'en_preparacion')
+      ORDER BY v.fecha ASC, dv.id_detalle ASC;
     `;
 
-    const { rows } = await pool.query(query, [id_sucursal]);
+    const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
 
     res.status(200).json({ 
       message: 'Pedidos pendientes obtenidos exitosamente.',

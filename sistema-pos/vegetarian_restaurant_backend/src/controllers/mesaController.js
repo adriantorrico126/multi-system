@@ -1,6 +1,7 @@
 const Mesa = require('../models/mesaModel');
 const { pool } = require('../config/database');
 const logger = require('../config/logger'); // Importar el logger
+const Venta = require('../models/ventaModel'); // Moved from inside agregarProductosAMesa
 
 // Obtener todas las mesas de una sucursal
 exports.getMesas = async (req, res, next) => {
@@ -245,7 +246,6 @@ exports.agregarProductosAMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       // Crear nueva venta para los productos adicionales
-      const Venta = require('./ventaModel');
       const venta = await Venta.createVenta({
         id_vendedor: id_vendedor,
         id_pago: null, // Se pagará al final
@@ -404,7 +404,7 @@ exports.generarPrefactura = async (req, res, next) => {
           AND v.id_sucursal = $2
           AND v.id_restaurante = $3
           AND v.fecha >= $4
-          AND v.estado IN ('abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'completada', 'pendiente', 'recibido')
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
       `;
       const totalSesionResult = await pool.query(totalSesionQuery, [mesa.numero, mesa.id_sucursal, id_restaurante, fechaAperturaPrefactura]);
       totalAcumulado = parseFloat(totalSesionResult.rows[0].total_acumulado) || 0;
@@ -436,13 +436,13 @@ exports.generarPrefactura = async (req, res, next) => {
         dv.id_detalle,
         dv.id_producto
       FROM ventas v
-      JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
-      JOIN productos p ON dv.id_producto = p.id_producto
-      JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
+      LEFT JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
+      LEFT JOIN productos p ON dv.id_producto = p.id_producto
+      LEFT JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
       WHERE v.mesa_numero = $1
         AND v.id_sucursal = $2
         AND v.id_restaurante = $3
-        AND v.estado IN ('abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'pagado', 'completada', 'pendiente', 'recibido')
+        AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
         ${fechaAperturaPrefactura ? 'AND v.fecha >= $4' : ''}
       ORDER BY v.fecha DESC
     `;
@@ -867,7 +867,7 @@ exports.splitBill = async (req, res, next) => {
       SELECT dv.*, v.id_prefactura, v.id_venta
       FROM detalle_ventas dv
       JOIN ventas v ON dv.id_venta = v.id_venta
-      WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('abierta', 'en_uso', 'pendiente_cobro')
+      WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
     `;
     const { rows: detalles } = await pool.query(detallesQuery, [id_mesa, id_restaurante]);
     if (detalles.length === 0) {
@@ -890,7 +890,7 @@ exports.splitBill = async (req, res, next) => {
         // Crear nueva venta/prefactura para la subcuenta
         const ventaRes = await client.query(
           `INSERT INTO ventas (id_mesa, id_restaurante, estado, tipo_servicio, total)
-           VALUES ($1, $2, 'abierta', 'Mesa', 0) RETURNING *`,
+           VALUES ($1, $2, 'recibido', 'Mesa', 0) RETURNING *`,
           [id_mesa, id_restaurante]
         );
         const nuevaVenta = ventaRes.rows[0];
@@ -918,47 +918,359 @@ exports.splitBill = async (req, res, next) => {
 
 // Transferir ítem individual entre mesas
 exports.transferirItem = async (req, res, next) => {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
     const { id_detalle, id_mesa_destino } = req.body;
     const id_restaurante = req.user.id_restaurante;
+    const id_vendedor = req.user.id; // Asignar el vendedor que realiza la transferencia
+
+    logger.debug(`req.body recibido en transferirItem: ${JSON.stringify(req.body)}`);
+
     if (!id_detalle || !id_mesa_destino) {
       return res.status(400).json({ message: 'Se requieren id_detalle e id_mesa_destino.' });
     }
-    // Buscar venta activa en la mesa destino
-    const ventaDestinoQuery = `SELECT id_venta FROM ventas WHERE id_mesa = $1 AND id_restaurante = $2 AND estado IN ('abierta', 'en_uso', 'pendiente_cobro') LIMIT 1`;
-    const { rows: ventasDestino } = await pool.query(ventaDestinoQuery, [id_mesa_destino, id_restaurante]);
-    let id_venta_destino;
-    if (ventasDestino.length > 0) {
-      id_venta_destino = ventasDestino[0].id_venta;
+
+    // 1. Obtener detalles del item y la venta de origen
+    const detalleOriginalQuery = `
+      SELECT dv.id_venta, dv.cantidad, dv.precio_unitario, dv.subtotal, v.id_mesa as id_mesa_origen
+      FROM detalle_ventas dv
+      JOIN ventas v ON dv.id_venta = v.id_venta
+      WHERE dv.id_detalle = $1 AND v.id_restaurante = $2;
+    `;
+    const { rows: detalleRows } = await client.query(detalleOriginalQuery, [id_detalle, id_restaurante]);
+
+    if (detalleRows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Detalle de venta no encontrado.' });
+    }
+
+    const detalleOriginal = detalleRows[0];
+    const id_venta_origen = detalleOriginal.id_venta;
+    const id_mesa_origen = detalleOriginal.id_mesa_origen;
+    const subtotal_item = parseFloat(detalleOriginal.subtotal);
+
+    logger.debug(`Validando mesas: Origen=${id_mesa_origen}, Destino=${id_mesa_destino}`);
+    // Validar que la mesa de origen y destino sean diferentes
+    if (id_mesa_origen === id_mesa_destino) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'No se puede transferir un producto a la misma mesa.' });
+    }
+
+    // 2. Obtener información de la mesa destino
+    const mesaDestinoInfo = await Mesa.getMesaById(id_mesa_destino, null, id_restaurante);
+    if (!mesaDestinoInfo) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Mesa de destino no encontrada.' });
+    }
+    
+    logger.debug(`Estado de mesa destino (ID: ${id_mesa_destino}): ${mesaDestinoInfo.estado}`);
+    
+    // Validar que la mesa no esté en mantenimiento o reservada
+    if (mesaDestinoInfo.estado === 'mantenimiento' || mesaDestinoInfo.estado === 'reservada') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+            message: 'No se puede transferir productos a una mesa en mantenimiento o reservada.' 
+        });
+    }
+    
+    // Si la mesa está libre, se creará automáticamente una nueva venta
+    const mesaEstaLibre = mesaDestinoInfo.estado === 'libre';
+    if (mesaEstaLibre) {
+        logger.info(`Mesa destino ${id_mesa_destino} está libre. Se creará una nueva venta automáticamente.`);
+    }
+
+    // 3. Crear SIEMPRE una nueva venta para la mesa destino (evita reactivar ventas históricas)
+    logger.info(`Creando nueva venta en mesa destino ${id_mesa_destino} (estado: ${mesaDestinoInfo.estado})`);
+    const newVentaRes = await client.query(
+      `INSERT INTO ventas (id_mesa, mesa_numero, id_restaurante, estado, tipo_servicio, total, id_vendedor, id_sucursal, fecha)
+       VALUES ($1, $2, $3, 'recibido', 'Mesa', 0, $4, $5, NOW()) RETURNING id_venta, fecha`,
+      [id_mesa_destino, mesaDestinoInfo.numero, id_restaurante, id_vendedor, mesaDestinoInfo.id_sucursal]
+    );
+    let id_venta_destino = newVentaRes.rows[0].id_venta;
+    let fechaVentaDestino = newVentaRes.rows[0].fecha;
+    
+    // Si la mesa estaba libre, actualizar su estado a 'en_uso'
+    if (mesaEstaLibre) {
+      await client.query(
+        `UPDATE mesas SET estado = 'en_uso', id_venta_actual = $1 WHERE id_mesa = $2 AND id_restaurante = $3`,
+        [id_venta_destino, id_mesa_destino, id_restaurante]
+      );
+      logger.info(`Mesa ${id_mesa_destino} actualizada de 'libre' a 'en_uso'`);
+    }
+
+    // 4. Transferir el ítem (actualizar id_venta en detalle_ventas)
+    await client.query(
+      `UPDATE detalle_ventas SET id_venta = $1 WHERE id_detalle = $2`,
+      [id_venta_destino, id_detalle]
+    );
+
+    // 5. Actualizar totales de ventas de origen y destino
+    await client.query(`
+      UPDATE ventas
+      SET total = COALESCE((SELECT SUM(subtotal) FROM detalle_ventas WHERE id_venta = ventas.id_venta), 0)
+      WHERE id_venta = $1;
+    `, [id_venta_origen]);
+
+    await client.query(`
+      UPDATE ventas
+      SET total = COALESCE((SELECT SUM(subtotal) FROM detalle_ventas WHERE id_venta = ventas.id_venta), 0)
+      WHERE id_venta = $1;
+    `, [id_venta_destino]);
+
+    // 6. Actualizar total_acumulado de las mesas de origen y destino (solo sesión actual)
+    // Determinar fecha de apertura de la sesión para origen y destino (prefactura abierta o hora_apertura)
+    const prefacturaOrigen = await Mesa.getPrefacturaByMesa(id_mesa_origen, id_restaurante);
+    const mesaOrigenInfo = await Mesa.getMesaById(id_mesa_origen, null, id_restaurante);
+    const aperturaOrigen = (prefacturaOrigen && prefacturaOrigen.fecha_apertura) || (mesaOrigenInfo && mesaOrigenInfo.hora_apertura) || null;
+
+    const prefacturaDestino = await Mesa.getPrefacturaByMesa(id_mesa_destino, id_restaurante);
+    const aperturaDestino = (prefacturaDestino && prefacturaDestino.fecha_apertura) || (mesaDestinoInfo && mesaDestinoInfo.hora_apertura) || null;
+
+    // Para la mesa de origen: excluir cancelados e históricos
+    const totalAcumuladoOrigenQuery = `
+        SELECT COALESCE(SUM(v.total), 0)
+        FROM ventas v
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado')
+          AND ($3::timestamp IS NULL OR v.fecha >= $3);
+    `;
+    const { rows: totalOrigenRows } = await client.query(totalAcumuladoOrigenQuery, [id_mesa_origen, id_restaurante, aperturaOrigen]);
+    const nuevoTotalOrigen = parseFloat(totalOrigenRows[0].coalesce) || 0;
+    await Mesa.actualizarTotalAcumulado(id_mesa_origen, nuevoTotalOrigen, id_restaurante, client);
+
+    // Si la mesa de origen quedó sin ventas activas, liberarla (doble verificación por seguridad)
+    if (nuevoTotalOrigen <= 0) {
+      await Mesa.liberarMesa(id_mesa_origen, id_restaurante, client);
+      logger.info(`Mesa ${id_mesa_origen} liberada al quedar sin productos/ventas activas (por total 0)`);
     } else {
-      // Crear nueva venta en la mesa destino
-      const ventaRes = await pool.query(
-        `INSERT INTO ventas (id_mesa, id_restaurante, estado, tipo_servicio, total) VALUES ($1, $2, 'abierta', 'Mesa', 0) RETURNING id_venta`,
+      // Verificación adicional por cantidad de ítems activos
+      const { rows: restantesRows } = await client.query(`
+        SELECT COUNT(*)::int AS cnt
+        FROM ventas v
+        LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+      `, [id_mesa_origen, id_restaurante]);
+      const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
+      if (itemsActivosRestantes === 0) {
+        await Mesa.liberarMesa(id_mesa_origen, id_restaurante, client);
+        logger.info(`Mesa ${id_mesa_origen} liberada al no quedar ítems activos (verificación por conteo)`);
+      }
+    }
+
+    // Para la mesa de destino: misma regla por sesión
+    const totalAcumuladoDestinoQuery = `
+        SELECT COALESCE(SUM(v.total), 0)
+        FROM ventas v
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado')
+          AND ($3::timestamp IS NULL OR v.fecha >= $3);
+    `;
+    const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante, aperturaDestino]);
+    const nuevoTotalDestino = parseFloat(totalDestinoRows[0].coalesce) || 0;
+    await Mesa.actualizarTotalAcumulado(id_mesa_destino, nuevoTotalDestino, id_restaurante, client);
+
+    // Asegurar que la mesa de destino quede en uso si recibió toda la orden
+    if (nuevoTotalDestino > 0) {
+      await client.query(
+        `UPDATE mesas 
+           SET estado = 'en_uso', 
+               hora_apertura = COALESCE(hora_apertura, NOW())
+         WHERE id_mesa = $1 AND id_restaurante = $2`,
         [id_mesa_destino, id_restaurante]
       );
-      id_venta_destino = ventaRes.rows[0].id_venta;
+      logger.info(`Mesa ${id_mesa_destino} marcada como 'en_uso' tras recibir orden completa`);
     }
-    // Transferir el ítem
-    await pool.query(`UPDATE detalle_ventas SET id_venta = $1 WHERE id_detalle = $2`, [id_venta_destino, id_detalle]);
-    res.status(200).json({ message: 'Ítem transferido exitosamente.' });
+
+    // Asegurar que la mesa de destino quede en uso si recibió productos/venta
+    if (nuevoTotalDestino > 0) {
+      await client.query(
+        `UPDATE mesas 
+           SET estado = 'en_uso', 
+               id_venta_actual = $1,
+               hora_apertura = COALESCE(hora_apertura, NOW())
+         WHERE id_mesa = $2 AND id_restaurante = $3`,
+        [id_venta_destino, id_mesa_destino, id_restaurante]
+      );
+      logger.info(`Mesa ${id_mesa_destino} marcada como 'en_uso' y vinculada a venta ${id_venta_destino}`);
+    }
+
+    // 7. Prefacturas
+    // Cerrar prefactura de la mesa de origen para cortar la sesión
+    await Mesa.cerrarPrefacturaExistente(id_mesa_origen, id_restaurante, client);
+    // Asegurar que la mesa destino tenga una prefactura abierta (crear si no existe)
+    const prefDestino = await Mesa.getPrefacturaByMesa(id_mesa_destino, id_restaurante);
+    if (!prefDestino) {
+      // Usar fecha de la venta para que la sesión incluya inmediatamente sus detalles
+      await Mesa.crearPrefacturaConFecha(id_mesa_destino, id_venta_destino, (fechaVentaDestino || new Date()), id_restaurante, client);
+      logger.info(`Prefactura creada para mesa destino ${id_mesa_destino} vinculada a venta ${id_venta_destino}`);
+    } else {
+      // Si existe, alinear la fecha de apertura con la fecha de la venta destino para aislar la sesión
+      await Mesa.actualizarFechaAperturaPrefactura(prefDestino.id_prefactura, (fechaVentaDestino || new Date()), id_restaurante, client);
+      logger.info(`Prefactura ${prefDestino.id_prefactura} actualizada con nueva fecha_apertura para mesa ${id_mesa_destino}`);
+    }
+
+    await client.query('COMMIT');
+    
+    const mensajeTransferencia = mesaEstaLibre 
+      ? `Ítem transferido exitosamente. Se creó una nueva venta en la mesa ${id_mesa_destino}.`
+      : 'Ítem transferido exitosamente.';
+    
+    logger.info(`Ítem ${id_detalle} transferido de mesa ${id_mesa_origen} a mesa ${id_mesa_destino} exitosamente.`);
+    res.status(200).json({ 
+        message: mensajeTransferencia, 
+        data: {
+            id_detalle, 
+            id_mesa_origen, 
+            id_mesa_destino,
+            nuevoTotalOrigen, 
+            nuevoTotalDestino,
+            nuevaVentaCreada: mesaEstaLibre,
+            id_venta_destino
+        }
+    });
   } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al transferir ítem:', error);
     next(error);
+  } finally {
+    client.release();
   }
 };
 
 // Transferir orden completa entre mesas
 exports.transferirOrden = async (req, res, next) => {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
     const { id_venta, id_mesa_destino } = req.body;
     const id_restaurante = req.user.id_restaurante;
+
     if (!id_venta || !id_mesa_destino) {
       return res.status(400).json({ message: 'Se requieren id_venta e id_mesa_destino.' });
     }
-    // Transferir la venta y todos sus detalles
-    await pool.query(`UPDATE ventas SET id_mesa = $1 WHERE id_venta = $2 AND id_restaurante = $3`, [id_mesa_destino, id_venta, id_restaurante]);
-    res.status(200).json({ message: 'Orden transferida exitosamente.' });
+
+    // 1. Obtener información de la venta de origen
+    const ventaOrigenQuery = `SELECT id_mesa FROM ventas WHERE id_venta = $1 AND id_restaurante = $2;`;
+    const { rows: ventaOrigenRows } = await client.query(ventaOrigenQuery, [id_venta, id_restaurante]);
+
+    if (ventaOrigenRows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Venta no encontrada.' });
+    }
+    const id_mesa_origen = ventaOrigenRows[0].id_mesa;
+
+    // Validar que la mesa de origen y destino sean diferentes
+    if (id_mesa_origen === id_mesa_destino) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'No se puede transferir una orden a la misma mesa.' });
+    }
+
+    // 2. Obtener información de la mesa destino
+    const mesaDestinoInfo = await Mesa.getMesaById(id_mesa_destino, null, id_restaurante);
+    if (!mesaDestinoInfo) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Mesa de destino no encontrada.' });
+    }
+    
+    // Validar que la mesa no esté en mantenimiento o reservada
+    if (mesaDestinoInfo.estado === 'mantenimiento' || mesaDestinoInfo.estado === 'reservada') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+            message: 'No se puede transferir órdenes a una mesa en mantenimiento o reservada.' 
+        });
+    }
+    
+    // Si la mesa está libre, se permitirá la transferencia (la venta ya existe)
+    const mesaEstaLibre = mesaDestinoInfo.estado === 'libre';
+    if (mesaEstaLibre) {
+        logger.info(`Mesa destino ${id_mesa_destino} está libre. Se transferirá la orden completa.`);
+    }
+
+    // 3. Transferir la venta y todos sus detalles
+    const ventaUpdateRes = await client.query(
+      `UPDATE ventas SET id_mesa = $1, mesa_numero = (SELECT numero FROM mesas WHERE id_mesa = $1 AND id_restaurante = $3)
+       WHERE id_venta = $2 AND id_restaurante = $3
+       RETURNING id_venta, fecha`,
+      [id_mesa_destino, id_venta, id_restaurante]
+    );
+    const fechaVentaDestino = ventaUpdateRes.rows[0]?.fecha;
+
+    // 4. Recalcular y actualizar total_acumulado para mesas de origen y destino
+    // Para la mesa de origen:
+    const totalAcumuladoOrigenQuery = `
+        SELECT COALESCE(SUM(v.total), 0)
+        FROM ventas v
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado');
+    `;
+    const { rows: totalOrigenRows } = await client.query(totalAcumuladoOrigenQuery, [id_mesa_origen, id_restaurante]);
+    const nuevoTotalOrigen = parseFloat(totalOrigenRows[0].coalesce) || 0;
+    await Mesa.actualizarTotalAcumulado(id_mesa_origen, nuevoTotalOrigen, id_restaurante, client);
+
+    // Si la mesa de origen quedó sin ventas activas tras transferir la orden, liberarla (doble verificación)
+    if (nuevoTotalOrigen <= 0) {
+      await Mesa.liberarMesa(id_mesa_origen, id_restaurante, client);
+      logger.info(`Mesa ${id_mesa_origen} liberada al quedar sin ventas activas (transferirOrden, total 0)`);
+    } else {
+      const { rows: restantesRows } = await client.query(`
+        SELECT COUNT(*)::int AS cnt
+        FROM ventas v
+        LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+      `, [id_mesa_origen, id_restaurante]);
+      const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
+      if (itemsActivosRestantes === 0) {
+        await Mesa.liberarMesa(id_mesa_origen, id_restaurante, client);
+        logger.info(`Mesa ${id_mesa_origen} liberada al no quedar ítems activos (transferirOrden, verificación por conteo)`);
+      }
+    }
+
+    // Para la mesa de destino:
+    const totalAcumuladoDestinoQuery = `
+        SELECT COALESCE(SUM(v.total), 0)
+        FROM ventas v
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado');
+    `;
+    const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante]);
+    const nuevoTotalDestino = parseFloat(totalDestinoRows[0].coalesce) || 0;
+    await Mesa.actualizarTotalAcumulado(id_mesa_destino, nuevoTotalDestino, id_restaurante, client);
+
+    // 5. Prefacturas: cerrar origen, asegurar destino abierta
+    await Mesa.cerrarPrefacturaExistente(id_mesa_origen, id_restaurante, client);
+    const prefDestino = await Mesa.getPrefacturaByMesa(id_mesa_destino, id_restaurante);
+    if (!prefDestino) {
+      await Mesa.crearPrefacturaConFecha(id_mesa_destino, id_venta, (fechaVentaDestino || new Date()), id_restaurante, client);
+      logger.info(`Prefactura creada para mesa destino ${id_mesa_destino} tras transferir orden ${id_venta}`);
+    }
+
+    await client.query('COMMIT');
+    
+    const mensajeTransferencia = mesaEstaLibre 
+      ? `Orden transferida exitosamente a la mesa ${id_mesa_destino} (estaba libre).`
+      : 'Orden transferida exitosamente.';
+    
+    logger.info(`Orden ${id_venta} transferida de mesa ${id_mesa_origen} a mesa ${id_mesa_destino} exitosamente.`);
+    res.status(200).json({ 
+        message: mensajeTransferencia, 
+        data: {
+            id_venta, 
+            id_mesa_origen, 
+            id_mesa_destino,
+            nuevoTotalOrigen, 
+            nuevoTotalDestino,
+            mesaDestinoEstabaLibre: mesaEstaLibre
+        }
+    });
   } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al transferir orden:', error);
     next(error);
+  } finally {
+    client.release();
   }
 };
 
@@ -1057,7 +1369,7 @@ exports.crearGrupoMesas = async (req, res, next) => {
       }
       // Crear venta principal para el grupo
       const ventaRes = await client.query(
-        `INSERT INTO ventas (id_vendedor, id_sucursal, tipo_servicio, total, estado, id_restaurante, id_mesa) VALUES ($1, (SELECT id_sucursal FROM mesas WHERE id_mesa = $2), 'Mesa', 0, 'abierta', $3, $2) RETURNING *`,
+         `INSERT INTO ventas (id_vendedor, id_sucursal, tipo_servicio, total, estado, id_restaurante, id_mesa) VALUES ($1, (SELECT id_sucursal FROM mesas WHERE id_mesa = $2), 'Mesa', 0, 'recibido', $3, $2) RETURNING *`,
         [id_mesero, mesas[0], id_restaurante]
       );
       const venta = ventaRes.rows[0];

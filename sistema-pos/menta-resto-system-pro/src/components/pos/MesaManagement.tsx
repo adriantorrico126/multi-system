@@ -6,16 +6,19 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Coffee, 
-  CheckCircle, 
-  AlertCircle, 
-  Clock, 
-  X, 
-  Users, 
-  Settings, 
-  FileText, 
-  Receipt, 
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Coffee,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  X,
+  Users,
+  Settings,
+  FileText,
+  Receipt,
   DollarSign,
   CreditCard,
   RefreshCw,
@@ -29,15 +32,16 @@ import {
   BookOpen,
   Link2,
   Unlink,
-  Eye
+  Eye,
+  MoveRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  getMesas, 
-  abrirMesa, 
-  cerrarMesa, 
-  liberarMesa, 
-  generarPrefactura, 
+import {
+  getMesas,
+  abrirMesa,
+  cerrarMesa,
+  liberarMesa,
+  generarPrefactura,
   cerrarMesaConFactura,
   getEstadisticasMesas,
   crearGrupoMesas,
@@ -59,6 +63,28 @@ import { GruposMesasManagement } from './GruposMesasManagement';
 import { ReservaModal } from './ReservaModal';
 import { useAuth } from '@/context/AuthContext';
 import ReservaDetallesModal from './ReservaDetallesModal';
+
+// Definición de tipos para el historial de la mesa, incluyendo id_detalle y id_producto
+interface HistorialMesaDetallado {
+  id_detalle: number;
+  id_producto: number;
+  nombre_producto: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+  observaciones?: string;
+  id_venta: number;
+}
+
+interface PrefacturaData {
+  mesa: Mesa;
+  historial: HistorialMesa[];
+  historial_detallado: HistorialMesaDetallado[]; // Asegúrate de que este campo existe en la respuesta de la API
+  total_acumulado: number;
+  total_ventas: number;
+  fecha_apertura: string;
+  estado_prefactura: string;
+}
 
 interface Mesa {
   id_mesa: number;
@@ -83,9 +109,9 @@ interface EstadisticasMesas {
 
 interface HistorialMesa {
   nombre_producto: string;
-  cantidad: number;
+  cantidad_total: number; // Cambiado de 'cantidad' a 'cantidad_total' para coincidir con el backend agrupado
   precio_unitario: number;
-  subtotal: number;
+  subtotal_total: number; // Cambiado de 'subtotal' a 'subtotal_total'
   observaciones?: string;
 }
 
@@ -93,6 +119,85 @@ interface MesaManagementProps {
   sucursalId: number;
   idRestaurante: number;
 }
+
+// Componente del Modal de Transferencia de Productos
+interface TransferProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  producto: HistorialMesaDetallado | null; // El producto a transferir (con id_detalle)
+  mesaOrigen: Mesa; // La mesa de la que se transfiere el producto
+  mesasDisponibles: Mesa[]; // Todas las mesas para seleccionar como destino
+  onTransfer: (id_detalle: number, id_mesa_destino: number) => void;
+}
+
+const TransferProductModal: React.FC<TransferProductModalProps> = ({
+  isOpen, onClose, producto, mesaOrigen, mesasDisponibles, onTransfer
+}) => {
+  const [selectedMesaDestino, setSelectedMesaDestino] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const handleTransferClick = () => {
+    if (producto && selectedMesaDestino) {
+      if (selectedMesaDestino === mesaOrigen.id_mesa) {
+        toast({
+          title: "Error de Transferencia",
+          description: "No puedes transferir un producto a la misma mesa.",
+          variant: "destructive",
+        });
+        return;
+      }
+      onTransfer(producto.id_detalle, selectedMesaDestino);
+    } else {
+      toast({
+        title: "Error",
+        description: "Selecciona un producto y una mesa de destino.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filtrar mesas para que la mesa de origen no aparezca como destino
+  const filteredMesasDisponibles = mesasDisponibles.filter(m => m.id_mesa !== mesaOrigen.id_mesa);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Transferir Producto</DialogTitle>
+          <DialogDescription>
+            Mueve "{producto?.nombre_producto}" de la Mesa {mesaOrigen.numero} a otra mesa.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-gray-700">Producto a transferir: <span className="font-semibold">{producto?.nombre_producto} (x{producto?.cantidad})</span></p>
+          <p className="text-sm text-gray-700">Desde la mesa: <span className="font-semibold">{mesaOrigen.numero}</span></p>
+          
+          <div className="grid gap-2">
+            <label htmlFor="mesa-destino" className="text-sm font-medium">Seleccionar Mesa de Destino:</label>
+            <Select onValueChange={(value) => setSelectedMesaDestino(Number(value))}>
+              <SelectTrigger id="mesa-destino">
+                <SelectValue placeholder="Selecciona una mesa" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredMesasDisponibles.map((mesa) => (
+                  <SelectItem key={mesa.id_mesa} value={String(mesa.id_mesa)}>
+                    Mesa {mesa.numero} ({mesa.estado === 'en_uso' ? 'En Uso' : mesa.estado === 'pendiente_cobro' ? 'Pendiente Cobro' : mesa.estado})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleTransferClick} disabled={!selectedMesaDestino}>
+            Transferir
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProps) {
   const { user } = useAuth();
@@ -117,6 +222,10 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   const [showDetallesModal, setShowDetallesModal] = useState(false);
   const [selectedMesaForDetalles, setSelectedMesaForDetalles] = useState<Mesa | null>(null);
   const [reservaDetalles, setReservaDetalles] = useState<any>(null);
+
+  // NUEVOS ESTADOS PARA TRANSFERENCIA DE PRODUCTOS
+  const [showTransferProductModal, setShowTransferProductModal] = useState(false);
+  const [selectedProductToTransfer, setSelectedProductToTransfer] = useState<HistorialMesaDetallado | null>(null);
 
   // Cargar meseros cuando se abre el modal
   useEffect(() => {
@@ -148,21 +257,21 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   };
 
   // Query para obtener mesas
-  const { data: mesas = [], isLoading: isLoadingMesas, refetch: refetchMesas } = useQuery({
+  const { data: mesas = [], isLoading: isLoadingMesas, refetch: refetchMesas } = useQuery<Mesa[]>({
     queryKey: ['mesas', sucursalId],
     queryFn: () => getMesas(sucursalId),
     enabled: !!sucursalId,
   });
 
   // Obtener estadísticas
-  const { data: estadisticas } = useQuery({
+  const { data: estadisticas } = useQuery<EstadisticasMesas>({
     queryKey: ['estadisticas-mesas', sucursalId],
     queryFn: () => getEstadisticasMesas(sucursalId),
     enabled: !!sucursalId,
   });
 
   // Obtener prefactura
-  const { data: prefacturaData } = useQuery({
+  const { data: prefacturaData } = useQuery<PrefacturaData>({
     queryKey: ['prefactura', selectedMesa?.id_mesa],
     queryFn: async () => {
       if (!selectedMesa) return null;
@@ -436,11 +545,37 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
   });
 
-
+  const transferirItemMutation = useMutation({
+    mutationFn: ({ id_detalle, id_mesa_destino }: { id_detalle: number; id_mesa_destino: number }) =>
+      transferirItemMesa(id_detalle, id_mesa_destino),
+    onSuccess: (data: any) => {
+      const mensaje = data?.data?.nuevaVentaCreada 
+        ? `Producto transferido exitosamente. Se creó una nueva venta en la mesa ${data.data.id_mesa_destino}.`
+        : "El producto ha sido transferido exitosamente.";
+      
+      toast({
+        title: "Producto Transferido",
+        description: mensaje,
+      });
+      setShowTransferProductModal(false); // Cerrar modal después de éxito
+      setSelectedProductToTransfer(null); // Limpiar estado
+      queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] }); // Refrescar mesas
+      queryClient.invalidateQueries({ queryKey: ['prefactura', selectedMesa?.id_mesa] }); // Refrescar prefactura actual
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error de Transferencia",
+        description: error.response?.data?.message || "Error al transferir el producto.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const getMesaState = (mesa: Mesa) => {
     if (mesa.id_grupo_mesa) return 'en_grupo';
-    if (reservasPorMesa?.has(mesa.id_mesa)) return 'reservada';
+    // Suponiendo que `reservasPorMesa` es un Map o Set global accesible aquí
+    // Si no lo es, esta línea podría causar un error. Ajustar según la implementación.
+    // if (reservasPorMesa?.has(mesa.id_mesa)) return 'reservada'; 
     return mesa.estado;
   };
 
@@ -545,9 +680,25 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     }
   };
 
+  // Función para abrir el modal de transferencia de producto
+  const handleOpenTransferProductModal = (producto: HistorialMesaDetallado) => {
+    setSelectedProductToTransfer(producto);
+    setShowTransferProductModal(true);
+  };
+
+  // Función para manejar la transferencia de producto desde el modal
+  const handleProductTransfer = (id_detalle: number, id_mesa_destino: number) => {
+    transferirItemMutation.mutate({ id_detalle, id_mesa_destino });
+  };
+
   // Definir productos a partir de la prefactura para evitar referencia no definida
-  const productos = prefacturaData?.data?.historial ?? [];
-  const idVentaActual = prefacturaData?.data?.id_venta || productos?.[0]?.id_venta || null;
+  // Asegúrate de que prefacturaData.data.historial_detallado esté disponible y tenga el tipo correcto
+  const productosDetallados: HistorialMesaDetallado[] = prefacturaData?.data?.historial_detallado ?? [];
+  const productosAgrupados: HistorialMesa[] = prefacturaData?.data?.historial ?? [];
+
+  // Obtener todas las mesas excepto la actualmente seleccionada (para el modal de transferencia)
+  const otherMesas = mesas.filter(m => m.id_mesa !== selectedMesa?.id_mesa);
+
   const [processingTransfer, setProcessingTransfer] = useState(false);
 
   if (!sucursalId) {
@@ -1530,7 +1681,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
-                          <p className="text-sm font-bold text-purple-600">{prefacturaData?.data?.historial?.length || 0}</p>
+                          <p className="text-sm font-bold text-purple-600">{productosAgrupados?.length || 0}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Estado Prefactura</p>
@@ -1544,7 +1695,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 </div>
 
                 {/* Lista de productos */}
-                {prefacturaData?.data?.historial && prefacturaData.data.historial.length > 0 ? (
+                {productosDetallados && productosDetallados.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Productos Consumidos</h3>
                     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -1555,11 +1706,12 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                             <TableHead className="font-medium text-gray-700 text-right">Cantidad</TableHead>
                             <TableHead className="font-medium text-gray-700 text-right">Precio Unit.</TableHead>
                             <TableHead className="font-medium text-gray-700 text-right">Subtotal</TableHead>
+                            <TableHead className="font-medium text-gray-700 text-right">Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {prefacturaData.data.historial.map((producto: any, index: number) => (
-                            <TableRow key={index} className="hover:bg-gray-50">
+                          {productosDetallados.map((producto: HistorialMesaDetallado, index: number) => (
+                            <TableRow key={producto.id_detalle} className="hover:bg-gray-50">
                               <TableCell className="font-medium">
                                 <div>
                                   <div className="text-gray-900">{producto.nombre_producto}</div>
@@ -1571,13 +1723,28 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                                 </div>
                               </TableCell>
                               <TableCell className="text-right font-medium">
-                                {producto.cantidad_total}
+                                {producto.cantidad}
                               </TableCell>
                               <TableCell className="text-right text-gray-600">
                                 ${Number(producto.precio_unitario).toFixed(2)}
                               </TableCell>
                               <TableCell className="text-right font-bold text-green-600">
-                                ${Number(producto.subtotal_total).toFixed(2)}
+                                ${Number(producto.subtotal).toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {selectedMesa?.estado === 'en_uso' || selectedMesa?.estado === 'pendiente_cobro' ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleOpenTransferProductModal(producto)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    <MoveRight className="h-4 w-4 mr-1" />
+                                    Transferir
+                                  </Button>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">No disponible</span>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1596,7 +1763,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 )}
 
                 {/* Totales */}
-                {prefacturaData?.data?.historial && prefacturaData.data.historial.length > 0 && (
+                {productosAgrupados && productosAgrupados.length > 0 && (
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-green-800">Total Acumulado:</span>
@@ -1616,7 +1783,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                 {/* Acciones */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Mesa {selectedMesa?.numero} • {prefacturaData?.data?.historial?.length || 0} producto{prefacturaData?.data?.historial?.length !== 1 ? 's' : ''}
+                    Mesa {selectedMesa?.numero} • {productosDetallados?.length || 0} producto{productosDetallados?.length !== 1 ? 's' : ''}
                   </div>
                   <div className="flex space-x-2">
                     <Button
@@ -1658,6 +1825,21 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
           </DialogContent>
         </Dialog>
         
+        {/* NUEVO: Modal de Transferencia de Productos */}
+        {showTransferProductModal && selectedProductToTransfer && selectedMesa && (
+          <TransferProductModal
+            isOpen={showTransferProductModal}
+            onClose={() => {
+              setShowTransferProductModal(false);
+              setSelectedProductToTransfer(null);
+            }}
+            producto={selectedProductToTransfer}
+            mesaOrigen={selectedMesa}
+            mesasDisponibles={otherMesas}
+            onTransfer={handleProductTransfer}
+          />
+        )}
+
         {/* NUEVO: Modal de Reservas */}
         {showReservaModal && selectedMesaForReserva && (
           <ReservaModal

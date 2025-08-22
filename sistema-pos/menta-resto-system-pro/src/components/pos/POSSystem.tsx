@@ -243,7 +243,8 @@ export function POSSystem() {
   });
 
   // Obtener pedidos para la vista de cocina/gestión de pedidos
-  const canViewOrders = user.rol === 'cocinero' || user.rol === 'admin' || user.rol === 'cajero';
+  // Profesional: permitir también al rol 'mesero' ver el feed unificado de cocina
+  const canViewOrders = ['cocinero', 'admin', 'cajero', 'mesero'].includes(user.rol);
   const {
     data: backendOrders = [],
     isError: isErrorOrders,

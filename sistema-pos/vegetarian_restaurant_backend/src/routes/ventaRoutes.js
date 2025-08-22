@@ -7,7 +7,8 @@ const { authenticateToken, authorizeRoles, ensureTenantContext } = require('../m
 router.post('/', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, ventaController.createVenta);
 
 // Obtener pedidos para la cocina
-router.get('/cocina', authenticateToken, authorizeRoles('cocinero', 'admin', 'cajero', 'super_admin'), ensureTenantContext, ventaController.getPedidosParaCocina);
+// Permitir también al rol 'mesero' ver el mismo feed de cocina, tal como cajero/admin
+router.get('/cocina', authenticateToken, authorizeRoles('cocinero', 'admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, ventaController.getPedidosParaCocina);
 
 // Actualizar estado de pedido
 router.put('/:id/status', authenticateToken, authorizeRoles('cocinero', 'admin', 'super_admin'), ensureTenantContext, ventaController.actualizarEstadoPedido);
