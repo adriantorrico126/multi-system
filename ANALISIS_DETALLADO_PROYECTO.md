@@ -407,3 +407,6 @@ Este es un **sistema POS profesional y completo** que demuestra:
 **Complejidad**: Alta - Requiere conocimientos técnicos para instalación y mantenimiento.
 
 **Potencial Comercial**: Muy alto - Sistema completo listo para comercialización.
+
+---
+*Nota: Este commit se ha creado para forzar un nuevo despliegue en Vercel.*

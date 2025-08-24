@@ -4,7 +4,8 @@
   "description": "Agente local para manejar la impresión de tickets desde el sistema POS.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "pkg . --targets node18-win-x64,node18-macos-x64 --output agente-impresion"
   },
   "keywords": [
     "pos",
@@ -17,5 +18,8 @@
     "dotenv": "^17.2.1",
     "node-thermal-printer": "^4.1.2",
     "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }
