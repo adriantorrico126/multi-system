@@ -38,6 +38,7 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "jest": "^29.0.0",
+    "node-latex": "^3.1.0",
     "nodemon": "^3.1.10",
     "supertest": "^6.0.0"
   }

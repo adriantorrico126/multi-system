@@ -6,24 +6,57 @@ const api = axios.create();
 // Interceptor global para manejar expiración de JWT
 api.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
     console.log('🔍 [API Interceptor] Error detectado:', error);
     const status = error?.response?.status;
     const message = error?.response?.data?.message?.toLowerCase?.() || '';
+    const code = error?.response?.data?.code;
 
-    // Solo forzar logout en 401 con token inválido/expirado
+    // Manejar tokens expirados o inválidos
     const isAuthFailure = status === 401 && (
       message.includes('jwt expired') ||
+      message.includes('token expirado') ||
       message.includes('invalid token') ||
       message.includes('token invalid') ||
       message.includes('no token provided') ||
-      message.includes('token requerido')
+      message.includes('token requerido') ||
+      code === 'TOKEN_EXPIRED' ||
+      code === 'TOKEN_INVALID' ||
+      code === 'TOKEN_ERROR'
     );
 
     if (isAuthFailure) {
-      console.log('🔍 [API Interceptor] Token inválido/expirado. Redirigiendo al login...');
+      console.log('🔍 [API Interceptor] Token inválido/expirado. Intentando renovar...');
+      
+      // Intentar renovar el token automáticamente
+      try {
+        const { token, data } = await refreshAuthToken();
+        
+        // Si la renovación fue exitosa, reintentar la petición original
+        if (token && data) {
+          console.log('🔍 [API Interceptor] Token renovado. Reintentando petición original...');
+          
+          // Actualizar el token en la petición original
+          const originalRequest = error.config;
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          
+          // Reintentar la petición
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.log('🔍 [API Interceptor] Falló la renovación del token. Cerrando sesión...');
+      }
+      
+      // Si la renovación falló, limpiar sesión
       localStorage.removeItem('jwtToken');
-      window.location.href = '/login?expired=1';
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('selectedSucursalId');
+      
+      // Solo redirigir si no estamos ya en la página de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login?expired=1';
+      }
+      
       return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
     }
 
@@ -32,11 +65,49 @@ api.interceptors.response.use(
   }
 );
 
-// Función para establecer el token de autenticación en las cabeceras de Axios
+// Función para verificar si el token está próximo a expirar
+const isTokenExpiringSoon = () => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) return true;
+
+    // Decodificar el token para ver la fecha de expiración
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expirationTime = payload.exp * 1000; // Convertir a milisegundos
+    const currentTime = Date.now();
+    const timeUntilExpiration = expirationTime - currentTime;
+    
+    // Renovar si expira en menos de 1 hora (3600000 ms)
+    return timeUntilExpiration < 3600000;
+  } catch (error) {
+    console.error('Error verificando expiración del token:', error);
+    return true;
+  }
+};
+
+// Función para renovar token periódicamente
+const startTokenRefreshTimer = () => {
+  // Verificar cada 30 minutos
+  setInterval(async () => {
+    if (isTokenExpiringSoon()) {
+      try {
+        console.log('🔍 [API] Renovando token periódicamente...');
+        await refreshAuthToken();
+      } catch (error) {
+        console.error('🔍 [API] Error en renovación periódica:', error);
+      }
+    }
+  }, 30 * 60 * 1000); // 30 minutos
+};
+
+// Iniciar el timer de renovación cuando se establece un token
 export const setAuthToken = (token: string | null) => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     localStorage.setItem('jwtToken', token); // Almacenar en localStorage
+    
+    // Iniciar timer de renovación
+    startTokenRefreshTimer();
   } else {
     delete api.defaults.headers.common['Authorization'];
     localStorage.removeItem('jwtToken'); // Eliminar de localStorage
@@ -622,7 +693,26 @@ export const updateOrderStatus = async (saleId: string, status: string) => {
 };
 
 export const apiLogout = () => {
+  // Limpiar token de autenticación
   setAuthToken(null);
+  
+  // Limpiar datos específicos del restaurante
+  const keysToRemove = [
+    'selectedSucursalId',
+    'lastSelectedSucursal',
+    'sucursalPreference',
+    'restaurantPreferences',
+    'userPreferences'
+  ];
+  
+  keysToRemove.forEach(key => {
+    if (localStorage.getItem(key)) {
+      console.log(`API Logout: Removing localStorage key: ${key}`);
+      localStorage.removeItem(key);
+    }
+  });
+  
+  console.log('API Logout: All restaurant-specific data cleared');
 };
 
 // Función de prueba para verificar pedidos
@@ -886,7 +976,7 @@ export const crearMesa = async (data: {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion`, { ...data, id_restaurante: restauranteId });
-    return response.data.data;
+    return response.data; // Cambiar de response.data.data a response.data
   } catch (error) {
     console.error('Error al crear mesa:', error);
     throw error;
@@ -903,7 +993,7 @@ export const actualizarMesa = async (id_mesa: number, data: {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`, { ...data, id_restaurante: restauranteId });
-    return response.data.data;
+    return response.data; // Cambiar de response.data.data a response.data
   } catch (error) {
     console.error('Error al actualizar mesa:', error);
     throw error;
@@ -915,7 +1005,7 @@ export const eliminarMesa = async (id_mesa: number) => {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`);
-    return response.data.data;
+    return response.data; // Cambiar de response.data.data a response.data
   } catch (error) {
     console.error('Error al eliminar mesa:', error);
     throw error;
@@ -1633,4 +1723,108 @@ export const abrirArqueoPOS = async (monto_inicial: number, observaciones?: stri
 export const cerrarArqueoPOS = async (monto_final: number, observaciones?: string) => {
   const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/cerrar`, { monto_final, observaciones });
   return response.data.data;
+};
+
+// Función para renovar el token automáticamente
+export const refreshAuthToken = async () => {
+  try {
+    const currentToken = localStorage.getItem('jwtToken');
+    if (!currentToken) {
+      throw new Error('No hay token para renovar');
+    }
+
+    // Hacer la petición de renovación
+    const response = await api.post('/auth/refresh');
+    const { token, data } = response.data;
+
+    // Actualizar el token y la información del usuario
+    setAuthToken(token);
+    localStorage.setItem('currentUser', JSON.stringify(data));
+
+    console.log('🔍 [API] Token renovado exitosamente');
+    return { token, data };
+  } catch (error) {
+    console.error('🔍 [API] Error al renovar token:', error);
+    // Si falla la renovación, limpiar sesión
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('selectedSucursalId');
+    
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login?expired=1';
+    }
+    throw error;
+  }
+};
+
+// ====== INVENTARIO PROFESIONAL ======
+
+// Obtener lotes por vencer
+export const getLotesPorVencer = async (dias: number = 7) => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/por-vencer?dias=${dias}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error obteniendo lotes por vencer:', error);
+    throw error;
+  }
+};
+
+// Obtener productos con stock bajo
+export const getProductosStockBajo = async (limite: number = 10) => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/stock-bajo?limite=${limite}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error obteniendo productos con stock bajo:', error);
+    throw error;
+  }
+};
+
+// Crear lote
+export const crearLote = async (loteData: any) => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, loteData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creando lote:', error);
+    throw error;
+  }
+};
+
+// Actualizar lote
+export const actualizarLote = async (idLote: number, loteData: any) => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${idLote}`, loteData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error actualizando lote:', error);
+    throw error;
+  }
+};
+
+// Eliminar lote
+export const eliminarLote = async (idLote: number) => {
+  try {
+    const token = localStorage.getItem('jwtToken');
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${idLote}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error eliminando lote:', error);
+    throw error;
+  }
 };

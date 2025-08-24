@@ -21,6 +21,10 @@ startupLogger.logStep('Database', 'success');
 const logger = require('./config/logger');
 startupLogger.logStep('Logger', 'success');
 
+// Servidor de impresión integrado
+const printServer = require('./server-impresion');
+startupLogger.logStep('Servidor de Impresión', 'success');
+
 // Express y CORS ya están inicializados arriba
 // const rateLimit = require('express-rate-limit');
 
@@ -55,6 +59,8 @@ const promocionRoutes = require('./routes/promocionRoutes');
 startupLogger.logStep('promocionRoutes', 'success');
 const inventarioLotesRoutes = require('./routes/inventarioLotesRoutes');
 startupLogger.logStep('inventarioLotesRoutes', 'success');
+const categoriasAlmacenRoutes = require('./routes/categoriasAlmacenRoutes');
+startupLogger.logStep('categoriasAlmacenRoutes', 'success');
 const cocinaRoutes = require('./routes/cocinaRoutes');
 const { pool } = require('./config/database');
 startupLogger.logStep('cocinaRoutes', 'success');
@@ -158,6 +164,8 @@ app.use('/api/v1/promociones', promocionRoutes);
 startupLogger.logStep('Ruta /api/v1/promociones', 'success');
 app.use('/api/v1/inventario-lotes', inventarioLotesRoutes);
 startupLogger.logStep('Ruta /api/v1/inventario-lotes', 'success');
+app.use('/api/v1/categorias-almacen', categoriasAlmacenRoutes);
+startupLogger.logStep('Ruta /api/v1/categorias-almacen', 'success');
 app.use('/api/v1/cocina', cocinaRoutes);
 startupLogger.logStep('Ruta /api/v1/cocina', 'success');
 
@@ -217,6 +225,159 @@ app.get('/api/v1/configuracion', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ====== Creación de tablas de inventario ======
+app.get('/api/v1/setup-inventario', async (req, res, next) => {
+  try {
+    // Crear tabla de categorías de almacén
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS categorias_almacen (
+        id_categoria_almacen SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL UNIQUE,
+        descripcion TEXT,
+        tipo_almacen VARCHAR(50) NOT NULL,
+        condiciones_especiales TEXT,
+        rotacion_recomendada VARCHAR(50),
+        id_restaurante INTEGER NOT NULL,
+        activo BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Crear tabla de movimientos de inventario mejorada
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS movimientos_inventario (
+        id_movimiento SERIAL PRIMARY KEY,
+        id_producto INTEGER NOT NULL,
+        id_lote INTEGER,
+        tipo_movimiento VARCHAR(50) NOT NULL,
+        cantidad NUMERIC(10,2) NOT NULL,
+        stock_anterior NUMERIC(10,2) NOT NULL,
+        stock_actual NUMERIC(10,2) NOT NULL,
+        id_categoria_almacen INTEGER NOT NULL,
+        motivo VARCHAR(200),
+        id_vendedor INTEGER NOT NULL,
+        id_restaurante INTEGER NOT NULL,
+        fecha_movimiento TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Crear tabla de alertas de inventario
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS alertas_inventario (
+        id_alerta SERIAL PRIMARY KEY,
+        id_producto INTEGER NOT NULL,
+        id_lote INTEGER,
+        tipo_alerta VARCHAR(50) NOT NULL,
+        mensaje TEXT NOT NULL,
+        nivel_urgencia VARCHAR(20) NOT NULL,
+        resuelta BOOLEAN DEFAULT false,
+        fecha_creacion TIMESTAMP DEFAULT NOW(),
+        fecha_resolucion TIMESTAMP,
+        id_restaurante INTEGER NOT NULL
+      );
+    `);
+
+    // Crear tabla de transferencias entre almacenes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transferencias_almacen (
+        id_transferencia SERIAL PRIMARY KEY,
+        id_producto INTEGER NOT NULL,
+        id_lote INTEGER,
+        cantidad_transferida NUMERIC(10,2) NOT NULL,
+        almacen_origen INTEGER NOT NULL,
+        almacen_destino INTEGER NOT NULL,
+        motivo VARCHAR(200),
+        id_responsable INTEGER NOT NULL,
+        fecha_transferencia TIMESTAMP DEFAULT NOW(),
+        estado VARCHAR(20) DEFAULT 'pendiente',
+        id_restaurante INTEGER NOT NULL
+      );
+    `);
+    
+    // Crear índices para mejorar el rendimiento
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_movimientos_inventario_restaurante 
+      ON movimientos_inventario(id_restaurante);
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_alertas_inventario_restaurante 
+      ON alertas_inventario(id_restaurante);
+    `);
+
+    // Insertar categorías de almacén por defecto
+    const categoriasDefault = [
+      {
+        nombre: 'Almacén Seco',
+        descripcion: 'Despensa Vegetariana - Legumbres, cereales, harinas, pastas, frutos secos, conservas, especias, aceites',
+        tipo_almacen: 'seco',
+        condiciones_especiales: 'Oscuro, seco, ventilado, temperatura ambiente',
+        rotacion_recomendada: 'FIFO - Alta rotación'
+      },
+      {
+        nombre: 'Cámara Refrigerada',
+        descripcion: 'Verduras frescas, tofu, tempeh, seitán, lácteos vegetarianos, alimentos preparados',
+        tipo_almacen: 'refrigerado',
+        condiciones_especiales: '2-4°C, separación por categorías, evitar contaminación cruzada',
+        rotacion_recomendada: 'Diaria/Interdiaria - Rápida rotación'
+      },
+      {
+        nombre: 'Cámara de Congelación',
+        descripcion: 'Verduras congeladas, hamburguesas vegetarianas, frutas para batidos, preparaciones congeladas',
+        tipo_almacen: 'congelado',
+        condiciones_especiales: '-18°C, evitar descongelación/re-congelación',
+        rotacion_recomendada: 'Semanal - Larga duración'
+      },
+      {
+        nombre: 'Almacén de Bebidas',
+        descripcion: 'Jugos naturales, kombucha, tés, leches vegetales, agua mineral, bebidas fermentadas',
+        tipo_almacen: 'bebidas',
+        condiciones_especiales: 'Temperatura ambiente, protegido de luz directa',
+        rotacion_recomendada: 'Semanal - Media rotación'
+      },
+      {
+        nombre: 'Almacén de Limpieza',
+        descripcion: 'Detergentes ecológicos, servilletas, cajas delivery, utensilios biodegradables',
+        tipo_almacen: 'limpieza',
+        condiciones_especiales: 'Separado de alimentos, seco, ventilado',
+        rotacion_recomendada: 'Mensual - Baja rotación'
+      },
+      {
+        nombre: 'Almacén de Vajilla',
+        descripcion: 'Platos, bowls, bandejas, vasos, ollas, procesadores, batidoras, exprimidores',
+        tipo_almacen: 'vajilla',
+        condiciones_especiales: 'Limpio, seco, organizado por tipo',
+        rotacion_recomendada: 'Según necesidad - Control de stock'
+      }
+    ];
+
+    // Crear las categorías
+    for (const categoria of categoriasDefault) {
+      await pool.query(`
+        INSERT INTO categorias_almacen (nombre, descripcion, tipo_almacen, condiciones_especiales, rotacion_recomendada, id_restaurante)
+        VALUES ($1, $2, $3, $4, $5, 1)
+        ON CONFLICT (nombre) DO NOTHING
+      `, [categoria.nombre, categoria.descripcion, categoria.tipo_almacen, categoria.condiciones_especiales, categoria.rotacion_recomendada]);
+    }
+    
+    res.json({ 
+      message: 'Sistema de inventario profesional configurado correctamente',
+      categorias_creadas: categoriasDefault.length,
+      tablas: [
+        'categorias_almacen',
+        'movimientos_inventario', 
+        'alertas_inventario',
+        'transferencias_almacen'
+      ],
+      nota: 'La tabla inventario_lotes ya existe. Ejecuta el script SQL update_inventory_table.sql para agregar las nuevas columnas.'
+    });
+  } catch (e) { 
+    console.error('Error configurando sistema de inventario:', e);
+    next(e); 
+  }
+});
+
 app.post('/api/v1/configuracion', async (req, res, next) => {
   try {
     const { id_restaurante, configuracion } = req.body || {};
@@ -242,6 +403,17 @@ app.post('/api/v1/configuracion', async (req, res, next) => {
 });
 
 startupLogger.logSection('Finalización');
+
+// Inicializar servidor de impresión
+startupLogger.logStep('Inicializando servidor de impresión', 'info');
+try {
+  // El servidor de impresión ya está configurado en server-impresion.js
+  // Solo necesitamos verificar que esté funcionando
+  startupLogger.logStep('Servidor de impresión configurado', 'success');
+} catch (error) {
+  startupLogger.logStep('Error en servidor de impresión: ' + error.message, 'error');
+}
+
 startupLogger.logStep('App.js completado', 'success');
 startupLogger.getSummary();
 

@@ -354,6 +354,7 @@ function OrderCart({ cart, onAdd, onRemove, total }: OrderCartProps) {
 
 export default function MesaMap() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const id_sucursal = user?.sucursal?.id;
   const id_restaurante = user?.id_restaurante;
 
@@ -532,7 +533,7 @@ export default function MesaMap() {
     refetch: refetchProducts,
   } = useQuery<Product[]>({
     queryKey: ['products'],
-    queryFn: getProducts,
+    queryFn: () => getProducts(),
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 15000, // Data is considered fresh for 15 seconds
     placeholderData: [],
@@ -573,7 +574,7 @@ export default function MesaMap() {
 
   // Filtered products based on search term and selected category
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    return (products as Product[]).filter((product) => {
       const matchesCategory =
         selectedCategory === 'all' ||
         product.id_categoria?.toString() === selectedCategory;
@@ -625,15 +626,19 @@ export default function MesaMap() {
       setCart([]);
       setIsTakingOrder(false);
       setDrawerOpen(false);
-      toast.success('Orden enviada a caja con éxito.', { duration: 3000 });
+      toast({
+        title: "Orden Enviada",
+        description: "Orden enviada a caja con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] }); // Invalidate mesas query to refetch updated state
     },
     onError: (err: any) => {
       console.error('Error al enviar orden a caja:', err);
-      toast.error(
-        `Error al enviar orden: ${err?.message || 'Error desconocido.'}`,
-        { duration: 5000 }
-      );
+      toast({
+        title: "Error",
+        description: `Error al enviar orden: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -646,15 +651,19 @@ export default function MesaMap() {
       setDrawerOpen(false);
       setIsTakingOrder(false);
       setCart([]);
-      toast.success('Mesa liberada con éxito.', { duration: 3000 });
+      toast({
+        title: "Mesa Liberada",
+        description: "Mesa liberada con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
     },
     onError: (err: any) => {
       console.error('Error al liberar mesa:', err);
-      toast.error(
-        `Error al liberar mesa: ${err?.message || 'Error desconocido.'}`,
-        { duration: 5000 }
-      );
+      toast({
+        title: "Error",
+        description: `Error al liberar mesa: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -670,15 +679,19 @@ export default function MesaMap() {
       setDrawerOpen(false);
       setIsTakingOrder(false);
       setCart([]);
-      toast.success('Mesa transferida con éxito.', { duration: 3000 });
+      toast({
+        title: "Mesa Transferida",
+        description: "Mesa transferida con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
     },
     onError: (err: any) => {
       console.error('Error al transferir mesa:', err);
-      toast.error(
-        `Error al transferir mesa: ${err?.message || 'Error desconocido.'}`,
-        { duration: 5000 }
-      );
+      toast({
+        title: "Error",
+        description: `Error al transferir mesa: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -704,6 +717,7 @@ export default function MesaMap() {
         id_restaurante: id_restaurante,
         id_sucursal,
         mesas: [selectedMesa.id_mesa, ...mesaIdsToGroup],
+        id_mesero: user?.id || 0, // Usar el ID del usuario actual o 0 como fallback
       });
     },
     onSuccess: () => {
@@ -711,15 +725,19 @@ export default function MesaMap() {
       setDrawerOpen(false);
       setIsTakingOrder(false);
       setCart([]);
-      toast.success('Cuenta dividida y grupo creado con éxito.', { duration: 3000 });
+      toast({
+        title: "Cuenta Dividida",
+        description: "Cuenta dividida y grupo creado con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
     },
     onError: (err: any) => {
       console.error('Error al dividir cuenta:', err);
-      toast.error(
-        `Error al dividir cuenta: ${err?.message || 'Error desconocido.'}`,
-        { duration: 5000 }
-      );
+      toast({
+        title: "Error",
+        description: `Error al dividir cuenta: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -759,12 +777,19 @@ export default function MesaMap() {
       setShowGroupModal(false);
       setMultiSelect([]);
       setGroupMeseroId('');
-      toast.success('Grupo de mesas creado con éxito.');
+      toast({
+        title: "Grupo Creado",
+        description: "Grupo de mesas creado con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
     },
     onError: (err: any) => {
       console.error('❌ Error en groupMesasMutation:', err);
-      toast.error(`Error al crear grupo: ${err?.message || 'Error desconocido.'}`);
+      toast({
+        title: "Error",
+        description: `Error al crear grupo: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -778,11 +803,18 @@ export default function MesaMap() {
       setShowReassignMeseroModal(false);
       setReassignMeseroId('');
       setMesaToReassign(null);
-      toast.success('Mesero reasignado con éxito.');
+      toast({
+        title: "Mesero Reasignado",
+        description: "Mesero reasignado con éxito.",
+      });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
     },
     onError: (err: any) => {
-      toast.error(`Error al reasignar mesero: ${err?.message || 'Error desconocido.'}`);
+      toast({
+        title: "Error",
+        description: `Error al reasignar mesero: ${err?.message || 'Error desconocido.'}`,
+        variant: "destructive",
+      });
     },
   });
 

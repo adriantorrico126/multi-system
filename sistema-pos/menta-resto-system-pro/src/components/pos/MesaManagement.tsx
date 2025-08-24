@@ -59,6 +59,7 @@ import {
   transferirOrdenMesa,
   splitBillMesa,
 } from '@/services/api';
+import { printService, PrintData } from '@/services/printService';
 import MesaConfiguration from './MesaConfiguration';
 import { GruposMesasManagement } from './GruposMesasManagement';
 import { ReservaModal } from './ReservaModal';
@@ -693,7 +694,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   };
 
   const handleImprimirComanda = async () => {
-    if (!prefacturaData?.data) {
+    if (!prefacturaData) {
       toast({
         title: "Error",
         description: "No hay datos de prefactura para imprimir.",
@@ -702,53 +703,108 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       return;
     }
 
-    const pedidoParaImprimir = {
-      id_pedido: prefacturaData.data.historial_detallado[0]?.id_venta || selectedMesa?.id_mesa,
-      mesa: selectedMesa?.numero,
+    // Preparar datos para impresión
+    const printData: PrintData = {
+      id_pedido: prefacturaData.historial_detallado?.[0]?.id_venta || selectedMesa?.id_mesa,
+      mesa: selectedMesa?.numero?.toString() || 'N/A',
       mesero: user?.nombre || 'N/A',
-      productos: prefacturaData.data.historial_detallado.map(p => ({
+      productos: prefacturaData.historial_detallado?.map(p => ({
         cantidad: p.cantidad,
         nombre: p.nombre_producto,
-        notas: p.observaciones
-      }))
+        precio: p.precio_unitario,
+        notas: p.observaciones || ''
+      })) || [],
+      total: prefacturaData.total_acumulado || 0,
+      restauranteId: idRestaurante || 1
     };
 
     try {
-      const printServerUrl = (import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001');
-      const response = await fetch(`${printServerUrl}/api/pedidos/imprimir`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          pedido: pedidoParaImprimir, 
-          restauranteId: idRestaurante 
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('El servidor de impresión no pudo procesar la solicitud.');
+      // Usar el servicio de impresión
+      const success = await printService.printComanda(printData);
+      
+      if (success) {
+        toast({
+          title: "Impresión Solicitada",
+          description: "La comanda ha sido enviada a la impresora.",
+        });
+      } else {
+        toast({
+          title: "Impresión en Cola",
+          description: "La comanda se agregó a la cola de impresión. Se imprimirá cuando el agente esté disponible.",
+        });
       }
-
-      toast({
-        title: "Impresión Solicitada",
-        description: "La comanda ha sido enviada a la impresora.",
-      });
 
     } catch (error) {
       console.error('Error al solicitar la impresión:', error);
       toast({
         title: "Error de Impresión",
-        description: "No se pudo conectar con el servidor de impresión. Verifique que el agente esté funcionando.",
+        description: "No se pudo enviar la comanda para impresión.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para impresión rápida desde la vista de lista
+  const handleImprimirComandaRapida = async (mesa: Mesa) => {
+    try {
+      // Generar prefactura para obtener los datos de la mesa
+      const prefacturaResponse = await generarPrefactura(mesa.id_mesa);
+      
+      if (!prefacturaResponse || !prefacturaResponse.data) {
+        toast({
+          title: "Error",
+          description: "No se pudieron obtener los datos de la mesa para imprimir.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const prefactura = prefacturaResponse.data;
+      
+      // Preparar datos para impresión
+      const printData: PrintData = {
+        id_pedido: prefactura.historial_detallado?.[0]?.id_venta || mesa.id_mesa,
+        mesa: mesa.numero.toString(),
+        mesero: user?.nombre || 'N/A',
+        productos: prefactura.historial_detallado?.map(p => ({
+          cantidad: p.cantidad,
+          nombre: p.nombre_producto,
+          precio: p.precio_unitario,
+          notas: p.observaciones || ''
+        })) || [],
+        total: prefactura.total_acumulado || 0,
+        restauranteId: idRestaurante || 1
+      };
+
+      // Usar el servicio de impresión
+      const success = await printService.printComanda(printData);
+      
+      if (success) {
+        toast({
+          title: "Impresión Solicitada",
+          description: `Comanda de Mesa ${mesa.numero} enviada a la impresora.`,
+        });
+      } else {
+        toast({
+          title: "Impresión en Cola",
+          description: `Comanda de Mesa ${mesa.numero} agregada a la cola de impresión.`,
+        });
+      }
+
+    } catch (error) {
+      console.error('Error al solicitar la impresión rápida:', error);
+      toast({
+        title: "Error de Impresión",
+        description: "No se pudo enviar la comanda para impresión.",
         variant: "destructive",
       });
     }
   };
 
   // Definir productos a partir de la prefactura para evitar referencia no definida
-  // Asegúrate de que prefacturaData.data.historial_detallado esté disponible y tenga el tipo correcto
-  const productosDetallados: HistorialMesaDetallado[] = prefacturaData?.data?.historial_detallado ?? [];
-  const productosAgrupados: HistorialMesa[] = prefacturaData?.data?.historial ?? [];
+  // Asegúrate de que prefacturaData.historial_detallado esté disponible y tenga el tipo correcto
+  const productosDetallados: HistorialMesaDetallado[] = prefacturaData?.historial_detallado ?? [];
+  const productosAgrupados: HistorialMesa[] = prefacturaData?.historial ?? [];
 
   // Obtener todas las mesas excepto la actualmente seleccionada (para el modal de transferencia)
   const otherMesas = mesas.filter(m => m.id_mesa !== selectedMesa?.id_mesa);
@@ -797,29 +853,6 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
               >
                 <RefreshCw className="h-4 w-4" />
                 <span>Actualizar</span>
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  // Navegar a la pestaña de configuración y abrir el modal de nueva mesa
-                  const configTab = document.querySelector('[data-value="configuration"]') as HTMLElement;
-                  if (configTab) {
-                    configTab.click();
-                    // Simular click en el botón de nueva mesa después de un breve delay
-                    setTimeout(() => {
-                      const nuevaMesaBtn = document.querySelector('[data-testid="nueva-mesa-btn"]') as HTMLElement;
-                      if (nuevaMesaBtn) {
-                        nuevaMesaBtn.click();
-                      }
-                    }, 100);
-                  }
-                }}
-                variant="default"
-                size="sm"
-                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Nueva Mesa</span>
               </Button>
               
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
@@ -1145,14 +1178,23 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               Generar Prefactura
                             </Button>
                             <Button 
+                              onClick={() => handleImprimirComandaRapida(mesa)}
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 text-blue-800 hover:bg-blue-100 font-medium"
+                            >
+                              <Printer className="h-3 w-3 mr-1" />
+                              Imprimir
+                            </Button>
+                            <Button 
                               onClick={() => handleMarcarComoPagado(mesa)}
                               variant="default"
                               className="w-full bg-green-600 hover:bg-green-700"
                               size="sm"
                               disabled={marcarComoPagadoMutation.isPending}
                             >
-                              <CreditCard className="h-4 w-4 mr-2" />
-                              Marcar como Pagado
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              Pagado
                             </Button>
                             <Button 
                               onClick={() => handleLiberarMesa(mesa.id_mesa)}
@@ -1161,8 +1203,8 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               size="sm"
                               disabled={liberarMesaMutation.isPending}
                             >
-                              <X className="h-4 w-4 mr-2" />
-                              Liberar Mesa
+                              <X className="h-3 w-3 mr-1" />
+                              Liberar
                             </Button>
                           </div>
                         )}
@@ -1325,6 +1367,15 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                                     Prefactura
                                   </Button>
                                   <Button 
+                                    onClick={() => handleImprimirComandaRapida(mesa)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-blue-300 text-blue-800 hover:bg-blue-100 font-medium"
+                                  >
+                                    <Printer className="h-3 w-3 mr-1" />
+                                    Imprimir
+                                  </Button>
+                                  <Button 
                                     onClick={() => handleMarcarComoPagado(mesa)}
                                     size="sm"
                                     variant="default"
@@ -1418,7 +1469,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                       <p className="text-sm text-gray-500">Gestión de mesas agrupadas</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-sm">
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300 text-sm">
                     {gruposActivos.length} grupo{gruposActivos.length !== 1 ? 's' : ''} activo{gruposActivos.length !== 1 ? 's' : ''}
                   </Badge>
                 </div>
@@ -1731,7 +1782,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-xs font-medium text-gray-500">Ventas Realizadas</p>
-                          <p className="text-sm font-bold text-blue-600">{prefacturaData.data.total_ventas}</p>
+                          <p className="text-sm font-bold text-blue-600">{prefacturaData.total_ventas}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
@@ -1822,13 +1873,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-green-800">Total Acumulado:</span>
                       <span className="text-2xl font-bold text-green-900">
-                        ${(Number(prefacturaData.data.total_acumulado) || 0).toFixed(2)}
+                        ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
                       </span>
                     </div>
-                    {prefacturaData.data.total_ventas && (
+                    {prefacturaData.total_ventas && (
                       <div className="mt-2 text-sm text-green-700">
-                        {prefacturaData.data.total_ventas} venta{prefacturaData.data.total_ventas !== 1 ? 's' : ''} • 
-                        {prefacturaData.data.fecha_apertura && ` Abierta desde: ${prefacturaData.data.fecha_apertura}`}
+                        {prefacturaData.total_ventas} venta{prefacturaData.total_ventas !== 1 ? 's' : ''} • 
+                        {prefacturaData.fecha_apertura && ` Abierta desde: ${prefacturaData.fecha_apertura}`}
                       </div>
                     )}
                   </div>

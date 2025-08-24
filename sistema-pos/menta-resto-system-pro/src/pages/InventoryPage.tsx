@@ -10,6 +10,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useNavigate } from 'react-router-dom';
+import { InventoryDashboard } from '../components/inventory/InventoryDashboard';
+import { LotesManagement } from '../components/inventory/LotesManagement';
+import { InventoryReports } from '../components/inventory/InventoryReports';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { 
+  Package, 
+  FileText, 
+  BarChart3, 
+  TrendingUp, 
+  AlertTriangle,
+  Download,
+  Settings
+} from 'lucide-react';
+import { 
+  getLotesPorVencer,
+  getProductosStockBajo,
+  crearLote,
+  actualizarLote,
+  eliminarLote
+} from '../services/api';
 
 interface Product {
   id_producto: number;
@@ -39,248 +60,15 @@ interface Lote {
   fecha_fabricacion: string;
   fecha_caducidad: string;
   precio_compra: number;
+  ubicacion_especifica?: string;
+  proveedor?: string;
+  certificacion_organica: boolean;
   id_restaurante: number;
-  // Campos de auditoría opcionales que pueden venir de la API
-  created_at?: string;
-  updated_at?: string;
+  producto_nombre?: string;
+  categoria_nombre?: string;
+  estado_caducidad?: string;
+  estado_stock?: string;
 }
-
-const InventarioLotesManagement: React.FC = () => {
-  const [lotes, setLotes] = useState<Lote[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedLote, setSelectedLote] = useState<Lote | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const productMap = useMemo(() => {
-    return products.reduce((map, product) => {
-      map[product.id_producto] = product.nombre;
-      return map;
-    }, {} as Record<number, string>);
-  }, [products]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem("jwtToken");
-      const [lotesResponse, productsResponse] = await Promise.all([
-        api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      setLotes(lotesResponse.data.data || []);
-      setProducts(productsResponse.data.data || []);
-
-    } catch (err) {
-      setError('Error al cargar los datos.');
-      toast.error('Error', { description: 'Error al cargar lotes o productos.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleSave = async (loteData: Lote) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("jwtToken");
-      const dataToSend = { ...loteData };
-      // La tabla 'inventario_lotes' no tiene una columna 'updated_at'.
-      // Al editar, el objeto 'loteData' que viene de la API sí contiene este campo.
-      // Debemos eliminarlo antes de enviarlo al backend para evitar el error.
-      delete dataToSend.updated_at;
-
-      if (selectedLote) {
-        await api.put(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes/${selectedLote.id_lote}`, dataToSend, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success("Lote actualizado");
-      } else {
-        await api.post(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, dataToSend, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success('Lote creado');
-      }
-      fetchData();
-      setIsDialogOpen(false);
-    } catch (err) {
-      setError('Error al guardar el lote.');
-      toast.error('Error', { description: 'Error al guardar el lote.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Gestión de Lotes de Inventario</CardTitle>
-        <Button onClick={() => {
-          setSelectedLote(null);
-          setIsDialogOpen(true);
-        }}>Crear Lote</Button>
-      </CardHeader>
-      <CardContent>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        {loading ? (
-          <p>Cargando...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead>Número de Lote</TableHead>
-                <TableHead>Cantidad Actual</TableHead>
-                <TableHead>Fecha de Caducidad</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lotes.map((lote) => (
-                <TableRow key={lote.id_lote}>
-                  <TableCell>{productMap[lote.id_producto] || lote.id_producto}</TableCell>
-                  <TableCell>{lote.numero_lote}</TableCell>
-                  <TableCell>{lote.cantidad_actual}</TableCell>
-                  <TableCell>{new Date(lote.fecha_caducidad).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedLote(lote);
-                      setIsDialogOpen(true);
-                    }}>
-                      Editar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-      <LoteDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onSave={handleSave}
-        products={products}
-        lote={selectedLote}
-      />
-    </Card>
-  );
-};
-
-interface LoteDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (lote: Lote) => void;
-  lote: Lote | null;
-  products: Product[];
-}
-
-const LoteDialog: React.FC<LoteDialogProps> = ({ isOpen, onClose, onSave, lote, products }) => {
-  const [formData, setFormData] = useState<Partial<Lote>>(lote || {});
-
-  useEffect(() => {
-    const initialData = lote ? {
-      ...lote,
-      fecha_fabricacion: lote.fecha_fabricacion ? new Date(lote.fecha_fabricacion).toISOString().split('T')[0] : '',
-      fecha_caducidad: lote.fecha_caducidad ? new Date(lote.fecha_caducidad).toISOString().split('T')[0] : '',
-    } : {};
-    setFormData(initialData);
-  }, [lote, isOpen]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSelectChange = (value: string) => {
-    setFormData({ ...formData, id_producto: parseInt(value, 10) });
-  };
-
-  const handleSave = () => {
-    onSave(formData as Lote);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{lote ? 'Editar Lote' : 'Crear Lote'}</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="id_producto" className="text-right">Producto</Label>
-            <Select onValueChange={handleSelectChange} value={formData.id_producto?.toString() || ''}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Selecciona un producto" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id_producto} value={product.id_producto.toString()}>
-                    {product.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="numero_lote" className="text-right">Número de Lote</Label>
-            <Input id="numero_lote" name="numero_lote" value={formData.numero_lote || ''} onChange={handleChange} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cantidad_inicial" className="text-right">Cantidad Inicial</Label>
-            <Input id="cantidad_inicial" name="cantidad_inicial" type="number" value={formData.cantidad_inicial || ''} onChange={handleChange} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cantidad_actual" className="text-right">Cantidad Actual</Label>
-            <Input id="cantidad_actual" name="cantidad_actual" type="number" value={formData.cantidad_actual || ''} onChange={handleChange} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fecha_fabricacion" className="text-right">Fecha de Fabricación</Label>
-            <Input
-              id="fecha_fabricacion"
-              name="fecha_fabricacion"
-              type="date"
-              value={formData.fecha_fabricacion || ''}
-              onChange={handleChange}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fecha_caducidad" className="text-right">Fecha de Caducidad</Label>
-            <Input
-              id="fecha_caducidad"
-              name="fecha_caducidad"
-              type="date"
-              value={formData.fecha_caducidad || ''}
-              onChange={handleChange}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="precio_compra" className="text-right">Precio de Compra</Label>
-            <Input id="precio_compra" name="precio_compra" type="number" value={formData.precio_compra || ''} onChange={handleChange} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleSave}>Guardar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const InventoryPage: React.FC = () => {
   const { user } = useAuth();
@@ -289,36 +77,41 @@ const InventoryPage: React.FC = () => {
 
   const [inventory, setInventory] = useState<Product[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [changeAmount, setChangeAmount] = useState<string>('');
   const [movementType, setMovementType] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'productos' | 'lotes'>('productos');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'productos' | 'lotes' | 'reportes'>('dashboard');
+  const [filteredInventory, setFilteredInventory] = useState<Product[]>([]);
 
   const fetchInventoryData = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('jwtToken');
-      const inventoryResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setInventory(inventoryResponse.data.data || []);
+      const [inventoryResponse, movementsResponse, lotesResponse] = await Promise.all([
+        api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`${import.meta.env.VITE_BACKEND_URL}/inventario-lotes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      const movementsResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      setInventory(inventoryResponse.data.data || []);
       setMovements(movementsResponse.data.data || []);
+      setLotes(lotesResponse.data.data || []);
+      setFilteredInventory(inventoryResponse.data.data || []);
 
     } catch (err) {
       console.error('Error fetching inventory data:', err);
       setError('Error al cargar los datos de inventario. Asegúrate de tener permisos.');
-      toast.error('Error', { description: 'Error al cargar los datos de inventario.' });
+      toast.error('Error al cargar los datos de inventario.');
     } finally {
       setLoading(false);
     }
@@ -326,46 +119,84 @@ const InventoryPage: React.FC = () => {
 
   useEffect(() => {
     if (role === 'admin' || role === 'gerente') {
-      if (activeTab === 'productos') {
-        fetchInventoryData();
-      }
+      fetchInventoryData();
     }
-  }, [role, activeTab]);
+  }, [role]);
 
   const handleUpdateStock = async () => {
     if (!selectedProduct || !changeAmount || !movementType) {
-      toast.error('Error', { description: 'Por favor, completa todos los campos.' });
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
-    const amount = parseInt(changeAmount);
-    if (isNaN(amount) || amount === 0) {
-      toast.error('Error', { description: 'La cantidad debe ser un número válido y diferente de cero.' });
-      return;
-    }
-
-    setLoading(true);
     try {
+      setLoading(true);
       const token = localStorage.getItem('jwtToken');
+      const cantidad = parseFloat(changeAmount);
+      
+      let nuevaCantidad = selectedProduct.stock_actual || 0;
+      if (movementType === 'entrada' || movementType === 'ajuste_positivo') {
+        nuevaCantidad += cantidad;
+      } else {
+        nuevaCantidad -= cantidad;
+      }
+
       await api.post(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/${selectedProduct.id_producto}/stock`, {
-        cantidad_cambio: amount,
+        cantidad: cantidad,
         tipo_movimiento: movementType,
+        stock_anterior: selectedProduct.stock_actual || 0,
+        stock_actual: nuevaCantidad
       }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success('Stock actualizado', { description: 'El stock del producto ha sido actualizado exitosamente.' });
-      fetchInventoryData(); // Refresh data
-      setSelectedProduct(null);
+
+      toast.success('Stock actualizado correctamente');
       setChangeAmount('');
       setMovementType('');
+      setSelectedProduct(null);
+      fetchInventoryData();
     } catch (err) {
       console.error('Error updating stock:', err);
-      setError('Error al actualizar el stock.');
-      toast.error('Error', { description: 'Error al actualizar el stock.' });
+      toast.error('Error al actualizar el stock');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filters: any) => {
+    setFilteredInventory(filters.filteredInventory || inventory);
+  };
+
+  const handleExportData = () => {
+    toast.info('Exportación', { description: 'Usa la pestaña de Reportes para exportar datos específicos.' });
+  };
+
+  const handleSaveLote = async (loteData: Lote) => {
+    try {
+      if (loteData.id_lote) {
+        await actualizarLote(loteData.id_lote, loteData);
+        toast.success("Lote actualizado");
+      } else {
+        await crearLote(loteData);
+        toast.success('Lote creado');
+      }
+      fetchInventoryData();
+    } catch (err) {
+      setError('Error al guardar el lote.');
+      toast.error('Error', { description: 'Error al guardar el lote.' });
+      throw err;
+    }
+  };
+
+  const handleDeleteLote = async (id: number) => {
+    try {
+      await eliminarLote(id);
+      toast.success('Lote eliminado');
+      fetchInventoryData();
+    } catch (err) {
+      setError('Error al eliminar el lote.');
+      toast.error('Error', { description: 'Error al eliminar el lote.' });
+      throw err;
     }
   };
 
@@ -374,9 +205,7 @@ const InventoryPage: React.FC = () => {
       <div className="flex flex-col items-center justify-center h-full p-10">
         <h2 className="text-2xl font-bold text-red-600 mb-4">Acceso denegado</h2>
         <p className="text-gray-700 mb-6">No tienes permisos para ver el inventario.</p>
-        <Button
-          onClick={() => navigate(-1)}
-        >
+        <Button onClick={() => navigate(-1)}>
           Volver
         </Button>
       </div>
@@ -386,148 +215,228 @@ const InventoryPage: React.FC = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gestión de Inventario</h1>
-        <div className="flex gap-2">
-          <Button
-            variant={activeTab === 'productos' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('productos')}
-          >
-            Productos
-          </Button>
-          <Button
-            variant={activeTab === 'lotes' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('lotes')}
-          >
-            Lotes
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Gestión de Inventario Profesional</h1>
+          <p className="text-gray-600 mt-2">Sistema completo de gestión de inventario para restaurantes</p>
         </div>
       </div>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-
-      {loading && (
-        <div className="flex items-center justify-center p-8">
-          <p>Cargando datos...</p>
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600">{error}</p>
         </div>
       )}
 
-      {!loading && activeTab === 'productos' && (
-        <>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Resumen de Inventario</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Producto</TableHead>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead>Stock Actual</TableHead>
-                    <TableHead>Precio</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(inventory || []).map((product) => (
-                    <TableRow key={product.id_producto}>
-                      <TableCell>{product.nombre}</TableCell>
-                      <TableCell>{product.categoria_nombre}</TableCell>
-                      <TableCell>{product.stock_actual || 0}</TableCell>
-                      <TableCell>${(typeof product.precio === 'number' ? product.precio : parseFloat(product.precio) || 0).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedProduct(product)}>
-                              Ajustar Stock
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Ajustar Stock de {selectedProduct?.nombre}</DialogTitle>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="changeAmount" className="text-right">
-                                  Cantidad
-                                </Label>
-                                <Input
-                                  id="changeAmount"
-                                  type="number"
-                                  value={changeAmount}
-                                  onChange={(e) => setChangeAmount(e.target.value)}
-                                  className="col-span-3"
-                                />
-                              </div>
-                              <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="movementType" className="text-right">
-                                  Tipo de Movimiento
-                                </Label>
-                                <Select onValueChange={setMovementType} value={movementType}>
-                                  <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Selecciona tipo" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="entrada">Entrada</SelectItem>
-                                    <SelectItem value="salida">Salida</SelectItem>
-                                    <SelectItem value="ajuste_positivo">Ajuste Positivo</SelectItem>
-                                    <SelectItem value="ajuste_negativo">Ajuste Negativo</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button onClick={handleUpdateStock} disabled={loading}>
-                                {loading ? 'Guardando...' : 'Guardar Cambios'}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Movimientos de Stock</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Producto</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Cantidad</TableHead>
-                    <TableHead>Stock Anterior</TableHead>
-                    <TableHead>Stock Actual</TableHead>
-                    <TableHead>Vendedor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(movements || []).map((movement) => (
-                    <TableRow key={movement.id_movimiento}>
-                      <TableCell>{new Date(movement.fecha_movimiento).toLocaleString()}</TableCell>
-                      <TableCell>{movement.producto_nombre}</TableCell>
-                      <TableCell>{movement.tipo_movimiento}</TableCell>
-                      <TableCell>{movement.cantidad}</TableCell>
-                      <TableCell>{movement.stock_anterior}</TableCell>
-                      <TableCell>{movement.stock_actual}</TableCell>
-                      <TableCell>{movement.vendedor_username}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </>
+      {loading && (
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-gray-500">Cargando datos...</p>
+          </div>
+        </div>
       )}
-      {!loading && activeTab === 'lotes' && (
-        <InventarioLotesManagement />
+
+      {!loading && (
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="productos" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Productos
+            </TabsTrigger>
+            <TabsTrigger value="lotes" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Lotes
+            </TabsTrigger>
+            <TabsTrigger value="reportes" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Reportes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="mt-6">
+            <InventoryDashboard
+              inventory={inventory}
+              lotes={lotes}
+              onFilterChange={handleFilterChange}
+              onExportData={handleExportData}
+            />
+          </TabsContent>
+
+          <TabsContent value="productos" className="mt-6">
+            <div className="space-y-6">
+              {/* Resumen de inventario */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Resumen de Inventario
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Stock Actual</TableHead>
+                        <TableHead>Precio</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInventory.map((product) => (
+                        <TableRow key={product.id_producto}>
+                          <TableCell className="font-medium">{product.nombre}</TableCell>
+                          <TableCell>{product.categoria_nombre}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                (product.stock_actual || 0) === 0 ? "destructive" : 
+                                (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                              }
+                            >
+                              {product.stock_actual || 0}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>Bs {(typeof product.precio === 'number' ? product.precio : parseFloat(product.precio) || 0).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                (product.stock_actual || 0) === 0 ? "destructive" : 
+                                (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                              }
+                            >
+                              {(product.stock_actual || 0) === 0 ? 'Sin Stock' : 
+                               (product.stock_actual || 0) <= 10 ? 'Stock Bajo' : 'Stock OK'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setSelectedProduct(product)}
+                                >
+                                  Ajustar Stock
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Ajustar Stock de {selectedProduct?.nombre}</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="changeAmount" className="text-right">
+                                      Cantidad
+                                    </Label>
+                                    <Input
+                                      id="changeAmount"
+                                      type="number"
+                                      value={changeAmount}
+                                      onChange={(e) => setChangeAmount(e.target.value)}
+                                      className="col-span-3"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="movementType" className="text-right">
+                                      Tipo de Movimiento
+                                    </Label>
+                                    <Select onValueChange={setMovementType} value={movementType}>
+                                      <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Selecciona tipo" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="entrada">Entrada</SelectItem>
+                                        <SelectItem value="salida">Salida</SelectItem>
+                                        <SelectItem value="ajuste_positivo">Ajuste Positivo</SelectItem>
+                                        <SelectItem value="ajuste_negativo">Ajuste Negativo</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button onClick={handleUpdateStock} disabled={loading}>
+                                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Historial de movimientos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Historial de Movimientos de Stock
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Cantidad</TableHead>
+                        <TableHead>Stock Anterior</TableHead>
+                        <TableHead>Stock Actual</TableHead>
+                        <TableHead>Vendedor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {movements.map((movement) => (
+                        <TableRow key={movement.id_movimiento}>
+                          <TableCell>{new Date(movement.fecha_movimiento).toLocaleString()}</TableCell>
+                          <TableCell className="font-medium">{movement.producto_nombre}</TableCell>
+                          <TableCell>
+                            <Badge variant={movement.tipo_movimiento === 'entrada' ? 'default' : 'secondary'}>
+                              {movement.tipo_movimiento}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{movement.cantidad}</TableCell>
+                          <TableCell>{movement.stock_anterior}</TableCell>
+                          <TableCell>{movement.stock_actual}</TableCell>
+                          <TableCell>{movement.vendedor_username}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="lotes" className="mt-6">
+            <LotesManagement
+              lotes={lotes}
+              products={inventory}
+              onSave={handleSaveLote}
+              onDelete={handleDeleteLote}
+              loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="reportes" className="mt-6">
+            <InventoryReports
+              inventory={inventory}
+              lotes={lotes}
+              movements={movements}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

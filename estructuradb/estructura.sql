@@ -5,6 +5,27 @@ admin_users	nombre	character varying
 admin_users	activo	boolean
 admin_users	creado_en	timestamp without time zone
 admin_users	actualizado_en	timestamp without time zone
+alertas_inventario	id_alerta	integer
+alertas_inventario	id_producto	integer
+alertas_inventario	id_lote	integer
+alertas_inventario	tipo_alerta	character varying
+alertas_inventario	mensaje	text
+alertas_inventario	nivel_urgencia	character varying
+alertas_inventario	resuelta	boolean
+alertas_inventario	fecha_creacion	timestamp without time zone
+alertas_inventario	fecha_resolucion	timestamp without time zone
+alertas_inventario	id_restaurante	integer
+arqueos_caja	id_arqueo	integer
+arqueos_caja	id_restaurante	integer
+arqueos_caja	id_sucursal	integer
+arqueos_caja	id_vendedor	integer
+arqueos_caja	monto_inicial	numeric
+arqueos_caja	fecha_apertura	timestamp without time zone
+arqueos_caja	monto_final	numeric
+arqueos_caja	fecha_cierre	timestamp without time zone
+arqueos_caja	diferencia	numeric
+arqueos_caja	estado	character varying
+arqueos_caja	observaciones	text
 auditoria_admin	id_auditoria	integer
 auditoria_admin	id_usuario	integer
 auditoria_admin	accion	character varying
@@ -32,6 +53,16 @@ categorias	nombre	character varying
 categorias	activo	boolean
 categorias	created_at	timestamp without time zone
 categorias	id_restaurante	integer
+categorias_almacen	id_categoria_almacen	integer
+categorias_almacen	nombre	character varying
+categorias_almacen	descripcion	text
+categorias_almacen	tipo_almacen	character varying
+categorias_almacen	condiciones_especiales	text
+categorias_almacen	rotacion_recomendada	character varying
+categorias_almacen	id_restaurante	integer
+categorias_almacen	activo	boolean
+categorias_almacen	created_at	timestamp without time zone
+categorias_almacen	updated_at	timestamp without time zone
 clientes	id_cliente	integer
 clientes	nombre	character varying
 clientes	telefono	character varying
@@ -82,6 +113,22 @@ grupos_mesas	estado	character varying
 grupos_mesas	created_at	timestamp without time zone
 grupos_mesas	updated_at	timestamp without time zone
 grupos_mesas	id_mesero	integer
+inventario_lotes	id_lote	integer
+inventario_lotes	id_producto	integer
+inventario_lotes	numero_lote	character varying
+inventario_lotes	cantidad_inicial	numeric
+inventario_lotes	cantidad_actual	numeric
+inventario_lotes	fecha_fabricacion	date
+inventario_lotes	fecha_caducidad	date
+inventario_lotes	precio_compra	numeric
+inventario_lotes	activo	boolean
+inventario_lotes	id_restaurante	integer
+inventario_lotes	created_at	timestamp without time zone
+inventario_lotes	updated_at	timestamp without time zone
+inventario_lotes	id_categoria_almacen	integer
+inventario_lotes	ubicacion_especifica	character varying
+inventario_lotes	proveedor	character varying
+inventario_lotes	certificacion_organica	boolean
 mesas	id_mesa	integer
 mesas	numero	integer
 mesas	id_sucursal	integer
@@ -219,6 +266,17 @@ sucursales	direccion	text
 sucursales	activo	boolean
 sucursales	created_at	timestamp without time zone
 sucursales	id_restaurante	integer
+transferencias_almacen	id_transferencia	integer
+transferencias_almacen	id_producto	integer
+transferencias_almacen	id_lote	integer
+transferencias_almacen	cantidad_transferida	numeric
+transferencias_almacen	almacen_origen	integer
+transferencias_almacen	almacen_destino	integer
+transferencias_almacen	motivo	character varying
+transferencias_almacen	id_responsable	integer
+transferencias_almacen	fecha_transferencia	timestamp without time zone
+transferencias_almacen	estado	character varying
+transferencias_almacen	id_restaurante	integer
 usuarios	id_usuario	integer
 usuarios	nombre	character varying
 usuarios	email	character varying
@@ -251,17 +309,3 @@ ventas	created_at	timestamp without time zone
 ventas	estado	character varying
 ventas	id_restaurante	integer
 ventas	id_mesa	integer
--- ============================
--- Tabla de arqueos de caja
--- ============================
-arqueos_caja	id_arqueo	integer
-arqueos_caja	id_restaurante	integer
-arqueos_caja	id_sucursal	integer
-arqueos_caja	id_vendedor	integer
-arqueos_caja	monto_inicial	numeric
-arqueos_caja	fecha_apertura	timestamp without time zone
-arqueos_caja	monto_final	numeric
-arqueos_caja	fecha_cierre	timestamp without time zone
-arqueos_caja	diferencia	numeric
-arqueos_caja	estado	character varying
-arqueos_caja	observaciones	text

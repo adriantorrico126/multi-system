@@ -106,7 +106,7 @@ export function PromocionCart({ cartItems, appliedPromociones }: PromocionCartPr
             <CheckCircle className="h-3 w-3 text-green-600" />
             <span className="text-xs font-semibold text-green-700">Promociones Aplicadas</span>
           </div>
-          <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs px-1 py-0.5">
+          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-xs px-1 py-0.5">
             {appliedPromociones.length}
           </Badge>
         </div>

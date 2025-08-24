@@ -474,7 +474,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
                           </div>
                         </TableCell>
                         <TableCell className="p-6 align-middle">
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                          <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
                             {product.category}
                           </Badge>
                         </TableCell>

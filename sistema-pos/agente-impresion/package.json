@@ -1,0 +1,54 @@
+{
+  "name": "agente-impresion-sitemm",
+  "version": "1.0.0",
+  "description": "Agente de impresión profesional para sistema POS Sitemm",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "pkg . --targets node18-win-x64,node18-macos-x64",
+    "build:win": "pkg . --targets node18-win-x64",
+    "build:mac": "pkg . --targets node18-macos-x64",
+    "test": "jest",
+    "lint": "eslint src/**/*.js"
+  },
+  "keywords": [
+    "pos",
+    "printer",
+    "ticket",
+    "restaurant",
+    "sitemm"
+  ],
+  "author": "Sitemm Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "node-thermal-printer": "^4.4.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "src/config/**/*",
+      "src/templates/**/*"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "bin": "src/index.js"
+}

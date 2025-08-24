@@ -350,7 +350,7 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
                       <Clock className="h-4 w-4 text-gray-600" />
                       <span className="text-sm font-medium text-gray-700">Auto-refresh</span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">30s</Badge>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 text-xs">30s</Badge>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -358,7 +358,7 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
                       <Users className="h-4 w-4 text-gray-600" />
                       <span className="text-sm font-medium text-gray-700">Máximo mesas por grupo</span>
                     </div>
-                    <Badge variant="secondary" className="text-xs">8</Badge>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 text-xs">8</Badge>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

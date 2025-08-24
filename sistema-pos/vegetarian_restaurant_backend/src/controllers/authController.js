@@ -145,3 +145,76 @@ exports.getSessionStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.refreshToken = async (req, res, next) => {
+  try {
+    const { id_vendedor } = req.user;
+    
+    // Verificar que el usuario aún existe y está activo
+    const query = `
+      SELECT id_vendedor, nombre, username, rol, activo, id_sucursal, id_restaurante
+      FROM vendedores 
+      WHERE id_vendedor = $1 AND activo = true
+    `;
+    
+    const { rows } = await pool.query(query, [id_vendedor]);
+    
+    if (rows.length === 0) {
+      logger.warn(`Intento de renovación de token para usuario inactivo: ${id_vendedor}`);
+      return res.status(401).json({ 
+        message: 'Usuario no encontrado o inactivo.',
+        code: 'USER_INACTIVE'
+      });
+    }
+
+    const user = rows[0];
+
+    // Obtener información de sucursal
+    const sucursalQuery = `
+      SELECT id_sucursal, nombre, ciudad, direccion
+      FROM sucursales 
+      WHERE id_sucursal = $1 AND activo = true
+    `;
+    
+    const sucursalResult = await pool.query(sucursalQuery, [user.id_sucursal]);
+    const sucursal = sucursalResult.rows[0];
+
+    // Generar nuevo token
+    const newToken = jwt.sign(
+      { 
+        id: user.id_vendedor,
+        id_vendedor: user.id_vendedor,
+        username: user.username, 
+        rol: user.rol,
+        id_sucursal: user.id_sucursal,
+        sucursal_nombre: sucursal ? sucursal.nombre : null,
+        id_restaurante: user.id_restaurante
+      },
+      envConfig.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    logger.info(`Token renovado exitosamente para usuario: ${user.username}`);
+    res.status(200).json({
+      message: 'Token renovado exitosamente.',
+      token: newToken,
+      data: {
+        id: user.id_vendedor,
+        nombre: user.nombre,
+        username: user.username,
+        rol: user.rol,
+        id_restaurante: user.id_restaurante,
+        sucursal: sucursal ? {
+          id: sucursal.id_sucursal,
+          nombre: sucursal.nombre,
+          ciudad: sucursal.ciudad,
+          direccion: sucursal.direccion
+        } : null
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error al renovar token:', error);
+    next(error);
+  }
+};

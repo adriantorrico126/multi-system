@@ -13,8 +13,38 @@ exports.authenticateToken = (req, res, next) => {
 
   jwt.verify(token, envConfig.JWT_SECRET, (err, user) => {
     if (err) {
-      logger.warn(`Intento de acceso con token inválido: ${err.message}`, { token, ip: req.ip });
-      return res.status(403).json({ message: 'Token de autenticación inválido o expirado.' });
+      // Distinguir entre diferentes tipos de errores JWT
+      if (err.name === 'TokenExpiredError') {
+        logger.warn(`Token expirado para IP: ${req.ip}`, { 
+          token: token.substring(0, 20) + '...', 
+          ip: req.ip,
+          expiredAt: err.expiredAt 
+        });
+        return res.status(401).json({ 
+          message: 'Token de autenticación expirado. Por favor, inicie sesión nuevamente.',
+          code: 'TOKEN_EXPIRED'
+        });
+      } else if (err.name === 'JsonWebTokenError') {
+        logger.warn(`Token inválido para IP: ${req.ip}`, { 
+          token: token.substring(0, 20) + '...', 
+          ip: req.ip,
+          error: err.message 
+        });
+        return res.status(401).json({ 
+          message: 'Token de autenticación inválido. Por favor, inicie sesión nuevamente.',
+          code: 'TOKEN_INVALID'
+        });
+      } else {
+        logger.warn(`Error JWT desconocido para IP: ${req.ip}`, { 
+          token: token.substring(0, 20) + '...', 
+          ip: req.ip,
+          error: err.message 
+        });
+        return res.status(401).json({ 
+          message: 'Error de autenticación. Por favor, inicie sesión nuevamente.',
+          code: 'TOKEN_ERROR'
+        });
+      }
     } // Token inválido
     
     req.user = user; // Adjuntar el usuario al objeto de solicitud

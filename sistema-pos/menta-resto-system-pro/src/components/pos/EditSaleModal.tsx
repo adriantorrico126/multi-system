@@ -75,7 +75,7 @@ export function EditSaleModal({ sale, onSave, onCancel }: EditSaleModalProps) {
             </div>
             <div>
               <Label className="text-sm font-medium">Total Original</Label>
-              <Badge variant="secondary">Bs {sale.total.toFixed(2)}</Badge>
+              <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">Bs {sale.total.toFixed(2)}</Badge>
             </div>
           </div>
 
@@ -154,7 +154,7 @@ export function EditSaleModal({ sale, onSave, onCancel }: EditSaleModalProps) {
           <div className="border-t pt-4">
             <div className="flex justify-between items-center">
               <span className="font-semibold">Nuevo Total:</span>
-              <Badge variant="secondary" className="bg-green-100 text-green-700 text-lg">
+              <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-lg">
                 Bs {total.toFixed(2)}
               </Badge>
             </div>

@@ -46,7 +46,8 @@ import {
   Minus,
   Plus,
   CheckCircle,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
@@ -106,6 +107,7 @@ export function POSSystem() {
   const [showArqueoModal, setShowArqueoModal] = useState(false);
   const [montoApertura, setMontoApertura] = useState<string>('');
   const [showCajaBanner, setShowCajaBanner] = useState<boolean>(true);
+  const [isClosingBanner, setIsClosingBanner] = useState<boolean>(false);
   
   React.useEffect(() => {
     const interval = setInterval(() => setNow(dayjs()), 1000 * 30);
@@ -129,25 +131,36 @@ export function POSSystem() {
   React.useEffect(() => {
     (async () => {
       try {
-        const data = await getArqueoActualPOS();
-        setArqueoActual(data);
-        const skipOnce = sessionStorage.getItem('skipCajaModalOnce') === '1';
-        const autoPromptDone = sessionStorage.getItem('cajaAutoPromptDone') === '1';
-        if (!data && user?.rol !== 'cocinero' && !skipOnce && !autoPromptDone) {
-          setShowArqueoModal(true);
-          try { sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
+        const arqueo = await getArqueoActualPOS();
+        if (arqueo) {
+          setArqueoActual(arqueo);
+          setShowCajaBanner(true);
         }
-        if (skipOnce) try { sessionStorage.removeItem('skipCajaModalOnce'); } catch {}
-        // Control de banner auto-ocultable
-        setShowCajaBanner(true);
-        if (data) {
-          window.setTimeout(() => setShowCajaBanner(false), 3000);
-        }
-      } catch (e:any) {
-        console.warn('No se pudo verificar arqueo actual:', e?.message || e);
+      } catch (error) {
+        console.error('Error al verificar arqueo:', error);
       }
     })();
-  }, [user?.rol]);
+  }, []);
+
+  // Función para cerrar el banner con animación
+  const handleCloseBanner = () => {
+    setIsClosingBanner(true);
+    setTimeout(() => {
+      setShowCajaBanner(false);
+      setIsClosingBanner(false);
+    }, 300); // Tiempo de la animación
+  };
+
+  // Timer para cerrar automáticamente el banner de caja
+  React.useEffect(() => {
+    if (showCajaBanner && arqueoActual && !isClosingBanner) {
+      const timer = setTimeout(() => {
+        handleCloseBanner();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showCajaBanner, arqueoActual, isClosingBanner]);
 
   const handleAbrirArqueo = async () => {
     try {
@@ -159,6 +172,8 @@ export function POSSystem() {
       const res = await abrirArqueoPOS(monto);
       setArqueoActual(res);
       setShowArqueoModal(false);
+      setMontoApertura(''); // Limpiar el input
+      setShowCajaBanner(true); // Mostrar el banner
       try { sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
       toast({ title: 'Caja abierta', description: 'Apertura registrada.' });
     } catch (e:any) {
@@ -993,11 +1008,34 @@ export function POSSystem() {
       )}
 
       {/* Banner de caja abierta (informativo, cierre automático) */}
-      {arqueoActual && showCajaBanner && (
-        <div className="fixed bottom-4 right-4 z-[150] bg-white shadow-lg border rounded-lg p-3">
-          <div className="text-sm">Caja abierta desde {new Date(arqueoActual.fecha_apertura).toLocaleString()}</div>
-          <div className="text-sm text-gray-600">Monto inicial: ${Number(arqueoActual.monto_inicial||0).toLocaleString()}</div>
-          <div className="mt-2 text-xs text-gray-500">El cierre es automático a las 23:59.</div>
+      {(arqueoActual && showCajaBanner) && (
+        <div 
+          className={`fixed bottom-4 right-4 z-[150] bg-white shadow-lg border rounded-lg p-3 transition-all duration-300 ease-in-out ${
+            !isClosingBanner 
+              ? 'opacity-100 translate-y-0 animate-in slide-in-from-bottom-2' 
+              : 'opacity-0 translate-y-4'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900">
+                Caja abierta desde {new Date(arqueoActual.fecha_apertura).toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-600">
+                Monto inicial: ${Number(arqueoActual.monto_inicial||0).toLocaleString()}
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                El cierre es automático a las 23:59.
+              </div>
+            </div>
+            <button
+              onClick={handleCloseBanner}
+              className="flex-shrink-0 w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-200 group"
+              aria-label="Cerrar banner"
+            >
+              <X className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+            </button>
+          </div>
         </div>
       )}
 

@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { OrientationBanner } from "./components/OrientationBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AuthProvider } from "./context/AuthContext";
+import { RestaurantChangeHandler } from "./components/RestaurantChangeHandler";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -19,24 +21,27 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <OrientationBanner />
-        <BrowserRouter>
-          <Suspense fallback={<div>Cargando...</div>}> {/* Add Suspense fallback */}
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/cocina" element={<KitchenView />} />
-              <Route path="/arqueo" element={<ArqueoPage />} />
-              <Route path="/inventario" element={<InventoryPage />} />
-              <Route path="/soporte" element={<SupportPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <OrientationBanner />
+          <BrowserRouter>
+            <RestaurantChangeHandler />
+            <Suspense fallback={<div>Cargando...</div>}> {/* Add Suspense fallback */}
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/cocina" element={<KitchenView />} />
+                <Route path="/arqueo" element={<ArqueoPage />} />
+                <Route path="/inventario" element={<InventoryPage />} />
+                <Route path="/soporte" element={<SupportPage />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

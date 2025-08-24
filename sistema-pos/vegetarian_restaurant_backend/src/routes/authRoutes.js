@@ -11,6 +11,9 @@ const loginValidationRules = [
 
 router.post('/login', loginValidationRules, authController.login);
 
+// Renovar token (requiere token válido)
+router.post('/refresh', authenticateToken, authController.refreshToken);
+
 // Verificar el estado de la sesión actual del token
 router.get('/status', authenticateToken, authController.getSessionStatus);
 
