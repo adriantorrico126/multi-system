@@ -1,20 +1,37 @@
-# Usar una imagen base de Node.js ligera y específica
-FROM node:18-alpine
+# --- Etapa 1: Construcción (Builder) ---
+FROM node:18-alpine AS builder
 
-# Establecer el directorio de trabajo dentro del contenedor
+# Establecer el directorio de trabajo
 WORKDIR /usr/src/app
 
 # Copiar los archivos de dependencias
 COPY package*.json ./
 
-# Instalar solo las dependencias de producción
+# Instalar TODAS las dependencias (incluidas las de desarrollo para poder construir)
+RUN npm install
+
+# Copiar todo el código fuente (incluida la carpeta src)
+COPY . .
+
+# Ejecutar el script de construcción para generar la carpeta /dist
+# (Asegúrate de que en tu package.json el script se llame "build")
+RUN npm run build
+
+# --- Etapa 2: Producción ---
+FROM node:18-alpine
+
+# Establecer el directorio de trabajo
+WORKDIR /usr/src/app
+
+# Copiar solo el package.json para instalar dependencias de producción
+COPY package*.json ./
 RUN npm ci --only=production
 
-# Copiar el código fuente compilado
-COPY dist ./dist
+# Copiar la carpeta 'dist' generada en la etapa de 'builder'
+COPY --from=builder /usr/src/app/dist ./dist
 
-# Exponer el puerto en el que corre la aplicación (el del error era 8080)
+# Exponer el puerto de la aplicación
 EXPOSE 8080
 
-# El comando para iniciar la aplicación
+# Comando para iniciar la aplicación
 CMD [ "node", "dist/index.js" ]
