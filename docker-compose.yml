@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  admin-backend:
+    build:
+      context: ./admin-console-backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_BACKEND_PORT}:${ADMIN_BACKEND_PORT}"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_SSL_MODE=${DB_SSL_MODE}
+      - PORT=${ADMIN_BACKEND_PORT}
+    networks:
+      - sitemm-network
+
+  pos-backend:
+    build:
+      context: ./vegetarian_restaurant_backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${POS_BACKEND_PORT}:${POS_BACKEND_PORT}"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_SSL_MODE=${DB_SSL_MODE}
+      - PORT=${POS_BACKEND_PORT}
+    networks:
+      - sitemm-network
+
+networks:
+  sitemm-network:
+    driver: bridge
