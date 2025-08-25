@@ -1,15 +1,16 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  host: process.env.POS_DB_HOST,
-  port: Number(process.env.POS_DB_PORT) || 5432,
-  user: process.env.POS_DB_USER,
-  password: process.env.POS_DB_PASSWORD,
-  database: process.env.POS_DB_NAME,
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT) || 5432,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
   max: 10, // Limitar conexiones desde la consola admin
 });
 
-console.log('DB ENV:', process.env.POS_DB_USER, process.env.POS_DB_NAME, process.env.POS_DB_HOST);
+console.log('DB ENV:', process.env.DB_USER, process.env.DB_DATABASE, process.env.DB_HOST);
 
 export default pool;
 

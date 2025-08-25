@@ -9,7 +9,7 @@ import { initAdminUsersTable, initPagosRestaurantesTable, initRestaurantesTable,
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger.json';
 
-console.log('ENV TEST:', process.env.POS_DB_USER, process.env.POS_DB_NAME, process.env.POS_DB_HOST, process.env.POS_DB_PASSWORD, process.env.POS_DB_PORT);
+console.log('ENV TEST:', process.env.DB_USER, process.env.DB_DATABASE, process.env.DB_HOST, process.env.DB_PASSWORD, process.env.DB_PORT);
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 4000;
