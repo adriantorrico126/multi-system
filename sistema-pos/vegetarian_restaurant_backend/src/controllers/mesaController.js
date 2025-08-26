@@ -3,6 +3,22 @@ const { pool } = require('../config/database');
 const logger = require('../config/logger'); // Importar el logger
 const Venta = require('../models/ventaModel'); // Moved from inside agregarProductosAMesa
 
+// ===================================
+// 🔹 FUNCIONES HELPER
+// ===================================
+
+// Función helper para obtener estados válidos de ventas para prefacturas
+function getEstadosValidosVentas() {
+  return [
+    'recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado',
+    'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado'
+  ];
+}
+
+// ===================================
+// 🔹 GENERACIÓN DE PREFACTURAS
+// ===================================
+
 // Obtener todas las mesas de una sucursal
 exports.getMesas = async (req, res, next) => {
   try {
@@ -328,7 +344,7 @@ exports.generarPrefactura = async (req, res, next) => {
     const ventasQuery = `
       SELECT 
         v.id_venta,
-        v.mesa_numero,
+        v.id_mesa,
         v.id_sucursal,
         v.estado,
         v.total,
@@ -336,13 +352,13 @@ exports.generarPrefactura = async (req, res, next) => {
         COUNT(dv.id_detalle) as items_count
       FROM ventas v
       LEFT JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
-      WHERE v.mesa_numero = $1 
+      WHERE v.id_mesa = $1 
         AND v.id_sucursal = $2
         AND v.id_restaurante = $3
-      GROUP BY v.id_venta, v.mesa_numero, v.id_sucursal, v.estado, v.total, v.fecha
+      GROUP BY v.id_venta, v.id_mesa, v.id_sucursal, v.estado, v.total, v.fecha
       ORDER BY v.fecha DESC
     `;
-    const ventasResult = await pool.query(ventasQuery, [mesa.numero, mesa.id_sucursal, id_restaurante]);
+    const ventasResult = await pool.query(ventasQuery, [mesa.id_mesa, mesa.id_sucursal, id_restaurante]);
     logger.info(`Ventas encontradas para mesa con ID ${id_mesa}: ${ventasResult.rows.length}`);
     ventasResult.rows.forEach((venta, index) => {
       logger.info(`Venta ${index + 1}: ID=${venta.id_venta}, Estado=${venta.estado}, Total=${venta.total}, Items=${venta.items_count}, Fecha=${venta.fecha}`);
@@ -391,6 +407,10 @@ exports.generarPrefactura = async (req, res, next) => {
     let totalVentas = 0;
     let totalItems = 0;
     
+    // Obtener estados válidos para prefacturas
+    const estadosValidos = getEstadosValidosVentas();
+    logger.info(`Estados válidos para prefacturas: ${estadosValidos.join(', ')}`);
+    
     // Siempre usar filtro de fecha para evitar mostrar ventas anteriores
     if (fechaAperturaPrefactura) {
       const totalSesionQuery = `
@@ -400,13 +420,13 @@ exports.generarPrefactura = async (req, res, next) => {
           COUNT(dv.id_detalle) as total_items
         FROM ventas v
         JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
-        WHERE v.mesa_numero = $1 
+        WHERE v.id_mesa = $1 
           AND v.id_sucursal = $2
           AND v.id_restaurante = $3
           AND v.fecha >= $4
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
+          AND v.estado = ANY($5)
       `;
-      const totalSesionResult = await pool.query(totalSesionQuery, [mesa.numero, mesa.id_sucursal, id_restaurante, fechaAperturaPrefactura]);
+      const totalSesionResult = await pool.query(totalSesionQuery, [mesa.id_mesa, mesa.id_sucursal, id_restaurante, fechaAperturaPrefactura, estadosValidos]);
       totalAcumulado = parseFloat(totalSesionResult.rows[0].total_acumulado) || 0;
       totalVentas = parseInt(totalSesionResult.rows[0].total_ventas) || 0;
       totalItems = parseInt(totalSesionResult.rows[0].total_items) || 0;
@@ -439,21 +459,43 @@ exports.generarPrefactura = async (req, res, next) => {
       LEFT JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
       LEFT JOIN productos p ON dv.id_producto = p.id_producto
       LEFT JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
-      WHERE v.mesa_numero = $1
+      WHERE v.id_mesa = $1
         AND v.id_sucursal = $2
         AND v.id_restaurante = $3
-        AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
-        ${fechaAperturaPrefactura ? 'AND v.fecha >= $4' : ''}
+        AND v.estado = ANY($4)
+        ${fechaAperturaPrefactura ? 'AND v.fecha >= $5' : ''}
       ORDER BY v.fecha DESC
     `;
     const historialParams = fechaAperturaPrefactura 
-      ? [mesa.numero, mesa.id_sucursal, id_restaurante, fechaAperturaPrefactura]
-      : [mesa.numero, mesa.id_sucursal, id_restaurante];
+      ? [mesa.id_mesa, mesa.id_sucursal, id_restaurante, estadosValidos, fechaAperturaPrefactura]
+      : [mesa.id_mesa, mesa.id_sucursal, id_restaurante, estadosValidos];
     const historialResult = await pool.query(historialQuery, historialParams);
 
     logger.info(`Historial obtenido: ${historialResult.rows.length} registros`);
     if (historialResult.rows.length > 0) {
       logger.info(`Primer registro: ${JSON.stringify(historialResult.rows[0])}`);
+      
+      // Log adicional para debugging
+      logger.info(`Estados de ventas encontrados: ${[...new Set(historialResult.rows.map(r => r.estado))].join(', ')}`);
+      logger.info(`Productos encontrados: ${[...new Set(historialResult.rows.map(r => r.nombre_producto))].join(', ')}`);
+    } else {
+      logger.warn(`No se encontraron registros de historial para mesa ${mesa.numero} con estados válidos`);
+      
+      // Verificar qué ventas existen sin filtro de estado
+      const ventasSinFiltroQuery = `
+        SELECT v.id_venta, v.estado, v.fecha, COUNT(dv.id_detalle) as items
+        FROM ventas v
+        LEFT JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
+        WHERE v.id_mesa = $1 AND v.id_sucursal = $2 AND v.id_restaurante = $3
+        GROUP BY v.id_venta, v.estado, v.fecha
+        ORDER BY v.fecha DESC
+        LIMIT 5
+      `;
+      const ventasSinFiltroResult = await pool.query(ventasSinFiltroQuery, [mesa.id_mesa, mesa.id_sucursal, id_restaurante]);
+      logger.info(`Ventas encontradas sin filtro de estado: ${ventasSinFiltroResult.rows.length}`);
+      ventasSinFiltroResult.rows.forEach((venta, index) => {
+        logger.info(`  Venta ${index + 1}: ID=${venta.id_venta}, Estado=${venta.estado}, Items=${venta.items}, Fecha=${venta.fecha}`);
+      });
     }
 
     // Calcular subtotales por producto
@@ -1051,7 +1093,7 @@ exports.transferirItem = async (req, res, next) => {
         FROM ventas v
         LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
       `, [id_mesa_origen, id_restaurante]);
       const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
       if (itemsActivosRestantes === 0) {
@@ -1065,7 +1107,7 @@ exports.transferirItem = async (req, res, next) => {
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2 
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado')
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
           AND ($3::timestamp IS NULL OR v.fecha >= $3);
     `;
     const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante, aperturaDestino]);
@@ -1220,7 +1262,7 @@ exports.transferirOrden = async (req, res, next) => {
         FROM ventas v
         LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
       `, [id_mesa_origen, id_restaurante]);
       const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
       if (itemsActivosRestantes === 0) {
@@ -1233,7 +1275,7 @@ exports.transferirOrden = async (req, res, next) => {
     const totalAcumuladoDestinoQuery = `
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
-        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado');
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado');
     `;
     const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante]);
     const nuevoTotalDestino = parseFloat(totalDestinoRows[0].coalesce) || 0;

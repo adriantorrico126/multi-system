@@ -34,8 +34,10 @@ const updateProductValidationRules = [
 
 // Reglas de validación para la actualización de stock
 const updateStockValidationRules = [
-  check('cantidad_cambio').isInt({ min: 1 }).withMessage('La cantidad de cambio debe ser un número entero positivo.'),
-  check('tipo_movimiento').isIn(['entrada', 'salida']).withMessage('El tipo de movimiento debe ser \'entrada\' o \'salida\'.'),
+  check('cantidad').isNumeric().withMessage('La cantidad debe ser un número válido.'),
+  check('tipo_movimiento').isIn(['entrada', 'salida', 'ajuste_positivo', 'ajuste_negativo']).withMessage('El tipo de movimiento debe ser válido.'),
+  check('stock_anterior').optional().isNumeric().withMessage('El stock anterior debe ser un número válido.'),
+  check('stock_actual').optional().isNumeric().withMessage('El stock actual debe ser un número válido.'),
 ];
 
 // Obtener todos los productos (multitenant: NO usar cache global para evitar mezcla entre restaurantes)
@@ -52,7 +54,7 @@ router.delete('/:id', authenticateToken, authorizeRoles('admin', 'super_admin'),
 
 // Rutas de inventario (para administradores, gerentes y cajeros)
 router.get('/inventario/resumen', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin'), productoController.getInventorySummary);
-router.post('/inventario/:id/stock', authenticateToken, authorizeRoles('admin', 'super_admin'), updateStockValidationRules, clearCache('productos'), productoController.updateProductStock);
+router.post('/inventario/:id/stock', authenticateToken, authorizeRoles('admin', 'gerente', 'super_admin'), updateStockValidationRules, clearCache('productos'), productoController.updateProductStock);
 router.get('/inventario/movimientos', authenticateToken, authorizeRoles('admin', 'super_admin'), productoController.getStockMovementsHistory);
 
 module.exports = router;

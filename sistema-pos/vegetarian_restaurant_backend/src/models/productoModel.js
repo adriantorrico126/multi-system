@@ -82,27 +82,79 @@ const Producto = {
 
   // Funciones de inventario
   async updateStock(id_producto, cantidad_cambio, tipo_movimiento, id_vendedor, id_restaurante) {
-    // Actualizar stock_actual en la tabla productos
-    const updateProductQuery = `
-      UPDATE productos
-      SET stock_actual = stock_actual + $1
-      WHERE id_producto = $2 AND id_restaurante = $3
-      RETURNING stock_actual;
-    `;
-    const { rows: productRows } = await pool.query(updateProductQuery, [cantidad_cambio, id_producto, id_restaurante]);
-    const nuevo_stock = productRows[0].stock_actual;
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Obtener el stock actual antes de la actualización
+      const currentStockQuery = `
+        SELECT stock_actual FROM productos 
+        WHERE id_producto = $1 AND id_restaurante = $2
+      `;
+      const { rows: currentStockRows } = await client.query(currentStockQuery, [id_producto, id_restaurante]);
+      
+      if (currentStockRows.length === 0) {
+        throw new Error('Producto no encontrado');
+      }
+      
+      const stock_anterior = currentStockRows[0].stock_actual || 0;
+      const nuevo_stock = Math.max(0, stock_anterior + cantidad_cambio); // No permitir stock negativo
+      
+      // Actualizar stock_actual en la tabla productos
+      const updateProductQuery = `
+        UPDATE productos
+        SET stock_actual = $1
+        WHERE id_producto = $2 AND id_restaurante = $3
+        RETURNING stock_actual;
+      `;
+      const { rows: productRows } = await client.query(updateProductQuery, [nuevo_stock, id_producto, id_restaurante]);
+      
+      if (productRows.length === 0) {
+        throw new Error('Error al actualizar el producto');
+      }
+      
+      // Registrar movimiento en la tabla movimientos_inventario
+      const recordMovementQuery = `
+        INSERT INTO movimientos_inventario (
+          id_producto, 
+          tipo_movimiento, 
+          cantidad, 
+          stock_anterior, 
+          stock_actual, 
+          id_vendedor, 
+          id_restaurante,
+          motivo
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *;
+      `;
+      
+      const motivo = `Ajuste manual de stock: ${tipo_movimiento}`;
+      const { rows: movementRows } = await client.query(recordMovementQuery, [
+        id_producto, 
+        tipo_movimiento, 
+        Math.abs(cantidad_cambio), // Siempre guardar cantidad positiva
+        stock_anterior, 
+        nuevo_stock, 
+        id_vendedor, 
+        id_restaurante,
+        motivo
+      ]);
 
-    // Registrar movimiento en la tabla movimientos_inventario
-    const recordMovementQuery = `
-      INSERT INTO movimientos_inventario (id_producto, tipo_movimiento, cantidad, stock_anterior, stock_actual, id_vendedor, id_restaurante)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *;
-    `;
-    const { rows: movementRows } = await pool.query(recordMovementQuery, [
-      id_producto, tipo_movimiento, cantidad_cambio, nuevo_stock - cantidad_cambio, nuevo_stock, id_vendedor, id_restaurante
-    ]);
-
-    return { nuevo_stock, movimiento: movementRows[0] };
+      await client.query('COMMIT');
+      return { 
+        nuevo_stock: productRows[0].stock_actual, 
+        stock_anterior: stock_anterior,
+        movimiento: movementRows[0] 
+      };
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   },
 
   async getInventorySummary(id_restaurante) {

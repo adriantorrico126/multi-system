@@ -147,19 +147,34 @@ exports.updateProductStock = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { cantidad_cambio, tipo_movimiento } = req.body;
+    const { cantidad, tipo_movimiento, stock_anterior, stock_actual } = req.body;
     const id_vendedor = req.user.id; // Asumiendo que el id del usuario está en req.user.id
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
-    // La validación de express-validator ya cubre esto, pero se mantiene como fallback
-    if (!cantidad_cambio || !tipo_movimiento) {
-      logger.warn('Cantidad de cambio o tipo de movimiento faltante en updateProductStock.');
-      return res.status(400).json({ message: 'Cantidad de cambio y tipo de movimiento son requeridos.' });
+    // Validar datos requeridos
+    if (!cantidad || !tipo_movimiento) {
+      logger.warn('Cantidad o tipo de movimiento faltante en updateProductStock.');
+      return res.status(400).json({ message: 'Cantidad y tipo de movimiento son requeridos.' });
+    }
+
+    // Calcular la cantidad de cambio basada en el tipo de movimiento
+    let cantidad_cambio = parseFloat(cantidad);
+    if (tipo_movimiento === 'salida' || tipo_movimiento === 'ajuste_negativo') {
+      cantidad_cambio = -Math.abs(cantidad_cambio); // Asegurar que sea negativo
+    } else {
+      cantidad_cambio = Math.abs(cantidad_cambio); // Asegurar que sea positivo
     }
 
     const result = await Producto.updateStock(id, cantidad_cambio, tipo_movimiento, id_vendedor, id_restaurante);
 
-    logger.info('Stock actualizado y movimiento registrado exitosamente:', { productId: id, change: cantidad_cambio, type: tipo_movimiento, id_restaurante });
+    logger.info('Stock actualizado y movimiento registrado exitosamente:', { 
+      productId: id, 
+      cantidad: cantidad, 
+      cambio: cantidad_cambio, 
+      tipo: tipo_movimiento, 
+      id_restaurante 
+    });
+    
     res.status(200).json({
       message: 'Stock actualizado y movimiento registrado exitosamente.',
       data: result

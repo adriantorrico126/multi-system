@@ -228,6 +228,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   // NUEVOS ESTADOS PARA TRANSFERENCIA DE PRODUCTOS
   const [showTransferProductModal, setShowTransferProductModal] = useState(false);
   const [selectedProductToTransfer, setSelectedProductToTransfer] = useState<HistorialMesaDetallado | null>(null);
+  
+  // Estado local para la prefactura
+  const [prefacturaDataLocal, setPrefacturaDataLocal] = useState<any>(null);
 
   // Cargar meseros cuando se abre el modal
   useEffect(() => {
@@ -272,20 +275,24 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     enabled: !!sucursalId,
   });
 
-  // Obtener prefactura
-  const { data: prefacturaData } = useQuery<PrefacturaData>({
+  // Obtener prefactura - SOLO cuando se solicite explícitamente
+  const { data: prefacturaData, refetch: refetchPrefactura } = useQuery<PrefacturaData>({
     queryKey: ['prefactura', selectedMesa?.id_mesa],
     queryFn: async () => {
       if (!selectedMesa) return null;
       try {
+        console.log('🔄 Ejecutando query de prefactura para mesa:', selectedMesa.id_mesa);
         const result = await generarPrefactura(selectedMesa.id_mesa);
+        console.log('✅ Resultado de prefactura:', result);
         return result;
       } catch (error) {
         console.error('❌ MesaManagement: Error generando prefactura:', error);
         throw error;
       }
     },
-    enabled: !!selectedMesa && showPrefactura,
+    enabled: !!selectedMesa && showPrefactura, // ✅ HABILITAR cuando se abra el modal
+    refetchOnWindowFocus: false,
+    retry: false
   });
 
   // Obtener grupos activos
@@ -386,15 +393,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
   });
 
-  // Nueva mutación para marcar como pagado
+  // Mutación para marcar como pagado
   const marcarComoPagadoMutation = useMutation({
-    mutationFn: (data: {
-      id_mesa: number;
-    }) => marcarMesaComoPagada(data),
+    mutationFn: ({ id_mesa }: { id_mesa: number }) => marcarMesaComoPagada({ id_mesa }),
     onSuccess: (data) => {
       toast({
-        title: "Pago Registrado",
-        description: `Mesa ${data.data.mesa.numero} marcada como pagada y liberada. Total: $${data.data.total_final}`,
+        title: "Mesa Marcada como Pagada",
+        description: `Mesa ${data.data.mesa.numero} marcada como pagada exitosamente.`,
       });
       queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] });
       queryClient.invalidateQueries({ queryKey: ['estadisticas-mesas', sucursalId] });
@@ -412,10 +417,16 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   const generarPrefacturaMutation = useMutation({
     mutationFn: (mesa: Mesa) => generarPrefactura(mesa.id_mesa),
     onSuccess: (data) => {
+      console.log('✅ Prefactura generada exitosamente:', data);
+      // Actualizar el estado local con los datos de la prefactura
       setSelectedMesa(data.data.mesa);
+      setPrefacturaDataLocal(data);
       setShowPrefactura(true);
+      // Forzar la actualización de la query
+      queryClient.setQueryData(['prefactura', data.data.mesa.id_mesa], data);
     },
     onError: (error: any) => {
+      console.error('❌ Error generando prefactura:', error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Error al generar prefactura.",
@@ -708,13 +719,13 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       id_pedido: prefacturaData.historial_detallado?.[0]?.id_venta || selectedMesa?.id_mesa,
       mesa: selectedMesa?.numero?.toString() || 'N/A',
       mesero: user?.nombre || 'N/A',
-      productos: prefacturaData.historial_detallado?.map(p => ({
+      productos: prefacturaDataLocal?.data?.historial_detallado?.map(p => ({
         cantidad: p.cantidad,
         nombre: p.nombre_producto,
         precio: p.precio_unitario,
         notas: p.observaciones || ''
       })) || [],
-      total: prefacturaData.total_acumulado || 0,
+      total: prefacturaDataLocal?.data?.total_acumulado || 0,
       restauranteId: idRestaurante || 1
     };
 
@@ -802,9 +813,20 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   };
 
   // Definir productos a partir de la prefactura para evitar referencia no definida
-  // Asegúrate de que prefacturaData.historial_detallado esté disponible y tenga el tipo correcto
-  const productosDetallados: HistorialMesaDetallado[] = prefacturaData?.historial_detallado ?? [];
-  const productosAgrupados: HistorialMesa[] = prefacturaData?.historial ?? [];
+  // Asegúrate de que prefacturaDataLocal.historial_detallado esté disponible y tenga el tipo correcto
+  const productosDetallados: HistorialMesaDetallado[] = prefacturaDataLocal?.data?.historial_detallado ?? [];
+  const productosAgrupados: HistorialMesa[] = prefacturaDataLocal?.data?.historial ?? [];
+
+  // 🔍 DEBUG: Logs para depurar los datos de la prefactura
+  console.log('🔍 DEBUG Prefactura:', {
+    prefacturaDataLocal,
+    productosDetallados,
+    productosAgrupados,
+    historialDetallado: prefacturaDataLocal?.data?.historial_detallado,
+    historial: prefacturaDataLocal?.data?.historial,
+    totalAcumulado: prefacturaDataLocal?.data?.total_acumulado,
+    totalVentas: prefacturaDataLocal?.data?.total_ventas
+  });
 
   // Obtener todas las mesas excepto la actualmente seleccionada (para el modal de transferencia)
   const otherMesas = mesas.filter(m => m.id_mesa !== selectedMesa?.id_mesa);
@@ -1748,7 +1770,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
               </div>
             </DialogHeader>
             
-            {prefacturaData ? (
+            {prefacturaDataLocal ? (
               <div className="space-y-6">
                 {/* Información de la mesa */}
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -1767,22 +1789,22 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     <div>
                       <p className="text-sm font-medium text-gray-500">Total Acumulado</p>
                       <p className="text-lg font-bold text-green-600">
-                        ${(Number(prefacturaData?.data?.total_acumulado) || 0).toFixed(2)}
+                        ${(Number(prefacturaDataLocal?.data?.total_acumulado) || 0).toFixed(2)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500">Fecha de Apertura</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {prefacturaData?.data?.fecha_apertura || 'N/A'}
+                        {prefacturaDataLocal?.data?.fecha_apertura || 'N/A'}
                       </p>
                     </div>
                   </div>
-                  {prefacturaData?.data?.total_ventas && (
+                  {prefacturaDataLocal?.data?.total_ventas && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                           <p className="text-xs font-medium text-gray-500">Ventas Realizadas</p>
-                          <p className="text-sm font-bold text-blue-600">{prefacturaData.total_ventas}</p>
+                          <p className="text-sm font-bold text-blue-600">{prefacturaDataLocal?.data?.total_ventas}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-gray-500">Productos Diferentes</p>
@@ -1791,7 +1813,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                         <div>
                           <p className="text-xs font-medium text-gray-500">Estado Prefactura</p>
                           <p className="text-sm font-bold text-orange-600 capitalize">
-                            {(prefacturaData?.data?.estado_prefactura || 'abierta').replace('_', ' ')}
+                            {(prefacturaDataLocal?.data?.estado_prefactura || 'abierta').replace('_', ' ')}
                           </p>
                         </div>
                       </div>
@@ -1872,14 +1894,14 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-green-800">Total Acumulado:</span>
-                      <span className="text-2xl font-bold text-green-900">
-                        ${(Number(prefacturaData.total_acumulado) || 0).toFixed(2)}
+                                            <span className="text-2xl font-bold text-green-900">
+                        ${(Number(prefacturaDataLocal?.data?.total_acumulado) || 0).toFixed(2)}
                       </span>
                     </div>
-                    {prefacturaData.total_ventas && (
+                    {prefacturaDataLocal?.data?.total_ventas && (
                       <div className="mt-2 text-sm text-green-700">
-                        {prefacturaData.total_ventas} venta{prefacturaData.total_ventas !== 1 ? 's' : ''} • 
-                        {prefacturaData.fecha_apertura && ` Abierta desde: ${prefacturaData.fecha_apertura}`}
+                        {prefacturaDataLocal?.data?.total_ventas} venta{prefacturaDataLocal?.data?.total_ventas !== 1 ? 's' : ''} •
+                        {prefacturaDataLocal?.data?.fecha_apertura && ` Abierta desde: ${prefacturaDataLocal?.data?.fecha_apertura}`}
                       </div>
                     )}
                   </div>
