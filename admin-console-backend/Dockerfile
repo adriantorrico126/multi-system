@@ -32,5 +32,7 @@ COPY --from=builder /usr/src/app/dist ./dist
 # Exponer el puerto de la aplicación
 EXPOSE 8080
 
-# Comando para iniciar la aplicación
-CMD [ "node", "dist/index.js" ]
+# --- COMANDO DE DEPURACIÓN ---
+# En lugar de iniciar la app, imprimimos las variables de entorno y esperamos.
+# Esto es temporal para ver qué variables está recibiendo el contenedor.
+CMD ["sh", "-c", "echo '--- VARIABLES DE ENTORNO DEL CONTENEDOR ---' && printenv && echo '--- FIN DE VARIABLES ---' && sleep 3600"]
