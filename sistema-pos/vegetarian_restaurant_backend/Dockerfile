@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # El comando para iniciar la aplicación (ajústalo si tu archivo principal es otro)
-CMD [ "node", "index.js" ]
+CMD [ "node", "db_test.js" ]
