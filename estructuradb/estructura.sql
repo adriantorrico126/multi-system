@@ -15,6 +15,14 @@ alertas_inventario	resuelta	boolean
 alertas_inventario	fecha_creacion	timestamp without time zone
 alertas_inventario	fecha_resolucion	timestamp without time zone
 alertas_inventario	id_restaurante	integer
+archivos_egresos	id_archivo	integer
+archivos_egresos	id_egreso	integer
+archivos_egresos	nombre_archivo	character varying
+archivos_egresos	ruta_archivo	character varying
+archivos_egresos	tipo_archivo	character varying
+archivos_egresos	tamaño_archivo	integer
+archivos_egresos	subido_por	integer
+archivos_egresos	fecha_subida	timestamp without time zone
 arqueos_caja	id_arqueo	integer
 arqueos_caja	id_restaurante	integer
 arqueos_caja	id_sucursal	integer
@@ -63,6 +71,15 @@ categorias_almacen	id_restaurante	integer
 categorias_almacen	activo	boolean
 categorias_almacen	created_at	timestamp without time zone
 categorias_almacen	updated_at	timestamp without time zone
+categorias_egresos	id_categoria_egreso	integer
+categorias_egresos	nombre	character varying
+categorias_egresos	descripcion	text
+categorias_egresos	color	character varying
+categorias_egresos	icono	character varying
+categorias_egresos	activo	boolean
+categorias_egresos	id_restaurante	integer
+categorias_egresos	created_at	timestamp without time zone
+categorias_egresos	updated_at	timestamp without time zone
 clientes	id_cliente	integer
 clientes	nombre	character varying
 clientes	telefono	character varying
@@ -98,6 +115,37 @@ dim_tiempo	nombre_mes	character varying
 dim_tiempo	nombre_dia	character varying
 dim_tiempo	es_fin_de_semana	boolean
 dim_tiempo	turno	character varying
+egresos	id_egreso	integer
+egresos	concepto	character varying
+egresos	descripcion	text
+egresos	monto	numeric
+egresos	fecha_egreso	date
+egresos	id_categoria_egreso	integer
+egresos	metodo_pago	character varying
+egresos	proveedor_nombre	character varying
+egresos	proveedor_documento	character varying
+egresos	proveedor_telefono	character varying
+egresos	proveedor_email	character varying
+egresos	numero_factura	character varying
+egresos	numero_recibo	character varying
+egresos	numero_comprobante	character varying
+egresos	estado	character varying
+egresos	requiere_aprobacion	boolean
+egresos	aprobado_por	integer
+egresos	fecha_aprobacion	timestamp without time zone
+egresos	comentario_aprobacion	text
+egresos	es_deducible	boolean
+egresos	numero_autorizacion_fiscal	character varying
+egresos	codigo_control	character varying
+egresos	es_recurrente	boolean
+egresos	frecuencia_recurrencia	character varying
+egresos	proxima_fecha_recurrencia	date
+egresos	archivos_adjuntos	jsonb
+egresos	registrado_por	integer
+egresos	id_sucursal	integer
+egresos	id_restaurante	integer
+egresos	created_at	timestamp without time zone
+egresos	updated_at	timestamp without time zone
 facturas	id_factura	integer
 facturas	numero	character varying
 facturas	nit_cliente	character varying
@@ -105,6 +153,12 @@ facturas	razon_social	character varying
 facturas	total	numeric
 facturas	fecha	timestamp without time zone
 facturas	id_venta	integer
+flujo_aprobaciones_egresos	id_flujo	integer
+flujo_aprobaciones_egresos	id_egreso	integer
+flujo_aprobaciones_egresos	id_vendedor	integer
+flujo_aprobaciones_egresos	accion	character varying
+flujo_aprobaciones_egresos	comentario	text
+flujo_aprobaciones_egresos	fecha_accion	timestamp without time zone
 grupos_mesas	id_grupo_mesa	integer
 grupos_mesas	id_restaurante	integer
 grupos_mesas	id_sucursal	integer
@@ -113,6 +167,13 @@ grupos_mesas	estado	character varying
 grupos_mesas	created_at	timestamp without time zone
 grupos_mesas	updated_at	timestamp without time zone
 grupos_mesas	id_mesero	integer
+integrity_logs	id	integer
+integrity_logs	check_name	character varying
+integrity_logs	status	character varying
+integrity_logs	message	text
+integrity_logs	details_count	integer
+integrity_logs	execution_time_ms	integer
+integrity_logs	created_at	timestamp without time zone
 inventario_lotes	id_lote	integer
 inventario_lotes	id_producto	integer
 inventario_lotes	numero_lote	character varying
@@ -160,6 +221,9 @@ movimientos_inventario	stock_actual	integer
 movimientos_inventario	fecha_movimiento	timestamp with time zone
 movimientos_inventario	id_vendedor	integer
 movimientos_inventario	id_restaurante	integer
+movimientos_inventario	id_lote	integer
+movimientos_inventario	id_categoria_almacen	integer
+movimientos_inventario	motivo	text
 pagos_restaurantes	id	integer
 pagos_restaurantes	id_restaurante	integer
 pagos_restaurantes	monto	numeric
@@ -178,6 +242,16 @@ prefacturas	fecha_cierre	timestamp without time zone
 prefacturas	observaciones	text
 prefacturas	created_at	timestamp without time zone
 prefacturas	id_restaurante	integer
+presupuestos_egresos	id_presupuesto	integer
+presupuestos_egresos	anio	integer
+presupuestos_egresos	mes	integer
+presupuestos_egresos	id_categoria_egreso	integer
+presupuestos_egresos	monto_presupuestado	numeric
+presupuestos_egresos	monto_gastado	numeric
+presupuestos_egresos	activo	boolean
+presupuestos_egresos	id_restaurante	integer
+presupuestos_egresos	created_at	timestamp without time zone
+presupuestos_egresos	updated_at	timestamp without time zone
 productos	id_producto	integer
 productos	nombre	character varying
 productos	precio	numeric
@@ -266,6 +340,13 @@ sucursales	direccion	text
 sucursales	activo	boolean
 sucursales	created_at	timestamp without time zone
 sucursales	id_restaurante	integer
+system_tasks	id	integer
+system_tasks	task_name	character varying
+system_tasks	last_run	timestamp without time zone
+system_tasks	next_run	timestamp without time zone
+system_tasks	interval_minutes	integer
+system_tasks	is_active	boolean
+system_tasks	created_at	timestamp without time zone
 transferencias_almacen	id_transferencia	integer
 transferencias_almacen	id_producto	integer
 transferencias_almacen	id_lote	integer
@@ -286,6 +367,11 @@ usuarios	id_sucursal	integer
 usuarios	activo	boolean
 usuarios	creado_en	timestamp without time zone
 usuarios	actualizado_en	timestamp without time zone
+v_integrity_monitoring	table_name	text
+v_integrity_monitoring	total_records	bigint
+v_integrity_monitoring	active_mesas	bigint
+v_integrity_monitoring	free_mesas	bigint
+v_integrity_monitoring	total_acumulado	numeric
 vendedores	id_vendedor	integer
 vendedores	nombre	character varying
 vendedores	username	character varying
@@ -309,3 +395,25 @@ ventas	created_at	timestamp without time zone
 ventas	estado	character varying
 ventas	id_restaurante	integer
 ventas	id_mesa	integer
+vista_lotes_criticos	id_lote	integer
+vista_lotes_criticos	numero_lote	character varying
+vista_lotes_criticos	producto_nombre	character varying
+vista_lotes_criticos	categoria_nombre	character varying
+vista_lotes_criticos	cantidad_actual	numeric
+vista_lotes_criticos	fecha_caducidad	date
+vista_lotes_criticos	precio_compra	numeric
+vista_lotes_criticos	estado_caducidad	text
+vista_lotes_criticos	estado_stock	text
+vista_lotes_criticos	dias_vencido	integer
+vista_lotes_criticos	dias_restantes	integer
+vista_resumen_inventario	id_producto	integer
+vista_resumen_inventario	producto_nombre	character varying
+vista_resumen_inventario	categoria_nombre	character varying
+vista_resumen_inventario	stock_actual	integer
+vista_resumen_inventario	precio	numeric
+vista_resumen_inventario	stock_en_lotes	numeric
+vista_resumen_inventario	total_lotes	bigint
+vista_resumen_inventario	lotes_vencidos	bigint
+vista_resumen_inventario	lotes_por_vencer	bigint
+vista_resumen_inventario	proxima_caducidad	date
+vista_resumen_inventario	estado_stock	text

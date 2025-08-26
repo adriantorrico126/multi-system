@@ -65,6 +65,14 @@ const cocinaRoutes = require('./routes/cocinaRoutes');
 const { pool } = require('./config/database');
 startupLogger.logStep('cocinaRoutes', 'success');
 
+// Rutas de Egresos
+const egresoRoutes = require('./routes/egresoRoutes');
+startupLogger.logStep('egresoRoutes', 'success');
+const categoriaEgresoRoutes = require('./routes/categoriaEgresoRoutes');
+startupLogger.logStep('categoriaEgresoRoutes', 'success');
+const presupuestoEgresoRoutes = require('./routes/presupuestoEgresoRoutes');
+startupLogger.logStep('presupuestoEgresoRoutes', 'success');
+
 // const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
 // const pagoSuscripcionRoutes = require('./routes/pagoSuscripcionRoutes');
 
@@ -169,7 +177,13 @@ startupLogger.logStep('Ruta /api/v1/categorias-almacen', 'success');
 app.use('/api/v1/cocina', cocinaRoutes);
 startupLogger.logStep('Ruta /api/v1/cocina', 'success');
 
-
+// Rutas de Egresos
+app.use('/api/v1/egresos', egresoRoutes);
+startupLogger.logStep('Ruta /api/v1/egresos', 'success');
+app.use('/api/v1/categorias-egresos', categoriaEgresoRoutes);
+startupLogger.logStep('Ruta /api/v1/categorias-egresos', 'success');
+app.use('/api/v1/presupuestos-egresos', presupuestoEgresoRoutes);
+startupLogger.logStep('Ruta /api/v1/presupuestos-egresos', 'success');
 
 // app.use('/api/v1/metodos_pago', metodoPagoRoutes);
 // app.use('/api/v1/pagos_suscripcion', pagoSuscripcionRoutes);

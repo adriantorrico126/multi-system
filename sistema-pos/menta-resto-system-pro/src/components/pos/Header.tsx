@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, User, Clock, LogOut, Bell, DollarSign, Package, Settings } from 'lucide-react';
+import { Store, User, Clock, LogOut, Bell, DollarSign, Package, Settings, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { refreshInventory } from '@/services/api';
@@ -301,6 +301,17 @@ export const Header = React.memo(({
                 >
                   <Package className="h-4 w-4" />
                   Inventario
+                </Button>
+              )}
+              {(currentUser.role === 'admin' || currentUser.role === 'gerente') && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/egresos')}
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Egresos
                 </Button>
               )}
               {currentUser.role === 'admin' && onOpenConfig && (
