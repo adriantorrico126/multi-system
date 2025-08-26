@@ -128,7 +128,7 @@ export const PresupuestosList: React.FC<PresupuestosListProps> = ({
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Progreso:</span>
                   <span className={`font-medium px-2 py-1 rounded text-xs ${getColorEstado(estado)}`}>
-                    {(presupuesto.porcentaje_ejecutado || 0).toFixed(1)}%
+                    {Number(presupuesto.porcentaje_ejecutado || 0).toFixed(1)}%
                   </span>
                 </div>
                 <Progress 

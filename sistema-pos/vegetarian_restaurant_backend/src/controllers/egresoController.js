@@ -572,6 +572,39 @@ const egresoController = {
       logger.error('Error al obtener flujo de aprobaciones:', error);
       next(error);
     }
+  },
+
+  /**
+   * Obtener egresos pendientes de aprobación
+   * GET /api/v1/egresos/pendientes-aprobacion
+   */
+  async getPendientesAprobacion(req, res, next) {
+    try {
+      const id_restaurante = req.user.id_restaurante;
+      const { limit = 10 } = req.query;
+
+      // Filtros para egresos pendientes de aprobación
+      const filtros = {
+        estado: 'pendiente',
+        limit: parseInt(limit),
+        offset: 0
+      };
+
+      const egresos = await EgresoModel.getAllEgresos(id_restaurante, filtros);
+
+      logger.info(`Obtenidos ${egresos.length} egresos pendientes de aprobación para restaurante ${id_restaurante}`);
+
+      res.json({
+        success: true,
+        data: egresos,
+        total: egresos.length,
+        message: `${egresos.length} egresos pendientes de aprobación`
+      });
+
+    } catch (error) {
+      logger.error('Error al obtener egresos pendientes de aprobación:', error);
+      next(error);
+    }
   }
 };
 
