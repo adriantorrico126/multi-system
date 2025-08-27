@@ -21,6 +21,11 @@ app.use(express.json());
 app.use('/api', routes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// Healthcheck básico (no toca la BD)
+app.get('/health', (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 app.get('/', (req, res) => {
   res.send('Admin Console Backend funcionando');
 });
@@ -28,12 +33,17 @@ app.get('/', (req, res) => {
 // Aquí se agregarán las rutas de la consola admin
 
 (async () => {
-  await initAdminUsersTable();
-  await initRestaurantesTable();
-  await initPagosRestaurantesTable();
-  await initConfiguracionesSistemaTable();
-  await initServiciosRestauranteTable();
-  app.listen(PORT, () => {
-    console.log(`Admin Console Backend escuchando en el puerto ${PORT}`);
-  });
+  try {
+    await initAdminUsersTable();
+    await initRestaurantesTable();
+    await initPagosRestaurantesTable();
+    await initConfiguracionesSistemaTable();
+    await initServiciosRestauranteTable();
+  } catch (err) {
+    console.error('Error inicializando tablas (continuando de todos modos):', err);
+  } finally {
+    app.listen(PORT, () => {
+      console.log(`Admin Console Backend escuchando en el puerto ${PORT}`);
+    });
+  }
 })(); 
