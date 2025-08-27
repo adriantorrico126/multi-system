@@ -212,6 +212,14 @@ router.get('/',
   egresoController.getAllEgresos
 );
 
+// NOTA: Debe declararse ANTES de "/:id" para evitar colisiones
+// Obtener egresos pendientes de aprobación
+router.get('/pendientes-aprobacion', 
+  authenticateToken, 
+  authorizeRoles('admin', 'gerente'),
+  egresoController.getEgresosPendientesAprobacion
+);
+
 // Obtener un egreso por ID
 router.get('/:id', 
   authenticateToken, 
@@ -310,13 +318,6 @@ router.post('/:id/pagar',
 // =====================================================
 // RUTAS DE REPORTES Y CONSULTAS
 // =====================================================
-
-// Obtener egresos pendientes de aprobación
-router.get('/pendientes-aprobacion', 
-  authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
-  egresoController.getEgresosPendientesAprobacion
-);
 
 // Obtener resumen de egresos por categoría
 router.get('/reportes/por-categoria', 

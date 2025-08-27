@@ -12,7 +12,7 @@ const Venta = {
     
     const query = `
       INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7::int, $8, $9)
       RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante;
     `;
     const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante];

@@ -4,6 +4,19 @@ const { pool } = require('../config/database');
 const logger = require('../config/logger'); // Importar el logger
 const ModificadorModel = require('../models/modificadorModel');
 
+// Normaliza el tipo de servicio a valores canónicos
+function normalizeServiceType(input) {
+  if (!input) return 'Mesa';
+  const t = String(input).trim().toLowerCase();
+  // Variantes de mesa
+  if (t === 'mesa' || t === 'en mesa' || t === 'en_mesa') return 'Mesa';
+  // Variantes de delivery (incluye errores comunes)
+  if (t === 'delivery' || t === 'delibery' || t === 'deliveri' || t === 'envio' || t === 'a domicilio') return 'Delivery';
+  // Variantes de para llevar / takeaway
+  if (t === 'para llevar' || t === 'para_llevar' || t === 'take away' || t === 'takeaway' || t === 'llevar') return 'Para Llevar';
+  return 'Mesa';
+}
+
 // Utilidades para mapear nombres a ids
 async function getIdByField(table, field, value, id_restaurante) {
   try {
@@ -78,7 +91,8 @@ exports.createVenta = async (req, res, next) => {
     } = req.body;
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
-    logger.info('Backend: Parsed data:', { items, total, paymentMethod, cashier, branch, id_sucursal, tipo_servicio, id_mesa, mesa_numero, id_restaurante });
+    const tipoServicio = normalizeServiceType(tipo_servicio);
+    logger.info('Backend: Parsed data:', { items, total, paymentMethod, cashier, branch, id_sucursal, tipo_servicio: tipoServicio, id_mesa, mesa_numero, id_restaurante });
 
     // Requerir caja abierta para el día actual (solo para roles operativos, no mesero)
     if (!['mesero'].includes(req.user.rol)) {
@@ -134,7 +148,7 @@ exports.createVenta = async (req, res, next) => {
     // --- MOVER AQUÍ LA LÓGICA DE MESA ---
     let idMesaFinal = id_mesa;
     let mesa = null;
-    if (tipo_servicio === 'Mesa' && !id_mesa && mesa_numero && sucursal.id_sucursal) {
+    if (tipoServicio === 'Mesa' && !id_mesa && mesa_numero && sucursal.id_sucursal) {
       mesa = await Mesa.getMesaByNumero(mesa_numero, sucursal.id_sucursal, id_restaurante);
       if (!mesa) {
         logger.error(`[VENTA] No se encontró la mesa número ${mesa_numero} en la sucursal ${sucursal.id_sucursal} (restaurante ${id_restaurante})`);
@@ -292,7 +306,7 @@ exports.createVenta = async (req, res, next) => {
     let mesaActualizada = null;
 
     // --- VERIFICACIÓN DE MESA ANTES DE LA TRANSACCIÓN ---
-    if (tipo_servicio === 'Mesa' && idMesaFinal) {
+    if (tipoServicio === 'Mesa' && idMesaFinal) {
       logger.info('Backend: Verificando mesa:', idMesaFinal);
       mesa = await Mesa.getMesaById(idMesaFinal, sucursal.id_sucursal, id_restaurante);
       if (!mesa || mesa.numero == null) {
@@ -339,7 +353,7 @@ exports.createVenta = async (req, res, next) => {
       console.log('=== DEBUG: TRANSACTION STARTED ===');
       
       // Si es venta por mesa, actualizar estado de mesa
-      if (tipo_servicio === 'Mesa' && idMesaFinal) {
+      if (tipoServicio === 'Mesa' && idMesaFinal) {
         if (mesa.estado === 'libre') {
           // Si la mesa está libre, abrirla
           logger.info('Backend: Abriendo mesa:', idMesaFinal);
@@ -396,8 +410,11 @@ exports.createVenta = async (req, res, next) => {
       
       // Crear venta
       let mesaNumero = null;
-      if (tipo_servicio === 'Mesa' && mesa) {
+      if (tipoServicio === 'Mesa' && mesa) {
         mesaNumero = mesa.numero;
+      } else if (tipoServicio !== 'Mesa') {
+        // Servicios sin mesa (Delivery / Para Llevar): mesa_numero NULL
+        mesaNumero = null;
       }
       console.log('DEBUG: mesaNumero a guardar en venta:', mesaNumero);
       try {
@@ -427,14 +444,14 @@ exports.createVenta = async (req, res, next) => {
       }
 
       // Si es venta por mesa, asignar la venta a la mesa
-      if (tipo_servicio === 'Mesa' && idMesaFinal && mesaActualizada) {
+      if (tipoServicio === 'Mesa' && idMesaFinal && mesaActualizada) {
         await Mesa.asignarVentaAMesa(mesaActualizada.id_mesa, venta.id_venta, id_restaurante, client);
         // Asignar el mesero a la mesa (id_mesero_actual)
         await Mesa.asignarMeseroAMesa(mesaActualizada.id_mesa, vendedor.id_vendedor, id_restaurante, client);
       }
 
       // Si es venta por mesa, asegurar que la mesa esté en estado 'en_uso' (forzar siempre)
-      if (tipo_servicio === 'Mesa' && idMesaFinal) {
+      if (tipoServicio === 'Mesa' && idMesaFinal) {
         console.log('DEBUG (FORZAR) actualizarEstadoMesa:', { id_mesa: idMesaFinal, estado: 'en_uso', id_restaurante });
         const mesaActualizada = await Mesa.actualizarEstadoMesa(idMesaFinal, 'en_uso', id_restaurante, client);
         console.log('DEBUG resultado actualizarEstadoMesa (FORZADO):', mesaActualizada);

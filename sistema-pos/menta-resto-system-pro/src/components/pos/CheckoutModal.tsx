@@ -26,9 +26,10 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
     businessName: '',
     customerName: ''
   });
-  const [tipoPedido, setTipoPedido] = useState<'mesa' | 'llevar' | 'recoger'>(
+  const [tipoPedido, setTipoPedido] = useState<'mesa' | 'llevar' | 'delivery'>(
     mesaNumero ? 'mesa' : 'llevar'
   );
+  const lockByLlevar = !mesaNumero; // Si viene sin mesa, bloquear cambio de opción
   const [clienteInfo, setClienteInfo] = useState({
     nombre: '',
     telefono: '',
@@ -51,7 +52,7 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
       const printData: PrintData = {
         id_pedido: Date.now(), // ID temporal
         mesa: tipoPedido === 'mesa' ? `Mesa ${mesaNumero}` : 
-              tipoPedido === 'llevar' ? 'Para Llevar' : 'Para Recoger',
+              tipoPedido === 'llevar' ? 'Para Llevar' : 'Delivery',
         mesero: user?.nombre || 'N/A',
         productos: items.map(item => ({
           cantidad: item.quantity,
@@ -105,7 +106,7 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
               <Button
                 variant={tipoPedido === 'mesa' ? "default" : "outline"}
                 onClick={() => setTipoPedido('mesa')}
-                disabled={!mesaNumero}
+                disabled={!mesaNumero || lockByLlevar}
                 className="text-xs"
               >
                 Mesa {mesaNumero || 'N/A'}
@@ -118,20 +119,21 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
                 Para Llevar
               </Button>
               <Button
-                variant={tipoPedido === 'recoger' ? "default" : "outline"}
-                onClick={() => setTipoPedido('recoger')}
+                variant={tipoPedido === 'delivery' ? "default" : "outline"}
+                onClick={() => setTipoPedido('delivery')}
+                disabled={lockByLlevar}
                 className="text-xs"
               >
-                Para Recoger
+                Delivery
               </Button>
             </div>
           </div>
 
-          {/* Información del Cliente (para llevar/recoger) */}
-          {(tipoPedido === 'llevar' || tipoPedido === 'recoger') && (
+          {/* Información del Cliente (solo para Delivery). Para Llevar no solicita datos */}
+          {(tipoPedido === 'delivery') && (
             <div className="space-y-3 p-4 border rounded-lg bg-blue-50">
               <h4 className="font-semibold text-blue-800">
-                {tipoPedido === 'llevar' ? 'Información de Entrega' : 'Información de Recogida'}
+                Información de Entrega (Delivery)
               </h4>
               <div className="grid grid-cols-1 gap-3">
                 <div>
@@ -152,17 +154,15 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
                     placeholder="Número de teléfono"
                   />
                 </div>
-                {tipoPedido === 'llevar' && (
-                  <div>
-                    <Label htmlFor="clienteDireccion">Dirección de Entrega</Label>
-                    <Input
-                      id="clienteDireccion"
-                      value={clienteInfo.direccion}
-                      onChange={(e) => setClienteInfo({...clienteInfo, direccion: e.target.value})}
-                      placeholder="Dirección completa"
-                    />
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor="clienteDireccion">Dirección de Entrega</Label>
+                  <Input
+                    id="clienteDireccion"
+                    value={clienteInfo.direccion}
+                    onChange={(e) => setClienteInfo({...clienteInfo, direccion: e.target.value})}
+                    placeholder="Dirección completa"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -180,7 +180,7 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
               <div className="flex justify-between text-sm font-medium mb-2">
                 <span>Tipo:</span>
                 <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 font-medium">
-                  {tipoPedido === 'llevar' ? 'Para Llevar' : 'Para Recoger'}
+                  {tipoPedido === 'llevar' ? 'Para Llevar' : 'Delivery'}
                 </Badge>
               </div>
             )}

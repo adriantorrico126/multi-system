@@ -14,6 +14,8 @@ const KitchenView = lazy(() => import("./pages/KitchenView"));
 const ArqueoPage = lazy(() => import("./pages/ArqueoPage"));
 const InventoryPage = lazy(() => import("./pages/InventoryPage"));
 const EgresosPage = lazy(() => import("./pages/EgresosPage"));
+const CajaEgresoPage = lazy(() => import("./pages/CajaEgresoPage"));
+const InfoCajaPage = lazy(() => import("./pages/InfoCajaPage"));
 const Login = lazy(() => import("./pages/Login"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 
@@ -36,6 +38,8 @@ const App = () => (
                 <Route path="/arqueo" element={<ArqueoPage />} />
                 <Route path="/inventario" element={<InventoryPage />} />
                 <Route path="/egresos" element={<EgresosPage />} />
+                <Route path="/egresos-caja" element={<CajaEgresoPage />} />
+                <Route path="/info-caja" element={<InfoCajaPage />} />
                 <Route path="/soporte" element={<SupportPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

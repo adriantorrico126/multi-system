@@ -182,12 +182,26 @@ const Mesa = {
 
   // Crear prefactura
   async crearPrefactura(id_mesa, id_venta_principal, id_restaurante, client = pool) {
-    const query = `
+    // 1) Si ya existe una prefactura abierta para esta mesa, reutilizarla
+    const existingQuery = `
+      SELECT *
+      FROM prefacturas
+      WHERE id_mesa = $1 AND id_restaurante = $2 AND estado = 'abierta'
+      ORDER BY fecha_apertura DESC
+      LIMIT 1
+    `;
+    const existing = await client.query(existingQuery, [id_mesa, id_restaurante]);
+    if (existing.rows[0]) {
+      return existing.rows[0];
+    }
+
+    // 2) Si no existe, crear una nueva
+    const insertQuery = `
       INSERT INTO prefacturas (id_mesa, id_venta_principal, total_acumulado, estado, id_restaurante)
       VALUES ($1, $2, 0, 'abierta', $3)
       RETURNING *
     `;
-    const { rows } = await client.query(query, [id_mesa, id_venta_principal, id_restaurante]);
+    const { rows } = await client.query(insertQuery, [id_mesa, id_venta_principal, id_restaurante]);
     return rows[0];
   },
 

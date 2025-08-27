@@ -3,11 +3,7 @@
 const path = require('path');
 
 // Carga las variables de entorno desde .env al objeto process.env
-if (process.env.NODE_ENV === 'test') {
-  require('dotenv').config({ path: path.resolve(process.cwd(), '.env.test') });
-} else {
-  require('dotenv').config();
-}
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const envConfig = {
   NODE_ENV: process.env.NODE_ENV || 'development',

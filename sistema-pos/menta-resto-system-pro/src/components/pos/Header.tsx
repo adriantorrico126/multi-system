@@ -314,6 +314,28 @@ export const Header = React.memo(({
                   Egresos
                 </Button>
               )}
+              {currentUser.role === 'cajero' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/egresos-caja')}
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Egreso de Caja
+                </Button>
+              )}
+              {currentUser.role === 'cajero' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/info-caja')}
+                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Información
+                </Button>
+              )}
               {currentUser.role === 'admin' && onOpenConfig && (
                 <Button
                   variant="outline"

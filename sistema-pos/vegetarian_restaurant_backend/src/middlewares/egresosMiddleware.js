@@ -43,11 +43,11 @@ const validateEgresosPermissions = (requiredAction) => {
           break;
 
         case 'pay':
-          // Solo admin, gerente y contador pueden marcar como pagado
-          if (!['admin', 'gerente', 'contador'].includes(rol)) {
+          // Permitir también al cajero marcar como pagado (egreso de caja)
+          if (!['admin', 'gerente', 'contador', 'cajero'].includes(rol)) {
             return res.status(403).json({
               success: false,
-              message: 'Solo administradores, gerentes y contadores pueden marcar egresos como pagados'
+              message: 'No tienes permisos para marcar egresos como pagados'
             });
           }
           break;

@@ -43,11 +43,19 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
   mode,
   onSave
 }) => {
+  const getLocalISODate = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const [formData, setFormData] = useState<Partial<Egreso>>({
     concepto: '',
     descripcion: '',
     monto: 0,
-    fecha_egreso: new Date().toISOString().split('T')[0],
+    fecha_egreso: getLocalISODate(),
     id_categoria_egreso: 0,
     metodo_pago: 'efectivo',
     proveedor_nombre: '',
@@ -94,7 +102,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
         concepto: '',
         descripcion: '',
         monto: 0,
-        fecha_egreso: new Date().toISOString().split('T')[0],
+        fecha_egreso: getLocalISODate(),
         id_categoria_egreso: 0,
         metodo_pago: 'efectivo',
         proveedor_nombre: '',

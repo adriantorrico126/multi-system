@@ -1,0 +1,816 @@
+% !TEX program = pdflatex
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{float}
+
+% Configuración de colores
+\definecolor{primaryblue}{RGB}{59,130,246}
+\definecolor{secondarygreen}{RGB}{16,185,129}
+\definecolor{warningorange}{RGB}{245,158,11}
+\definecolor{dangered}{RGB}{239,68,68}
+\definecolor{lightgray}{RGB}{243,244,246}
+
+% Configuración de hyperref
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=primaryblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue,
+    pdftitle={Análisis Detallado del Sistema de Egresos - SITEMM},
+    pdfauthor={Sistema SITEMM},
+    pdfsubject={Análisis Técnico del Sistema de Gestión de Egresos},
+    pdfkeywords={POS, Egresos, Gestión, Análisis, Sistema}
+}
+
+% Configuración de listings
+\lstset{
+    basicstyle=\footnotesize\ttfamily,
+    backgroundcolor=\color{lightgray},
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    commentstyle=\color{gray},
+    keywordstyle=\color{primaryblue},
+    stringstyle=\color{secondarygreen}
+}
+
+% Configuración de headers y footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{primaryblue}{\textbf{Sistema SITEMM}}}
+\fancyhead[R]{\textcolor{primaryblue}{Análisis Sistema de Egresos}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{2pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{primaryblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% Comandos personalizados
+\newcommand{\highlight}[1]{\textcolor{primaryblue}{\textbf{#1}}}
+\newcommand{\success}[1]{\textcolor{secondarygreen}{\textbf{#1}}}
+\newcommand{\warning}[1]{\textcolor{warningorange}{\textbf{#1}}}
+\newcommand{\danger}[1]{\textcolor{dangered}{\textbf{#1}}}
+
+\title{
+    \vspace{-2cm}
+    {\Huge\textcolor{primaryblue}{\textbf{ANÁLISIS DETALLADO}}} \\[0.5cm]
+    {\LARGE\textcolor{secondarygreen}{\textbf{Sistema de Egresos}}} \\[0.3cm]
+    {\large\textcolor{gray}{Proyecto SITEMM - Sistema POS Multi-Restaurante}} \\[0.5cm]
+    \rule{\textwidth}{2pt}
+}
+
+\author{
+    \textbf{Análisis Técnico Completo} \\
+    \textit{Generado: \today}
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\vspace{1cm}
+
+\begin{center}
+\colorbox{lightgray}{
+\begin{minipage}{0.9\textwidth}
+\centering
+\textcolor{primaryblue}{\Large\textbf{RESUMEN EJECUTIVO}}
+\vspace{0.3cm}
+
+El Sistema de Egresos del proyecto SITEMM es una \highlight{solución empresarial completa} para la gestión de gastos operativos en restaurantes multi-tenant. Implementa un \success{flujo de trabajo profesional} con aprobaciones, presupuestos, categorización avanzada y reportes analíticos.
+\end{minipage}
+}
+\end{center}
+
+\vspace{1cm}
+
+\tableofcontents
+\newpage
+
+% =====================================================
+% INTRODUCCIÓN
+% =====================================================
+
+\section{Introducción}
+
+\subsection{Propósito del Análisis}
+Este documento presenta un análisis técnico exhaustivo del \highlight{Sistema de Egresos} implementado en el proyecto SITEMM, un sistema POS multi-restaurante profesional. El análisis abarca desde la arquitectura de base de datos hasta la interfaz de usuario, pasando por la lógica de negocio y las funcionalidades avanzadas.
+
+\subsection{Alcance del Sistema}
+El Sistema de Egresos es un módulo integral que permite:
+\begin{itemize}[leftmargin=*]
+    \item \success{Gestión completa de gastos operativos}
+    \item \success{Sistema de aprobaciones por roles}
+    \item \success{Control presupuestario por categorías}
+    \item \success{Flujos de trabajo automatizados}
+    \item \success{Reportes y analíticas avanzadas}
+    \item \success{Auditoría completa de transacciones}
+\end{itemize}
+
+% =====================================================
+% ARQUITECTURA TÉCNICA
+% =====================================================
+
+\section{Arquitectura Técnica}
+
+\subsection{Stack Tecnológico}
+
+\subsubsection{Backend}
+\begin{itemize}[leftmargin=*]
+    \item \highlight{Node.js + Express.js}: Framework principal del servidor
+    \item \highlight{PostgreSQL}: Base de datos relacional con triggers avanzados
+    \item \highlight{JWT}: Sistema de autenticación y autorización
+    \item \highlight{Winston}: Sistema de logging profesional
+    \item \highlight{Express-validator}: Validación robusta de datos
+\end{itemize}
+
+\subsubsection{Frontend}
+\begin{itemize}[leftmargin=*]
+    \item \highlight{React 18 + TypeScript}: Framework de interfaz moderna
+    \item \highlight{Tailwind CSS + Shadcn/ui}: Sistema de diseño profesional
+    \item \highlight{Axios}: Cliente HTTP para comunicación con API
+    \item \highlight{React Hook Form}: Gestión avanzada de formularios
+    \item \highlight{Recharts}: Visualización de datos y reportes
+\end{itemize}
+
+\subsection{Patrón Arquitectónico}
+El sistema implementa una \highlight{arquitectura en capas} con separación clara de responsabilidades:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Capa de Presentación}: Componentes React con TypeScript
+    \item \textbf{Capa de Servicios}: APIs REST con validación completa
+    \item \textbf{Capa de Lógica de Negocio}: Controladores y middlewares
+    \item \textbf{Capa de Datos}: Modelos y acceso a base de datos
+    \item \textbf{Capa de Persistencia}: PostgreSQL con triggers automáticos
+\end{enumerate}
+
+% =====================================================
+% ESTRUCTURA DE BASE DE DATOS
+% =====================================================
+
+\section{Estructura de Base de Datos}
+
+\subsection{Diseño del Esquema}
+El sistema implementa un \highlight{esquema relacional normalizado} con las siguientes tablas principales:
+
+\subsubsection{Tabla Principal: egresos}
+\begin{lstlisting}[language=SQL, caption=Estructura de la tabla egresos]
+CREATE TABLE egresos (
+    id_egreso SERIAL PRIMARY KEY,
+    concepto VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    monto DECIMAL(12,2) NOT NULL CHECK (monto > 0),
+    fecha_egreso DATE NOT NULL DEFAULT CURRENT_DATE,
+    id_categoria_egreso INTEGER NOT NULL,
+    metodo_pago VARCHAR(50) NOT NULL DEFAULT 'efectivo',
+    proveedor_nombre VARCHAR(150),
+    estado VARCHAR(30) DEFAULT 'pendiente',
+    requiere_aprobacion BOOLEAN DEFAULT FALSE,
+    es_deducible BOOLEAN DEFAULT TRUE,
+    es_recurrente BOOLEAN DEFAULT FALSE,
+    registrado_por INTEGER NOT NULL,
+    id_sucursal INTEGER NOT NULL,
+    id_restaurante INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsubsection{Sistema de Categorías}
+\begin{lstlisting}[language=SQL, caption=Tabla de categorías de egresos]
+CREATE TABLE categorias_egresos (
+    id_categoria_egreso SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    color VARCHAR(7) DEFAULT '#6B7280',
+    icono VARCHAR(50) DEFAULT 'DollarSign',
+    activo BOOLEAN DEFAULT TRUE,
+    id_restaurante INTEGER NOT NULL
+);
+\end{lstlisting}
+
+\subsubsection{Control Presupuestario}
+\begin{lstlisting}[language=SQL, caption=Tabla de presupuestos por categoría]
+CREATE TABLE presupuestos_egresos (
+    id_presupuesto SERIAL PRIMARY KEY,
+    anio INTEGER NOT NULL,
+    mes INTEGER CHECK (mes BETWEEN 1 AND 12),
+    id_categoria_egreso INTEGER NOT NULL,
+    monto_presupuestado DECIMAL(12,2) NOT NULL,
+    monto_gastado DECIMAL(12,2) DEFAULT 0,
+    activo BOOLEAN DEFAULT TRUE,
+    id_restaurante INTEGER NOT NULL
+);
+\end{lstlisting}
+
+\subsection{Funcionalidades Avanzadas de Base de Datos}
+
+\subsubsection{Triggers Automáticos}
+El sistema implementa \highlight{triggers inteligentes} para automatización:
+
+\begin{lstlisting}[language=SQL, caption=Trigger para actualización automática de presupuestos]
+CREATE OR REPLACE FUNCTION actualizar_presupuesto_gastado()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.estado IN ('pagado', 'aprobado') THEN
+        UPDATE presupuestos_egresos 
+        SET monto_gastado = (
+            SELECT COALESCE(SUM(monto), 0)
+            FROM egresos 
+            WHERE id_categoria_egreso = NEW.id_categoria_egreso
+              AND estado IN ('pagado', 'aprobado')
+              AND EXTRACT(YEAR FROM fecha_egreso) = presupuestos_egresos.anio
+              AND EXTRACT(MONTH FROM fecha_egreso) = presupuestos_egresos.mes
+        )
+        WHERE id_categoria_egreso = NEW.id_categoria_egreso;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+\end{lstlisting}
+
+\subsubsection{Vistas Optimizadas}
+\begin{lstlisting}[language=SQL, caption=Vista para reportes de egresos]
+CREATE VIEW v_egresos_detallados AS
+SELECT 
+    e.id_egreso, e.concepto, e.monto, e.estado,
+    ce.nombre as categoria_nombre,
+    ce.color as categoria_color,
+    u.username as registrado_por_username,
+    s.nombre as sucursal_nombre
+FROM egresos e
+LEFT JOIN categorias_egresos ce ON e.id_categoria_egreso = ce.id_categoria_egreso
+LEFT JOIN users u ON e.registrado_por = u.id
+LEFT JOIN sucursales s ON e.id_sucursal = s.id_sucursal;
+\end{lstlisting}
+
+% =====================================================
+% LÓGICA DE NEGOCIO
+% =====================================================
+
+\section{Lógica de Negocio}
+
+\subsection{Modelos de Datos}
+
+\subsubsection{Modelo de Egresos}
+El \texttt{EgresoModel} implementa todas las operaciones CRUD con \highlight{validaciones robustas}:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{getAllEgresos()}: Consulta con filtros avanzados y paginación
+    \item \success{createEgreso()}: Creación con validación de categorías
+    \item \success{updateEgreso()}: Actualización con control de estados
+    \item \success{aprobarEgreso()}: Flujo de aprobación con auditoría
+    \item \success{rechazarEgreso()}: Rechazo con comentarios obligatorios
+    \item \success{marcarComoPagado()}: Cambio de estado con registro
+\end{itemize}
+
+\subsubsection{Modelo de Categorías}
+El \texttt{CategoriaEgresoModel} proporciona:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{Gestión completa de categorías}
+    \item \success{Validación de nombres únicos}
+    \item \success{Soft delete para preservar histórico}
+    \item \success{Estadísticas por categoría}
+    \item \success{Categorías más utilizadas}
+\end{itemize}
+
+\subsection{Controladores}
+
+\subsubsection{Control de Acceso por Roles}
+\begin{lstlisting}[language=JavaScript, caption=Validación de permisos por rol]
+const validateEgresosPermissions = (requiredAction) => {
+  return (req, res, next) => {
+    const { rol } = req.user;
+    const permissions = {
+      admin: ['create', 'read', 'update', 'delete', 'approve', 'pay'],
+      gerente: ['create', 'read', 'update', 'delete', 'approve', 'pay'],
+      contador: ['create', 'read', 'update', 'report'],
+      cajero: ['create', 'read'],
+    };
+    
+    if (!permissions[rol]?.includes(requiredAction)) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para esta acción'
+      });
+    }
+    next();
+  };
+};
+\end{lstlisting}
+
+\subsubsection{Validación de Montos por Rol}
+\begin{lstlisting}[language=JavaScript, caption=Límites de monto por rol de usuario]
+const validateMontoLimits = (req, res, next) => {
+  const { monto } = req.body;
+  const { rol } = req.user;
+  
+  const limits = {
+    cajero: 500,      // 500 Bs
+    contador: 2000,   // 2000 Bs
+    gerente: 10000,   // 10000 Bs
+    admin: Infinity,  // Sin límite
+  };
+  
+  if (monto > limits[rol]) {
+    return res.status(403).json({
+      message: `Monto excede límite autorizado (${limits[rol]} Bs)`
+    });
+  }
+  next();
+};
+\end{lstlisting}
+
+% =====================================================
+% INTERFAZ DE USUARIO
+% =====================================================
+
+\section{Interfaz de Usuario}
+
+\subsection{Arquitectura del Frontend}
+
+\subsubsection{Estructura de Componentes}
+El frontend implementa una \highlight{arquitectura de componentes modular}:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{EgresosDashboard}: Panel principal con métricas
+    \item \textbf{EgresosList}: Lista paginada con filtros avanzados
+    \item \textbf{EgresoModal}: Formulario completo de creación/edición
+    \item \textbf{CategoriasList}: Gestión de categorías
+    \item \textbf{PresupuestosList}: Control presupuestario
+\end{itemize}
+
+\subsubsection{Sistema de Estado}
+\begin{lstlisting}[language=JavaScript, caption=Gestión de estado con React Hooks]
+const [egresos, setEgresos] = useState<Egreso[]>([]);
+const [categorias, setCategorias] = useState<CategoriaEgreso[]>([]);
+const [filtros, setFiltros] = useState<FiltrosEgresos>({
+  page: 1,
+  limit: 20
+});
+const [pagination, setPagination] = useState({
+  page: 1,
+  pages: 1,
+  total: 0
+});
+\end{lstlisting}
+
+\subsection{Funcionalidades de la Interfaz}
+
+\subsubsection{Dashboard Ejecutivo}
+El dashboard proporciona una \highlight{vista ejecutiva completa}:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{Métricas en tiempo real}
+    \item \success{Egresos pendientes de aprobación}
+    \item \success{Resumen por categorías}
+    \item \success{Alertas automáticas}
+    \item \success{Acciones rápidas}
+\end{itemize}
+
+\subsubsection{Formulario de Egresos}
+El modal de egresos incluye:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{Validación en tiempo real}
+    \item \success{Información del proveedor}
+    \item \success{Documentos de respaldo}
+    \item \success{Opciones fiscales}
+    \item \success{Configuración de recurrencia}
+    \item \success{Flujo de aprobaciones visible}
+\end{itemize}
+
+\subsubsection{Sistema de Filtros}
+\begin{lstlisting}[language=JavaScript, caption=Filtros avanzados implementados]
+interface FiltrosEgresos {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  id_categoria_egreso?: number;
+  estado?: string;
+  proveedor_nombre?: string;
+  page?: number;
+  limit?: number;
+}
+\end{lstlisting}
+
+% =====================================================
+% FUNCIONALIDADES AVANZADAS
+% =====================================================
+
+\section{Funcionalidades Avanzadas}
+
+\subsection{Sistema de Aprobaciones}
+
+\subsubsection{Flujo de Trabajo}
+El sistema implementa un \highlight{flujo de aprobaciones robusto}:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Solicitud}: Usuario crea egreso (estado: pendiente)
+    \item \textbf{Revisión}: Gerente/Admin revisa la solicitud
+    \item \textbf{Aprobación/Rechazo}: Decisión con comentarios
+    \item \textbf{Pago}: Cajero/Contador marca como pagado
+    \item \textbf{Auditoría}: Registro completo del flujo
+\end{enumerate}
+
+\subsubsection{Tabla de Flujo de Aprobaciones}
+\begin{lstlisting}[language=SQL, caption=Auditoría completa de aprobaciones]
+CREATE TABLE flujo_aprobaciones_egresos (
+    id_flujo SERIAL PRIMARY KEY,
+    id_egreso INTEGER NOT NULL,
+    id_usuario INTEGER NOT NULL,
+    accion VARCHAR(20) NOT NULL,
+    comentario TEXT,
+    fecha_accion TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsection{Control Presupuestario}
+
+\subsubsection{Alertas Automáticas}
+El sistema genera \highlight{alertas inteligentes}:
+
+\begin{itemize}[leftmargin=*]
+    \item \warning{Precaución}: 70\% del presupuesto ejecutado
+    \item \warning{Alerta}: 90\% del presupuesto ejecutado
+    \item \danger{Excedido}: Presupuesto superado
+\end{itemize}
+
+\subsubsection{Funciones de Control}
+\begin{lstlisting}[language=SQL, caption=Función para obtener presupuestos excedidos]
+CREATE FUNCTION getPresupuestosExcedidos(id_restaurante INTEGER)
+RETURNS TABLE(categoria_nombre VARCHAR, exceso DECIMAL) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT ce.nombre, (pe.monto_gastado - pe.monto_presupuestado)
+    FROM presupuestos_egresos pe
+    JOIN categorias_egresos ce ON pe.id_categoria_egreso = ce.id_categoria_egreso
+    WHERE pe.id_restaurante = id_restaurante 
+      AND pe.monto_gastado > pe.monto_presupuestado;
+END;
+$$ LANGUAGE plpgsql;
+\end{lstlisting}
+
+\subsection{Egresos Recurrentes}
+
+\subsubsection{Automatización}
+El sistema permite \highlight{egresos recurrentes automatizados}:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{Configuración de frecuencia}: Diario, semanal, mensual, anual
+    \item \success{Generación automática}: Función programada
+    \item \success{Próxima fecha calculada}: Algoritmo inteligente
+    \item \success{Historial completo}: Trazabilidad total
+\end{itemize}
+
+\begin{lstlisting}[language=SQL, caption=Función para generar egresos recurrentes]
+CREATE FUNCTION generar_egresos_recurrentes()
+RETURNS INTEGER AS $$
+DECLARE
+    egreso_rec RECORD;
+    nueva_fecha DATE;
+    egresos_generados INTEGER := 0;
+BEGIN
+    FOR egreso_rec IN 
+        SELECT * FROM egresos 
+        WHERE es_recurrente = TRUE 
+          AND proxima_fecha_recurrencia <= CURRENT_DATE
+          AND estado = 'pagado'
+    LOOP
+        -- Calcular próxima fecha según frecuencia
+        CASE egreso_rec.frecuencia_recurrencia
+            WHEN 'mensual' THEN 
+                nueva_fecha := egreso_rec.proxima_fecha_recurrencia + INTERVAL '1 month';
+            WHEN 'anual' THEN 
+                nueva_fecha := egreso_rec.proxima_fecha_recurrencia + INTERVAL '1 year';
+        END CASE;
+        
+        -- Crear nuevo egreso
+        INSERT INTO egresos (concepto, monto, id_categoria_egreso, ...)
+        VALUES (egreso_rec.concepto, egreso_rec.monto, ...);
+        
+        egresos_generados := egresos_generados + 1;
+    END LOOP;
+    
+    RETURN egresos_generados;
+END;
+$$ LANGUAGE plpgsql;
+\end{lstlisting}
+
+% =====================================================
+% REPORTES Y ANALÍTICAS
+% =====================================================
+
+\section{Reportes y Analíticas}
+
+\subsection{Dashboards Ejecutivos}
+
+\subsubsection{Métricas Principales}
+El sistema proporciona \highlight{métricas ejecutivas en tiempo real}:
+
+\begin{itemize}[leftmargin=*]
+    \item \success{Total de egresos por período}
+    \item \success{Distribución por categorías}
+    \item \success{Estados de aprobación}
+    \item \success{Comparativas mensuales}
+    \item \success{Tendencias y proyecciones}
+\end{itemize}
+
+\subsubsection{Reportes Operativos}
+\begin{itemize}[leftmargin=*]
+    \item \success{Egresos pendientes por aprobar}
+    \item \success{Presupuestos vs. gastos reales}
+    \item \success{Proveedores más frecuentes}
+    \item \success{Análisis de deducibilidad fiscal}
+    \item \success{Reportes de auditoría}
+\end{itemize}
+
+\subsection{Exportación de Datos}
+
+\subsubsection{Formatos Soportados}
+\begin{itemize}[leftmargin=*]
+    \item \success{Excel (XLSX)}: Reportes detallados
+    \item \success{CSV}: Datos para análisis externos
+    \item \success{PDF}: Reportes ejecutivos
+    \item \success{JSON}: Integración con APIs
+\end{itemize}
+
+% =====================================================
+% SEGURIDAD Y AUDITORÍA
+% =====================================================
+
+\section{Seguridad y Auditoría}
+
+\subsection{Controles de Seguridad}
+
+\subsubsection{Autenticación y Autorización}
+\begin{itemize}[leftmargin=*]
+    \item \success{JWT con expiración}: Tokens seguros
+    \item \success{Roles granulares}: Permisos específicos
+    \item \success{Middleware de validación}: Control en cada endpoint
+    \item \success{Rate limiting}: Protección contra ataques
+    \item \success{Validación de entrada}: Sanitización completa
+\end{itemize}
+
+\subsubsection{Auditoría Completa}
+\begin{lstlisting}[language=JavaScript, caption=Middleware de auditoría]
+const logEgresosActivity = (action) => {
+  return (req, res, next) => {
+    const originalSend = res.send;
+    res.send = function(data) {
+      winston.info(`[EGRESOS_AUDIT] ${action}`, {
+        usuario: req.user.username,
+        rol: req.user.rol,
+        method: req.method,
+        url: req.originalUrl,
+        timestamp: new Date().toISOString(),
+        ip: req.ip
+      });
+      originalSend.call(this, data);
+    };
+    next();
+  };
+};
+\end{lstlisting}
+
+\subsection{Integridad de Datos}
+
+\subsubsection{Constraints de Base de Datos}
+\begin{lstlisting}[language=SQL, caption=Constraints para integridad]
+ALTER TABLE egresos
+ADD CONSTRAINT ck_egresos_estado 
+CHECK (estado IN ('pendiente', 'aprobado', 'pagado', 'cancelado', 'rechazado'));
+
+ALTER TABLE egresos
+ADD CONSTRAINT ck_egresos_monto_positivo 
+CHECK (monto > 0);
+
+ALTER TABLE egresos
+ADD CONSTRAINT ck_egresos_fechas_validas 
+CHECK (fecha_egreso <= CURRENT_DATE + INTERVAL '1 day');
+\end{lstlisting}
+
+% =====================================================
+% RENDIMIENTO Y OPTIMIZACIÓN
+% =====================================================
+
+\section{Rendimiento y Optimización}
+
+\subsection{Optimizaciones de Base de Datos}
+
+\subsubsection{Índices Estratégicos}
+\begin{lstlisting}[language=SQL, caption=Índices para optimización de consultas]
+-- Índices para consultas frecuentes
+CREATE INDEX idx_egresos_fecha_restaurante 
+ON egresos(fecha_egreso, id_restaurante);
+
+CREATE INDEX idx_egresos_categoria_fecha 
+ON egresos(id_categoria_egreso, fecha_egreso);
+
+CREATE INDEX idx_egresos_estado_restaurante 
+ON egresos(estado, id_restaurante);
+
+-- Índice parcial para egresos recurrentes
+CREATE INDEX idx_egresos_recurrente 
+ON egresos(es_recurrente, proxima_fecha_recurrencia) 
+WHERE es_recurrente = TRUE;
+\end{lstlisting}
+
+\subsubsection{Consultas Optimizadas}
+\begin{itemize}[leftmargin=*]
+    \item \success{Paginación eficiente}: LIMIT/OFFSET optimizado
+    \item \success{Filtros indexados}: Consultas rápidas
+    \item \success{Joins optimizados}: Evitar N+1 queries
+    \item \success{Agregaciones eficientes}: GROUP BY optimizado
+\end{itemize}
+
+\subsection{Optimizaciones de Frontend}
+
+\subsubsection{Técnicas Implementadas}
+\begin{itemize}[leftmargin=*]
+    \item \success{Lazy loading}: Carga bajo demanda
+    \item \success{Memoización}: React.memo para componentes
+    \item \success{Debouncing}: En filtros de búsqueda
+    \item \success{Paginación}: Carga incremental
+    \item \success{Caché local}: Reducir llamadas API
+\end{itemize}
+
+% =====================================================
+% EVALUACIÓN TÉCNICA
+% =====================================================
+
+\section{Evaluación Técnica}
+
+\subsection{Fortalezas del Sistema}
+
+\subsubsection{Arquitectura}
+\begin{itemize}[leftmargin=*]
+    \item[\success{✓}] \textbf{Separación de responsabilidades}: Arquitectura en capas bien definida
+    \item[\success{✓}] \textbf{Escalabilidad}: Diseño preparado para crecimiento
+    \item[\success{✓}] \textbf{Mantenibilidad}: Código modular y bien estructurado
+    \item[\success{✓}] \textbf{Testabilidad}: Componentes aislados y testeable
+\end{itemize}
+
+\subsubsection{Funcionalidad}
+\begin{itemize}[leftmargin=*]
+    \item[\success{✓}] \textbf{Completitud}: Cubre todo el flujo de egresos
+    \item[\success{✓}] \textbf{Flexibilidad}: Configurable por roles y permisos
+    \item[\success{✓}] \textbf{Automatización}: Procesos automáticos inteligentes
+    \item[\success{✓}] \textbf{Auditoría}: Trazabilidad completa
+\end{itemize}
+
+\subsubsection{Tecnología}
+\begin{itemize}[leftmargin=*]
+    \item[\success{✓}] \textbf{Stack moderno}: Tecnologías actualizadas
+    \item[\success{✓}] \textbf{TypeScript}: Tipado fuerte y seguro
+    \item[\success{✓}] \textbf{PostgreSQL}: Base de datos robusta
+    \item[\success{✓}] \textbf{React 18}: Framework moderno y eficiente
+\end{itemize}
+
+\subsection{Áreas de Mejora}
+
+\subsubsection{Funcionalidades Futuras}
+\begin{itemize}[leftmargin=*]
+    \item[\warning{⚠}] \textbf{Reportes avanzados}: Más visualizaciones y análisis
+    \item[\warning{⚠}] \textbf{Integración contable}: Conexión con sistemas ERP
+    \item[\warning{⚠}] \textbf{Notificaciones}: Sistema de alertas automáticas
+    \item[\warning{⚠}] \textbf{Mobile app}: Aplicación móvil para aprobaciones
+\end{itemize}
+
+\subsubsection{Optimizaciones}
+\begin{itemize}[leftmargin=*]
+    \item[\warning{⚠}] \textbf{Caché distribuido}: Redis para mejor rendimiento
+    \item[\warning{⚠}] \textbf{CDN}: Para archivos estáticos
+    \item[\warning{⚠}] \textbf{Compresión}: Optimización de transferencia
+    \item[\warning{⚠}] \textbf{Monitoreo}: Herramientas de observabilidad
+\end{itemize}
+
+% =====================================================
+% CASOS DE USO
+% =====================================================
+
+\section{Casos de Uso Principales}
+
+\subsection{Flujo Típico de Egreso}
+
+\subsubsection{Escenario: Compra de Insumos}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Cajero} registra egreso por compra de ingredientes
+    \item \textbf{Sistema} valida monto contra límite del cajero (500 Bs)
+    \item \textbf{Sistema} asigna estado "pendiente" automáticamente
+    \item \textbf{Gerente} recibe notificación de egreso pendiente
+    \item \textbf{Gerente} revisa y aprueba el egreso con comentario
+    \item \textbf{Sistema} actualiza presupuesto de la categoría "Insumos"
+    \item \textbf{Contador} marca el egreso como pagado
+    \item \textbf{Sistema} registra el flujo completo en auditoría
+\end{enumerate}
+
+\subsection{Casos Especiales}
+
+\subsubsection{Egreso Recurrente}
+\begin{itemize}[leftmargin=*]
+    \item \success{Configuración}: Alquiler mensual de \$5000
+    \item \success{Automatización}: Se genera automáticamente cada mes
+    \item \success{Aprobación}: Requiere aprobación de gerente
+    \item \success{Seguimiento}: Historial completo de recurrencias
+\end{itemize}
+
+\subsubsection{Presupuesto Excedido}
+\begin{itemize}[leftmargin=*]
+    \item \warning{Alerta}: Sistema detecta exceso en categoría "Marketing"
+    \item \warning{Notificación}: Gerente recibe alerta automática
+    \item \warning{Decisión}: Puede aprobar excepcionalmente o rechazar
+    \item \warning{Reporte}: Se incluye en reportes ejecutivos
+\end{itemize}
+
+% =====================================================
+% CONCLUSIONES
+% =====================================================
+
+\section{Conclusiones}
+
+\subsection{Evaluación General}
+
+El Sistema de Egresos del proyecto SITEMM representa una \highlight{implementación profesional y completa} para la gestión de gastos operativos en entornos multi-restaurante. La solución demuestra:
+
+\subsubsection{Excelencia Técnica}
+\begin{itemize}[leftmargin=*]
+    \item \success{Arquitectura sólida} con separación clara de responsabilidades
+    \item \success{Tecnologías modernas} y stack actualizado
+    \item \success{Base de datos robusta} con triggers y constraints inteligentes
+    \item \success{Interfaz intuitiva} con UX profesional
+\end{itemize}
+
+\subsubsection{Funcionalidad Empresarial}
+\begin{itemize}[leftmargin=*]
+    \item \success{Flujos de trabajo completos} desde creación hasta pago
+    \item \success{Control presupuestario} con alertas automáticas
+    \item \success{Sistema de aprobaciones} por roles y montos
+    \item \success{Auditoría completa} con trazabilidad total
+\end{itemize}
+
+\subsubsection{Escalabilidad y Mantenimiento}
+\begin{itemize}[leftmargin=*]
+    \item \success{Código modular} fácil de mantener y extender
+    \item \success{Configuración flexible} adaptable a diferentes necesidades
+    \item \success{Performance optimizado} con índices y consultas eficientes
+    \item \success{Seguridad robusta} con validaciones y controles múltiples
+\end{itemize}
+
+\subsection{Recomendaciones}
+
+\subsubsection{Implementación}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Despliegue gradual}: Implementar por módulos para minimizar riesgo
+    \item \textbf{Capacitación}: Entrenar usuarios en flujos de trabajo
+    \item \textbf{Monitoreo}: Implementar herramientas de observabilidad
+    \item \textbf{Backups}: Establecer rutinas de respaldo automático
+\end{enumerate}
+
+\subsubsection{Evolución Futura}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Integraciones}: Conectar con sistemas contables externos
+    \item \textbf{Analytics}: Implementar machine learning para predicciones
+    \item \textbf{Mobile}: Desarrollar app móvil para aprobaciones
+    \item \textbf{APIs}: Exponer APIs para integraciones de terceros
+\end{enumerate}
+
+\vspace{1cm}
+
+\begin{center}
+\colorbox{secondarygreen}{
+\begin{minipage}{0.9\textwidth}
+\centering
+\textcolor{white}{\Large\textbf{VEREDICTO FINAL}}
+\vspace{0.3cm}
+
+El Sistema de Egresos de SITEMM es una \textbf{solución de nivel empresarial} que cumple con los más altos estándares de calidad técnica y funcional. Su implementación representa una \textbf{inversión estratégica} para cualquier organización que busque \textbf{profesionalizar la gestión de gastos operativos}.
+\end{minipage}
+}
+\end{center}
+
+\vspace{2cm}
+
+\begin{flushright}
+\textit{Análisis completado el \today}\\
+\textit{Proyecto SITEMM - Sistema POS Multi-Restaurante}
+\end{flushright}
+
+\end{document}

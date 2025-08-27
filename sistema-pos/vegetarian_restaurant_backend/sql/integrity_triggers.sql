@@ -6,14 +6,15 @@
 CREATE OR REPLACE FUNCTION validate_mesa_integrity()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Verificar que no haya mesas duplicadas por número en el mismo restaurante
+  -- Verificar que no haya mesas duplicadas por (numero, id_sucursal, id_restaurante)
   IF EXISTS (
     SELECT 1 FROM mesas 
     WHERE numero = NEW.numero 
+      AND id_sucursal = NEW.id_sucursal
       AND id_restaurante = NEW.id_restaurante 
       AND id_mesa != COALESCE(NEW.id_mesa, 0)
   ) THEN
-    RAISE EXCEPTION 'Ya existe una mesa con número % en el restaurante %', NEW.numero, NEW.id_restaurante;
+    RAISE EXCEPTION 'Ya existe una mesa con número % en la sucursal % del restaurante %', NEW.numero, NEW.id_sucursal, NEW.id_restaurante;
   END IF;
 
   -- Verificar que la sucursal pertenezca al restaurante
@@ -40,24 +41,32 @@ CREATE TRIGGER trigger_validate_mesa_integrity
 CREATE OR REPLACE FUNCTION validate_venta_integrity()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Verificar que la mesa existe y es consistente
-  IF NOT EXISTS (
-    SELECT 1 FROM mesas 
-    WHERE id_mesa = NEW.id_mesa
-  ) THEN
-    RAISE EXCEPTION 'La mesa % no existe', NEW.id_mesa;
-  END IF;
+  -- Validar mesa SOLO para ventas de tipo 'Mesa'
+  IF NEW.tipo_servicio = 'Mesa' THEN
+    -- Mesa obligatoria cuando es servicio de Mesa
+    IF NEW.id_mesa IS NULL OR NEW.mesa_numero IS NULL THEN
+      RAISE EXCEPTION 'La mesa es obligatoria para ventas de Mesa' USING ERRCODE = 'P0001';
+    END IF;
 
-  -- Verificar consistencia de datos de mesa
-  IF EXISTS (
-    SELECT 1 FROM mesas m
-    WHERE m.id_mesa = NEW.id_mesa
-      AND (m.numero != NEW.mesa_numero 
-           OR m.id_sucursal != NEW.id_sucursal 
-           OR m.id_restaurante != NEW.id_restaurante)
-  ) THEN
-    RAISE EXCEPTION 'Inconsistencia en datos de mesa: número=%, sucursal=%, restaurante=%', 
-      NEW.mesa_numero, NEW.id_sucursal, NEW.id_restaurante;
+    -- La mesa debe existir
+    IF NOT EXISTS (
+      SELECT 1 FROM mesas 
+      WHERE id_mesa = NEW.id_mesa
+    ) THEN
+      RAISE EXCEPTION 'La mesa % no existe', NEW.id_mesa;
+    END IF;
+
+    -- Consistencia de datos de mesa
+    IF EXISTS (
+      SELECT 1 FROM mesas m
+      WHERE m.id_mesa = NEW.id_mesa
+        AND (m.numero != NEW.mesa_numero 
+             OR m.id_sucursal != NEW.id_sucursal 
+             OR m.id_restaurante != NEW.id_restaurante)
+    ) THEN
+      RAISE EXCEPTION 'Inconsistencia en datos de mesa: número=%, sucursal=%, restaurante=%', 
+        NEW.mesa_numero, NEW.id_sucursal, NEW.id_restaurante;
+    END IF;
   END IF;
 
   -- Verificar que el estado sea válido
