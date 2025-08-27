@@ -1,16 +1,25 @@
 import { Pool } from 'pg';
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT) || 5432,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
-  max: 10, // Limitar conexiones desde la consola admin
-});
+// Permitir usar DATABASE_URL (DigitalOcean/Heroku style) o variables sueltas
+const connectionString = process.env.DATABASE_URL;
 
-console.log('DB ENV:', process.env.DB_USER, process.env.DB_DATABASE, process.env.DB_HOST);
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
+      max: 10,
+    })
+  : new Pool({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT) || 5432,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
+      ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
+      max: 10, // Limitar conexiones desde la consola admin
+    });
+
+console.log('DB ENV:', connectionString ? 'DATABASE_URL' : process.env.DB_USER, connectionString ? '(using URL)' : process.env.DB_DATABASE, process.env.DB_HOST);
 
 export default pool;
 
