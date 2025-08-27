@@ -7,14 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { categoriasEgresosApi, egresosApi, type CategoriaEgreso } from '@/services/egresosApi';
 import { DollarSign } from 'lucide-react';
 
 const CajaEgresoPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const role = user?.rol || '';
 
   // Restringir solo a cajero

@@ -61,13 +61,14 @@ const InfoCajaPage: React.FC = () => {
         setArqueo(arq);
 
         // Cargar egresos de hoy (solo efectivo) de la sucursal del usuario
-        const fechaInicio = `${hoyISO} 00:00:00`;
-        const fechaFin = `${hoyISO} 23:59:59`;
+        // Backend espera DATE, no timestamp
+        const fechaInicio = hoyISO;
+        const fechaFin = hoyISO;
         const filtros = {
           fecha_inicio: fechaInicio,
           fecha_fin: fechaFin,
           estado: 'pagado',
-          id_sucursal: user?.sucursal?.id,
+          id_sucursal: (user as any)?.sucursal?.id || (user as any)?.id_sucursal,
         } as any;
         const eg = await egresosApi.getAll(filtros);
         const egEfectivo = (eg.data || []).filter((e: Egreso) => (e.metodo_pago || '').toLowerCase() === 'efectivo');

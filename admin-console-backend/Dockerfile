@@ -28,11 +28,11 @@ RUN npm ci --only=production
 
 # Copiar la carpeta 'dist' generada en la etapa de 'builder'
 COPY --from=builder /usr/src/app/dist ./dist
+# Asegurar que swagger.json esté disponible en la carpeta final
+COPY --from=builder /usr/src/app/src/swagger.json ./dist/swagger.json
 
 # Exponer el puerto de la aplicación
-EXPOSE 8080
+EXPOSE 4000
 
-# --- COMANDO DE DEPURACIÓN ---
-# En lugar de iniciar la app, imprimimos las variables de entorno y esperamos.
-# Esto es temporal para ver qué variables está recibiendo el contenedor.
-CMD ["sh", "-c", "echo '--- VARIABLES DE ENTORNO DEL CONTENEDOR ---' && printenv && echo '--- FIN DE VARIABLES ---' && sleep 3600"]
+# Iniciar la aplicación en producción
+CMD ["node", "dist/index.js"]

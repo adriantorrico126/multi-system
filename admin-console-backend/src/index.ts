@@ -12,7 +12,8 @@ import swaggerDocument from './swagger.json';
 console.log('ENV TEST:', process.env.DB_USER, process.env.DB_DATABASE, process.env.DB_HOST, process.env.DB_PASSWORD, process.env.DB_PORT);
 
 const app = express();
-const PORT = process.env.ADMIN_PORT || 4000;
+// Respetar PORT (plataformas PaaS) y permitir ADMIN_PORT como override
+const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 4000);
 
 app.use(cors());
 app.use(helmet());
