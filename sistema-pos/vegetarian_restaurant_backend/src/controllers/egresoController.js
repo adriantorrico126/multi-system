@@ -1,4 +1,4 @@
-const EgresoModel = require('../models/egresoModel');
+const EgresoModel = require('../models/egresoModelSimple');
 const CategoriaEgresoModel = require('../models/categoriaEgresoModel');
 const { validationResult } = require('express-validator');
 const logger = require('../config/logger');

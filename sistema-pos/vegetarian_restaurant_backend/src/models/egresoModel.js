@@ -26,13 +26,13 @@ const EgresoModel = {
         ce.nombre as categoria_nombre,
         ce.color as categoria_color,
         ce.icono as categoria_icono,
-        v_reg.nombre as registrado_por_nombre,
-        v_apr.nombre as aprobado_por_nombre,
+        e.registrado_por as registrado_por_nombre,
+        -- aprobado_por no existe en nuestro esquema simplificado
         s.nombre as sucursal_nombre
       FROM egresos e
       LEFT JOIN categorias_egresos ce ON e.id_categoria_egreso = ce.id_categoria_egreso
-      LEFT JOIN vendedores v_reg ON e.registrado_por = v_reg.id_vendedor
-      LEFT JOIN vendedores v_apr ON e.aprobado_por = v_apr.id_vendedor
+      -- registrado_por es VARCHAR, no necesitamos JOIN
+      -- aprobado_por no existe en nuestro esquema simplificado
       LEFT JOIN sucursales s ON e.id_sucursal = s.id_sucursal
       WHERE e.id_restaurante = $1
     `;
@@ -139,15 +139,14 @@ const EgresoModel = {
         ce.nombre as categoria_nombre,
         ce.color as categoria_color,
         ce.icono as categoria_icono,
-        v_reg.nombre as registrado_por_nombre,
-        v_reg.username as registrado_por_username,
-        v_apr.nombre as aprobado_por_nombre,
-        v_apr.username as aprobado_por_username,
+        e.registrado_por as registrado_por_nombre,
+        e.registrado_por as registrado_por_username,
+        -- aprobado_por no existe en nuestro esquema simplificado
         s.nombre as sucursal_nombre
       FROM egresos e
       LEFT JOIN categorias_egresos ce ON e.id_categoria_egreso = ce.id_categoria_egreso
-      LEFT JOIN vendedores v_reg ON e.registrado_por = v_reg.id_vendedor
-      LEFT JOIN vendedores v_apr ON e.aprobado_por = v_apr.id_vendedor
+      -- registrado_por es VARCHAR, no necesitamos JOIN
+      -- aprobado_por no existe en nuestro esquema simplificado
       LEFT JOIN sucursales s ON e.id_sucursal = s.id_sucursal
       WHERE e.id_egreso = $1 AND e.id_restaurante = $2
     `;
