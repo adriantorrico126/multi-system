@@ -109,3 +109,5 @@ export function ResponsiveBanner({ children }: { children: React.ReactNode }) {
 }
 
 
+
+// Fix: Icono corregido de FaRotateLeft a FaRedo para Vercel build
