@@ -3,13 +3,16 @@
 const { Pool } = require('pg');
 const envConfig = require('./envConfig');
 
-// Pool básico, igual que en el test y el REPL
+// Pool básico con configuración SSL para DigitalOcean
 const pool = new Pool({
   user: envConfig.DB_USER,
   host: envConfig.DB_HOST,
   database: envConfig.DB_NAME,
   password: envConfig.DB_PASSWORD,
   port: envConfig.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false
+  },
   connectionTimeoutMillis: 2000 // 2 segundos
 });
 

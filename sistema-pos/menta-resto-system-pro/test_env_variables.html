@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Variables de Entorno - Frontend POS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .variable { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .url-test { margin: 20px 0; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Variables de Entorno - Frontend POS</h1>
+    
+    <div class="url-test">
+        <h3>📋 URLs de Prueba</h3>
+        <p><strong>Login URL esperada:</strong> <span id="loginUrl">Calculando...</span></p>
+        <p><strong>Backend base:</strong> <span id="backendBase">Calculando...</span></p>
+    </div>
+
+    <div class="variable info">
+        <h3>📊 Variables de Entorno Detectadas</h3>
+        <p><strong>VITE_BACKEND_URL:</strong> <span id="backendUrl">Detectando...</span></p>
+        <p><strong>VITE_PRINT_SERVER_URL:</strong> <span id="printUrl">Detectando...</span></p>
+        <p><strong>NODE_ENV:</strong> <span id="nodeEnv">Detectando...</span></p>
+    </div>
+
+    <div class="variable info">
+        <h3>🔗 URLs Construidas</h3>
+        <p><strong>Login:</strong> <span id="constructedLogin">Calculando...</span></p>
+        <p><strong>Productos:</strong> <span id="constructedProducts">Calculando...</span></p>
+        <p><strong>Dashboard:</strong> <span id="constructedDashboard">Calculando...</span></p>
+    </div>
+
+    <div class="variable info">
+        <h3>🧪 Test de Conexión</h3>
+        <button onclick="testConnection()">Probar Conexión al Backend</button>
+        <div id="connectionResult"></div>
+    </div>
+
+    <script type="module">
+        // Simular el comportamiento de Vite
+        const env = {
+            VITE_BACKEND_URL: 'https://api.forkast.vip/api/v1',
+            VITE_PRINT_SERVER_URL: 'https://print.forkast.vip',
+            NODE_ENV: 'production'
+        };
+
+        // Mostrar variables
+        document.getElementById('backendUrl').textContent = env.VITE_BACKEND_URL || 'NO DEFINIDA';
+        document.getElementById('printUrl').textContent = env.VITE_PRINT_SERVER_URL || 'NO DEFINIDA';
+        document.getElementById('nodeEnv').textContent = env.NODE_ENV || 'NO DEFINIDA';
+
+        // Construir URLs
+        const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1';
+        document.getElementById('backendBase').textContent = backendUrl;
+        document.getElementById('loginUrl').textContent = `${backendUrl}/auth/login`;
+        document.getElementById('constructedLogin').textContent = `${backendUrl}/auth/login`;
+        document.getElementById('constructedProducts').textContent = `${backendUrl}/productos`;
+        document.getElementById('constructedDashboard').textContent = `${backendUrl}/dashboard/stats`;
+
+        // Función para probar conexión
+        window.testConnection = async function() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.innerHTML = '<p>🔄 Probando conexión...</p>';
+            
+            try {
+                const response = await fetch(`${backendUrl.replace('/api/v1', '')}/health`);
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="success">✅ Conexión exitosa al backend</p>';
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error HTTP: ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error de conexión: ${error.message}</p>`;
+            }
+        };
+
+        // Verificar si las URLs están correctas
+        const isCorrect = backendUrl === 'https://api.forkast.vip/api/v1';
+        if (isCorrect) {
+            document.body.style.backgroundColor = '#f8fff8';
+        } else {
+            document.body.style.backgroundColor = '#fff8f8';
+        }
+    </script>
+</body>
+</html>
