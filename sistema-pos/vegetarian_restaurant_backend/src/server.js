@@ -31,11 +31,11 @@ try {
   // Iniciar servidor
   const PORT = process.env.PORT || 3000;
   console.log('Antes de server.listen');
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     serverLogger.logSection('Servidor iniciado');
     serverLogger.logStep(`Servidor HTTP en puerto ${PORT}`, 'success');
     serverLogger.getSummary();
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`🚀 Servidor corriendo en http://0.0.0.0:${PORT}`);
   });
   console.log('Después de server.listen');
 
