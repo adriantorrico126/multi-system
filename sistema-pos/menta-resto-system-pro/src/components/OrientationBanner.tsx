@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOrientation } from '@/hooks/use-mobile';
-import { FaMobile, FaRotateLeft, FaTablet } from 'react-icons/fa';
+import { FaMobile, FaRedo, FaTablet } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 
 interface OrientationBannerProps {
@@ -38,7 +38,7 @@ export function OrientationBanner({
             ) : (
               <FaTablet className="text-6xl text-purple-600 animate-pulse" />
             )}
-            <FaRotateLeft className="absolute -top-2 -right-2 text-2xl text-orange-500 animate-spin" />
+            <FaRedo className="absolute -top-2 -right-2 text-2xl text-orange-500 animate-spin" />
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export function OrientationBanner({
           onClick={() => window.location.reload()}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
         >
-          <FaRotateLeft className="mr-2" />
+          <FaRedo className="mr-2" />
           Recargar después de girar
         </Button>
 
