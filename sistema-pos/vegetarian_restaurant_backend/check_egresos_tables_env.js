@@ -3,11 +3,11 @@ require('dotenv').config();
 
 // Configuración de la base de datos desde variables de entorno
 const pool = new Pool({
-  host: process.env.DB_HOST || 'db-postgresql-nyc3-64232-do-user-24932517-0.j.db.ondigitalocean.com',
-  port: process.env.DB_PORT || 25060,
-  user: process.env.DB_USER || 'doadmin',
-  password: process.env.DB_PASSWORD, // Debe estar en .env
-  database: process.env.DB_DATABASE || 'defaultdb',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -17,10 +17,10 @@ async function checkEgresosTables() {
   try {
     console.log('🔍 Verificando tablas del sistema de egresos...\n');
     console.log('📊 Configuración de conexión:');
-    console.log(`   Host: ${process.env.DB_HOST || 'db-postgresql-nyc3-64232-do-user-24932517-0.j.db.ondigitalocean.com'}`);
-    console.log(`   Puerto: ${process.env.DB_PORT || 25060}`);
-    console.log(`   Usuario: ${process.env.DB_USER || 'doadmin'}`);
-    console.log(`   Base de datos: ${process.env.DB_DATABASE || 'defaultdb'}`);
+    console.log(`   Host: ${process.env.DB_HOST || 'NO CONFIGURADO'}`);
+    console.log(`   Puerto: ${process.env.DB_PORT || 'NO CONFIGURADO'}`);
+    console.log(`   Usuario: ${process.env.DB_USER || 'NO CONFIGURADO'}`);
+    console.log(`   Base de datos: ${process.env.DB_DATABASE || 'NO CONFIGURADO'}`);
     console.log(`   Contraseña: ${process.env.DB_PASSWORD ? '***CONFIGURADA***' : '❌ NO CONFIGURADA'}\n`);
     
     // Tablas que deberían existir

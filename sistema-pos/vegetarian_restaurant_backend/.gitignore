@@ -1,3 +1,67 @@
 
-# Archivos de entorno locales
+# =====================================================
+# ARCHIVOS DE ENTORNO Y CONFIGURACIÓN
+# =====================================================
+# Archivos de entorno locales (NUNCA subir a GitHub)
 .env
+.env.local
+.env.production
+.env.staging
+
+# =====================================================
+# ARCHIVOS DE BASE DE DATOS
+# =====================================================
+# Archivos de configuración de base de datos
+config_db_local.js
+config_db_production.js
+
+# =====================================================
+# ARCHIVOS TEMPORALES Y LOGS
+# =====================================================
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos temporales
+tmp/
+temp/
+.tmp/
+
+# =====================================================
+# DEPENDENCIAS Y BUILD
+# =====================================================
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+dist/
+build/
+
+# =====================================================
+# ARCHIVOS DEL SISTEMA
+# =====================================================
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================================================
+# ARCHIVOS DE CREDENCIALES
+# =====================================================
+# NUNCA subir archivos con credenciales reales
+*credentials*
+*secrets*
+*keys*
+*.pem
+*.key

@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const dbConfig = require('./config_db');
+const dbConfig = require('./config_db_local'); // Usar configuración local sin SSL
 
 // Configuración de la base de datos
 const pool = new Pool(dbConfig);
