@@ -78,6 +78,7 @@ startupLogger.logStep('presupuestoEgresoRoutes', 'success');
 
 const app = express();
 startupLogger.logSection('Configuración de middleware');
+// Configuración de CORS para producción
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
@@ -113,6 +114,38 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 }));
+
+// Middleware adicional para asegurar headers CORS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  if (origin) {
+    const allowedOrigins = [
+      'https://pos.forkast.vip',
+      'https://admin.forkast.vip',
+      'https://forkast.vip',
+      'https://www.forkast.vip'
+    ];
+    
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push(
+        'http://localhost:8080',
+        'http://localhost:5173',
+        'http://localhost:8081',
+        'http://localhost:3000'
+      );
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    }
+  }
+  
+  next();
+});
 startupLogger.logStep('CORS middleware', 'success');
 app.use(express.json());
 startupLogger.logStep('Express JSON middleware', 'success');
