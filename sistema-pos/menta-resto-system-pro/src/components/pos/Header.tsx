@@ -171,7 +171,7 @@ export const Header = React.memo(({
             
             {/* Información de Sucursal y Selector */}
             {currentBranch && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+              <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                   <Store className="h-4 w-4 text-white" />
                 </div>
@@ -212,40 +212,11 @@ export const Header = React.memo(({
             )}
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Notificaciones */}
-            <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative p-2 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200">
-                  <Bell className="h-4 w-4 text-gray-700" />
-                  {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-80 p-0 bg-white/95 backdrop-blur-md border border-gray-200/50 shadow-2xl rounded-2xl">
-                <div className="p-4 border-b border-gray-200/50 font-semibold text-gray-700 bg-gradient-to-r from-gray-50/50 to-white/50">
-                  Notificaciones del Sistema
-                </div>
-                <ul className="max-h-60 overflow-y-auto divide-y divide-gray-100">
-                  {notifications.length === 0 ? (
-                    <li className="p-6 text-center text-gray-400">
-                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                      Sin notificaciones
-                    </li>
-                  ) : notifications.map(n => (
-                    <li key={n.id} className={`p-4 text-sm ${n.read ? 'text-gray-500' : 'font-semibold text-gray-900 bg-blue-50/50'}`}>
-                      {n.text}
-                    </li>
-                  ))}
-                </ul>
-              </PopoverContent>
-            </Popover>
+          <div className="flex items-center gap-6">
+            {/* Campanita movida a la barra de pestañas del POS */}
 
             {/* Información del Usuario */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+            <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                 <User className="h-4 w-4 text-white" />
               </div>
@@ -267,7 +238,7 @@ export const Header = React.memo(({
             </div>
             
             {/* Hora Actual */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg">
+            <div className="flex items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
               <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                 <Clock className="h-4 w-4 text-white" />
               </div>
@@ -303,17 +274,7 @@ export const Header = React.memo(({
                   Inventario
                 </Button>
               )}
-              {(currentUser.role === 'admin' || currentUser.role === 'gerente') && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/egresos')}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Egresos
-                </Button>
-              )}
+              {/* Botón de Egresos movido a la barra de pestañas junto a Promociones */}
               {currentUser.role === 'cajero' && (
                 <Button
                   variant="outline"

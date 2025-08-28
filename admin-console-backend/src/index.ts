@@ -15,7 +15,40 @@ const app = express();
 // Respetar PORT (plataformas PaaS) y permitir ADMIN_PORT como override
 const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 4000);
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://pos.forkast.vip',
+      'https://admin.forkast.vip',
+      'https://forkast.vip',
+      'https://www.forkast.vip'
+    ];
+
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push(
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:4000'
+      );
+    }
+
+    if (!origin) {
+      // Permitir peticiones sin origin (Postman, curl, backend)
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log(`🚫 CORS bloqueado: ${origin}`);
+    return callback(new Error('No permitido por CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+}));
 app.use(helmet());
 app.use(express.json());
 app.use('/api', routes);

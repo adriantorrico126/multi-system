@@ -116,10 +116,11 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
   console.log('DashboardStats - ventasOrdenadas:', ventasOrdenadas);
   console.log('DashboardStats - ventasFiltradas:', ventasFiltradas);
 
-  // Calcular estadísticas
+  // Calcular estadísticas en base a datos del backend
   const totalVentas = ventasFiltradas.length;
   const totalIngresos = ventasFiltradas.reduce((sum, venta) => sum + (venta.total || 0), 0);
   const promedioVenta = totalVentas > 0 ? totalIngresos / totalVentas : 0;
+  const totalItemsVendidos = ventasFiltradas.reduce((sum, venta:any) => sum + (venta.items || []).reduce((s:any, it:any) => s + (Number(it.quantity)||0), 0), 0);
   const productosActivos = products.filter(p => p.available).length;
   const pedidosPendientes = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length;
 
@@ -165,13 +166,13 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
 
       {/* Métricas Principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Ventas de Hoy */}
+        {/* Ventas (periodo seleccionado / hoy por defecto) */}
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700 mb-1">Ventas de Hoy</p>
-                <p className="text-3xl font-bold text-green-800">{sales.length}</p>
+                <p className="text-sm font-medium text-green-700 mb-1">Ventas (período)</p>
+                <p className="text-3xl font-bold text-green-800">{totalVentas}</p>
                 <p className="text-xs text-green-600 mt-1">Transacciones realizadas</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
@@ -197,14 +198,14 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
           </CardContent>
         </Card>
 
-        {/* Productos Disponibles */}
+        {/* Productos Vendidos */}
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-700 mb-1">Productos</p>
-                <p className="text-3xl font-bold text-purple-800">{products.length}</p>
-                <p className="text-xs text-purple-600 mt-1">En catálogo</p>
+                <p className="text-sm font-medium text-purple-700 mb-1">Productos vendidos</p>
+                <p className="text-3xl font-bold text-purple-800">{totalItemsVendidos}</p>
+                <p className="text-xs text-purple-600 mt-1">Unidades en el período</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center">
                 <ShoppingCart className="h-6 w-6 text-white" />
@@ -213,14 +214,14 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
           </CardContent>
         </Card>
 
-        {/* Rendimiento */}
+        {/* Ticket promedio (rendimiento de venta) */}
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-700 mb-1">Rendimiento</p>
-                <p className="text-3xl font-bold text-orange-800">98%</p>
-                <p className="text-xs text-orange-600 mt-1">Eficiencia operativa</p>
+                <p className="text-sm font-medium text-orange-700 mb-1">Ticket promedio</p>
+                <p className="text-3xl font-bold text-orange-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
+                <p className="text-xs text-orange-600 mt-1">Promedio por transacción</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
                 <Zap className="h-6 w-6 text-white" />
@@ -261,34 +262,40 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
               </Badge>
             </div>
             <div className="space-y-3">
-              {[
-                { name: 'Hamburguesa Vegana', sales: 45, percentage: 85 },
-                { name: 'Ensalada César', sales: 32, percentage: 65 },
-                { name: 'Smoothie Verde', sales: 28, percentage: 55 },
-                { name: 'Pizza Margherita', sales: 25, percentage: 45 },
-                { name: 'Pasta Carbonara', sales: 22, percentage: 35 }
-              ].map((product, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">{index + 1}</span>
+              {(() => {
+                const mapa:any = {};
+                (ventasFiltradas || []).forEach((venta:any) => {
+                  (venta.items || []).forEach((it:any) => {
+                    const key = it.id || it.id_producto || it.name;
+                    if (!mapa[key]) mapa[key] = { name: it.name || `Producto ${key}`, units: 0 };
+                    mapa[key].units += Number(it.quantity) || 0;
+                  });
+                });
+                const top = Object.values(mapa).sort((a:any,b:any)=>b.units-a.units).slice(0,5) as any[];
+                const maxUnits = Math.max(1, ...top.map(t=>t.units));
+                return top.map((product:any, index:number) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{index + 1}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{product.name}</p>
+                        <p className="text-xs text-gray-500">{product.units} unidades</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{product.name}</p>
-                      <p className="text-xs text-gray-500">{product.sales} ventas</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full" 
+                          style={{ width: `${Math.round((product.units/maxUnits)*100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-600">{Math.round((product.units/maxUnits)*100)}%</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full" 
-                        style={{ width: `${product.percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600">{product.percentage}%</span>
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -304,7 +311,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Ingresos Totales</p>
-                <p className="text-xl font-bold text-gray-800">$12,450</p>
+                <p className="text-xl font-bold text-gray-800">{totalIngresos.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
               </div>
             </div>
           </CardContent>
@@ -317,8 +324,8 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
                 <Users className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Clientes Atendidos</p>
-                <p className="text-xl font-bold text-gray-800">156</p>
+                <p className="text-sm font-medium text-gray-600">Transacciones</p>
+                <p className="text-xl font-bold text-gray-800">{totalVentas}</p>
               </div>
             </div>
           </CardContent>
@@ -331,8 +338,8 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
                 <Clock className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Tiempo Promedio</p>
-                <p className="text-xl font-bold text-gray-800">8.5 min</p>
+                <p className="text-sm font-medium text-gray-600">Ticket Promedio</p>
+                <p className="text-xl font-bold text-gray-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
               </div>
             </div>
           </CardContent>

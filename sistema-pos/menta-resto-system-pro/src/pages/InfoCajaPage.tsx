@@ -81,6 +81,38 @@ const InfoCajaPage: React.FC = () => {
     })();
   }, []);
 
+  // Auto-refresco suave cada 60s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      (async () => {
+        try {
+          const [vts, arq] = await Promise.all([
+            getVentasOrdenadas(500),
+            getArqueoActualPOS().catch(() => null)
+          ]);
+          const now = new Date();
+          const delDia = (vts || []).filter((v: any) => {
+            const f = (v.timestamp instanceof Date ? v.timestamp : new Date(v.timestamp));
+            return !isNaN(f.getTime()) && f.getFullYear() === now.getFullYear() && f.getMonth() === now.getMonth() && f.getDate() === now.getDate();
+          });
+          setVentas(delDia);
+          setArqueo(arq);
+          const hoyISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+          const filtros: any = {
+            fecha_inicio: hoyISO,
+            fecha_fin: hoyISO,
+            estado: 'pagado',
+            id_sucursal: (user as any)?.sucursal?.id || (user as any)?.id_sucursal,
+          };
+          const eg = await egresosApi.getAll(filtros);
+          const egEfectivo = (eg.data || []).filter((e: Egreso) => (e.metodo_pago || '').toLowerCase() === 'efectivo');
+          setEgresosHoy(egEfectivo);
+        } catch {}
+      })();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [user?.sucursal?.id]);
+
   const resumen = useMemo(() => {
     const totalesPorMetodo: Record<string, { monto: number; cantidad: number }> = {};
     let totalDia = 0;
@@ -180,8 +212,12 @@ const InfoCajaPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button variant="outline" onClick={() => navigate(-1)} disabled={loading}>Volver</Button>
+            <div className="flex justify-between pt-2">
+              <div className="text-xs text-gray-500">Se actualiza cada 60s automáticamente.</div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => window.print()} disabled={loading}>Imprimir resumen</Button>
+                <Button variant="outline" onClick={() => navigate(-1)} disabled={loading}>Volver</Button>
+              </div>
             </div>
           </CardContent>
         </Card>

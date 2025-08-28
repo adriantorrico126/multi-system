@@ -93,6 +93,39 @@ const EgresoModel = {
     }
 
     const { rows } = await pool.query(query, params);
+    
+    // Debug: verificar datos enviados
+    console.log('Backend - getAllEgresos - cantidad de egresos:', rows.length);
+    if (rows.length > 0) {
+      console.log('Backend - primer egreso:', {
+        id: rows[0].id_egreso,
+        concepto: rows[0].concepto,
+        registrado_por_nombre: rows[0].registrado_por_nombre,
+        estado: rows[0].estado
+      });
+      
+      // Verificar si hay montos inválidos
+      const montosInvalidos = rows.filter(row => 
+        row.monto === null || row.monto === undefined || isNaN(Number(row.monto))
+      );
+      if (montosInvalidos.length > 0) {
+        console.warn('Montos inválidos encontrados:', montosInvalidos.length);
+      }
+      
+      // Verificar campos registrado_por_nombre
+      const sinNombreCajero = rows.filter(row => 
+        !row.registrado_por_nombre || row.registrado_por_nombre === null
+      );
+      if (sinNombreCajero.length > 0) {
+        console.warn('Egresos sin nombre de cajero:', sinNombreCajero.length);
+        console.log('Backend - ejemplos de egresos sin cajero:', sinNombreCajero.slice(0, 3).map(r => ({
+          id: r.id_egreso,
+          registrado_por: r.registrado_por,
+          registrado_por_nombre: r.registrado_por_nombre
+        })));
+      }
+    }
+    
     return rows;
   },
 
@@ -153,6 +186,13 @@ const EgresoModel = {
       id_sucursal
     } = egresoData;
 
+    // Debug: verificar datos recibidos
+    console.log('Datos recibidos en createEgreso:', {
+      estado: estado,
+      requiere_aprobacion: requiere_aprobacion,
+      registrado_por: registrado_por
+    });
+
     const client = await pool.connect();
 
     try {
@@ -181,7 +221,8 @@ const EgresoModel = {
         id_categoria_egreso, metodo_pago || 'efectivo', proveedor_nombre,
         proveedor_documento, proveedor_telefono, proveedor_email,
         numero_factura, numero_recibo, numero_comprobante,
-        estado || 'pendiente', requiere_aprobacion || false, es_deducible !== false,
+        estado, // Usar el estado enviado desde el frontend (sin fallback)
+        requiere_aprobacion || false, es_deducible !== false,
         numero_autorizacion_fiscal, codigo_control,
         es_recurrente || false, frecuencia_recurrencia, proxima_fecha_recurrencia,
         registrado_por, id_sucursal, id_restaurante
@@ -189,11 +230,15 @@ const EgresoModel = {
 
       const nuevoEgreso = rows[0];
 
-      // Registrar en el flujo de aprobaciones
+      // Para egresos de cajero (estado 'pagado'), registrar como 'aprobado' automáticamente
+      // Para otros egresos, registrar como 'solicitado'
+      const accion = (estado === 'pagado') ? 'aprobado' : 'solicitado';
+      const comentario = (estado === 'pagado') ? 'Egreso de caja aprobado automáticamente' : 'Egreso registrado';
+      
       await client.query(`
         INSERT INTO flujo_aprobaciones_egresos (id_egreso, id_vendedor, accion, comentario)
-        VALUES ($1, $2, 'solicitado', 'Egreso registrado')
-      `, [nuevoEgreso.id_egreso, registrado_por]);
+        VALUES ($1, $2, $3, $4)
+      `, [nuevoEgreso.id_egreso, registrado_por, accion, comentario]);
 
       await client.query('COMMIT');
       return nuevoEgreso;
@@ -299,24 +344,54 @@ const EgresoModel = {
     try {
       await client.query('BEGIN');
 
-      // Actualizar el egreso
-      const updateQuery = `
-        UPDATE egresos 
-        SET estado = 'aprobado', 
-            aprobado_por = $1, 
-            fecha_aprobacion = NOW(),
-            comentario_aprobacion = $2,
-            updated_at = NOW()
-        WHERE id_egreso = $3 AND id_restaurante = $4 AND estado = 'pendiente'
-        RETURNING *
+      // Primero verificar el estado actual del egreso
+      const checkQuery = `
+        SELECT estado FROM egresos 
+        WHERE id_egreso = $1 AND id_restaurante = $2
       `;
+      
+      const { rows: checkRows } = await client.query(checkQuery, [id_egreso, id_restaurante]);
+      
+      if (checkRows.length === 0) {
+        throw new Error('Egreso no encontrado');
+      }
 
-      const { rows } = await client.query(updateQuery, [
-        id_vendedor_aprobador, comentario, id_egreso, id_restaurante
-      ]);
+      const estadoActual = checkRows[0].estado;
+      let egresoActualizado = null;
 
-      if (rows.length === 0) {
-        throw new Error('Egreso no encontrado o no se puede aprobar');
+      // Si está pendiente, cambiar a aprobado
+      if (estadoActual === 'pendiente') {
+        const updateQuery = `
+          UPDATE egresos 
+          SET estado = 'aprobado', 
+              aprobado_por = $1, 
+              fecha_aprobacion = NOW(),
+              comentario_aprobacion = $2,
+              updated_at = NOW()
+          WHERE id_egreso = $3 AND id_restaurante = $4
+          RETURNING *
+        `;
+
+        const { rows } = await client.query(updateQuery, [
+          id_vendedor_aprobador, comentario, id_egreso, id_restaurante
+        ]);
+        
+        egresoActualizado = rows[0];
+      }
+      // Si ya está pagado, solo registrar la aprobación administrativa
+      else if (estadoActual === 'pagado') {
+        // No cambiar el estado, solo obtener el egreso actual
+        const getQuery = `
+          SELECT * FROM egresos 
+          WHERE id_egreso = $1 AND id_restaurante = $2
+        `;
+        
+        const { rows } = await client.query(getQuery, [id_egreso, id_restaurante]);
+        egresoActualizado = rows[0];
+      }
+      // Si está en otro estado, no permitir aprobación
+      else {
+        throw new Error(`No se puede aprobar un egreso en estado '${estadoActual}'`);
       }
 
       // Registrar en el flujo de aprobaciones
@@ -326,7 +401,7 @@ const EgresoModel = {
       `, [id_egreso, id_vendedor_aprobador, comentario]);
 
       await client.query('COMMIT');
-      return rows[0];
+      return egresoActualizado;
 
     } catch (error) {
       await client.query('ROLLBACK');
@@ -345,20 +420,50 @@ const EgresoModel = {
     try {
       await client.query('BEGIN');
 
-      // Actualizar el egreso
-      const updateQuery = `
-        UPDATE egresos 
-        SET estado = 'rechazado',
-            comentario_aprobacion = $1,
-            updated_at = NOW()
-        WHERE id_egreso = $2 AND id_restaurante = $3 AND estado = 'pendiente'
-        RETURNING *
+      // Primero verificar el estado actual del egreso
+      const checkQuery = `
+        SELECT estado FROM egresos 
+        WHERE id_egreso = $1 AND id_restaurante = $2
       `;
+      
+      const { rows: checkRows } = await client.query(checkQuery, [id_egreso, id_restaurante]);
+      
+      if (checkRows.length === 0) {
+        throw new Error('Egreso no encontrado');
+      }
 
-      const { rows } = await client.query(updateQuery, [comentario, id_egreso, id_restaurante]);
+      const estadoActual = checkRows[0].estado;
+      let egresoActualizado = null;
 
-      if (rows.length === 0) {
-        throw new Error('Egreso no encontrado o no se puede rechazar');
+      // Si está pendiente, cambiar a rechazado
+      if (estadoActual === 'pendiente') {
+        const updateQuery = `
+          UPDATE egresos 
+          SET estado = 'rechazado',
+              comentario_aprobacion = $1,
+              updated_at = NOW()
+          WHERE id_egreso = $2 AND id_restaurante = $3
+          RETURNING *
+        `;
+
+        const { rows } = await client.query(updateQuery, [comentario, id_egreso, id_restaurante]);
+        
+        egresoActualizado = rows[0];
+      }
+      // Si ya está pagado, solo registrar el rechazo administrativo
+      else if (estadoActual === 'pagado') {
+        // No cambiar el estado, solo obtener el egreso actual
+        const getQuery = `
+          SELECT * FROM egresos 
+          WHERE id_egreso = $1 AND id_restaurante = $2
+        `;
+        
+        const { rows } = await client.query(getQuery, [id_egreso, id_restaurante]);
+        egresoActualizado = rows[0];
+      }
+      // Si está en otro estado, no permitir rechazo
+      else {
+        throw new Error(`No se puede rechazar un egreso en estado '${estadoActual}'`);
       }
 
       // Registrar en el flujo de aprobaciones
@@ -368,7 +473,7 @@ const EgresoModel = {
       `, [id_egreso, id_vendedor_rechazador, comentario]);
 
       await client.query('COMMIT');
-      return rows[0];
+      return egresoActualizado;
 
     } catch (error) {
       await client.query('ROLLBACK');

@@ -28,7 +28,8 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 
 // Importar APIs y tipos
@@ -47,6 +48,7 @@ import {
 import { EgresosList } from '../components/egresos/EgresosList';
 import { EgresoModal } from '../components/egresos/EgresoModal';
 import { CategoriasList } from '../components/egresos/CategoriasList';
+import { EgresosInfo } from '../components/egresos/EgresosInfo';
 import {
   CategoriaModal,
   PresupuestosList,
@@ -60,7 +62,7 @@ const EgresosPage: React.FC = () => {
   const userRole = user?.rol || '';
 
   // Estados principales
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes' | 'informacion'>('dashboard');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,7 +120,7 @@ const EgresosPage: React.FC = () => {
 
   useEffect(() => {
     // Verificar permisos
-    if (!['admin', 'gerente', 'cajero'].includes(userRole)) {
+    if (!['admin', 'gerente', 'cajero', 'contador'].includes(userRole)) {
       navigate('/');
       return;
     }
@@ -134,6 +136,16 @@ const EgresosPage: React.FC = () => {
     }
   }, [filtros, activeTab]);
 
+  useEffect(() => {
+    // Cargar egresos cuando se active la pestaña de información
+    console.log('EgresosPage - useEffect - activeTab:', activeTab, 'egresos.length:', egresos.length);
+    
+    if (activeTab === 'informacion' && egresos.length === 0) {
+      console.log('EgresosPage - useEffect - cargando egresos para pestaña información');
+      loadEgresos();
+    }
+  }, [activeTab, egresos.length]);
+
   // =====================================================
   // FUNCIONES DE CARGA DE DATOS
   // =====================================================
@@ -148,10 +160,19 @@ const EgresosPage: React.FC = () => {
         loadEgresosPendientes(),
         activeTab === 'dashboard' && loadDashboardData()
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading initial data:', err);
-      setError('Error al cargar los datos iniciales');
-      toast.error('Error al cargar los datos');
+      
+      // Mostrar mensaje de error más específico
+      let errorMessage = 'Error al cargar los datos iniciales';
+      if (err.response?.data?.message) {
+        errorMessage = `Error: ${err.response.data.message}`;
+      } else if (err.message) {
+        errorMessage = `Error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -160,12 +181,30 @@ const EgresosPage: React.FC = () => {
   const loadEgresos = async () => {
     try {
       setLoading(true);
+      console.log('EgresosPage - loadEgresos iniciado con filtros:', filtros);
+      
       const response = await egresosApi.getAll(filtros);
+      console.log('EgresosPage - respuesta de la API:', response);
+      console.log('EgresosPage - cantidad de egresos recibidos:', response.data?.length || 0);
+      
+      if (response.data && response.data.length > 0) {
+        console.log('EgresosPage - primer egreso:', response.data[0]);
+        console.log('EgresosPage - registrado_por_nombre del primer egreso:', response.data[0].registrado_por_nombre);
+      }
+      
       setEgresos(response.data);
       setPagination(response.pagination);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading egresos:', err);
-      toast.error('Error al cargar los egresos');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error al cargar egresos: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error al cargar egresos: ${err.message}`);
+      } else {
+        toast.error('Error al cargar los egresos');
+      }
     } finally {
       setLoading(false);
     }
@@ -175,9 +214,17 @@ const EgresosPage: React.FC = () => {
     try {
       const data = await categoriasEgresosApi.getAll();
       setCategorias(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading categorias:', err);
-      toast.error('Error al cargar las categorías');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error al cargar categorías: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error al cargar categorías: ${err.message}`);
+      } else {
+        toast.error('Error al cargar las categorías');
+      }
     }
   };
 
@@ -186,9 +233,17 @@ const EgresosPage: React.FC = () => {
       const currentYear = new Date().getFullYear();
       const data = await presupuestosApi.getAll({ anio: currentYear });
       setPresupuestos(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading presupuestos:', err);
-      toast.error('Error al cargar los presupuestos');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error al cargar presupuestos: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error al cargar presupuestos: ${err.message}`);
+      } else {
+        toast.error('Error al cargar los presupuestos');
+      }
     }
   };
 
@@ -198,8 +253,17 @@ const EgresosPage: React.FC = () => {
         const data = await egresosApi.getPendientesAprobacion();
         setEgresosPendientes(data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading egresos pendientes:', err);
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error al cargar egresos pendientes: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error al cargar egresos pendientes: ${err.message}`);
+      } else {
+        toast.error('Error al cargar los egresos pendientes');
+      }
     }
   };
 
@@ -271,25 +335,55 @@ const EgresosPage: React.FC = () => {
 
   const handleAprobarEgreso = async (id: number, comentario?: string) => {
     try {
-      await egresosApi.aprobar(id, comentario);
-      toast.success('Egreso aprobado exitosamente');
+      const egresoAprobado = await egresosApi.aprobar(id, comentario);
+      
+      // Verificar si el estado cambió o solo se registró la aprobación
+      if (egresoAprobado.estado === 'aprobado') {
+        toast.success('Egreso aprobado exitosamente');
+      } else if (egresoAprobado.estado === 'pagado') {
+        toast.success('Aprobación administrativa registrada para egreso ya pagado');
+      }
+      
       loadEgresos();
       loadEgresosPendientes();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error approving egreso:', err);
-      toast.error('Error al aprobar el egreso');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error: ${err.message}`);
+      } else {
+        toast.error('Error al aprobar el egreso');
+      }
     }
   };
 
   const handleRechazarEgreso = async (id: number, comentario: string) => {
     try {
-      await egresosApi.rechazar(id, comentario);
-      toast.success('Egreso rechazado');
+      const egresoRechazado = await egresosApi.rechazar(id, comentario);
+      
+      // Verificar si el estado cambió o solo se registró el rechazo
+      if (egresoRechazado.estado === 'rechazado') {
+        toast.success('Egreso rechazado exitosamente');
+      } else if (egresoRechazado.estado === 'pagado') {
+        toast.success('Rechazo administrativo registrado para egreso ya pagado');
+      }
+      
       loadEgresos();
       loadEgresosPendientes();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error rejecting egreso:', err);
-      toast.error('Error al rechazar el egreso');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error: ${err.message}`);
+      } else {
+        toast.error('Error al rechazar el egreso');
+      }
     }
   };
 
@@ -299,9 +393,17 @@ const EgresosPage: React.FC = () => {
       toast.success('Egreso marcado como pagado');
       loadEgresos();
       loadEgresosPendientes();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error marking egreso as paid:', err);
-      toast.error('Error al marcar el egreso como pagado');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error: ${err.message}`);
+      } else {
+        toast.error('Error al marcar el egreso como pagado');
+      }
     }
   };
 
@@ -311,9 +413,17 @@ const EgresosPage: React.FC = () => {
       toast.success('Egreso cancelado');
       loadEgresos();
       loadEgresosPendientes();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting egreso:', err);
-      toast.error('Error al cancelar el egreso');
+      
+      // Mostrar mensaje de error más específico
+      if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else if (err.message) {
+        toast.error(`Error: ${err.message}`);
+      } else {
+        toast.error('Error al cancelar el egreso');
+      }
     }
   };
 
@@ -322,21 +432,30 @@ const EgresosPage: React.FC = () => {
   // =====================================================
 
   const handleTabChange = (tab: string) => {
+    console.log('EgresosPage - handleTabChange - cambiando a pestaña:', tab);
     setActiveTab(tab as any);
     
     // Cargar datos específicos según la pestaña
     switch (tab) {
       case 'egresos':
+        console.log('EgresosPage - cargando egresos para pestaña egresos');
         loadEgresos();
         break;
       case 'categorias':
+        console.log('EgresosPage - cargando categorías');
         loadCategorias();
         break;
       case 'presupuestos':
+        console.log('EgresosPage - cargando presupuestos');
         loadPresupuestos();
         break;
       case 'dashboard':
+        console.log('EgresosPage - cargando dashboard');
         loadDashboardData();
+        break;
+      case 'informacion':
+        console.log('EgresosPage - cargando egresos para pestaña información');
+        loadEgresos(); // Cargar egresos para mostrar en la información
         break;
     }
   };
@@ -345,7 +464,7 @@ const EgresosPage: React.FC = () => {
   // VERIFICACIÓN DE PERMISOS
   // =====================================================
 
-  if (!['admin', 'gerente', 'cajero'].includes(userRole)) {
+  if (!['admin', 'gerente', 'cajero', 'contador'].includes(userRole)) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-10">
         <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
@@ -416,7 +535,7 @@ const EgresosPage: React.FC = () => {
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Dashboard
@@ -438,11 +557,15 @@ const EgresosPage: React.FC = () => {
             <PieChart className="h-4 w-4" />
             Presupuestos
           </TabsTrigger>
-          <TabsTrigger value="reportes" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Reportes
-          </TabsTrigger>
-        </TabsList>
+                     <TabsTrigger value="reportes" className="flex items-center gap-2">
+             <Activity className="h-4 w-4" />
+             Reportes
+           </TabsTrigger>
+           <TabsTrigger value="informacion" className="flex items-center gap-2">
+             <FileText className="h-4 w-4" />
+             Información
+           </TabsTrigger>
+         </TabsList>
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="mt-6">
@@ -512,8 +635,17 @@ const EgresosPage: React.FC = () => {
                   await categoriasEgresosApi.delete(id);
                   toast.success('Categoría eliminada');
                   loadCategorias();
-                } catch (err) {
-                  toast.error('Error al eliminar la categoría');
+                } catch (err: any) {
+                  console.error('Error deleting categoria:', err);
+                  
+                  // Mostrar mensaje de error más específico
+                  if (err.response?.data?.message) {
+                    toast.error(`Error: ${err.response.data.message}`);
+                  } else if (err.message) {
+                    toast.error(`Error: ${err.message}`);
+                  } else {
+                    toast.error('Error al eliminar la categoría');
+                  }
                 }
               }}
             />
@@ -544,29 +676,62 @@ const EgresosPage: React.FC = () => {
                   await presupuestosApi.delete(id);
                   toast.success('Presupuesto eliminado');
                   loadPresupuestos();
-                } catch (err) {
-                  toast.error('Error al eliminar el presupuesto');
+                } catch (err: any) {
+                  console.error('Error deleting presupuesto:', err);
+                  
+                  // Mostrar mensaje de error más específico
+                  if (err.response?.data?.message) {
+                    toast.error(`Error: ${err.response.data.message}`);
+                  } else if (err.message) {
+                    toast.error(`Error: ${err.message}`);
+                  } else {
+                    toast.error('Error al eliminar el presupuesto');
+                  }
                 }
               }}
             />
           </div>
         </TabsContent>
 
-        {/* Reportes Tab */}
-        <TabsContent value="reportes" className="mt-6">
-          <Card>
-            <CardContent className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Reportes en Desarrollo
-              </h3>
-              <p className="text-gray-600">
-                Los reportes y análisis estarán disponibles próximamente.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                 {/* Reportes Tab */}
+         <TabsContent value="reportes" className="mt-6">
+           <Card>
+             <CardContent className="text-center py-8">
+               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+               <h3 className="text-lg font-medium text-gray-900 mb-2">
+                 Reportes en Desarrollo
+               </h3>
+               <p className="text-gray-600">
+                 Los reportes y análisis estarán disponibles próximamente.
+               </p>
+             </CardContent>
+           </Card>
+         </TabsContent>
+
+         {/* Información Tab */}
+         <TabsContent value="informacion" className="mt-6">
+           <div className="space-y-4">
+             <div className="flex justify-between items-center">
+               <div>
+                 <h2 className="text-xl font-semibold">Información de Egresos</h2>
+                 <p className="text-sm text-gray-500">
+                   Resumen detallado de egresos por cajero y estadísticas generales
+                 </p>
+               </div>
+               <Button 
+                 onClick={loadEgresos} 
+                 variant="outline" 
+                 size="sm"
+                 disabled={loading}
+               >
+                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                 {loading ? 'Actualizando...' : 'Actualizar'}
+               </Button>
+             </div>
+             <EgresosInfo egresos={egresos} userRole={userRole} />
+           </div>
+         </TabsContent>
+       </Tabs>
 
       {/* Modales */}
       <EgresoModal
@@ -587,8 +752,17 @@ const EgresosPage: React.FC = () => {
             setEgresoModal({ ...egresoModal, open: false });
             loadEgresos();
             loadEgresosPendientes();
-          } catch (err) {
-            toast.error('Error al guardar el egreso');
+          } catch (err: any) {
+            console.error('Error saving egreso:', err);
+            
+            // Mostrar mensaje de error más específico
+            if (err.response?.data?.message) {
+              toast.error(`Error: ${err.response.data.message}`);
+            } else if (err.message) {
+              toast.error(`Error: ${err.message}`);
+            } else {
+              toast.error('Error al guardar el egreso');
+            }
           }
         }}
       />
@@ -609,8 +783,17 @@ const EgresosPage: React.FC = () => {
             }
             setCategoriaModal({ ...categoriaModal, open: false });
             loadCategorias();
-          } catch (err) {
-            toast.error('Error al guardar la categoría');
+          } catch (err: any) {
+            console.error('Error saving categoria:', err);
+            
+            // Mostrar mensaje de error más específico
+            if (err.response?.data?.message) {
+              toast.error(`Error: ${err.response.data.message}`);
+            } else if (err.message) {
+              toast.error(`Error: ${err.message}`);
+            } else {
+              toast.error('Error al guardar la categoría');
+            }
           }
         }}
       />
@@ -632,8 +815,17 @@ const EgresosPage: React.FC = () => {
             }
             setPresupuestoModal({ ...presupuestoModal, open: false });
             loadPresupuestos();
-          } catch (err) {
-            toast.error('Error al guardar el presupuesto');
+          } catch (err: any) {
+            console.error('Error saving presupuesto:', err);
+            
+            // Mostrar mensaje de error más específico
+            if (err.response?.data?.message) {
+              toast.error(`Error: ${err.response.data.message}`);
+            } else if (err.message) {
+              toast.error(`Error: ${err.message}`);
+            } else {
+              toast.error('Error al guardar el presupuesto');
+            }
           }
         }}
       />

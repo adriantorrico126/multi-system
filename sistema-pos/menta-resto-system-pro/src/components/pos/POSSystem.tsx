@@ -47,11 +47,12 @@ import {
   Plus,
   CheckCircle,
   Trash2,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS, cerrarArqueoPOS, getArqueoData } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { KitchenView } from '../../pages/KitchenView';
@@ -66,7 +67,8 @@ import { PedidosMeseroCajero } from './PedidosMeseroCajero';
 import { PromocionManagement } from '../promociones/PromocionManagement';
 import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
-// import { useNavigate } from 'react-router-dom';
+import { egresosApi } from '@/services/egresosApi';
+import { useNavigate } from 'react-router-dom';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -99,13 +101,19 @@ export function POSSystem() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const unreadCount = notifications.filter((n: any) => !n.read).length;
   const [now, setNow] = React.useState(dayjs());
   const [config, setConfig] = React.useState<any>({});
   const [configOpen, setConfigOpen] = useState(false);
   const [draftConfig, setDraftConfig] = useState<any>({});
   const [arqueoActual, setArqueoActual] = useState<any>(null);
   const [showArqueoModal, setShowArqueoModal] = useState(false);
+  const [showCerrarCajaModal, setShowCerrarCajaModal] = useState(false);
   const [montoApertura, setMontoApertura] = useState<string>('');
+  const [montoCierre, setMontoCierre] = useState<string>('');
+  const [resumenCaja, setResumenCaja] = useState<any>(null);
   const [showCajaBanner, setShowCajaBanner] = useState<boolean>(true);
   const [isClosingBanner, setIsClosingBanner] = useState<boolean>(false);
   
@@ -128,13 +136,52 @@ export function POSSystem() {
   }, []);
 
   // Verificar si hay caja abierta al iniciar
+  // Notificaciones de stock bajo en tiempo real (similar al Header)
+  const isMountedRef = React.useRef(true);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  React.useEffect(() => {
+    if (!['admin','cocinero'].includes(user.rol)) return;
+    async function checkLowStock() {
+      if (!isMountedRef.current) return;
+      try {
+        const inventory = await refreshInventory();
+        const lowStock = (inventory || []).filter((p:any) => p.stock_actual !== undefined && p.stock_actual <= 5);
+        setNotifications((prev:any[]) => {
+          let next = [...prev];
+          lowStock.forEach((p:any) => {
+            const stableId = p.id ? String(p.id) : p.nombre;
+            const notifId = `stock-bajo-${stableId}`;
+            if (!next.some(n => n.id === notifId)) {
+              next = [{ id: notifId, text: `Stock bajo en producto: ${p.nombre} (${p.stock_actual})`, read: false }, ...next];
+            }
+          });
+          return next;
+        });
+      } catch {}
+    }
+    checkLowStock();
+    const interval = setInterval(checkLowStock, 10000);
+    return () => clearInterval(interval);
+  }, [user.rol]);
   React.useEffect(() => {
     (async () => {
       try {
         const arqueo = await getArqueoActualPOS();
         if (arqueo) {
           setArqueoActual(arqueo);
-          setShowCajaBanner(true);
+          // Verificar si el usuario ya cerró el banner manualmente
+          try {
+            const bannerClosed = sessionStorage.getItem('cajaBannerClosed');
+            if (!bannerClosed) {
+              setShowCajaBanner(true);
+            }
+          } catch {
+            setShowCajaBanner(true);
+          }
         }
       } catch (error) {
         console.error('Error al verificar arqueo:', error);
@@ -142,12 +189,55 @@ export function POSSystem() {
     })();
   }, []);
 
+  // Refresco automático del estado de caja (detecta autocierre diario en backend)
+  React.useEffect(() => {
+    let isMounted = true;
+    async function refreshArqueo() {
+      try {
+        const actual = await getArqueoActualPOS();
+        if (!isMounted) return;
+        if (!actual) {
+          if (arqueoActual) {
+            setArqueoActual(null);
+            setShowCajaBanner(false);
+          }
+        } else {
+          setArqueoActual(actual);
+          // Solo mostrar el banner si no se ha cerrado manualmente y es una nueva apertura
+          if (!showCajaBanner && arqueoActual === null) {
+            try {
+              const bannerClosed = sessionStorage.getItem('cajaBannerClosed');
+              if (!bannerClosed) {
+                setShowCajaBanner(true);
+              }
+            } catch {
+              setShowCajaBanner(true);
+            }
+          }
+        }
+      } catch (_) {
+        // silencioso
+      }
+    }
+    // chequeo inicial + polling
+    refreshArqueo();
+    const interval = setInterval(refreshArqueo, 60_000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [arqueoActual, showCajaBanner]);
+
   // Función para cerrar el banner con animación
   const handleCloseBanner = () => {
     setIsClosingBanner(true);
     setTimeout(() => {
       setShowCajaBanner(false);
       setIsClosingBanner(false);
+      // Persistir que el usuario cerró el banner manualmente
+      try {
+        sessionStorage.setItem('cajaBannerClosed', 'true');
+      } catch {}
     }, 300); // Tiempo de la animación
   };
 
@@ -174,10 +264,69 @@ export function POSSystem() {
       setShowArqueoModal(false);
       setMontoApertura(''); // Limpiar el input
       setShowCajaBanner(true); // Mostrar el banner
-      try { sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
+      // Resetear el estado del banner cerrado
+      try { 
+        sessionStorage.removeItem('cajaBannerClosed');
+        sessionStorage.setItem('cajaAutoPromptDone', '1'); 
+      } catch {}
       toast({ title: 'Caja abierta', description: 'Apertura registrada.' });
     } catch (e:any) {
       toast({ title: 'Error', description: e.message || 'No se pudo abrir la caja.' });
+    }
+  };
+
+  // Preparar resumen y abrir modal de cierre
+  const handlePrepararCierre = async () => {
+    try {
+      if (!arqueoActual) {
+        toast({ title: 'Caja no abierta', description: 'No hay caja abierta para cerrar.' });
+        return;
+      }
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      const data = await getArqueoData(hoyISO, hoyISO, selectedBranchId || user.sucursal?.id);
+      const ingresosEfectivo = Number((data?.dailyCashFlow?.[0]?.ingresos_efectivo) || 0);
+      // Traer egresos en efectivo del día y sucursal
+      const filtros: any = {
+        fecha_inicio: hoyISO,
+        fecha_fin: hoyISO,
+        estado: 'pagado',
+        id_sucursal: selectedBranchId || user.sucursal?.id,
+      };
+      const eg = await egresosApi.getAll(filtros);
+      const egEfectivo = (eg.data || []).filter((e: any) => (e.metodo_pago || '').toLowerCase() === 'efectivo');
+      const totalEgresosEfectivo = egEfectivo.reduce((acc: number, e: any) => acc + (Number(e.monto) || 0), 0);
+
+      const montoInicial = Number(arqueoActual?.monto_inicial || 0);
+      const efectivoEsperado = montoInicial + ingresosEfectivo - totalEgresosEfectivo;
+      setResumenCaja({ montoInicial, ingresosEfectivo, totalEgresosEfectivo, efectivoEsperado });
+      setMontoCierre(String(efectivoEsperado.toFixed(2)));
+      setShowCerrarCajaModal(true);
+    } catch (e: any) {
+      console.error('Error preparando cierre de caja:', e);
+      toast({ title: 'Error', description: e?.message || 'No se pudo preparar el cierre de caja.' , variant: 'destructive' });
+    }
+  };
+
+  const handleCerrarArqueo = async () => {
+    try {
+      const monto = Number((montoCierre || '').replace(',', '.'));
+      if (isNaN(monto)) {
+        toast({ title: 'Validación', description: 'Monto contado inválido.' });
+        return;
+      }
+      const obs = resumenCaja ? `CI=${resumenCaja.montoInicial}; IE=${resumenCaja.ingresosEfectivo}; EE=${resumenCaja.totalEgresosEfectivo}; EEsp=${resumenCaja.efectivoEsperado}` : undefined;
+      await cerrarArqueoPOS(monto, obs);
+      setShowCerrarCajaModal(false);
+      setArqueoActual(null);
+      setShowCajaBanner(false);
+      // Resetear el estado del banner para la próxima apertura
+      try { 
+        sessionStorage.removeItem('cajaBannerClosed');
+      } catch {}
+      toast({ title: 'Caja cerrada', description: 'El cierre de caja se registró correctamente.' });
+    } catch (e: any) {
+      console.error('Error al cerrar caja:', e);
+      toast({ title: 'Error', description: e?.response?.data?.message || e?.message || 'No se pudo cerrar la caja.', variant: 'destructive' });
     }
   };
 
@@ -1007,6 +1156,27 @@ export function POSSystem() {
         </div>
       )}
 
+      {showCerrarCajaModal && (
+        <div className="fixed inset-0 z-[210] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
+            <h3 className="text-lg font-semibold mb-2">Cierre de Caja</h3>
+            <div className="text-sm text-gray-700 mb-3 space-y-1">
+              <div>Inicial: <strong>{Number(resumenCaja?.montoInicial||0).toLocaleString('es-BO', { style:'currency', currency:'BOB'})}</strong></div>
+              <div>Ingresos efectivo: <strong>{Number(resumenCaja?.ingresosEfectivo||0).toLocaleString('es-BO', { style:'currency', currency:'BOB'})}</strong></div>
+              <div>Egresos efectivo: <strong>{Number(resumenCaja?.totalEgresosEfectivo||0).toLocaleString('es-BO', { style:'currency', currency:'BOB'})}</strong></div>
+              <div>Efectivo esperado: <strong>{Number(resumenCaja?.efectivoEsperado||0).toLocaleString('es-BO', { style:'currency', currency:'BOB'})}</strong></div>
+            </div>
+            <div className="space-y-3">
+              <Input placeholder="Monto contado en efectivo" value={montoCierre} onChange={(e) => setMontoCierre(e.target.value)} />
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowCerrarCajaModal(false)}>Cancelar</Button>
+                <Button variant="destructive" onClick={handleCerrarArqueo}>Confirmar Cierre</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner de caja abierta (informativo, cierre automático) */}
       {(arqueoActual && showCajaBanner) && (
         <div 
@@ -1063,6 +1233,9 @@ export function POSSystem() {
             </>
           )}
           <Button onClick={goCaja} variant="outline" className="rounded-xl transition-all duration-200">Caja</Button>
+          {arqueoActual && (
+            <Button onClick={handlePrepararCierre} variant="destructive" className="rounded-xl transition-all duration-200">Cerrar Caja</Button>
+          )}
           {(user.rol === 'cajero') && (
             <Button
               variant={activeTab === 'mesero' ? 'default' : 'outline'}
@@ -1112,6 +1285,37 @@ export function POSSystem() {
               <Tag className="h-5 w-5 mr-2" />
               Promociones
             </Button>
+          )}
+          {(user.rol === 'admin' || user.rol === 'super_admin') && (
+            <Button
+              variant="outline"
+              onClick={() => navigate('/egresos')}
+              className="rounded-xl transition-all duration-200"
+            >
+              Egresos
+            </Button>
+          )}
+          {(['admin','cocinero'].includes(user.rol)) && (
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="rounded-xl transition-all duration-200 relative"
+                onClick={() => {
+                  if (notifications.length === 0) {
+                    toast({ title: 'Notificaciones', description: 'Sin notificaciones' });
+                  } else {
+                    const texto = notifications.map((n:any)=>`• ${n.text}`).join('\n');
+                    alert(`Notificaciones del Sistema\n\n${texto}`);
+                    setNotifications((prev:any[]) => prev.map(n=>({ ...n, read: true })));
+                  }
+                }}
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 min-w-[1.25rem] px-1 rounded-full text-xs bg-red-500 text-white flex items-center justify-center">{unreadCount}</span>
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </nav>

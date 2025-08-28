@@ -216,7 +216,7 @@ router.get('/',
 // Obtener egresos pendientes de aprobación
 router.get('/pendientes-aprobacion', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   egresoController.getEgresosPendientesAprobacion
 );
 
@@ -257,7 +257,7 @@ router.put('/:id',
 // Eliminar (cancelar) un egreso
 router.delete('/:id', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   paramIdValidation,
   egresoController.deleteEgreso
 );
@@ -269,7 +269,7 @@ router.delete('/:id',
 // Aprobar un egreso
 router.post('/:id/aprobar', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   validateEgresosPermissions('approve'),
   validateSucursalAccess,
   logEgresosActivity('APROBAR_EGRESO'),
@@ -286,7 +286,7 @@ router.post('/:id/aprobar',
 // Rechazar un egreso
 router.post('/:id/rechazar', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   paramIdValidation,
   [
     body('comentario')
@@ -322,7 +322,7 @@ router.post('/:id/pagar',
 // Obtener resumen de egresos por categoría
 router.get('/reportes/por-categoria', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   reporteQueryValidation,
   egresoController.getResumenPorCategoria
 );
@@ -330,7 +330,7 @@ router.get('/reportes/por-categoria',
 // Obtener total de egresos por período
 router.get('/reportes/por-periodo', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   [
     query('fecha_inicio')
       .notEmpty()
@@ -355,7 +355,7 @@ router.get('/reportes/por-periodo',
 // Obtener flujo de aprobaciones de un egreso
 router.get('/:id/flujo-aprobaciones', 
   authenticateToken, 
-  authorizeRoles('admin', 'gerente'),
+  authorizeRoles('admin', 'gerente', 'contador'),
   paramIdValidation,
   egresoController.getFlujoAprobaciones
 );

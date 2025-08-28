@@ -80,13 +80,38 @@ const app = express();
 startupLogger.logSection('Configuración de middleware');
 app.use(cors({
   origin: (origin, callback) => {
-    const allowed = (process.env.CORS_ORIGINS || 'http://localhost:8080,http://localhost:5173,http://localhost:8081').split(',').map(s => s.trim());
-    if (!origin || allowed.includes(origin)) {
+    const allowedOrigins = [
+      'https://pos.forkast.vip',
+      'https://admin.forkast.vip',
+      'https://forkast.vip',
+      'https://www.forkast.vip'
+    ];
+
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push(
+        'http://localhost:8080',
+        'http://localhost:5173',
+        'http://localhost:8081',
+        'http://localhost:3000'
+      );
+    }
+
+    if (!origin) {
+      // Permitir peticiones sin origin (Postman, curl, backend)
       return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS'));
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log(`🚫 CORS bloqueado: ${origin}`);
+    return callback(new Error('No permitido por CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 startupLogger.logStep('CORS middleware', 'success');
 app.use(express.json());

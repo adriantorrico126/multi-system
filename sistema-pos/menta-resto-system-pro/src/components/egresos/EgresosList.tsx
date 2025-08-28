@@ -161,11 +161,17 @@ export const EgresosList: React.FC<EgresosListProps> = ({
   };
 
   const canEdit = (egreso: Egreso) => {
-    return egreso.estado === 'pendiente' && egresosUtils.canEdit(userRole);
+    // Solo permitir editar egresos pendientes o aprobados (no pagados, cancelados o rechazados)
+    return ['pendiente', 'aprobado'].includes(egreso.estado) && egresosUtils.canEdit(userRole);
   };
 
   const canDelete = (egreso: Egreso) => {
-    return egreso.estado === 'pendiente' && egresosUtils.canEdit(userRole);
+    // Solo permitir eliminar egresos pendientes o aprobados (no pagados, cancelados o rechazados)
+    // Los cajeros solo pueden eliminar egresos que ellos crearon
+    if (userRole === 'cajero') {
+      return ['pendiente', 'aprobado'].includes(egreso.estado) && egresosUtils.canDelete(userRole);
+    }
+    return ['pendiente', 'aprobado'].includes(egreso.estado) && egresosUtils.canEdit(userRole);
   };
 
   const canApprove = (egreso: Egreso) => {
@@ -173,7 +179,8 @@ export const EgresosList: React.FC<EgresosListProps> = ({
   };
 
   const canPay = (egreso: Egreso) => {
-    return ['pendiente', 'aprobado'].includes(egreso.estado) && egresosUtils.canPay(userRole);
+    // Solo mostrar botón de pagar si el egreso NO está pagado y el usuario tiene permisos
+    return !['pagado', 'cancelado', 'rechazado'].includes(egreso.estado) && egresosUtils.canPay(userRole);
   };
 
   return (
@@ -216,16 +223,16 @@ export const EgresosList: React.FC<EgresosListProps> = ({
               <div>
                 <Label htmlFor="categoria">Categoría</Label>
                 <Select
-                  value={filtros.id_categoria_egreso?.toString() || ''}
+                  value={filtros.id_categoria_egreso?.toString() || 'all'}
                   onValueChange={(value) => 
-                    handleFilterChange('id_categoria_egreso', value ? parseInt(value) : undefined)
+                    handleFilterChange('id_categoria_egreso', value === 'all' ? undefined : parseInt(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las categorías" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las categorías</SelectItem>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
                     {categorias.map((categoria) => (
                       <SelectItem 
                         key={categoria.id_categoria_egreso} 
@@ -248,14 +255,14 @@ export const EgresosList: React.FC<EgresosListProps> = ({
               <div>
                 <Label htmlFor="estado">Estado</Label>
                 <Select
-                  value={filtros.estado || ''}
-                  onValueChange={(value) => handleFilterChange('estado', value || undefined)}
+                  value={filtros.estado || 'all'}
+                  onValueChange={(value) => handleFilterChange('estado', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
                     <SelectItem value="aprobado">Aprobado</SelectItem>
                     <SelectItem value="pagado">Pagado</SelectItem>

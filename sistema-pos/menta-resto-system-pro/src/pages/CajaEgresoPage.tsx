@@ -27,6 +27,10 @@ const CajaEgresoPage: React.FC = () => {
 
   const [categorias, setCategorias] = useState<CategoriaEgreso[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const EGRESO_MAXIMO_BS = useMemo(() => {
+    const stored = Number(localStorage.getItem('egresoMaximoCaja') || '0');
+    return Number.isFinite(stored) && stored > 0 ? stored : 500; // valor por defecto configurable
+  }, []);
 
   const getLocalISODate = () => {
     const d = new Date();
@@ -85,18 +89,28 @@ const CajaEgresoPage: React.FC = () => {
       id_categoria_egreso: Number(form.id_categoria_egreso),
       metodo_pago: 'efectivo' as const,
       // Política: egresos de cajero se descuentan de caja inmediatamente
-      requiere_aprobacion: false,
+      requiere_aprobacion: false, // NO requiere aprobación administrativa
+      estado: 'pagado', // Establecer como pagado por defecto
+      // Incluir información del cajero que registra
+      registrado_por: user?.id,
       // Asegurar sucursal desde el contexto/token
       id_sucursal: (user as any)?.sucursal?.id || (user as any)?.id_sucursal
     };
 
     try {
+      if (payload.monto > EGRESO_MAXIMO_BS) {
+        const proceed = window.confirm(`Este egreso supera el límite sugerido de Bs ${EGRESO_MAXIMO_BS}. ¿Deseas continuar?`);
+        if (!proceed) {
+          return;
+        }
+      }
+      
+      // Debug: verificar payload
+      console.log('Payload enviado al backend:', payload);
+      
       setLoading(true);
       const creado = await egresosApi.create(payload as any);
-      // Si no quedó pagado por defecto, marcarlo como pagado inmediatamente
-      if (creado && creado.id_egreso && creado.estado !== 'pagado') {
-        try { await egresosApi.marcarPagado(creado.id_egreso, 'Pago inmediato de caja'); } catch {}
-      }
+      // El egreso ya se crea como pagado, no es necesario marcarlo nuevamente
       toast.success('Egreso de caja registrado y descontado de caja');
       // Redirigir a Información tras un breve delay para que el toast se vea
       setTimeout(() => navigate('/info-caja'), 700);
@@ -104,8 +118,11 @@ const CajaEgresoPage: React.FC = () => {
     } catch (err) {
       console.error('Error creando egreso de caja:', err);
       const anyErr = err as any;
+      const status = anyErr?.response?.status;
       const serverMsg = anyErr?.response?.data?.message || anyErr?.message;
-      toast.error(serverMsg ? `No se pudo registrar el egreso: ${serverMsg}` : 'No se pudo registrar el egreso');
+      const details = anyErr?.response?.data?.details || anyErr?.response?.data?.error;
+      const desc = [serverMsg, details].filter(Boolean).join(' - ');
+      toast.error('No se pudo registrar el egreso', { description: `${status ? `[${status}] ` : ''}${desc || 'Error desconocido'}` });
     } finally {
       setLoading(false);
     }

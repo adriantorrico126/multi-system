@@ -415,5 +415,9 @@ export const egresosUtils = {
 
   canEdit: (userRole: string): boolean => {
     return ['admin', 'gerente', 'cajero'].includes(userRole);
+  },
+
+  canDelete: (userRole: string): boolean => {
+    return ['admin', 'gerente', 'contador', 'cajero'].includes(userRole);
   }
 };

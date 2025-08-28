@@ -13,8 +13,8 @@ const validateEgresosPermissions = (requiredAction) => {
       const permissions = {
         admin: ['create', 'read', 'update', 'delete', 'approve', 'pay', 'report'],
         gerente: ['create', 'read', 'update', 'delete', 'approve', 'pay', 'report'],
-        contador: ['create', 'read', 'update', 'report'],
-        cajero: ['create', 'read'],
+        contador: ['create', 'read', 'update', 'delete', 'approve', 'pay', 'report'],
+        cajero: ['create', 'read', 'pay', 'delete'], // Permitir eliminar egresos propios
         cocinero: ['read'],
         mesero: ['read']
       };
@@ -33,11 +33,11 @@ const validateEgresosPermissions = (requiredAction) => {
       // Validaciones adicionales por acción
       switch (requiredAction) {
         case 'approve':
-          // Solo admin y gerente pueden aprobar
-          if (!['admin', 'gerente'].includes(rol)) {
+          // Solo admin, gerente y contador pueden aprobar
+          if (!['admin', 'gerente', 'contador'].includes(rol)) {
             return res.status(403).json({
               success: false,
-              message: 'Solo administradores y gerentes pueden aprobar egresos'
+              message: 'Solo administradores, gerentes y contadores pueden aprobar egresos'
             });
           }
           break;
@@ -53,11 +53,11 @@ const validateEgresosPermissions = (requiredAction) => {
           break;
 
         case 'delete':
-          // Solo admin y gerente pueden eliminar
-          if (!['admin', 'gerente'].includes(rol)) {
+          // Solo admin, gerente y contador pueden eliminar
+          if (!['admin', 'gerente', 'contador'].includes(rol)) {
             return res.status(403).json({
               success: false,
-              message: 'Solo administradores y gerentes pueden eliminar egresos'
+              message: 'Solo administradores, gerentes y contadores pueden eliminar egresos'
             });
           }
           break;
@@ -197,7 +197,7 @@ const validateEstadoTransition = (req, res, next) => {
       admin: ['pendiente', 'aprobado', 'pagado', 'cancelado', 'rechazado'],
       gerente: ['pendiente', 'aprobado', 'pagado', 'cancelado', 'rechazado'],
       contador: ['pendiente', 'pagado'],
-      cajero: ['pendiente'],
+      cajero: ['pendiente', 'pagado'], // Permitir crear egresos pagados directamente
       cocinero: [],
       mesero: []
     };

@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-// Permitir usar DATABASE_URL (DigitalOcean/Heroku style) o variables sueltas
+Bien, los backned// Permitir usar DATABASE_URL (DigitalOcean/Heroku style) o variables sueltas
 const connectionString = process.env.DATABASE_URL;
 
 const pool = connectionString
