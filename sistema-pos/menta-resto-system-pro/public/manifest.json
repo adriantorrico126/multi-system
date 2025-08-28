@@ -1,0 +1,170 @@
+{
+  "name": "Sistema POS - Menta Restobar",
+  "short_name": "POS Menta",
+  "description": "Sistema de Punto de Venta profesional para restaurantes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "food"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Venta",
+      "short_name": "Venta",
+      "description": "Crear una nueva venta",
+      "url": "/?action=new-sale",
+      "icons": [
+        {
+          "src": "/icons/sale-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Cocina",
+      "short_name": "Cocina",
+      "description": "Panel de cocina",
+      "url": "/kitchen",
+      "icons": [
+        {
+          "src": "/icons/kitchen-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Stats",
+      "description": "Estadísticas y reportes",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/dashboard-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "short_name": "Stock",
+      "description": "Control de inventario",
+      "url": "/inventory",
+      "icons": [
+        {
+          "src": "/icons/inventory-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Panel principal del sistema POS"
+    },
+    {
+      "src": "/screenshots/mobile-2.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Panel de cocina optimizado"
+    },
+    {
+      "src": "/screenshots/tablet-1.png",
+      "sizes": "768x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Vista de tablet del sistema"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+pos",
+      "url": "/?action=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/upload",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"],
+        "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "permissions": [
+    "notifications",
+    "camera",
+    "microphone",
+    "geolocation",
+    "payment"
+  ],
+  "features": [
+    "Cross Platform",
+    "fast",
+    "simple",
+    "secure",
+    "offline"
+  ],
+  "developer": {
+    "name": "Menta Restobar",
+    "url": "https://forkast.vip"
+  }
+}

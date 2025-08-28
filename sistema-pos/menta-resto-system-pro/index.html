@@ -1,24 +1,155 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es" class="h-full">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>menta-resto-system-pro</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
-
-    <meta property="og:title" content="menta-resto-system-pro" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    
+    <!-- Meta tags para PWA y móvil -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="description" content="Sistema de Punto de Venta profesional para restaurantes. Gestión de ventas, inventario, cocina y reportes en tiempo real." />
+    <meta name="keywords" content="POS, restaurante, punto de venta, inventario, cocina, ventas, gestión" />
+    <meta name="author" content="Menta Restobar" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="POS Menta" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:url" content="https://pos.forkast.vip/" />
+    <meta property="og:title" content="Sistema POS - Menta Restobar" />
+    <meta property="og:description" content="Sistema de Punto de Venta profesional para restaurantes" />
+    <meta property="og:image" content="https://pos.forkast.vip/og-image.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://pos.forkast.vip/" />
+    <meta property="twitter:title" content="Sistema POS - Menta Restobar" />
+    <meta property="twitter:description" content="Sistema de Punto de Venta profesional para restaurantes" />
+    <meta property="twitter:image" content="https://pos.forkast.vip/twitter-image.png" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- Preconnect para performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//api.forkast.vip" />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    
+    <!-- Preload crítico -->
+    <link rel="preload" href="/src/index.css" as="style" />
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    
+    <title>Sistema POS - Menta Restobar</title>
+    
+    <!-- Estilos críticos inline para performance -->
+    <style>
+      /* Estilos críticos para evitar FOUC */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        overflow-x: hidden;
+      }
+      
+      /* Loading spinner */
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Safe area para dispositivos con notch */
+      @supports (padding: max(0px)) {
+        body {
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+          padding-left: max(0px, env(safe-area-inset-left));
+          padding-right: max(0px, env(safe-area-inset-right));
+        }
+      }
+    </style>
   </head>
-
-  <body>
+  <body class="h-full">
+    <!-- Loading spinner mientras se carga la app -->
+    <div id="loading" class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+    
+    <!-- Root de la aplicación -->
     <div id="root"></div>
+    
+    <!-- Script principal -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker para PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+      
+      // Ocultar loading spinner cuando la app esté lista
+      window.addEventListener('load', () => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.opacity = '0';
+          setTimeout(() => {
+            loading.style.display = 'none';
+          }, 300);
+        }
+      });
+      
+      // Prevenir zoom en inputs en iOS
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        const viewport = document.querySelector('meta[name=viewport]');
+        if (viewport) {
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }
+      }
+    </script>
   </body>
 </html>

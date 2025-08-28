@@ -1,342 +1,260 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, User, Clock, LogOut, Bell, DollarSign, Package, Settings, CreditCard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { refreshInventory } from '@/services/api';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/context/AuthContext';
-
-interface AuthUser {
-  username: string;
-  role: 'cajero' | 'admin' | 'cocinero' | 'mesero';
-  branch: string;
-}
-
-interface Branch {
-  id?: number;
-  id_sucursal?: number;
-  nombre?: string;
-  name?: string;
-  ciudad?: string;
-  location?: string;
-  direccion?: string;
-}
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from '@/components/ui/sheet';
+import { 
+  FaUser, 
+  FaSignOutAlt, 
+  FaCog, 
+  FaBars, 
+  FaHome, 
+  FaUtensils, 
+  FaChartBar, 
+  FaBoxes,
+  FaUsers,
+  FaReceipt,
+  FaPrint,
+  FaMobile,
+  FaTablet,
+  FaDesktop
+} from 'react-icons/fa';
 
 interface HeaderProps {
-  currentUser: AuthUser;
-  currentBranch: Branch | undefined;
-  salesCount: number;
-  onLogout: () => void;
-  branches?: Branch[];
-  selectedBranchId?: number;
-  onSucursalChange?: (id: number) => void;
-  onOpenConfig?: () => void;
+  currentBranch?: any;
+  branches?: any[];
+  onSucursalChange?: (branchId: string) => void;
+  selectedBranchId?: string;
 }
 
-interface Notification {
-  id: string;
-  text: string;
-  read: boolean;
-}
-
-export const Header = React.memo(({ 
-  currentUser, 
+export function Header({ 
   currentBranch, 
-  salesCount, 
-  onLogout,
-  branches,
-  selectedBranchId,
-  onSucursalChange,
-  onOpenConfig
-}: HeaderProps) => {
-  const navigate = useNavigate();
-  const [currentTime, setCurrentTime] = React.useState(new Date());
-  const [notifications, setNotifications] = React.useState<Notification[]>([]);
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const [popoverOpen, setPopoverOpen] = React.useState(false);
+  branches, 
+  onSucursalChange, 
+  selectedBranchId 
+}: HeaderProps) {
+  const { user, logout } = useAuth();
+  const { isMobile, isTablet, screenSize, orientation, isTouch } = useMobile();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Debug logs para verificar la información de sucursales
-  React.useEffect(() => {
-    console.log('🔍 Header Debug - currentUser:', currentUser);
-    console.log('🔍 Header Debug - currentBranch:', currentBranch);
-    console.log('🔍 Header Debug - branches:', branches);
-    console.log('🔍 Header Debug - selectedBranchId:', selectedBranchId);
-    console.log('🔍 Header Debug - onSucursalChange:', !!onSucursalChange);
-  }, [currentUser, currentBranch, branches, selectedBranchId, onSucursalChange]);
+  // Debug logs
+  console.log('🔍 Header Debug - currentUser:', user);
+  console.log('🔍 Header Debug - currentBranch:', currentBranch);
+  console.log('🔍 Header Debug - branches:', branches);
+  console.log('🔍 Header Debug - selectedBranchId:', selectedBranchId);
+  console.log('🔍 Header Debug - onSucursalChange:', !!onSucursalChange);
 
-  // Ref para controlar si el componente está montado
-  const isMountedRef = React.useRef(true);
-  
-  React.useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
 
-  // Ref para acceder al valor actual de notifications sin causar ciclos
-  const notificationsRef = React.useRef<Notification[]>([]);
-  React.useEffect(() => {
-    notificationsRef.current = notifications;
-  }, [notifications]);
-
-  // Notificaciones de stock bajo en tiempo real
-  const userRole = currentUser.role;
-  React.useEffect(() => {
-    console.log('Efecto notificaciones, userRole:', userRole);
-    if (!userRole || (userRole.toLowerCase() !== 'admin' && userRole.toLowerCase() !== 'cocinero')) return;
-
-    async function checkLowStock() {
-      if (!isMountedRef.current) return;
-      try {
-        const inventory = await refreshInventory();
-        const lowStockProducts = (inventory || []).filter((p: any) => p.stock_actual !== undefined && p.stock_actual <= 5);
-        setNotifications(prev => {
-          let next = [...prev];
-          lowStockProducts.forEach((p: any) => {
-            const stableProductId = p.id ? String(p.id) : p.nombre;
-            const notifId = `stock-bajo-${stableProductId}`;
-            if (!next.some(n => n.id === notifId)) {
-              next = [
-                {
-                  id: notifId,
-                  text: `Stock bajo en producto: ${p.nombre} (${p.stock_actual})`,
-                  read: false
-                },
-                ...next
-              ];
-            }
-          });
-          // Solo actualiza si el contenido realmente cambió
-          if (next.length !== prev.length || next.some((n, i) => n.id !== prev[i]?.id)) {
-          return next;
-          }
-          return prev;
-        });
-      } catch (err) {
-        // Silenciar errores de red
-      }
+  const handleBranchChange = (branchId: string) => {
+    if (onSucursalChange) {
+      onSucursalChange(branchId);
     }
+    setIsMenuOpen(false);
+  };
 
-    checkLowStock();
-    const interval = setInterval(checkLowStock, 10000);
-    return () => clearInterval(interval);
-  }, [userRole]);
+  // Navegación móvil optimizada
+  const mobileNavItems = [
+    { icon: FaHome, label: 'Inicio', href: '/' },
+    { icon: FaUtensils, label: 'Cocina', href: '/kitchen' },
+    { icon: FaChartBar, label: 'Dashboard', href: '/dashboard' },
+    { icon: FaBoxes, label: 'Inventario', href: '/inventory' },
+    { icon: FaUsers, label: 'Usuarios', href: '/users' },
+    { icon: FaReceipt, label: 'Ventas', href: '/sales' },
+    { icon: FaPrint, label: 'Impresión', href: '/print' },
+  ];
 
-  React.useEffect(() => {
-    function updateTime() {
-      if (isMountedRef.current) {
-      setCurrentTime(new Date());
-      }
-    }
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleArqueoClick = React.useCallback(() => {
-    try { sessionStorage.setItem('skipCajaModalOnce', '1'); sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
-    navigate('/arqueo');
-  }, [navigate]);
-
-  const handleInventoryClick = React.useCallback(() => {
-    try { sessionStorage.setItem('skipCajaModalOnce', '1'); sessionStorage.setItem('cajaAutoPromptDone', '1'); } catch {}
-    navigate('/inventario');
-  }, [navigate]);
-
-  // Al abrir el popover, marcar todas como leídas
-  const handlePopoverOpenChange = React.useCallback((open: boolean) => {
-    setPopoverOpen(open);
-    if (open) {
-      setNotifications((prev) => prev.map(n => ({ ...n, read: true })));
-    }
-  }, []);
-
-  return (
-    <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
-      <div className="px-6 py-4">
+  // Header compacto para móviles pequeños
+  if (isMobile && screenSize === 'xs') {
+    return (
+      <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            {/* Logo y Título */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">DATY</h1>
-                <p className="text-sm text-gray-600 font-medium">Sistema POS Profesional</p>
-              </div>
+          {/* Logo y título compacto */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <FaUtensils className="text-white text-sm" />
             </div>
-            
-            {/* Información de Sucursal y Selector */}
-            {currentBranch && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                  <Store className="h-4 w-4 text-white" />
-                </div>
-                <div className="text-sm">
-                  <div className="font-semibold text-gray-900">{currentBranch.name}</div>
-                  <div className="text-gray-600">{currentBranch.location}</div>
-                </div>
-                {/* Selector de sucursal solo para admin/cocinero */}
-                {branches && branches.length > 1 && (currentUser.role === 'admin' || currentUser.role === 'cocinero') && onSucursalChange && (
-                  <Select 
-                    value={selectedBranchId?.toString()} 
-                    onValueChange={v => {
-                      console.log('🔄 Selector de sucursal cambiado a:', v);
-                      onSucursalChange(Number(v));
-                    }}
-                  >
-                    <SelectTrigger className="ml-2 w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
-                      <SelectValue placeholder="Cambiar sucursal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.filter(branch => {
-                        const branchId = branch.id_sucursal || branch.id;
-                        return branchId !== undefined && branchId !== null;
-                      }).map(branch => {
-                        const branchId = branch.id_sucursal || branch.id;
-                        const branchName = branch.nombre || branch.name;
-                        console.log('🔍 Renderizando opción de sucursal:', { branchId, branchName, branch });
-                        return (
-                          <SelectItem key={branchId} value={branchId.toString()}>
-                            {branchName}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            )}
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold text-gray-900">POS</h1>
+              <p className="text-xs text-gray-500">Sistema de Punto de Venta</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {/* Campanita movida a la barra de pestañas del POS */}
-
-            {/* Información del Usuario */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-sm">
-                <div className="font-semibold text-gray-900">{currentUser.username}</div>
-                <Badge 
-                  variant={currentUser.role === 'admin' ? 'default' : 'secondary'}
-                  className={`text-xs font-semibold ${
-                    currentUser.role === 'admin' 
-                      ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white' 
-                      : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
-                  }`}
-                >
-                  {currentUser.role === 'admin' ? 'Administrador' : 
-                   currentUser.role === 'cocinero' ? 'Cocinero' : 
-                   currentUser.role === 'mesero' ? 'Mesero' : 'Cajero'}
-                </Badge>
-              </div>
-            </div>
-            
-            {/* Hora Actual */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-lg mr-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <Clock className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-sm font-semibold text-gray-900">
-                {currentTime.toLocaleTimeString('es-ES', { 
-                  hour: '2-digit', 
-                  minute: '2-digit'
-                })}
-              </div>
-            </div>
-
-            {/* Botones de Acción */}
-            <div className="flex items-center gap-2">
-              {currentUser.role === 'admin' && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleArqueoClick}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <DollarSign className="h-4 w-4" />
-                  Arqueo
-                </Button>
-              )}
-              {(currentUser.role === 'admin' || currentUser.role === 'cocinero') && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleInventoryClick}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Package className="h-4 w-4" />
-                  Inventario
-                </Button>
-              )}
-              {/* Botón de Egresos movido a la barra de pestañas junto a Promociones */}
-              {currentUser.role === 'cajero' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/egresos-caja')}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Egreso de Caja
-                </Button>
-              )}
-              {currentUser.role === 'cajero' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/info-caja')}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <DollarSign className="h-4 w-4" />
-                  Información
-                </Button>
-              )}
-              {currentUser.role === 'admin' && onOpenConfig && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onOpenConfig}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Settings className="h-4 w-4" />
-                  Configuración
-                </Button>
-              )}
-              {/* Exportación movida a Historial/Configuraciones avanzadas */}
-
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onLogout}
-                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-red-200/50 shadow-lg hover:shadow-xl transition-all duration-200 text-red-600 hover:text-red-700 hover:border-red-300"
-              >
-                <LogOut className="h-4 w-4" />
-                Salir
+          {/* Botón de menú */}
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-2">
+                <FaBars className="h-5 w-5" />
               </Button>
-              {currentUser.role === 'admin' && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/soporte')}
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Package className="h-4 w-4" />
-                  Soporte
-                </Button>
-              )}
-            </div>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <SheetHeader>
+                <SheetTitle className="flex items-center space-x-2">
+                  <FaUser className="text-blue-600" />
+                  <span>Menú Principal</span>
+                </SheetTitle>
+              </SheetHeader>
+              
+              <div className="mt-6 space-y-4">
+                {/* Información del usuario */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                      <FaUser className="text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{user?.nombre || 'Usuario'}</p>
+                      <p className="text-sm text-gray-500">{user?.rol || 'Rol'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Navegación */}
+                <nav className="space-y-2">
+                  {mobileNavItems.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <item.icon className="text-gray-600 w-5 h-5" />
+                      <span className="text-gray-900">{item.label}</span>
+                    </a>
+                  ))}
+                </nav>
+
+                {/* Separador */}
+                <div className="border-t border-gray-200 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="w-full justify-start"
+                  >
+                    <FaSignOutAlt className="mr-2" />
+                    Cerrar Sesión
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </header>
+    );
+  }
+
+  // Header estándar para tablets y desktop
+  return (
+    <header className="bg-white border-b border-gray-200 px-4 py-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        {/* Logo y título */}
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <FaUtensils className="text-white text-lg" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Sistema POS</h1>
+            <p className="text-sm text-gray-500">
+              {currentBranch?.name || 'Selecciona una sucursal'}
+            </p>
           </div>
         </div>
-      </div>
-    </div>
-  );
-});
 
-Header.displayName = 'Header';
+        {/* Información del usuario y sucursal */}
+        <div className="flex items-center space-x-4">
+          {/* Indicador de dispositivo */}
+          <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
+            {isMobile && <FaMobile className="w-4 h-4" />}
+            {isTablet && <FaTablet className="w-4 h-4" />}
+            {!isMobile && !isTablet && <FaDesktop className="w-4 h-4" />}
+            <span className="hidden md:inline">
+              {orientation === 'portrait' ? 'Vertical' : 'Horizontal'}
+            </span>
+          </div>
+
+          {/* Selector de sucursal */}
+          {branches && branches.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="hidden sm:flex">
+                  <span className="truncate max-w-32">
+                    {currentBranch?.name || 'Sucursal'}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem disabled>
+                  <span className="font-semibold">Seleccionar Sucursal</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {branches.map((branch) => (
+                  <DropdownMenuItem
+                    key={branch.id}
+                    onClick={() => handleBranchChange(branch.id)}
+                    className={selectedBranchId === branch.id ? 'bg-blue-50' : ''}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{branch.name}</span>
+                      <span className="text-xs text-gray-500">{branch.location}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Usuario */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                  <FaUser className="text-white text-sm" />
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900">{user?.nombre || 'Usuario'}</p>
+                  <p className="text-xs text-gray-500">{user?.rol || 'Rol'}</p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem disabled>
+                <div className="flex flex-col">
+                  <span className="font-semibold">{user?.nombre || 'Usuario'}</span>
+                  <span className="text-sm text-gray-500">{user?.username || 'username'}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <FaCog className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <FaSignOutAlt className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+}
 

@@ -3,10 +3,27 @@ const { Server } = require('socket.io');
 let io = null;
 
 const initializeSocket = (server) => {
+  const allowedOrigins = [
+    'https://pos.forkast.vip',
+    'https://admin.forkast.vip',
+    'https://forkast.vip',
+    'https://www.forkast.vip'
+  ];
+
+  if (process.env.NODE_ENV === 'development') {
+    allowedOrigins.push(
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'http://localhost:8081',
+      'http://localhost:3000'
+    );
+  }
+
   io = new Server(server, {
     cors: {
-      origin: '*', // Ajusta según tu frontend
-      methods: ['GET', 'POST']
+      origin: allowedOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true
     }
   });
 
