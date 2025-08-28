@@ -110,13 +110,27 @@ export function useMobile(): MobileInfo {
   return mobileInfo;
 }
 
-// Hook específico para orientación
+// Hook específico para orientación mejorado
 export function useOrientation() {
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const updateOrientation = () => {
-      setOrientation(window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const newOrientation = width > height ? 'landscape' : 'portrait';
+      const newIsMobile = width <= 768;
+      
+      setOrientation(newOrientation);
+      setIsMobile(newIsMobile);
+      
+      // Agregar clase al body para estilos CSS
+      if (newIsMobile) {
+        document.body.classList.add('mobile-device');
+      } else {
+        document.body.classList.remove('mobile-device');
+      }
     };
 
     updateOrientation();
@@ -154,4 +168,35 @@ export function usePWA() {
   }, []);
 
   return { isPWA, canInstall };
+}
+
+// Hook para detectar si el usuario está en móvil
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      const isMobileDevice = width <= 768;
+      setIsMobile(isMobileDevice);
+      
+      // Agregar clase al body
+      if (isMobileDevice) {
+        document.body.classList.add('mobile-device');
+      } else {
+        document.body.classList.remove('mobile-device');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+
+  return isMobile;
 }

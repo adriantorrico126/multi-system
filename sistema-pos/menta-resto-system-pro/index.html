@@ -118,20 +118,8 @@
     <!-- Script principal -->
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker para PWA -->
+    <!-- Scripts de optimización -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-      }
-      
       // Ocultar loading spinner cuando la app esté lista
       window.addEventListener('load', () => {
         const loading = document.getElementById('loading');
@@ -149,6 +137,11 @@
         if (viewport) {
           viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
+      }
+      
+      // Optimización para móviles
+      if (window.innerWidth <= 768) {
+        document.body.classList.add('mobile-device');
       }
     </script>
   </body>

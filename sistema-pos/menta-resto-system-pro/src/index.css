@@ -361,4 +361,286 @@ body {
   }
 }
 
-/* ===== FIN CONFIGURACIÓN MÓVIL ===== */
+/* ======================================== */
+/* ESTILOS PROFESIONALES PARA MÓVILES */
+/* ======================================== */
+
+/* Clase para dispositivos móviles */
+.mobile-device {
+  --mobile-padding: 1rem;
+  --mobile-border-radius: 0.75rem;
+  --mobile-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design mejorado */
+@media (max-width: 768px) {
+  /* Contenedores principales */
+  .container {
+    padding-left: var(--mobile-padding);
+    padding-right: var(--mobile-padding);
+  }
+  
+  /* Cards y contenedores */
+  .card {
+    border-radius: var(--mobile-border-radius);
+    box-shadow: var(--mobile-shadow);
+    margin-bottom: 1rem;
+  }
+  
+  /* Headers */
+  h1 {
+    font-size: 1.75rem !important;
+    line-height: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  
+  /* Botones */
+  .btn, button {
+    min-height: 44px; /* Tamaño mínimo para touch */
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  /* Inputs */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Previene zoom en iOS */
+    border-radius: 0.5rem;
+  }
+  
+  /* Tablas responsivas */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  table {
+    min-width: 600px;
+  }
+  
+  /* Grid responsivo */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* Flexbox responsivo */
+  .flex {
+    flex-direction: column;
+  }
+  
+  .flex-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  /* Espaciado móvil */
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Padding móvil */
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+  
+  /* Margin móvil */
+  .m-6 {
+    margin: 1rem !important;
+  }
+  
+  .mb-6 {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Gap móvil */
+  .gap-4 {
+    gap: 0.75rem !important;
+  }
+  
+  .gap-6 {
+    gap: 1rem !important;
+  }
+}
+
+/* Estilos específicos para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .mobile-device {
+    --mobile-padding: 0.75rem;
+  }
+  
+  /* Headers más pequeños */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Botones más compactos */
+  .btn, button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Inputs más compactos */
+  input, select, textarea {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Estilos para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .flex-row {
+    flex-direction: row;
+  }
+}
+
+/* ======================================== */
+/* OPTIMIZACIONES DE TOUCH */
+/* ======================================== */
+
+/* Mejorar interacciones táctiles */
+@media (hover: none) and (pointer: coarse) {
+  /* Botones con mejor feedback táctil */
+  .btn:active, button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Links con mejor área táctil */
+  a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* Inputs con mejor área táctil */
+  input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Hover effects para touch */
+  .hover\:bg-gray-100:hover {
+    background-color: transparent;
+  }
+  
+  .hover\:shadow-lg:hover {
+    box-shadow: var(--mobile-shadow);
+  }
+}
+
+/* ======================================== */
+/* ESTILOS DE ACCESIBILIDAD */
+/* ======================================== */
+
+/* Focus visible para navegación por teclado */
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Mejorar contraste en modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .mobile-device {
+    --mobile-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ======================================== */
+/* ANIMACIONES OPTIMIZADAS PARA MÓVILES */
+/* ======================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Transiciones suaves para móviles */
+  .mobile-device * {
+    transition: all 0.2s ease;
+  }
+  
+  /* Animaciones de entrada */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* Animaciones de salida */
+  .fade-out {
+    animation: fadeOut 0.2s ease-out;
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+  }
+}
+
+/* ======================================== */
+/* UTILIDADES ESPECÍFICAS PARA MÓVILES */
+/* ======================================== */
+
+/* Ocultar elementos en móviles */
+.mobile\:hidden {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .mobile\:hidden {
+    display: block;
+  }
+}
+
+/* Mostrar solo en móviles */
+.mobile\:block {
+  display: block;
+}
+
+@media (min-width: 769px) {
+  .mobile\:block {
+    display: none;
+  }
+}
+
+/* Safe area para dispositivos con notch */
+@supports (padding: max(0px)) {
+  .mobile-device {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}
