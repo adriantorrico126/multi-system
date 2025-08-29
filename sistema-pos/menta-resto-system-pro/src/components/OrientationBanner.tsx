@@ -178,4 +178,4 @@ export function MobileOnlyBanner({ children }: { children: React.ReactNode }) {
 
 
 
-// Fix: Icono corregido de FaRotateLeft a FaRedo para Vercel build
+// Fix: Icono corregido para Vercel build

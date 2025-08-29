@@ -24,7 +24,7 @@ import {
   FaMobile,
   FaTablet,
   FaDesktop,
-  FaRotateLeft,
+  FaRedo,
   FaBell,
   FaShoppingCart,
   FaQrcode,
