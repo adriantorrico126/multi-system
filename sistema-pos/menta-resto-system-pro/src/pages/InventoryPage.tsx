@@ -59,7 +59,7 @@ interface Lote {
   cantidad_actual: number;
   fecha_fabricacion: string;
   fecha_caducidad: string;
-  precio_compra: number | null;
+  precio_compra: number;
   ubicacion_especifica?: string;
   proveedor?: string;
   certificacion_organica: boolean;

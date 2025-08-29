@@ -426,13 +426,8 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
                         </TableCell>
                         <TableCell>
                           <div className="text-right">
-                            <div className="font-medium">
-                              Bs {lote.precio_compra && lote.cantidad_actual ? 
-                                (lote.precio_compra * lote.cantidad_actual).toFixed(2) : '0.00'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              Bs {lote.precio_compra ? lote.precio_compra.toFixed(2) : '0.00'} c/u
-                            </div>
+                            <div className="font-medium">Bs {(lote.precio_compra * lote.cantidad_actual).toFixed(2)}</div>
+                            <div className="text-xs text-gray-500">Bs {lote.precio_compra.toFixed(2)} c/u</div>
                           </div>
                         </TableCell>
                       </TableRow>
