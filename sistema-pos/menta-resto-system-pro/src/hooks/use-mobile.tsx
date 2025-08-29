@@ -104,41 +104,41 @@ export function useMobile(): MobileInfo {
         pixelRatio,
         deviceType,
       };
-      
+
       setMobileInfo(newMobileInfo);
-      
-      // Aplicar clases CSS automáticamente
-      updateBodyClasses(newMobileInfo);
+
+      // Aplicar clases CSS automáticamente - DESACTIVADO
+      // updateBodyClasses(newMobileInfo);
     };
 
-    const updateBodyClasses = (info: MobileInfo) => {
-      // Remover clases anteriores
-      document.body.classList.remove('mobile-device', 'tablet-device', 'desktop-device');
-      
-      // Agregar clase según tipo de dispositivo
-      if (info.isMobile) {
-        document.body.classList.add('mobile-device');
-      } else if (info.isTablet) {
-        document.body.classList.add('tablet-device');
-      } else {
-        document.body.classList.add('desktop-device');
-      }
-      
-      // Agregar clase de orientación
-      document.body.classList.remove('portrait', 'landscape');
-      document.body.classList.add(info.orientation);
-      
-      // Agregar clase de tamaño de pantalla
-      document.body.classList.remove('xs', 'sm', 'md', 'lg', 'xl', '2xl');
-      document.body.classList.add(info.screenSize);
-      
-      // Agregar clase de touch
-      if (info.isTouch) {
-        document.body.classList.add('touch-device');
-      } else {
-        document.body.classList.remove('touch-device');
-      }
-    };
+    // const updateBodyClasses = (info: MobileInfo) => {
+    //   // Remover clases anteriores
+    //   document.body.classList.remove('mobile-device', 'tablet-device', 'desktop-device');
+    //   
+    //   // Agregar clase según tipo de dispositivo
+    //   if (info.isMobile) {
+    //     document.body.classList.add('mobile-device');
+    //   } else if (info.isTablet) {
+    //     document.body.classList.add('tablet-device');
+    //   } else {
+    //     document.body.classList.add('desktop-device');
+    //   }
+    //   
+    //   // Agregar clase de orientación
+    //   document.body.classList.remove('portrait', 'landscape');
+    //   document.body.classList.add(info.orientation);
+    //   
+    //   // Agregar clase de tamaño de pantalla
+    //   document.body.classList.remove('xs', 'sm', 'md', 'lg', 'xl', '2xl');
+    //   document.body.classList.add(info.screenSize);
+    //   
+    //   // Agregar clase de touch
+    //   if (info.isTouch) {
+    //     document.body.classList.add('touch-device');
+    //   } else {
+    //     document.body.classList.remove('touch-device');
+    //   }
+    // };
 
     // Actualizar al montar y al cambiar tamaño
     updateMobileInfo();
