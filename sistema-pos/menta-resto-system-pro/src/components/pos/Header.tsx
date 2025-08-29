@@ -31,13 +31,7 @@ import {
   FaPrint,
   FaMobile,
   FaTablet,
-  FaDesktop,
-  FaBell,
-  FaShoppingCart,
-  FaClipboardList,
-  FaBuilding,
-  FaTag,
-  FaDollarSign
+  FaDesktop
 } from 'react-icons/fa';
 
 interface HeaderProps {
@@ -45,26 +39,17 @@ interface HeaderProps {
   branches?: any[];
   onSucursalChange?: (branchId: string) => void;
   selectedBranchId?: string;
-  currentUser?: any;
-  salesCount?: number;
-  onLogout?: () => void;
-  onOpenConfig?: () => void;
 }
 
 export function Header({ 
   currentBranch, 
   branches, 
   onSucursalChange, 
-  selectedBranchId,
-  currentUser,
-  salesCount = 0,
-  onLogout,
-  onOpenConfig
+  selectedBranchId 
 }: HeaderProps) {
   const { user, logout } = useAuth();
   const { isMobile, isTablet, screenSize, orientation, isTouch } = useMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('pos');
 
   // Debug logs
   console.log('🔍 Header Debug - currentUser:', user);
@@ -74,11 +59,7 @@ export function Header({
   console.log('🔍 Header Debug - onSucursalChange:', !!onSucursalChange);
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      logout();
-    }
+    logout();
     setIsMenuOpen(false);
   };
 
@@ -89,15 +70,15 @@ export function Header({
     setIsMenuOpen(false);
   };
 
-  // Navegación principal con todas las opciones
-  const navigationItems = [
-    { id: 'pos', label: 'Punto de Venta', icon: FaShoppingCart, href: '/' },
-    { id: 'orders', label: 'Pedidos', icon: FaClipboardList, href: '/orders' },
-    { id: 'caja', label: 'Caja', icon: FaDollarSign, href: '/caja' },
-    { id: 'sales', label: 'Historial de Ventas', icon: FaReceipt, href: '/sales' },
-    { id: 'dashboard', label: 'Dashboard', icon: FaChartBar, href: '/dashboard' },
-    { id: 'promociones', label: 'Promociones', icon: FaTag, href: '/promociones' },
-    { id: 'egresos', label: 'Egresos', icon: FaBuilding, href: '/egresos' },
+  // Navegación móvil optimizada
+  const mobileNavItems = [
+    { icon: FaHome, label: 'Inicio', href: '/' },
+    { icon: FaUtensils, label: 'Cocina', href: '/kitchen' },
+    { icon: FaChartBar, label: 'Dashboard', href: '/dashboard' },
+    { icon: FaBoxes, label: 'Inventario', href: '/inventory' },
+    { icon: FaUsers, label: 'Usuarios', href: '/users' },
+    { icon: FaReceipt, label: 'Ventas', href: '/sales' },
+    { icon: FaPrint, label: 'Impresión', href: '/print' },
   ];
 
   // Header compacto para móviles pequeños
@@ -147,7 +128,7 @@ export function Header({
 
                 {/* Navegación */}
                 <nav className="space-y-2">
-                  {navigationItems.map((item) => (
+                  {mobileNavItems.map((item) => (
                     <a
                       key={item.label}
                       href={item.href}
@@ -181,131 +162,99 @@ export function Header({
 
   // Header estándar para tablets y desktop
   return (
-    <div className="bg-white border-b border-gray-200 shadow-sm">
-      {/* Header principal */}
-      <header className="px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo y título */}
-          <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <FaUtensils className="text-white text-lg" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Sistema POS</h1>
-              <p className="text-sm text-gray-500">
-                {currentBranch?.name || 'Selecciona una sucursal'}
-              </p>
-            </div>
+    <header className="bg-white border-b border-gray-200 px-4 py-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        {/* Logo y título */}
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <FaUtensils className="text-white text-lg" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Sistema POS</h1>
+            <p className="text-sm text-gray-500">
+              {currentBranch?.name || 'Selecciona una sucursal'}
+            </p>
+          </div>
+        </div>
+
+        {/* Información del usuario y sucursal */}
+        <div className="flex items-center space-x-4">
+          {/* Indicador de dispositivo */}
+          <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
+            {isMobile && <FaMobile className="w-4 h-4" />}
+            {isTablet && <FaTablet className="w-4 h-4" />}
+            {!isMobile && !isTablet && <FaDesktop className="w-4 h-4" />}
+            <span className="hidden md:inline">
+              {orientation === 'portrait' ? 'Vertical' : 'Horizontal'}
+            </span>
           </div>
 
-          {/* Información del usuario y sucursal */}
-          <div className="flex items-center space-x-4">
-            {/* Indicador de dispositivo */}
-            <div className="hidden sm:flex items-center space-x-2 text-xs text-gray-500">
-              {isMobile && <FaMobile className="w-4 h-4" />}
-              {isTablet && <FaTablet className="w-4 h-4" />}
-              {!isMobile && !isTablet && <FaDesktop className="w-4 h-4" />}
-              <span className="hidden md:inline">
-                {orientation === 'portrait' ? 'Vertical' : 'Horizontal'}
-              </span>
-            </div>
-
-            {/* Selector de sucursal */}
-            {branches && branches.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="hidden sm:flex">
-                    <span className="truncate max-w-32">
-                      {currentBranch?.name || 'Sucursal'}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem disabled>
-                    <span className="font-semibold">Seleccionar Sucursal</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {branches.map((branch) => (
-                    <DropdownMenuItem
-                      key={branch.id}
-                      onClick={() => handleBranchChange(branch.id)}
-                      className={selectedBranchId === branch.id ? 'bg-blue-50' : ''}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{branch.name}</span>
-                        <span className="text-xs text-gray-500">{branch.location}</span>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {/* Notificaciones */}
-            <Button variant="ghost" size="sm" className="relative">
-              <FaBell className="h-5 w-5" />
-              {salesCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                  {salesCount}
-                </Badge>
-              )}
-            </Button>
-
-            {/* Usuario */}
+          {/* Selector de sucursal */}
+          {branches && branches.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                    <FaUser className="text-white text-sm" />
-                  </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-900">{user?.nombre || 'Usuario'}</p>
-                    <p className="text-xs text-gray-500">{user?.rol || 'Rol'}</p>
-                  </div>
+                <Button variant="outline" size="sm" className="hidden sm:flex">
+                  <span className="truncate max-w-32">
+                    {currentBranch?.name || 'Sucursal'}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem disabled>
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{user?.nombre || 'Usuario'}</span>
-                    <span className="text-sm text-gray-500">{user?.username || 'username'}</span>
-                  </div>
+                  <span className="font-semibold">Seleccionar Sucursal</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {onOpenConfig && (
-                  <DropdownMenuItem onClick={onOpenConfig}>
-                    <FaCog className="mr-2 h-4 w-4" />
-                    <span>Configuración</span>
+                {branches.map((branch) => (
+                  <DropdownMenuItem
+                    key={branch.id}
+                    onClick={() => handleBranchChange(branch.id)}
+                    className={selectedBranchId === branch.id ? 'bg-blue-50' : ''}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{branch.name}</span>
+                      <span className="text-xs text-gray-500">{branch.location}</span>
+                    </div>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                  <FaSignOutAlt className="mr-2 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
-      </header>
+          )}
 
-      {/* Barra de navegación */}
-      <nav className="px-4 pb-4">
-        <div className="flex items-center space-x-2 overflow-x-auto">
-          {navigationItems.map((item) => (
-            <Button
-              key={item.id}
-              variant={activeTab === item.id ? 'default' : 'outline'}
-              size="sm"
-              className="flex items-center space-x-2 whitespace-nowrap rounded-xl transition-all duration-200"
-              onClick={() => setActiveTab(item.id)}
-            >
-              <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
-            </Button>
-          ))}
+          {/* Usuario */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                  <FaUser className="text-white text-sm" />
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900">{user?.nombre || 'Usuario'}</p>
+                  <p className="text-xs text-gray-500">{user?.rol || 'Rol'}</p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem disabled>
+                <div className="flex flex-col">
+                  <span className="font-semibold">{user?.nombre || 'Usuario'}</span>
+                  <span className="text-sm text-gray-500">{user?.username || 'username'}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <FaCog className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <FaSignOutAlt className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </nav>
-    </div>
+      </div>
+    </header>
   );
 }
+
