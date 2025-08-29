@@ -14,14 +14,14 @@ import {
   FaSignOutAlt, 
   FaCog, 
   FaUtensils,
-  FaBell,
   FaCashRegister,
   FaBoxes,
   FaQuestionCircle,
-  FaClock,
   FaShieldAlt,
   FaCrown,
-  FaBuilding
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaCheckCircle
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
@@ -66,14 +66,14 @@ export function Header({
     setIsMenuOpen(false);
   };
 
-  // Navegación principal simplificada
+  // Navegación principal optimizada
   const navigationItems = [
     { 
       icon: FaCashRegister, 
       label: 'Arqueo', 
       path: '/arqueo', 
       show: ['admin', 'cajero', 'super_admin'].includes(user?.rol),
-      color: 'from-green-500 to-emerald-600',
+      color: 'from-emerald-500 to-green-600',
       description: 'Gestión de caja'
     },
     { 
@@ -153,52 +153,96 @@ export function Header({
 
           {/* Información del usuario y sucursal */}
           <div className="flex items-center space-x-4">
-            {/* Selector de sucursal */}
+            {/* Selector de sucursal PROFESIONALIZADO */}
             {branches && branches.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="hidden sm:flex bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white hover:border-blue-400 transition-all duration-200">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="hidden sm:flex bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-400 transition-all duration-300 shadow-md hover:shadow-lg px-4 py-2"
+                  >
                     <FaBuilding className="h-4 w-4 mr-2 text-blue-600" />
-                    <span className="truncate max-w-32 font-medium">
+                    <span className="truncate max-w-32 font-semibold text-blue-900">
                       {currentBranch?.name || 'Sucursal'}
                     </span>
+                    <FaMapMarkerAlt className="h-3 w-3 ml-2 text-blue-500" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl">
-                  <DropdownMenuItem disabled className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                    <span className="font-semibold text-blue-900">Seleccionar Sucursal</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {branches.map((branch) => (
-                    <DropdownMenuItem
-                      key={branch.id}
-                      onClick={() => handleBranchChange(branch.id)}
-                      className={`p-3 hover:bg-blue-50 transition-all duration-200 ${
-                        selectedBranchId === branch.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                      }`}
-                    >
-                      <div className="flex flex-col w-full">
-                        <span className="font-semibold text-gray-900">{branch.name}</span>
-                        <span className="text-sm text-gray-500">{branch.location}</span>
-                        {selectedBranchId === branch.id && (
-                          <span className="text-xs text-blue-600 font-medium mt-1">✓ Activa</span>
-                        )}
+                <DropdownMenuContent align="end" className="w-80 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl rounded-xl">
+                  {/* Header del selector */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200/50 rounded-t-xl">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <FaBuilding className="text-white text-lg" />
                       </div>
-                    </DropdownMenuItem>
-                  ))}
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg">Seleccionar Sucursal</h3>
+                        <p className="text-sm text-gray-600">Cambia entre ubicaciones disponibles</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Lista de sucursales */}
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {branches.map((branch) => (
+                      <DropdownMenuItem
+                        key={branch.id}
+                        onClick={() => handleBranchChange(branch.id)}
+                        className={`p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer rounded-lg m-1 ${
+                          selectedBranchId === branch.id 
+                            ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-l-4 border-blue-500 shadow-md' 
+                            : 'hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                              selectedBranchId === branch.id 
+                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500' 
+                                : 'bg-gray-100'
+                            }`}>
+                              {selectedBranchId === branch.id ? (
+                                <FaCheckCircle className="text-white text-lg" />
+                              ) : (
+                                <FaBuilding className="text-gray-600 text-lg" />
+                              )}
+                            </div>
+                            <div>
+                              <span className={`font-semibold text-lg ${
+                                selectedBranchId === branch.id ? 'text-blue-900' : 'text-gray-900'
+                              }`}>
+                                {branch.name}
+                              </span>
+                              <div className="flex items-center space-x-1 mt-1">
+                                <FaMapMarkerAlt className="h-3 w-3 text-gray-500" />
+                                <span className="text-sm text-gray-600">{branch.location}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {selectedBranchId === branch.id && (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                              <span className="text-xs text-blue-600 font-bold uppercase tracking-wide">
+                                Activa
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                  
+                  {/* Footer informativo */}
+                  <div className="p-3 bg-gray-50 border-t border-gray-200/50 rounded-b-xl">
+                    <p className="text-xs text-gray-500 text-center">
+                      💡 Solo administradores pueden cambiar de sucursal
+                    </p>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-
-            {/* Notificaciones */}
-            <Button variant="ghost" size="sm" className="relative bg-white/80 backdrop-blur-sm border border-gray-200/50 hover:bg-white hover:border-blue-400 transition-all duration-200">
-              <FaBell className="h-5 w-5 text-gray-600" />
-              {salesCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 text-xs bg-red-500 text-white border-2 border-white shadow-lg animate-pulse">
-                  {salesCount}
-                </Badge>
-              )}
-            </Button>
 
             {/* Usuario */}
             <DropdownMenu>
@@ -274,28 +318,28 @@ export function Header({
         </div>
       </header>
 
-      {/* Navegación principal */}
+      {/* Navegación principal optimizada */}
       <nav className="px-6 pb-4">
-        <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center justify-center space-x-4 overflow-x-auto scrollbar-hide">
           {navigationItems
             .filter(item => item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol)))
             .map((item) => (
               <Button
                 key={item.label}
                 variant="outline"
-                size="sm"
-                className={`flex items-center space-x-3 whitespace-nowrap rounded-xl transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm ${
+                size="lg"
+                className={`flex items-center space-x-3 whitespace-nowrap rounded-xl transition-all duration-300 hover:scale-105 shadow-md hover:shadow-xl border-2 bg-white/90 backdrop-blur-sm px-6 py-3 ${
                   item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
                 }`}
                 onClick={() => navigate(item.path)}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5" />
                 </div>
                 <div className="text-left">
-                  <span className="font-semibold">{item.label}</span>
+                  <span className="font-bold text-base">{item.label}</span>
                   <p className="text-xs text-gray-500">{item.description}</p>
                 </div>
               </Button>
