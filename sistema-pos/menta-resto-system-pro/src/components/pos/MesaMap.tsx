@@ -251,11 +251,11 @@ function ProductCatalog({
               No se encontraron productos con los filtros aplicados.
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"> {/* More columns for larger screens */}
+            <div className="products-grid w-full max-w-screen-xl mx-auto">
               {products.map((prod) => (
                 <div
                   key={prod.id}
-                  className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-3 flex flex-col items-center shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-100 dark:border-gray-800 transform hover:-translate-y-1 relative overflow-hidden"
+                  className="product-card bg-white/80 dark:bg-gray-800/80 rounded-xl p-3 flex flex-col items-center shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-100 dark:border-gray-800 transform hover:-translate-y-1 relative overflow-hidden"
                 >
                   {/* Subtle gradient overlay for modern look */}
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-500/5 dark:to-blue-500/10 rounded-xl pointer-events-none"></div>

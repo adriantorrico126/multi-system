@@ -1426,9 +1426,9 @@ export function POSSystem() {
               {/* Grid de productos */}
               <div className="w-full">
                 {isLoadingProducts ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-pulse">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <Card key={i} className="h-48 w-full bg-gray-200 rounded-lg" />
+                  <div className="products-grid animate-pulse">
+                    {[...Array(20)].map((_, i) => (
+                      <div key={i} className="product-card bg-gray-200 animate-pulse rounded-xl p-3 h-32"></div>
                     ))}
                   </div>
                 ) : filteredProducts.length > 0 ? (

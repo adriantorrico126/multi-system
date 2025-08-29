@@ -334,3 +334,5 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
     </div>
   );
 }
+
+export default KitchenView;

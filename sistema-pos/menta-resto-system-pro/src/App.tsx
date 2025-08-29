@@ -7,6 +7,7 @@ import { OrientationBanner } from "./components/OrientationBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { RestaurantChangeHandler } from "./components/RestaurantChangeHandler";
+import { useMobile } from "./hooks/use-mobile";
 
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -21,35 +22,43 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+function AppContent() {
+  // Aplicar detección móvil globalmente
+  useMobile();
+  
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <OrientationBanner />
-          <BrowserRouter>
-            <RestaurantChangeHandler />
-            <Suspense fallback={<div>Cargando...</div>}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/cocina" element={<KitchenView />} />
-                <Route path="/arqueo" element={<ArqueoPage />} />
-                <Route path="/inventario" element={<InventoryPage />} />
-                <Route path="/egresos" element={<EgresosPage />} />
-                <Route path="/egresos-caja" element={<CajaEgresoPage />} />
-                <Route path="/info-caja" element={<InfoCajaPage />} />
-                <Route path="/soporte" element={<SupportPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
+          <ErrorBoundary>
+            <OrientationBanner>
+              <Suspense fallback={<div>Cargando...</div>}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/cocina" element={<KitchenView />} />
+                  <Route path="/arqueo" element={<ArqueoPage />} />
+                  <Route path="/inventario" element={<InventoryPage />} />
+                  <Route path="/egresos" element={<EgresosPage />} />
+                  <Route path="/egresos-caja" element={<CajaEgresoPage />} />
+                  <Route path="/info-caja" element={<InfoCajaPage />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/soporte" element={<SupportPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <RestaurantChangeHandler />
+            </OrientationBanner>
+          </ErrorBoundary>
         </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+}
+
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
 );
 
 export default App;
-// Build fix: App.tsx recreado completamente

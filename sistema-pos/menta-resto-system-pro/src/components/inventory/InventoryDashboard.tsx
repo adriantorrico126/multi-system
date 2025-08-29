@@ -142,8 +142,8 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
       </Card>
 
       {/* Estadísticas Generales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
+      <div className="stats-grid">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Package className="h-8 w-8 text-blue-600" />
@@ -155,7 +155,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-teal-50 border border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-8 w-8 text-green-600" />
@@ -167,7 +167,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-8 w-8 text-yellow-600" />
@@ -179,7 +179,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -191,7 +191,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-8 w-8 text-orange-600" />
