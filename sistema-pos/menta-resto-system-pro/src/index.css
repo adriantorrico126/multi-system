@@ -3,386 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== CONFIGURACIÓN MÓVIL PROFESIONAL ===== */
-
-/* Variables CSS personalizadas para breakpoints */
-:root {
-  --mobile-xs: 480px;
-  --mobile-sm: 640px;
-  --mobile-md: 768px;
-  --mobile-lg: 1024px;
-  --mobile-xl: 1280px;
-  --mobile-2xl: 1536px;
-  
-  /* Colores del tema */
-  --primary-blue: #2563eb;
-  --primary-purple: #7c3aed;
-  --success-green: #10b981;
-  --warning-yellow: #f59e0b;
-  --error-red: #ef4444;
-  --info-cyan: #06b6d4;
-}
-
-/* ===== OPTIMIZACIONES MÓVILES ===== */
-
-/* Viewport móvil optimizado */
-@viewport {
-  width: device-width;
-  initial-scale: 1;
-  maximum-scale: 5;
-  user-scalable: yes;
-}
-
-/* Scroll suave para móviles */
-html {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Prevenir zoom en inputs en iOS */
-@media screen and (max-width: 768px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  textarea,
-  select {
-    font-size: 16px !important;
-  }
-}
-
-/* ===== COMPONENTES MÓVILES ===== */
-
-/* Botones táctiles optimizados */
-.btn-mobile {
-  @apply min-h-[44px] min-w-[44px] px-4 py-3 rounded-xl font-medium transition-all duration-200;
-  @apply active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
-}
-
-.btn-mobile-primary {
-  @apply btn-mobile bg-gradient-to-r from-blue-600 to-purple-600 text-white;
-  @apply hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl;
-}
-
-.btn-mobile-secondary {
-  @apply btn-mobile bg-white border-2 border-gray-200 text-gray-700;
-  @apply hover:bg-gray-50 hover:border-gray-300;
-}
-
-/* Cards móviles */
-.card-mobile {
-  @apply bg-white rounded-2xl shadow-lg border border-gray-100;
-  @apply hover:shadow-xl transition-all duration-300;
-  @apply active:scale-[0.98] active:shadow-md;
-}
-
-/* Inputs móviles */
-.input-mobile {
-  @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl;
-  @apply focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none;
-  @apply transition-all duration-200;
-  @apply placeholder:text-gray-400;
-}
-
-/* ===== LAYOUTS RESPONSIVOS ===== */
-
-/* Grid responsivo para móviles */
-.grid-mobile {
-  @apply grid gap-4;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-
-@media (max-width: 640px) {
-  .grid-mobile {
-    grid-template-columns: 1fr;
-    gap: 3;
-  }
-}
-
-/* Flexbox móvil */
-.flex-mobile {
-  @apply flex flex-col;
-}
-
-@media (min-width: 768px) {
-  .flex-mobile {
-    @apply flex-row;
-  }
-}
-
-/* ===== ANIMACIONES MÓVILES ===== */
-
-/* Animaciones de entrada para móviles */
-@keyframes slideInUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-slide-in-up {
-  animation: slideInUp 0.3s ease-out;
-}
-
-.animate-slide-in-left {
-  animation: slideInLeft 0.3s ease-out;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* ===== UTILIDADES MÓVILES ===== */
-
-/* Espaciado móvil */
-.space-mobile {
-  @apply space-y-4;
-}
-
-@media (min-width: 768px) {
-  .space-mobile {
-    @apply space-y-6;
-  }
-}
-
-/* Padding móvil */
-.p-mobile {
-  @apply p-4;
-}
-
-@media (min-width: 768px) {
-  .p-mobile {
-    @apply p-6;
-  }
-}
-
-/* Margen móvil */
-.m-mobile {
-  @apply m-4;
-}
-
-@media (min-width: 768px) {
-  .m-mobile {
-    @apply m-6;
-  }
-}
-
-/* ===== OPTIMIZACIONES PWA ===== */
-
-/* Estilos para modo standalone (PWA instalada) */
-@media (display-mode: standalone) {
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-}
-
-/* ===== ESTILOS ESPECÍFICOS DEL POS ===== */
-
-/* Header móvil */
-.header-mobile {
-  @apply bg-white border-b border-gray-200 px-4 py-3 shadow-sm;
-  @apply sticky top-0 z-40 backdrop-blur-sm bg-white/95;
-}
-
-/* Navegación móvil */
-.nav-mobile {
-  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200;
-  @apply px-4 py-2 z-50 backdrop-blur-sm bg-white/95;
-}
-
-/* Contenido principal móvil */
-.main-mobile {
-  @apply px-4 py-4 pb-20;
-}
-
-@media (min-width: 768px) {
-  .main-mobile {
-    @apply px-6 py-6 pb-6;
-  }
-}
-
-/* ===== OPTIMIZACIONES DE RENDIMIENTO ===== */
-
-/* Prevenir reflows en móviles */
-* {
-  box-sizing: border-box;
-}
-
-/* Optimizar transiciones */
-.transition-mobile {
-  @apply transition-all duration-200 ease-out;
-}
-
-/* Prevenir scroll horizontal */
-body {
-  overflow-x: hidden;
-}
-
-/* ===== ESTILOS DE ACCESIBILIDAD MÓVIL ===== */
-
-/* Focus visible para navegación táctil */
-.focus-mobile:focus-visible {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
-}
-
-/* Estados activos para móviles */
-.active-mobile:active {
-  @apply scale-95;
-}
-
-/* ===== MEDIA QUERIES ESPECÍFICOS ===== */
-
-/* Móviles extra pequeños */
-@media (max-width: 480px) {
-  .text-mobile-xs {
-    @apply text-xs;
-  }
-  
-  .p-mobile-xs {
-    @apply p-3;
-  }
-  
-  .m-mobile-xs {
-    @apply m-3;
-  }
-}
-
-/* Móviles pequeños */
-@media (max-width: 640px) {
-  .text-mobile-sm {
-    @apply text-sm;
-  }
-  
-  .p-mobile-sm {
-    @apply p-4;
-  }
-  
-  .m-mobile-sm {
-    @apply m-4;
-  }
-}
-
-/* Tablets */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .text-tablet {
-    @apply text-base;
-  }
-  
-  .p-tablet {
-    @apply p-5;
-  }
-  
-  .m-tablet {
-    @apply m-5;
-  }
-}
-
-/* ===== UTILIDADES ESPECÍFICAS DEL POS ===== */
-
-/* Botones de acción del POS */
-.btn-pos-primary {
-  @apply btn-mobile-primary;
-  @apply text-lg font-semibold;
-}
-
-.btn-pos-secondary {
-  @apply btn-mobile-secondary;
-  @apply text-base font-medium;
-}
-
-/* Cards de productos */
-.card-producto {
-  @apply card-mobile;
-  @apply p-4 hover:shadow-xl;
-}
-
-/* Grid de productos */
-.grid-productos {
-  @apply grid gap-4;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-}
-
-@media (max-width: 640px) {
-  .grid-productos {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 3;
-  }
-}
-
-/* ===== ESTILOS DE IMPRESIÓN ===== */
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
-}
-
-/* ===== ESTILOS DE DARK MODE (FUTURO) ===== */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary-blue: #3b82f6;
-    --primary-purple: #8b5cf6;
-  }
-}
-
 /* ======================================== */
-/* CSS RESPONSIVE PROFESIONAL MEJORADO */
+/* ESTILOS BASE ORIGINALES */
 /* ======================================== */
 
-/* Variables CSS para responsive */
-:root {
-  --mobile-padding: 1rem;
-  --tablet-padding: 1.5rem;
-  --desktop-padding: 2rem;
-  --mobile-border-radius: 0.75rem;
-  --tablet-border-radius: 1rem;
-  --desktop-border-radius: 1.25rem;
-  --mobile-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --tablet-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --desktop-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-/* ======================================== */
-/* DETECCIÓN AUTOMÁTICA MÓVIL/DESKTOP */
-/* ======================================== */
-
-/* Estilos base para todos los dispositivos */
 * {
   box-sizing: border-box;
 }
@@ -393,563 +17,103 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   background-color: #f8fafc;
   color: #1e293b;
-  overflow-x: hidden;
-  transition: all 0.3s ease;
 }
 
 /* ======================================== */
-/* RESPONSIVE DESIGN INTELIGENTE */
+/* UTILIDADES BÁSICAS */
 /* ======================================== */
 
-/* MÓVILES (≤768px) */
-@media (max-width: 768px) {
-  body {
-    padding: var(--mobile-padding);
-    font-size: 14px;
-  }
-  
-  /* Headers móviles */
-  h1 {
-    font-size: 1.5rem !important;
-    line-height: 2rem !important;
-    margin-bottom: 0.75rem !important;
-  }
-  
-  h2 {
-    font-size: 1.25rem !important;
-    line-height: 1.75rem !important;
-    margin-bottom: 0.5rem !important;
-  }
-  
-  h3 {
-    font-size: 1.125rem !important;
-    line-height: 1.5rem !important;
-  }
-  
-  /* Contenedores móviles */
-  .container {
-    padding: var(--mobile-padding);
-    margin: 0;
-  }
-  
-  /* Cards móviles */
-  .card {
-    border-radius: var(--mobile-border-radius);
-    box-shadow: var(--mobile-shadow);
-    margin-bottom: 1rem;
-    padding: 1rem;
-  }
-  
-  /* Botones móviles */
-  .btn, button {
-    min-height: 44px;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    border-radius: 0.5rem;
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Inputs móviles */
-  input, select, textarea {
-    min-height: 44px;
-    font-size: 16px;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    width: 100%;
-  }
-  
-  /* Grid móvil */
-  .grid {
-    grid-template-columns: 1fr !important;
-    gap: 1rem !important;
-  }
-  
-  /* Flexbox móvil */
-  .flex {
-    flex-direction: column;
-  }
-  
-  .flex-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  
-  /* Navegación móvil */
-  nav {
-    padding: 0.75rem;
-  }
-  
-  nav button {
-    padding: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  /* Productos móviles */
-  .product-card {
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-  
-  .product-card h3 {
-    font-size: 1rem;
-  }
-  
-  .product-card .price {
-    font-size: 1.125rem;
-  }
-  
-  /* Carrito móvil */
-  .cart-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    border-top: 1px solid #e2e8f0;
-    padding: 1rem;
-    z-index: 50;
-  }
-  
-  /* Header móvil */
-  header {
-    padding: 0.75rem 1rem;
-  }
-  
-  header h1 {
-    font-size: 1.25rem;
-  }
-  
-  /* Tablas móviles */
-  .table-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  table {
-    min-width: 600px;
-    font-size: 0.875rem;
-  }
-  
-  /* Espaciado móvil */
-  .space-y-4 > * + * {
-    margin-top: 1rem;
-  }
-  
-  .space-y-6 > * + * {
-    margin-top: 1.5rem;
-  }
-  
-  /* Padding móvil */
-  .p-6 {
-    padding: 1rem !important;
-  }
-  
-  .p-4 {
-    padding: 0.75rem !important;
-  }
-  
-  /* Margin móvil */
-  .m-6 {
-    margin: 1rem !important;
-  }
-  
-  .mb-6 {
-    margin-bottom: 1rem !important;
-  }
-}
-
-/* TABLETS (769px - 1024px) */
-@media (min-width: 769px) and (max-width: 1024px) {
-  body {
-    padding: var(--tablet-padding);
-    font-size: 15px;
-  }
-  
-  .container {
-    padding: var(--tablet-padding);
-  }
-  
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-  
-  .flex-row {
-    flex-direction: row;
-  }
-  
-  .card {
-    border-radius: var(--tablet-border-radius);
-    box-shadow: var(--tablet-shadow);
-    padding: 1.5rem;
-  }
-  
-  .btn, button {
-    min-height: 48px;
-    padding: 0.875rem 1.25rem;
-    font-size: 1rem;
-  }
-  
-  input, select, textarea {
-    min-height: 48px;
-    padding: 0.875rem;
-  }
-}
-
-/* DESKTOP (>1024px) */
-@media (min-width: 1025px) {
-  body {
-    padding: var(--desktop-padding);
-    font-size: 16px;
-  }
-  
-  .container {
-    padding: var(--desktop-padding);
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
-  .grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-  }
-  
-  .flex-row {
-    flex-direction: row;
-  }
-  
-  .card {
-    border-radius: var(--desktop-border-radius);
-    box-shadow: var(--desktop-shadow);
-    padding: 2rem;
-  }
-  
-  .btn, button {
-    min-height: 52px;
-    padding: 1rem 1.5rem;
-    font-size: 1.125rem;
-  }
-  
-  input, select, textarea {
-    min-height: 52px;
-    padding: 1rem;
-  }
-  
-  /* Header desktop */
-  header {
-    padding: 1.5rem 2rem;
-  }
-  
-  header h1 {
-    font-size: 2rem;
-  }
-  
-  /* Navegación desktop */
-  nav {
-    padding: 1rem 2rem;
-  }
-  
-  nav button {
-    padding: 0.75rem 1.25rem;
-    font-size: 1rem;
-  }
-}
-
-/* ======================================== */
-/* COMPONENTES ESPECÍFICOS RESPONSIVE */
-/* ======================================== */
-
-/* Header responsive */
-.header-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-@media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-  
-  .header-container > * {
-    margin-bottom: 0.5rem;
-  }
-}
-
-/* Navegación responsive */
-.nav-container {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding: 0.5rem 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-@media (max-width: 768px) {
-  .nav-container {
-    justify-content: flex-start;
-    padding: 0.5rem;
-  }
-  
-  .nav-container button {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-}
-
-@media (min-width: 1025px) {
-  .nav-container {
-    justify-content: center;
-    gap: 1rem;
-  }
-}
-
-/* Productos responsive */
-.products-grid {
-  display: grid;
-  gap: 1rem;
+.container {
   padding: 1rem;
 }
 
-@media (max-width: 768px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
-    padding: 0.75rem;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-}
-
-@media (min-width: 1025px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-/* Estadísticas responsive */
-.stats-grid {
-  display: grid;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-    padding: 0.75rem;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-}
-
-@media (min-width: 1025px) {
-  .stats-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 2rem;
-    padding: 2rem;
-  }
-}
-
-/* Carrito responsive */
-.cart-container {
+.card {
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.btn, button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+}
+
+input, select, textarea {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+}
+
+/* ======================================== */
+/* GRID BÁSICO */
+/* ======================================== */
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* ======================================== */
+/* FLEXBOX BÁSICO */
+/* ======================================== */
+
+.flex {
+  display: flex;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+/* ======================================== */
+/* ESPACIADO BÁSICO */
+/* ======================================== */
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+/* ======================================== */
+/* PADDING Y MARGIN BÁSICOS */
+/* ======================================== */
+
+.p-4 {
+  padding: 1rem;
+}
+
+.p-6 {
   padding: 1.5rem;
 }
 
-@media (max-width: 768px) {
-  .cart-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    border-radius: 1rem 1rem 0 0;
-    padding: 1rem;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
+.m-6 {
+  margin: 1.5rem;
 }
 
-@media (min-width: 1025px) {
-  .cart-container {
-    position: sticky;
-    top: 2rem;
-    height: fit-content;
-  }
+.mb-6 {
+  margin-bottom: 1.5rem;
 }
 
 /* ======================================== */
-/* UTILIDADES RESPONSIVE */
+/* ANIMACIONES BÁSICAS */
 /* ======================================== */
 
-/* Ocultar en móviles */
-.mobile\:hidden {
-  display: none;
-}
-
-@media (min-width: 769px) {
-  .mobile\:hidden {
-    display: block;
-  }
-}
-
-/* Mostrar solo en móviles */
-.mobile\:block {
-  display: block;
-}
-
-@media (min-width: 769px) {
-  .mobile\:block {
-    display: none;
-  }
-}
-
-/* Ocultar en tablets */
-.tablet\:hidden {
-  display: none;
-}
-
-@media (min-width: 1025px) {
-  .tablet\:hidden {
-    display: block;
-  }
-}
-
-/* Mostrar solo en tablets */
-.tablet\:block {
-  display: block;
-}
-
-@media (max-width: 768px), (min-width: 1025px) {
-  .tablet\:block {
-    display: none;
-  }
-}
-
-/* Ocultar en desktop */
-.desktop\:hidden {
-  display: none;
-}
-
-@media (max-width: 1024px) {
-  .desktop\:hidden {
-    display: block;
-  }
-}
-
-/* Mostrar solo en desktop */
-.desktop\:block {
-  display: block;
-}
-
-@media (max-width: 1024px) {
-  .desktop\:block {
-    display: none;
-  }
+* {
+  transition: all 0.2s ease;
 }
 
 /* ======================================== */
-/* ANIMACIONES RESPONSIVE */
+/* FOCUS VISIBLE */
 /* ======================================== */
 
-@media (prefers-reduced-motion: no-preference) {
-  /* Transiciones suaves */
-  * {
-    transition: all 0.2s ease;
-  }
-  
-  /* Animaciones de entrada */
-  .fade-in {
-    animation: fadeIn 0.3s ease-in;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* Animaciones de salida */
-  .fade-out {
-    animation: fadeOut 0.2s ease-out;
-  }
-  
-  @keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-  }
-  
-  /* Hover effects solo en desktop */
-  @media (min-width: 1025px) {
-    .hover\:scale:hover {
-      transform: scale(1.05);
-    }
-    
-    .hover\:shadow-lg:hover {
-      box-shadow: var(--desktop-shadow);
-    }
-  }
-}
-
-/* ======================================== */
-/* TOUCH OPTIMIZATIONS */
-/* ======================================== */
-
-@media (hover: none) and (pointer: coarse) {
-  /* Mejorar interacciones táctiles */
-  .btn:active, button:active {
-    transform: scale(0.98);
-  }
-  
-  /* Área táctil mínima */
-  .btn, button, a, input, select, textarea {
-    min-height: 44px;
-  }
-  
-  /* Deshabilitar hover en touch */
-  .hover\:bg-gray-100:hover {
-    background-color: transparent;
-  }
-}
-
-/* ======================================== */
-/* SAFE AREA PARA DISPOSITIVOS CON NOTCH */
-/* ======================================== */
-
-@supports (padding: max(0px)) {
-  body {
-    padding-top: max(0.75rem, env(safe-area-inset-top));
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    padding-left: max(0.75rem, env(safe-area-inset-left));
-    padding-right: max(0.75rem, env(safe-area-inset-right));
-  }
-  
-  @media (max-width: 768px) {
-    body {
-      padding-top: max(0.5rem, env(safe-area-inset-top));
-      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-    }
-  }
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
 }
 
