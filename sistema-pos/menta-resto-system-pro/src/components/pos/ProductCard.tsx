@@ -3,7 +3,7 @@ import { Product } from '@/types/restaurant';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus } from 'lucide-react';
+import { Plus, Edit3 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [selectedMods, setSelectedMods] = useState<number[]>([]);
   const [loadingMods, setLoadingMods] = useState(false);
 
-  const handleAddToCart = () => {
+  // Agregar al carrito directamente (sin modal)
+  const handleQuickAddToCart = () => {
+    onAddToCart(product, '', []);
+  };
+
+  // Agregar al carrito con notas y modificadores
+  const handleAddToCartWithDetails = () => {
     onAddToCart(product, notes, modificadores.filter(m => selectedMods.includes(m.id_modificador)));
     setNotes(''); // Clear notes after adding to cart
     setSelectedMods([]);
@@ -56,38 +62,50 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         
         <div className="flex justify-between items-center mt-4">
           <span className="text-xs text-muted-foreground">{product.category}</span>
+          
+          {/* Botón principal: Agregar al carrito directamente */}
+          <Button
+            size="sm"
+            onClick={handleQuickAddToCart}
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg mr-2"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+
+          {/* Botón secundario: Modal para notas y modificadores */}
           <AlertDialog open={isDialogOpen} onOpenChange={handleOpenDialog}>
             <AlertDialogTrigger asChild>
               <Button
                 size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg"
+                variant="outline"
+                className="opacity-0 group-hover:opacity-100 transition-opacity border-blue-300 text-blue-600 hover:bg-blue-50"
               >
-                <Plus className="h-4 w-4" />
+                <Edit3 className="h-3 w-3" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-white border border-gray-200 rounded-xl shadow-2xl max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle>Añadir {product.name} al Carrito</AlertDialogTitle>
-                <AlertDialogDescription>
-                  ¿Deseas añadir alguna nota especial para este producto?
+                <AlertDialogTitle className="text-gray-900">Personalizar {product.name}</AlertDialogTitle>
+                <AlertDialogDescription className="text-gray-600">
+                  Agregar notas especiales o modificadores (opcional)
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="notes">Notas (opcional)</Label>
+                  <Label htmlFor="notes" className="text-gray-700 font-medium">Notas (opcional)</Label>
                   <Textarea
                     id="notes"
                     placeholder="Ej: sin cebolla, bien cocido, extra picante..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="col-span-3"
+                    className="col-span-3 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
                 {loadingMods ? (
-                  <div className="text-xs text-muted-foreground">Cargando modificadores...</div>
+                  <div className="text-xs text-gray-500">Cargando modificadores...</div>
                 ) : modificadores.length > 0 && (
                   <div className="grid gap-2">
-                    <Label>Modificadores/Adiciones</Label>
+                    <Label className="text-gray-700 font-medium">Modificadores/Adiciones</Label>
                     <div className="flex flex-wrap gap-2">
                       {modificadores.map(mod => (
                         <Button
@@ -99,7 +117,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                             : [...prev, mod.id_modificador])}
                           className={selectedMods.includes(mod.id_modificador) 
                             ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
-                            : 'hover:border-green-300 hover:text-green-700'
+                            : 'hover:border-green-300 hover:text-green-700 border-gray-300'
                           }
                         >
                           {mod.nombre_modificador} {mod.precio_extra > 0 ? `(+${mod.precio_extra})` : ''}
@@ -110,9 +128,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 )}
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAddToCart} className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg">
-                  Añadir al Carrito
+                <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-50">Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleAddToCartWithDetails} className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg">
+                  Agregar al Carrito
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

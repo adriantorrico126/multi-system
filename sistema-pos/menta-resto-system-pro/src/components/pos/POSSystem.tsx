@@ -347,7 +347,12 @@ export function POSSystem() {
       nombre: b.nombre,
       name: b.name,
       ciudad: b.ciudad,
-      location: b.location
+      location: b.location,
+      direccion: b.direccion,
+      address: b.address,
+      // Mostrar todas las propiedades disponibles
+      allProps: Object.keys(b),
+      fullObject: b
     })));
   }, [branches, branchesLoading]);
 

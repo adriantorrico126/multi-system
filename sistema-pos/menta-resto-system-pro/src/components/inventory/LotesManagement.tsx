@@ -19,7 +19,7 @@ interface Lote {
   cantidad_actual: number;
   fecha_fabricacion: string;
   fecha_caducidad: string;
-  precio_compra: number;
+  precio_compra: number | null;
   id_restaurante: number;
   producto_nombre?: string;
   categoria_nombre?: string;
@@ -65,6 +65,11 @@ export const LotesManagement: React.FC<LotesManagementProps> = ({
 
   // Lotes filtrados
   const filteredLotes = useMemo(() => {
+    // Debug: verificar estructura de lotes
+    console.log('🔍 LotesManagement Debug - lotes:', lotes);
+    console.log('🔍 LotesManagement Debug - primer lote:', lotes[0]);
+    console.log('🔍 LotesManagement Debug - precio_compra del primer lote:', lotes[0]?.precio_compra, 'tipo:', typeof lotes[0]?.precio_compra);
+    
     return lotes.filter(lote => {
       const product = productMap[lote.id_producto];
       const matchesSearch = product?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,7 +97,7 @@ export const LotesManagement: React.FC<LotesManagementProps> = ({
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
     }).length;
-    const totalValue = lotes.reduce((sum, l) => sum + (l.precio_compra * l.cantidad_actual), 0);
+    const totalValue = lotes.reduce((sum, l) => sum + ((l.precio_compra || 0) * l.cantidad_actual), 0);
     const lowStockLotes = lotes.filter(l => l.cantidad_actual <= 5 && l.cantidad_actual > 0).length;
 
     return { totalLotes, expiredLotes, expiringLotes, totalValue, lowStockLotes };
@@ -379,9 +384,22 @@ export const LotesManagement: React.FC<LotesManagementProps> = ({
                       </TableCell>
                       <TableCell>
                         <div className="text-right">
-                          <div className="font-medium">Bs {lote.precio_compra.toFixed(2)}</div>
+                          <div className="font-medium">
+                            Bs {(() => {
+                              const precio = lote.precio_compra;
+                              console.log('🔍 Debug precio_compra:', precio, 'tipo:', typeof precio);
+                              if (precio === null || precio === undefined) return '0.00';
+                              if (typeof precio === 'string') return parseFloat(precio).toFixed(2);
+                              if (typeof precio === 'number') return precio.toFixed(2);
+                              return '0.00';
+                            })()}
+                          </div>
                           <div className="text-xs text-gray-500">
-                            Total: Bs {(lote.precio_compra * lote.cantidad_actual).toFixed(2)}
+                            Total: Bs {(() => {
+                              const precio = lote.precio_compra || 0;
+                              const cantidad = lote.cantidad_actual || 0;
+                              return (precio * cantidad).toFixed(2);
+                            })()}
                           </div>
                         </div>
                       </TableCell>

@@ -117,3 +117,36 @@ input, select, textarea {
   border-radius: 0.25rem;
 }
 
+/* ======================================== */
+/* UTILIDADES DE SCROLL */
+/* ======================================== */
+
+/* Ocultar barra de scroll pero mantener funcionalidad */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Safari and Chrome */
+}
+
+/* Scrollbar personalizado para navegadores que lo soporten */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
