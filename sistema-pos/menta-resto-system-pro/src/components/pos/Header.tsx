@@ -14,8 +14,19 @@ import {
   FaSignOutAlt, 
   FaCog, 
   FaUtensils,
-  FaBell
+  FaBell,
+  FaCashRegister,
+  FaBoxes,
+  FaChartBar,
+  FaQuestionCircle,
+  FaClock,
+  FaHome,
+  FaUtensils as FaKitchen,
+  FaReceipt,
+  FaUsers,
+  FaBuilding
 } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   currentBranch?: any;
@@ -39,6 +50,7 @@ export function Header({
   onOpenConfig
 }: HeaderProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -56,6 +68,19 @@ export function Header({
     }
     setIsMenuOpen(false);
   };
+
+  // Navegación principal
+  const navigationItems = [
+    { icon: FaHome, label: 'Inicio', path: '/', show: true },
+    { icon: FaCashRegister, label: 'Arqueo', path: '/arqueo', show: ['admin', 'cajero', 'super_admin'].includes(user?.rol) },
+    { icon: FaBoxes, label: 'Inventario', path: '/inventario', show: ['admin', 'super_admin'].includes(user?.rol) },
+    { icon: FaChartBar, label: 'Dashboard', path: '/', show: ['admin', 'super_admin'].includes(user?.rol) },
+    { icon: FaKitchen, label: 'Cocina', path: '/cocina', show: ['admin', 'cocinero', 'super_admin'].includes(user?.rol) },
+    { icon: FaReceipt, label: 'Egresos', path: '/egresos', show: ['admin', 'super_admin'].includes(user?.rol) },
+    { icon: FaUsers, label: 'Usuarios', path: '/', show: ['admin', 'super_admin'].includes(user?.rol) },
+    { icon: FaBuilding, label: 'Sucursales', path: '/', show: ['admin', 'super_admin'].includes(user?.rol) },
+    { icon: FaQuestionCircle, label: 'Soporte', path: '/soporte', show: true },
+  ];
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
@@ -155,6 +180,26 @@ export function Header({
           </div>
         </div>
       </header>
+
+      {/* Navegación principal */}
+      <nav className="px-4 pb-4">
+        <div className="flex items-center space-x-2 overflow-x-auto">
+          {navigationItems
+            .filter(item => item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol)))
+            .map((item) => (
+              <Button
+                key={item.label}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2 whitespace-nowrap rounded-xl transition-all duration-200 hover:bg-blue-50 hover:border-blue-200"
+                onClick={() => navigate(item.path)}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Button>
+            ))}
+        </div>
+      </nav>
     </div>
   );
 }
