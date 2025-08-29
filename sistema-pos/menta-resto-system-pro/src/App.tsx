@@ -52,3 +52,4 @@ const App = () => (
 );
 
 export default App;
+// Build fix: App.tsx recreado completamente
