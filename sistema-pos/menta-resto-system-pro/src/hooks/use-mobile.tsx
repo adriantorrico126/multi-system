@@ -13,6 +13,7 @@ interface MobileInfo {
   viewportHeight: number;
   viewportWidth: number;
   pixelRatio: number;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
 }
 
 const breakpoints = {
@@ -38,6 +39,7 @@ export function useMobile(): MobileInfo {
     viewportHeight: 0,
     viewportWidth: 0,
     pixelRatio: 1,
+    deviceType: 'desktop',
   });
 
   useEffect(() => {
@@ -60,10 +62,22 @@ export function useMobile(): MobileInfo {
       else if (width < breakpoints.xl) screenSize = 'xl';
       else screenSize = '2xl';
       
-      // Clasificación de dispositivo
-      const isMobile = width < breakpoints.md && isTouch;
-      const isTablet = width >= breakpoints.md && width < breakpoints.lg && isTouch;
-      const isDesktop = width >= breakpoints.lg || !isTouch;
+      // Clasificación de dispositivo mejorada
+      let isMobile = false;
+      let isTablet = false;
+      let isDesktop = false;
+      let deviceType: 'mobile' | 'tablet' | 'desktop' = 'desktop';
+      
+      if (width < breakpoints.md) {
+        isMobile = true;
+        deviceType = 'mobile';
+      } else if (width < breakpoints.lg) {
+        isTablet = true;
+        deviceType = 'tablet';
+      } else {
+        isDesktop = true;
+        deviceType = 'desktop';
+      }
       
       // Orientación
       const orientation: 'portrait' | 'landscape' = width > height ? 'landscape' : 'portrait';
@@ -75,7 +89,7 @@ export function useMobile(): MobileInfo {
       // Pixel ratio para pantallas de alta densidad
       const pixelRatio = window.devicePixelRatio || 1;
       
-      setMobileInfo({
+      const newMobileInfo = {
         isMobile,
         isTablet,
         isDesktop,
@@ -88,7 +102,42 @@ export function useMobile(): MobileInfo {
         viewportHeight: height,
         viewportWidth: width,
         pixelRatio,
-      });
+        deviceType,
+      };
+      
+      setMobileInfo(newMobileInfo);
+      
+      // Aplicar clases CSS automáticamente
+      updateBodyClasses(newMobileInfo);
+    };
+
+    const updateBodyClasses = (info: MobileInfo) => {
+      // Remover clases anteriores
+      document.body.classList.remove('mobile-device', 'tablet-device', 'desktop-device');
+      
+      // Agregar clase según tipo de dispositivo
+      if (info.isMobile) {
+        document.body.classList.add('mobile-device');
+      } else if (info.isTablet) {
+        document.body.classList.add('tablet-device');
+      } else {
+        document.body.classList.add('desktop-device');
+      }
+      
+      // Agregar clase de orientación
+      document.body.classList.remove('portrait', 'landscape');
+      document.body.classList.add(info.orientation);
+      
+      // Agregar clase de tamaño de pantalla
+      document.body.classList.remove('xs', 'sm', 'md', 'lg', 'xl', '2xl');
+      document.body.classList.add(info.screenSize);
+      
+      // Agregar clase de touch
+      if (info.isTouch) {
+        document.body.classList.add('touch-device');
+      } else {
+        document.body.classList.remove('touch-device');
+      }
     };
 
     // Actualizar al montar y al cambiar tamaño
@@ -124,13 +173,6 @@ export function useOrientation() {
       
       setOrientation(newOrientation);
       setIsMobile(newIsMobile);
-      
-      // Agregar clase al body para estilos CSS
-      if (newIsMobile) {
-        document.body.classList.add('mobile-device');
-      } else {
-        document.body.classList.remove('mobile-device');
-      }
     };
 
     updateOrientation();
@@ -179,13 +221,6 @@ export function useIsMobile() {
       const width = window.innerWidth;
       const isMobileDevice = width <= 768;
       setIsMobile(isMobileDevice);
-      
-      // Agregar clase al body
-      if (isMobileDevice) {
-        document.body.classList.add('mobile-device');
-      } else {
-        document.body.classList.remove('mobile-device');
-      }
     };
 
     checkMobile();
@@ -199,4 +234,27 @@ export function useIsMobile() {
   }, []);
 
   return isMobile;
+}
+
+// Hook para obtener información completa del dispositivo
+export function useDeviceInfo() {
+  const mobileInfo = useMobile();
+  
+  return {
+    ...mobileInfo,
+    // Utilidades adicionales
+    isSmallScreen: mobileInfo.viewportWidth < breakpoints.sm,
+    isMediumScreen: mobileInfo.viewportWidth >= breakpoints.sm && mobileInfo.viewportWidth < breakpoints.lg,
+    isLargeScreen: mobileInfo.viewportWidth >= breakpoints.lg,
+    // Clases CSS útiles
+    cssClasses: {
+      'mobile-device': mobileInfo.isMobile,
+      'tablet-device': mobileInfo.isTablet,
+      'desktop-device': mobileInfo.isDesktop,
+      'touch-device': mobileInfo.isTouch,
+      'portrait': mobileInfo.orientation === 'portrait',
+      'landscape': mobileInfo.orientation === 'landscape',
+      [mobileInfo.screenSize]: true,
+    }
+  };
 }
