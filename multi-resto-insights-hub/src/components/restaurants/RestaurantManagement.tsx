@@ -301,17 +301,43 @@ export const RestaurantManagement: React.FC = () => {
 
   const handleImportJson = async (restaurantId: number, text: string) => {
     try {
+      if (!text.trim()) {
+        toast({ title: 'Error', description: 'El campo de texto está vacío' });
+        return;
+      }
+
       const payload = JSON.parse(text);
-      if (!Array.isArray(payload)) throw new Error('El contenido debe ser un arreglo de productos');
+      if (!Array.isArray(payload)) {
+        throw new Error('El contenido debe ser un arreglo de productos');
+      }
+
+      if (payload.length === 0) {
+        toast({ title: 'Error', description: 'El arreglo de productos está vacío' });
+        return;
+      }
+
+      console.log('Enviando productos para importar:', payload);
+      
       const res = await apiFetch(`/productos/${restaurantId}/import`, {
         method: 'POST',
         body: JSON.stringify({ productos: payload })
       }, token || undefined);
-      toast({ title: 'Importación', description: 'Productos importados correctamente.' });
+      
+      console.log('Respuesta de importación:', res);
+      
+      toast({ title: 'Importación exitosa', description: `${payload.length} productos importados correctamente.` });
+      
+      // Recargar la lista de productos
       const list = await apiFetch<any>(`/productos/${restaurantId}`, {}, token || undefined);
       setDataProducts(list?.data || []);
-    } catch (e:any) {
-      toast({ title: 'Error', description: e.message || 'No se pudo importar.' });
+      
+    } catch (e: any) {
+      console.error('Error en importación:', e);
+      if (e.name === 'SyntaxError') {
+        toast({ title: 'Error de JSON', description: 'El formato JSON no es válido. Verifica la sintaxis.' });
+      } else {
+        toast({ title: 'Error de importación', description: e.message || 'No se pudo importar. Revisa la consola para más detalles.' });
+      }
     }
   };
 
@@ -350,14 +376,19 @@ export const RestaurantManagement: React.FC = () => {
   };
 
   const normalizeProducts = (rows: any[]) => {
-    return rows.map(r => ({
-      nombre: String(r.nombre ?? r.producto ?? '').trim(),
-      precio: Number(String(r.precio ?? r.price ?? '0').replace(',', '.')),
-      categoria_nombre: r.categoria_nombre ?? r.categoria ?? '',
-      stock: r.stock !== undefined ? Number(r.stock) : undefined,
-      activo: r.activo !== undefined ? (String(r.activo).toLowerCase() === 'true' || String(r.activo) === '1') : undefined,
-      imagen_url: r.imagen_url ?? r.imagen ?? undefined,
-    })).filter(p => p.nombre && !isNaN(p.precio));
+    return rows.map(r => {
+      const precio = Number(String(r.precio ?? r.price ?? '0').replace(',', '.'));
+      const stock = r.stock !== undefined && r.stock !== null && !isNaN(r.stock) ? Number(r.stock) : null;
+      
+      return {
+        nombre: String(r.nombre ?? r.producto ?? '').trim(),
+        precio: precio,
+        categoria_nombre: r.categoria_nombre ?? r.categoria ?? '',
+        stock: stock,
+        activo: r.activo !== undefined ? (String(r.activo).toLowerCase() === 'true' || String(r.activo) === '1') : true,
+        imagen_url: r.imagen_url ?? r.imagen ?? '',
+      };
+    }).filter(p => p.nombre && !isNaN(p.precio) && p.precio > 0);
   };
 
   const handleFileUpload = async (restaurantId: number, file: File) => {
@@ -902,7 +933,15 @@ export const RestaurantManagement: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={async () => {
+                  if (!selectedRestaurant?.id) {
+                    toast({ title: 'Error', description: 'No hay restaurante seleccionado' });
+                    return;
+                  }
                   const el = document.getElementById('jsonImport') as HTMLTextAreaElement;
+                  if (!el) {
+                    toast({ title: 'Error', description: 'No se encontró el campo de texto' });
+                    return;
+                  }
                   await handleImportJson(selectedRestaurant.id, el.value);
                 }} disabled={importing}>
                   {importing ? 'Importando...' : 'Importar JSON'}

@@ -1177,9 +1177,9 @@ export function POSSystem() {
                 <Button variant="outline" onClick={() => setShowCerrarCajaModal(false)}>Cancelar</Button>
                 <Button variant="destructive" onClick={handleCerrarArqueo}>Confirmar Cierre</Button>
               </div>
+              </div>
             </div>
           </div>
-        </div>
       )}
 
       {/* Banner de caja abierta (informativo, cierre automático) */}
@@ -1195,14 +1195,14 @@ export function POSSystem() {
             <div className="flex-1">
               <div className="text-sm font-medium text-gray-900">
                 Caja abierta desde {new Date(arqueoActual.fecha_apertura).toLocaleString()}
-              </div>
+            </div>
               <div className="text-sm text-gray-600">
                 Monto inicial: ${Number(arqueoActual.monto_inicial||0).toLocaleString()}
-              </div>
+          </div>
               <div className="mt-1 text-xs text-gray-500">
                 El cierre es automático a las 23:59.
-              </div>
-            </div>
+          </div>
+        </div>
             <button
               onClick={handleCloseBanner}
               className="flex-shrink-0 w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-200 group"
@@ -1223,7 +1223,7 @@ export function POSSystem() {
             className="rounded-xl transition-all duration-200"
           >
             <ShoppingCart className="h-5 w-5 mr-2" />
-            Punto de Venta
+                  Punto de Venta
           </Button>
           {gestionMesasHabilitada && (
             <>
@@ -1233,7 +1233,7 @@ export function POSSystem() {
                 className="rounded-xl transition-all duration-200"
               >
                 <ClipboardList className="h-5 w-5 mr-2" />
-                Pedidos
+                  Pedidos
               </Button>
             </>
           )}
@@ -1268,7 +1268,7 @@ export function POSSystem() {
               className="rounded-xl transition-all duration-200"
             >
               <FileText className="h-5 w-5 mr-2" />
-              Historial de Ventas
+                  Historial de Ventas
             </Button>
           )}
           {showAdminFeatures && (
@@ -1278,7 +1278,7 @@ export function POSSystem() {
               className="rounded-xl transition-all duration-200"
             >
               <LayoutDashboard className="h-5 w-5 mr-2" />
-              Dashboard
+                  Dashboard
             </Button>
           )}
           {(user.rol === 'admin' || user.rol === 'super_admin') && (
@@ -1288,7 +1288,7 @@ export function POSSystem() {
               className="rounded-xl transition-all duration-200"
             >
               <Tag className="h-5 w-5 mr-2" />
-              Promociones
+                  Promociones
             </Button>
           )}
           {(user.rol === 'admin' || user.rol === 'super_admin') && (
@@ -1297,7 +1297,7 @@ export function POSSystem() {
               onClick={() => navigate('/egresos')}
               className="rounded-xl transition-all duration-200"
             >
-              Egresos
+                  Egresos
             </Button>
           )}
           {(['admin','cocinero'].includes(user.rol)) && (
@@ -1428,7 +1428,7 @@ export function POSSystem() {
                 />
               </div>
               
-              {/* Grid de productos */}
+                  {/* Grid de productos */}
               <div className="w-full">
                 {isLoadingProducts ? (
                   <div className="products-grid animate-pulse">
@@ -1439,10 +1439,10 @@ export function POSSystem() {
                 ) : filteredProducts.length > 0 ? (
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {filteredProducts.map((product) => (
+                    {filteredProducts.map((product) => (
                         <ProductCard key={String(product.id)} product={product} onAddToCart={addToCart} />
-                      ))}
-                    </div>
+                    ))}
+                  </div>
                     
                     {/* Indicador de scroll cuando hay muchos productos */}
                     {filteredProducts.length > 15 && (
@@ -1451,7 +1451,7 @@ export function POSSystem() {
                         <p className="text-sm text-blue-700">
                           <strong>Tip:</strong> Usa el scroll para ver todos los productos ({filteredProducts.length} productos encontrados)
                         </p>
-                      </div>
+                  </div>
                     )}
                   </>
                 ) : (
@@ -1478,7 +1478,7 @@ export function POSSystem() {
                   onUpdateOrderStatus={handleUpdateOrderStatus}
                   userRole={roleForOrderMgmt as any}
                 />
-              </div>
+                  </div>
             </div>
           )}
 
@@ -1491,7 +1491,7 @@ export function POSSystem() {
                   onDeleteSale={handleDeleteSale}
                   userRole={roleForSales as any}
                 />
-              </div>
+                  </div>
             </div>
           )}
 
@@ -1502,7 +1502,7 @@ export function POSSystem() {
                 // Solo cajero: solo ve la gestión de mesas
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
-                </div>
+                  </div>
               ) : (
                 // Admin y gerente: ven todas las sub-pestañas
                 <>
@@ -1557,7 +1557,7 @@ export function POSSystem() {
           {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (
             <div className="p-6">
               <PedidosPendientesCajero />
-            </div>
+                  </div>
           )}
 
           {/* Vista de Promociones */}
@@ -1565,10 +1565,10 @@ export function POSSystem() {
             <div className="p-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                 <PromocionManagement />
+                  </div>
               </div>
-            </div>
           )}
-        </div>
+          </div>
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS */}
         {activeTab === 'pos' && (
@@ -1591,8 +1591,8 @@ export function POSSystem() {
                     <span className="text-xs text-yellow-600 font-medium">{appliedPromociones.length}</span>
                   </div>
                 )}
-              </div>
-              
+        </div>
+
               {/* Total Principal */}
               <div className="text-right">
                 <div className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
@@ -1747,8 +1747,8 @@ export function POSSystem() {
                     />
                   </div>
                 )}
-              </div>
-            </div>
+      </div>
+    </div>
 
             {/* Footer con Opciones de Servicio */}
             {cart.length > 0 && (
@@ -1836,75 +1836,75 @@ export function POSSystem() {
           </aside>
         )}
       </main>
-      {showCheckout && (
-        <CheckoutModal
-          items={cart}
-          onConfirmSale={confirmSale}
-          onCancel={() => setShowCheckout(false)}
-          mesaNumero={mesaNumero}
-        />
-      )}
-      {selectedInvoice && <InvoiceModal sale={selectedInvoice} onClose={() => setSelectedInvoice(null)} />}
-      {configOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Configuraciones</h2>
-              <Button variant="outline" onClick={() => setConfigOpen(false)}>Cerrar</Button>
+    {showCheckout && (
+      <CheckoutModal
+        items={cart}
+        onConfirmSale={confirmSale}
+        onCancel={() => setShowCheckout(false)}
+        mesaNumero={mesaNumero}
+      />
+    )}
+    {selectedInvoice && <InvoiceModal sale={selectedInvoice} onClose={() => setSelectedInvoice(null)} />}
+    {configOpen && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Configuraciones</h2>
+            <Button variant="outline" onClick={() => setConfigOpen(false)}>Cerrar</Button>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2">Operación y Flujos de Pedidos</h3>
+              <label className="block text-sm font-medium mb-1">Modo de Flujo de Cocina</label>
+              <select
+                className="w-full p-2 border rounded"
+                value={draftConfig?.flujoCocina?.modo || 'Completo'}
+                onChange={(e) => setDraftConfig((d:any) => ({ ...d, flujoCocina: { ...(d.flujoCocina||{}), modo: e.target.value } }))}
+              >
+                <option value="Completo">Completo (KDS)</option>
+                <option value="Directo">Directo (Impresión)</option>
+                <option value="Simplificado">Simplificado (Mostrador)</option>
+              </select>
+              {(draftConfig?.flujoCocina?.modo === 'Directo') && (
+                <label className="inline-flex items-center gap-2 mt-2">
+                  <input type="checkbox" checked={!!draftConfig?.flujoCocina?.autoImprimir} onChange={(e) => setDraftConfig((d:any)=>({ ...d, flujoCocina: { ...(d.flujoCocina||{}), autoImprimir: e.target.checked } }))} />
+                  <span className="text-sm">Imprimir automáticamente al crear el pedido</span>
+                </label>
+              )}
             </div>
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold mb-2">Operación y Flujos de Pedidos</h3>
-                <label className="block text-sm font-medium mb-1">Modo de Flujo de Cocina</label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={draftConfig?.flujoCocina?.modo || 'Completo'}
-                  onChange={(e) => setDraftConfig((d:any) => ({ ...d, flujoCocina: { ...(d.flujoCocina||{}), modo: e.target.value } }))}
-                >
-                  <option value="Completo">Completo (KDS)</option>
-                  <option value="Directo">Directo (Impresión)</option>
-                  <option value="Simplificado">Simplificado (Mostrador)</option>
-                </select>
-                {(draftConfig?.flujoCocina?.modo === 'Directo') && (
-                  <label className="inline-flex items-center gap-2 mt-2">
-                    <input type="checkbox" checked={!!draftConfig?.flujoCocina?.autoImprimir} onChange={(e) => setDraftConfig((d:any)=>({ ...d, flujoCocina: { ...(d.flujoCocina||{}), autoImprimir: e.target.checked } }))} />
-                    <span className="text-sm">Imprimir automáticamente al crear el pedido</span>
-                  </label>
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Tipos de Servicio Habilitados</h3>
-                <div className="grid grid-cols-3 gap-3 text-sm">
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" checked={draftConfig?.tiposServicio?.mesa ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), mesa: e.target.checked } }))} /> En Mesa
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" checked={draftConfig?.tiposServicio?.pickup ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), pickup: e.target.checked } }))} /> Para Llevar
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" checked={draftConfig?.tiposServicio?.delivery ?? false} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), delivery: e.target.checked } }))} /> Delivery
-                  </label>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Gestión de Mesas</h3>
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={draftConfig?.gestionMesas?.habilitado ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, gestionMesas: { ...(d.gestionMesas||{}), habilitado: e.target.checked } }))} /> Habilitar gestión de mesas
+            <div>
+              <h3 className="font-semibold mb-2">Tipos de Servicio Habilitados</h3>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={draftConfig?.tiposServicio?.mesa ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), mesa: e.target.checked } }))} /> En Mesa
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={draftConfig?.tiposServicio?.pickup ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), pickup: e.target.checked } }))} /> Para Llevar
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={draftConfig?.tiposServicio?.delivery ?? false} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, tiposServicio: { ...(d.tiposServicio||{}), delivery: e.target.checked } }))} /> Delivery
                 </label>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={()=>{ setDraftConfig(config); setConfigOpen(false); }}>Cancelar</Button>
-              <Button onClick={async ()=>{
-                await saveConfiguracion(draftConfig);
-                setConfig(draftConfig);
-                setConfigOpen(false);
-                toast({ title: 'Configuración guardada', description: 'Los cambios se aplicaron.' });
-              }}>Guardar</Button>
+            <div>
+              <h3 className="font-semibold mb-2">Gestión de Mesas</h3>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={draftConfig?.gestionMesas?.habilitado ?? true} onChange={(e)=> setDraftConfig((d:any)=>({ ...d, gestionMesas: { ...(d.gestionMesas||{}), habilitado: e.target.checked } }))} /> Habilitar gestión de mesas
+              </label>
             </div>
           </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={()=>{ setDraftConfig(config); setConfigOpen(false); }}>Cancelar</Button>
+            <Button onClick={async ()=>{
+              await saveConfiguracion(draftConfig);
+              setConfig(draftConfig);
+              setConfigOpen(false);
+              toast({ title: 'Configuración guardada', description: 'Los cambios se aplicaron.' });
+            }}>Guardar</Button>
+          </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }

@@ -42,7 +42,7 @@ router.post(
 router.get('/', authenticateToken, authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), ensureTenantContext, categoriaController.getAllCategorias);
 
 // GET /api/v1/categorias/:id - Obtener una categoría por ID
-router.get('/:id', categoriaController.getCategoriaById);
+router.get('/:id', authenticateToken, authorizeRoles('admin', 'cajero', 'mesero', 'cocinero', 'super_admin'), ensureTenantContext, categoriaController.getCategoriaById);
 
 // PUT /api/v1/categorias/:id - Actualizar una categoría por ID
 router.put('/:id', authenticateToken, authorizeRoles('admin', 'super_admin'), updateCategoriaValidationRules, clearCache('categorias'), categoriaController.updateCategoria);

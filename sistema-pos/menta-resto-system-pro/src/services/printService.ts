@@ -49,17 +49,25 @@ class PrintService {
       const user = localStorage.getItem('currentUser');
       
       if (!token || !user) {
-        console.warn('No hay token o usuario para conectar al servidor de impresión');
+        console.warn('⚠️ No hay token o usuario para conectar al servidor de impresión');
         return;
       }
 
       const userData = JSON.parse(user);
       const printServerUrl = import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001';
 
+      // Verificar que el token sea válido antes de conectar
+      if (!this.isValidToken(token)) {
+        console.warn('⚠️ Token inválido para servidor de impresión');
+        return;
+      }
+
       this.socket = io(printServerUrl, {
         auth: {
           token: token,
-          clientType: 'pos'
+          clientType: 'pos',
+          userId: userData.id,
+          restauranteId: userData.id_restaurante
         },
         transports: ['websocket'],
         reconnectionAttempts: this.maxReconnectAttempts,
@@ -70,7 +78,34 @@ class PrintService {
       this.setupEventHandlers();
       
     } catch (error) {
-      console.error('Error al inicializar socket de impresión:', error);
+      console.error('❌ Error al inicializar socket de impresión:', error);
+    }
+  }
+
+  /**
+   * Verifica si el token es válido
+   */
+  private isValidToken(token: string): boolean {
+    try {
+      // Verificar que el token tenga el formato correcto (JWT)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return false;
+      }
+      
+      // Verificar que no esté expirado (si es posible decodificar)
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp && payload.exp < currentTime) {
+        console.warn('⚠️ Token expirado');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Error al validar token:', error);
+      return false;
     }
   }
 
@@ -104,7 +139,10 @@ class PrintService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Error de conexión con servidor de impresión:', error);
+      // Solo mostrar error si no es por token inválido (ya se maneja arriba)
+      if (!error.message?.includes('Token inválido') && !error.message?.includes('Unauthorized')) {
+        console.error('❌ Error de conexión con servidor de impresión:', error);
+      }
       this.isConnected = false;
       this.updateStatus();
       

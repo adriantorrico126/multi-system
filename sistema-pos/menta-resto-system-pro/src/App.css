@@ -14,10 +14,6 @@
 }
 
 /* Gradientes personalizados */
-.gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
 .gradient-success {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
@@ -291,10 +287,7 @@
   }
 }
 
-/* Estilos para el header profesional */
-.header-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
+
 
 /* Estilos para iconos con animación */
 .icon-bounce {

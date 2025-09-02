@@ -1,25 +1,17 @@
 import { Pool } from 'pg';
 
-Bien, los backned// Permitir usar DATABASE_URL (DigitalOcean/Heroku style) o variables sueltas
-const connectionString = process.env.DATABASE_URL;
+// Usar las variables de entorno del archivo .env
+const pool = new Pool({
+  host: process.env.POS_DB_HOST || 'localhost',
+  port: Number(process.env.POS_DB_PORT) || 5432,
+  user: process.env.POS_DB_USER || 'postgres',
+  password: process.env.POS_DB_PASSWORD || '',
+  database: process.env.POS_DB_NAME || 'sistempos',
+  ssl: false, // SSL deshabilitado para desarrollo local
+  max: 10, // Limitar conexiones desde la consola admin
+});
 
-const pool = connectionString
-  ? new Pool({
-      connectionString,
-      ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
-      max: 10,
-    })
-  : new Pool({
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT) || 5432,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
-      max: 10, // Limitar conexiones desde la consola admin
-    });
-
-console.log('DB ENV:', connectionString ? 'DATABASE_URL' : process.env.DB_USER, connectionString ? '(using URL)' : process.env.DB_DATABASE, process.env.DB_HOST);
+console.log('DB ENV:', process.env.POS_DB_USER, process.env.POS_DB_DATABASE, process.env.POS_DB_HOST);
 
 export default pool;
 
@@ -36,6 +28,22 @@ export async function initAdminUsersTable() {
       actualizado_en TIMESTAMP DEFAULT NOW()
     )
   `);
+  
+  // Crear usuario administrador por defecto si no existe
+  try {
+    const bcrypt = require('bcryptjs');
+    const passwordHash = bcrypt.hashSync('admin123', 10);
+    
+    await pool.query(`
+      INSERT INTO admin_users (username, password_hash, nombre, activo)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (username) DO NOTHING
+    `, ['admin@possolutions.com', passwordHash, 'Administrador Global', true]);
+    
+    console.log('✅ Usuario administrador creado/verificado');
+  } catch (error) {
+    console.log('⚠️ Usuario administrador ya existe o error al crear:', error);
+  }
 }
 
 // Inicializar tabla de restaurantes si no existe

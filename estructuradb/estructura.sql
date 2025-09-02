@@ -417,3 +417,4 @@ vista_resumen_inventario	lotes_vencidos	bigint
 vista_resumen_inventario	lotes_por_vencer	bigint
 vista_resumen_inventario	proxima_caducidad	date
 vista_resumen_inventario	estado_stock	text
+

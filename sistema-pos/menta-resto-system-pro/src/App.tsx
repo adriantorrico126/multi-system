@@ -32,7 +32,7 @@ function AppContent() {
         <TooltipProvider>
           <ErrorBoundary>
             <OrientationBanner>
-              <Suspense fallback={<div>Cargando...</div>}>
+              <Suspense fallback={<div className="text-center p-8 text-gray-600">Cargando...</div>}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/cocina" element={<KitchenView />} />
@@ -47,6 +47,7 @@ function AppContent() {
                 </Routes>
               </Suspense>
               <RestaurantChangeHandler />
+              <Toaster />
             </OrientationBanner>
           </ErrorBoundary>
         </TooltipProvider>

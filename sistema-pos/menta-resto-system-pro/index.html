@@ -4,21 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     
-    <!-- Meta tags para PWA y móvil -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <!-- Meta tags básicos -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Sistema de Punto de Venta profesional para restaurantes. Gestión de ventas, inventario, cocina y reportes en tiempo real." />
     <meta name="keywords" content="POS, restaurante, punto de venta, inventario, cocina, ventas, gestión" />
     <meta name="author" content="Menta Restobar" />
     <meta name="robots" content="index, follow" />
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#2563eb" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="POS Menta" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="msapplication-TileColor" content="#2563eb" />
-    <meta name="msapplication-config" content="/browserconfig.xml" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -34,18 +25,8 @@
     <meta property="twitter:description" content="Sistema de Punto de Venta profesional para restaurantes" />
     <meta property="twitter:image" content="https://pos.forkast.vip/twitter-image.png" />
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <!-- Favicon básico -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     
     <!-- Preconnect para performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -73,26 +54,35 @@
         overflow-x: hidden;
       }
       
-      /* Loading spinner */
-      .loading-spinner {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      /* ELIMINACIÓN COMPLETA DEL LOADING SPINNER */
+      .loading-spinner,
+      #loading-spinner,
+      [class*="loading"],
+      [id*="loading"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        background: none !important;
+        background-image: none !important;
       }
       
-      .spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 1s ease-in-out infinite;
+      /* Eliminar cualquier gradiente morado */
+      *[style*="667eea"],
+      *[style*="764ba2"] {
+        background: none !important;
+        background-image: none !important;
       }
       
-      @keyframes spin {
-        to { transform: rotate(360deg); }
+      /* Restaurar el body específicamente */
+      body {
+        background-color: #f8fafc !important;
       }
       
       /* Safe area para dispositivos con notch */
@@ -107,10 +97,7 @@
     </style>
   </head>
   <body class="h-full">
-    <!-- Loading spinner mientras se carga la app -->
-    <div id="loading" class="loading-spinner">
-      <div class="spinner"></div>
-    </div>
+
     
     <!-- Root de la aplicación -->
     <div id="root"></div>
@@ -120,17 +107,6 @@
     
     <!-- Scripts de optimización -->
     <script>
-      // Ocultar loading spinner cuando la app esté lista
-      window.addEventListener('load', () => {
-        const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.opacity = '0';
-          setTimeout(() => {
-            loading.style.display = 'none';
-          }, 300);
-        }
-      });
-      
       // Prevenir zoom en inputs en iOS
       if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
         const viewport = document.querySelector('meta[name=viewport]');
@@ -138,6 +114,167 @@
           viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
       }
+      
+            // SOLUCIÓN RADICAL: Prevenir completamente la creación del loading spinner
+      (function() {
+        'use strict';
+        
+        // Sobrescribir appendChild para interceptar elementos problemáticos
+        const originalAppendChild = Node.prototype.appendChild;
+        Node.prototype.appendChild = function(child) {
+          if (child.nodeType === 1) { // Element node
+            const element = child;
+            if (element.id === 'loading-spinner' || 
+                element.id === 'loading' || 
+                element.classList.contains('loading-spinner')) {
+              console.log('BLOQUEADO: Intento de crear elemento loading spinner:', element.id || element.className);
+              return child; // Retornar el elemento pero no agregarlo al DOM
+            }
+            
+            // Verificar si tiene el gradiente morado en estilos inline
+            if (element.style && element.style.background && 
+                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
+              console.log('BLOQUEADO: Elemento con gradiente morado en style inline');
+              return child;
+            }
+          }
+          
+          return originalAppendChild.call(this, child);
+        };
+        
+        // Sobrescribir insertBefore para interceptar elementos problemáticos
+        const originalInsertBefore = Node.prototype.insertBefore;
+        Node.prototype.insertBefore = function(newNode, referenceNode) {
+          if (newNode.nodeType === 1) { // Element node
+            const element = newNode;
+            if (element.id === 'loading-spinner' || 
+                element.id === 'loading' || 
+                element.classList.contains('loading-spinner')) {
+              console.log('BLOQUEADO: Intento de insertar elemento loading spinner:', element.id || element.className);
+              return newNode; // Retornar el elemento pero no agregarlo al DOM
+            }
+          }
+          
+          return originalInsertBefore.call(this, newNode, referenceNode);
+        };
+        
+        // Función agresiva de limpieza
+        function removePurpleGradients() {
+          // Eliminar elementos específicos por ID
+          const loadingSpinner = document.getElementById('loading-spinner');
+          if (loadingSpinner) {
+            loadingSpinner.remove();
+            console.log('ELIMINADO: loading-spinner por ID');
+          }
+          
+          const loading = document.getElementById('loading');
+          if (loading) {
+            loading.remove();
+            console.log('ELIMINADO: loading por ID');
+          }
+          
+          // Eliminar elementos por clase
+          const loadingSpinnersByClass = document.querySelectorAll('.loading-spinner');
+          loadingSpinnersByClass.forEach(element => {
+            element.remove();
+            console.log('ELIMINADO: elemento con clase loading-spinner');
+          });
+          
+          // Eliminar cualquier div que contenga un spinner o gradiente morado
+          const allElements = document.querySelectorAll('*');
+          allElements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundImage = style.backgroundImage;
+            
+            // Verificar si tiene el gradiente morado
+            if (backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) {
+              element.remove();
+              console.log('ELIMINADO: elemento con gradiente morado:', element.tagName, element.id, element.className);
+            }
+            
+            // Verificar estilos inline también
+            if (element.style && element.style.background && 
+                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
+              element.remove();
+              console.log('ELIMINADO: elemento con gradiente morado inline:', element.tagName, element.id, element.className);
+            }
+          });
+        }
+        
+        // Observador de mutaciones mejorado
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+              if (node.nodeType === 1) { // Element node
+                const element = node;
+                
+                // Verificar ID y clases problemáticas
+                if (element.id === 'loading-spinner' || 
+                    element.id === 'loading' || 
+                    element.classList.contains('loading-spinner')) {
+                  element.remove();
+                  console.log('INTERCEPTADO: elemento dinámico eliminado:', element.id || element.className);
+                  return;
+                }
+                
+                // Verificar gradientes morados en elementos recién creados
+                setTimeout(() => {
+                  const style = window.getComputedStyle(element);
+                  const backgroundImage = style.backgroundImage;
+                  if (backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) {
+                    element.remove();
+                    console.log('INTERCEPTADO: elemento con gradiente morado eliminado');
+                  }
+                }, 10);
+              }
+            });
+          });
+        });
+        
+        // Ejecutar inmediatamente
+        removePurpleGradients();
+        
+        // Ejecutar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', removePurpleGradients);
+        
+        // Iniciar el observador
+        observer.observe(document.documentElement, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class', 'id']
+        });
+        
+        // Ejecutar limpieza periódica
+        setInterval(removePurpleGradients, 250);
+        
+        // LIMPIEZA AGRESIVA ADICIONAL para elementos del Service Worker
+        setInterval(() => {
+          // Eliminar cualquier elemento con el gradiente morado
+          const allElements = document.querySelectorAll('*');
+          allElements.forEach(element => {
+            const style = window.getComputedStyle(element);
+            const backgroundImage = style.backgroundImage;
+            const backgroundColor = style.backgroundColor;
+            
+            // Verificar gradientes morados
+            if ((backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) ||
+                (backgroundColor && (backgroundColor.includes('667eea') || backgroundColor.includes('764ba2')))) {
+              element.remove();
+              console.log('🔥 ELIMINADO: elemento con gradiente morado del Service Worker');
+            }
+            
+            // Verificar estilos inline
+            if (element.style && element.style.background && 
+                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
+              element.remove();
+              console.log('🔥 ELIMINADO: elemento con gradiente morado inline del Service Worker');
+            }
+          });
+        }, 100);
+        
+        console.log('🔥 SISTEMA ANTI-LOADING-SPINNER ACTIVADO');
+      })();
       
       // Optimización para móviles - DESACTIVADO
       // if (window.innerWidth <= 768) {

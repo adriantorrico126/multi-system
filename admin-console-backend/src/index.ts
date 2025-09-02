@@ -9,78 +9,22 @@ import { initAdminUsersTable, initPagosRestaurantesTable, initRestaurantesTable,
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './swagger.json';
 
-console.log('ENV TEST:', process.env.DB_USER, process.env.DB_DATABASE, process.env.DB_HOST, process.env.DB_PASSWORD, process.env.DB_PORT);
+console.log('ENV TEST:', process.env.POS_DB_USER, process.env.POS_DB_NAME, process.env.POS_DB_HOST, process.env.POS_DB_PASSWORD, process.env.POS_DB_PORT);
 
 const app = express();
 // Respetar PORT (plataformas PaaS) y permitir ADMIN_PORT como override
 const PORT = Number(process.env.PORT || process.env.ADMIN_PORT || 4000);
 
-// Configuración de CORS para producción
+// Configuración de CORS simplificada para desarrollo
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'https://pos.forkast.vip',
-      'https://admin.forkast.vip',
-      'https://forkast.vip',
-      'https://www.forkast.vip'
-    ];
-
-    if (process.env.NODE_ENV === 'development') {
-      allowedOrigins.push(
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://localhost:4000'
-      );
-    }
-
-    if (!origin) {
-      // Permitir peticiones sin origin (Postman, curl, backend)
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    console.log(`🚫 CORS bloqueado: ${origin}`);
-    return callback(new Error('No permitido por CORS'));
-  },
+  origin: true, // Permitir todos los orígenes en desarrollo
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 }));
 
-// Middleware adicional para asegurar headers CORS
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  if (origin) {
-    const allowedOrigins = [
-      'https://pos.forkast.vip',
-      'https://admin.forkast.vip',
-      'https://forkast.vip',
-      'https://www.forkast.vip'
-    ];
-    
-    if (process.env.NODE_ENV === 'development') {
-      allowedOrigins.push(
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://localhost:4000'
-      );
-    }
-    
-    if (allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    }
-  }
-  
-  next();
-});
+// CORS ya está configurado arriba, no necesitamos middleware adicional
 app.use(helmet());
 app.use(express.json());
 app.use('/api', routes);

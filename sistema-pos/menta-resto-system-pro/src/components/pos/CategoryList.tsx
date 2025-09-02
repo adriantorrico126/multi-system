@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { getCategories, createCategory } from '../../services/api';
+import { getCategories, createCategory, updateCategory, deleteCategory } from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,11 @@ const CategoryList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,6 +65,65 @@ const CategoryList: React.FC = () => {
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, nombre }: { id: number; nombre: string }) => updateCategory(id, { nombre }),
+    onSuccess: async (data: any) => {
+      toast({ title: 'Categoría actualizada', description: 'Se actualizó correctamente.' });
+      setEditOpen(false);
+      setEditingCategory(null);
+      setNewCatName('');
+      try {
+        const refreshed = await getCategories();
+        setCategories(refreshed);
+      } catch {}
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'No se pudo actualizar la categoría.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (categoryId: number) => deleteCategory(categoryId),
+    onSuccess: async (data: any) => {
+      toast({ title: 'Categoría eliminada', description: 'Se eliminó correctamente.' });
+      setDeleteOpen(false);
+      setCategoryToDelete(null);
+      try {
+        const refreshed = await getCategories();
+        setCategories(refreshed);
+      } catch {}
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'No se pudo eliminar la categoría.';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    }
+  });
+
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setNewCatName(category.nombre);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (category: Category) => {
+    setCategoryToDelete(category);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmEdit = () => {
+    if (!editingCategory || !newCatName.trim()) {
+      toast({ title: 'Validación', description: 'Ingresa un nombre válido.', variant: 'destructive' });
+      return;
+    }
+    updateMutation.mutate({ id: editingCategory.id_categoria, nombre: newCatName.trim() });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!categoryToDelete) return;
+    deleteMutation.mutate(categoryToDelete.id_categoria);
+  };
 
   return (
     <div className="space-y-6">
@@ -127,10 +190,21 @@ const CategoryList: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit(cat)}
+                              disabled={updateMutation.isPending}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDelete(cat)}
+                              disabled={deleteMutation.isPending}
+                            >
                               <Trash className="h-4 w-4" />
                             </Button>
                           </div>
@@ -145,6 +219,7 @@ const CategoryList: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Dialog para agregar categoría */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
@@ -168,6 +243,62 @@ const CategoryList: React.FC = () => {
               addMutation.mutate(name);
             }} disabled={addMutation.isPending}>
               {addMutation.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar categoría */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Categoría</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Nombre de la categoría"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setEditOpen(false);
+              setEditingCategory(null);
+              setNewCatName('');
+            }}>Cancelar</Button>
+            <Button onClick={handleConfirmEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para confirmar eliminación */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-gray-600">
+              ¿Estás seguro de que quieres eliminar la categoría "{categoryToDelete?.nombre}"?
+            </p>
+            <p className="text-sm text-red-600">
+              Esta acción no se puede deshacer y puede afectar los productos asociados.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setDeleteOpen(false);
+              setCategoryToDelete(null);
+            }}>Cancelar</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>

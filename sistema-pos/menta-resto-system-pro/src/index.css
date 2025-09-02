@@ -4,6 +4,32 @@
 @tailwind utilities;
 
 /* ======================================== */
+/* ELIMINACIÓN COMPLETA DEL LOADING SPINNER */
+/* ======================================== */
+
+/* Ocultar completamente cualquier elemento con loading-spinner */
+.loading-spinner,
+#loading-spinner {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Eliminar SOLO el gradiente morado del loading spinner */
+.loading-spinner,
+#loading-spinner {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* ======================================== */
 /* ESTILOS BASE ORIGINALES */
 /* ======================================== */
 

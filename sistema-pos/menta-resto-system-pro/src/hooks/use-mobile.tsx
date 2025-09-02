@@ -9,7 +9,7 @@ interface MobileInfo {
   isTouch: boolean;
   isIOS: boolean;
   isAndroid: boolean;
-  isStandalone: boolean; // PWA instalada
+  isStandalone: boolean; // Aplicación standalone
   viewportHeight: number;
   viewportWidth: number;
   pixelRatio: number;
@@ -82,7 +82,7 @@ export function useMobile(): MobileInfo {
       // Orientación
       const orientation: 'portrait' | 'landscape' = width > height ? 'landscape' : 'portrait';
       
-      // PWA standalone
+      // Aplicación standalone
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                           (window.navigator as any).standalone === true;
       
@@ -186,30 +186,6 @@ export function useOrientation() {
   }, []);
 
   return orientation;
-}
-
-// Hook para PWA
-export function usePWA() {
-  const [isPWA, setIsPWA] = useState(false);
-  const [canInstall, setCanInstall] = useState(false);
-
-  useEffect(() => {
-    const checkPWA = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                          (window.navigator as any).standalone === true;
-      setIsPWA(isStandalone);
-    };
-
-    const checkInstallable = () => {
-      const isInstallable = 'serviceWorker' in navigator && 'PushManager' in window;
-      setCanInstall(isInstallable);
-    };
-
-    checkPWA();
-    checkInstallable();
-  }, []);
-
-  return { isPWA, canInstall };
 }
 
 // Hook para detectar si el usuario está en móvil

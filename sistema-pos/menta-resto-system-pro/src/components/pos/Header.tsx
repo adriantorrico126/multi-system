@@ -168,22 +168,6 @@ export function Header({
     return selectedBranchId === branchId || selectedBranchId === branch.id_sucursal || selectedBranchId === branch.id;
   };
 
-  // Debug: mostrar información de sucursales
-  console.log('🔍 Header Debug - branches:', branches);
-  console.log('🔍 Header Debug - currentBranch:', currentBranch);
-  console.log('🔍 Header Debug - selectedBranchId:', selectedBranchId);
-  console.log('🔍 Header Debug - branches structure:', branches?.map(b => ({
-    id: b.id,
-    id_sucursal: b.id_sucursal,
-    nombre: b.nombre,
-    name: b.name,
-    ciudad: b.ciudad,
-    location: b.location,
-    direccion: b.direccion,
-    address: b.address,
-    allProps: Object.keys(b)
-  })));
-
   return (
     <div className="bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
       {/* Header principal - TODO EN UNA SOLA LÍNEA */}

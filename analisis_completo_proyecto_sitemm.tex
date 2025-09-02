@@ -2,822 +2,719 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
-\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
-\usepackage{xcolor}
-\usepackage{fancyhdr}
+\usepackage{parskip}
 \usepackage{hyperref}
-\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
 \usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{minted}
+\usepackage{float}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{tikz}
-\usepackage{pgfplots}
-\usepackage{float}
 
-% Configuración de colores
-\definecolor{primaryblue}{RGB}{59,130,246}
-\definecolor{secondarygreen}{RGB}{16,185,129}
-\definecolor{warningorange}{RGB}{245,158,11}
-\definecolor{dangered}{RGB}{239,68,68}
-\definecolor{lightgray}{RGB}{243,244,246}
-
-% Configuración de hyperref
-\hypersetup{
-    colorlinks=true,
-    linkcolor=primaryblue,
-    filecolor=primaryblue,
-    urlcolor=primaryblue,
-    citecolor=primaryblue,
-    pdftitle={Análisis Completo del Proyecto SITEMM},
-    pdfauthor={Análisis Técnico},
-    pdfsubject={Sistema POS Multi-Restaurante}
-}
-
-% Configuración de encabezados
+% Configuración de página
+\geometry{margin=2.5cm}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\textcolor{primaryblue}{\textbf{SITEMM - Análisis Técnico}}}
-\fancyhead[R]{\textcolor{primaryblue}{\thepage}}
-\fancyfoot[C]{\textcolor{lightgray}{\footnotesize Análisis Completo del Sistema POS Multi-Restaurante}}
+\fancyhead[L]{\textcolor{blue}{\textbf{Análisis Completo - Proyecto Sitemm}}}
+\fancyhead[R]{\textcolor{gray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
 
-% Configuración de listings para código
-\lstset{
+% Configuración de títulos
+\titleformat{\section}{\Large\bfseries\color{blue}}{}{0em}{}
+\titleformat{\subsection}{\large\bfseries\color{darkgray}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{darkgray}}{}{0em}{}
+
+% Configuración de listas
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.5em}
+
+% Colores personalizados
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Configuración de código
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
     basicstyle=\ttfamily\footnotesize,
-    backgroundcolor=\color{lightgray},
-    frame=single,
-    numbers=left,
-    numberstyle=\tiny\color{gray},
-    keywordstyle=\color{primaryblue},
-    commentstyle=\color{gray},
-    stringstyle=\color{secondarygreen},
-    breaklines=true,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
     showstringspaces=false,
+    showtabs=false,                  
     tabsize=2
 }
-
-\title{
-    \vspace{-2cm}
-    {\Huge \textbf{\textcolor{primaryblue}{ANÁLISIS COMPLETO}}}\\
-    \vspace{0.5cm}
-    {\Large \textbf{\textcolor{secondarygreen}{PROYECTO SITEMM}}}\\
-    \vspace{0.3cm}
-    {\large \textit{Sistema POS Multi-Restaurante Profesional}}\\
-    \vspace{1cm}
-    \rule{\textwidth}{2pt}
-}
-
-\author{
-    \textbf{Análisis Técnico Detallado}\\
-    \textit{Arquitectura, Funcionalidades y Evaluación}
-}
-
-\date{\today}
+\lstset{style=mystyle}
 
 \begin{document}
 
-\maketitle
-\thispagestyle{empty}
+\begin{titlepage}
+\centering
+\vspace*{2cm}
 
-\newpage
+{\Huge\bfseries\color{blue} Análisis Completo del Proyecto Sitemm}
+
+\vspace{1cm}
+
+{\Large Sistema Multi-Restaurante POS Profesional}
+
+\vspace{2cm}
+
+\begin{minipage}{0.8\textwidth}
+\centering
+\textbf{Resumen Ejecutivo}\\
+\vspace{0.5cm}
+\parbox{0.9\textwidth}{
+Este documento presenta un análisis exhaustivo del sistema Sitemm, una solución POS (Point of Sale) multi-restaurante completa que integra gestión de ventas, administración centralizada, control de inventario y analytics avanzados. El proyecto demuestra una arquitectura empresarial robusta con tecnologías modernas y funcionalidades integrales para la industria gastronómica.
+}
+\end{minipage}
+
+\vspace{2cm}
+
+{\large \textbf{Fecha de Análisis:} \today}
+
+\vspace{1cm}
+
+{\large \textbf{Versión del Sistema:} 2.0.0}
+
+\vfill
+
+{\small \textbf{Desarrollado por el equipo de Sitemm}}
+
+\end{titlepage}
 
 \tableofcontents
-\thispagestyle{empty}
-
 \newpage
 
 \section{Resumen Ejecutivo}
 
-El proyecto \textbf{SITEMM} constituye un \textcolor{primaryblue}{\textbf{sistema POS (Point of Sale) multi-restaurante completo y profesional}} desarrollado con tecnologías modernas y arquitectura escalable. Este análisis detallado examina todos los componentes del sistema, desde la infraestructura técnica hasta las funcionalidades de negocio.
+\subsection{Descripción General del Proyecto}
 
-\subsection{Características Principales}
+El proyecto \textbf{Sitemm} es un sistema POS (Point of Sale) multi-restaurante de nivel empresarial que integra tres componentes principales trabajando de manera coordinada:
 
-\begin{itemize}[leftmargin=*]
-    \item \textcolor{secondarygreen}{\textbf{Arquitectura Multi-Tenant:}} Soporte nativo para múltiples restaurantes
-    \item \textcolor{secondarygreen}{\textbf{Stack Tecnológico Moderno:}} React, Node.js, PostgreSQL, TypeScript
-    \item \textcolor{secondarygreen}{\textbf{Sistema Completo:}} Desde ventas básicas hasta analytics empresariales
-    \item \textcolor{secondarygreen}{\textbf{Escalabilidad:}} Preparado para crecimiento empresarial
-    \item \textcolor{secondarygreen}{\textbf{Seguridad Robusta:}} JWT, bcrypt, rate limiting, auditoría completa
+\begin{itemize}
+    \item \textbf{Admin Console Backend}: Backend centralizado para administración multi-restaurante
+    \item \textbf{Multi-Resto Insights Hub}: Frontend de administración central con dashboard ejecutivo
+    \item \textbf{Sistema POS Completo}: Solución integral de punto de venta para restaurantes
 \end{itemize}
 
-\subsection{Componentes del Sistema}
+\subsection{Arquitectura General}
 
-El proyecto se estructura como un \textbf{monorepo} con cuatro aplicaciones principales que trabajan de manera integrada:
-
-\begin{enumerate}
-    \item \textbf{Sistema POS Principal} (menta-resto-system-pro + vegetarian\_restaurant\_backend)
-    \item \textbf{Consola de Administración} (admin-console-backend)
-    \item \textbf{Hub de Insights Multi-Restaurante} (multi-resto-insights-hub)
-    \item \textbf{Agente de Impresión} (sistema distribuido)
-\end{enumerate}
-
-\section{Arquitectura General del Sistema}
-
-\subsection{Diagrama de Arquitectura}
+El proyecto está estructurado como un \textbf{monorepo} con arquitectura distribuida:
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=2cm, auto]
-    % Definir estilos
-    \tikzstyle{frontend} = [rectangle, draw=primaryblue, fill=primaryblue!20, text width=3cm, text centered, minimum height=1.5cm]
-    \tikzstyle{backend} = [rectangle, draw=secondarygreen, fill=secondarygreen!20, text width=3cm, text centered, minimum height=1.5cm]
-    \tikzstyle{database} = [cylinder, draw=warningorange, fill=warningorange!20, text width=2cm, text centered, minimum height=1.5cm]
-    \tikzstyle{service} = [ellipse, draw=dangered, fill=dangered!20, text width=2.5cm, text centered]
-    
-    % Nodos
-    \node [frontend] (pos-frontend) {POS Frontend\\React + TypeScript};
-    \node [frontend, right of=pos-frontend, xshift=4cm] (admin-frontend) {Admin Frontend\\Multi-Resto Hub};
-    
-    \node [backend, below of=pos-frontend] (pos-backend) {POS Backend\\Node.js + Express};
-    \node [backend, below of=admin-frontend] (admin-backend) {Admin Backend\\TypeScript + Express};
-    
-    \node [database, below of=pos-backend, xshift=2cm] (database) {PostgreSQL\\Multi-Tenant};
-    
-    \node [service, left of=pos-backend, xshift=-3cm] (print-service) {Agente\\Impresión};
-    
-    % Conexiones
-    \draw [->] (pos-frontend) -- (pos-backend);
-    \draw [->] (admin-frontend) -- (admin-backend);
-    \draw [->] (pos-backend) -- (database);
-    \draw [->] (admin-backend) -- (database);
-    \draw [->] (pos-backend) -- (print-service);
-    
-    % Etiquetas de conexión
-    \node [above, midway] at ($(pos-frontend)!0.5!(pos-backend)$) {\footnotesize API REST};
-    \node [above, midway] at ($(admin-frontend)!0.5!(admin-backend)$) {\footnotesize API REST};
-    \node [left, midway] at ($(pos-backend)!0.5!(print-service)$) {\footnotesize Socket.IO};
-\end{tikzpicture}
-\caption{Arquitectura General del Sistema SITEMM}
+\begin{lstlisting}[language=bash]
+sitemm/
+├── admin-console-backend/          # Backend de administración central
+├── multi-resto-insights-hub/       # Frontend de administración central  
+├── sistema-pos/                    # Sistema POS completo
+│   ├── menta-resto-system-pro/     # Frontend del POS
+│   ├── vegetarian_restaurant_backend/ # Backend del POS
+│   └── migration-scripts/          # Scripts de migración
+├── install_all.bat/sh             # Scripts de instalación automática
+└── package.json                   # Dependencias globales
+\end{lstlisting}
+\caption{Estructura del Monorepo Sitemm}
 \end{figure}
 
-\subsection{Tecnologías Utilizadas}
+\subsection{Objetivos del Sistema}
+
+\begin{enumerate}
+    \item \textbf{Digitalización Completa}: Automatizar todas las operaciones de restaurantes
+    \item \textbf{Escalabilidad Multi-Tenant}: Soporte para múltiples restaurantes y sucursales
+    \item \textbf{Gestión Centralizada}: Control unificado desde administración central
+    \item \textbf{Analytics Avanzados}: Reportes y métricas en tiempo real
+    \item \textbf{Experiencia de Usuario Optimizada}: Interfaces intuitivas y eficientes
+\end{enumerate}
+
+\section{Análisis Técnico Detallado}
+
+\subsection{Stack Tecnológico}
+
+\subsubsection{Backend Technologies}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{@{}lll@{}}
-\toprule
-\textbf{Componente} & \textbf{Frontend} & \textbf{Backend} \\
-\midrule
-POS Principal & React 18 + TypeScript & Node.js + Express \\
-Admin Console & React 18 + TypeScript & Node.js + TypeScript \\
-Base de Datos & - & PostgreSQL 13+ \\
-UI Framework & Tailwind CSS + Shadcn/ui & - \\
-Estado & TanStack Query & - \\
-Autenticación & JWT Client & JWT + bcrypt \\
-Comunicación RT & Socket.IO Client & Socket.IO Server \\
-Documentación & - & Swagger/OpenAPI \\
-Testing & - & Jest + Supertest \\
-\bottomrule
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Componente} & \textbf{Tecnología} & \textbf{Versión} \\
+\hline
+Admin Console Backend & Node.js + TypeScript & 18.x \\
+POS Backend & Node.js + Express.js & 18.x \\
+Base de Datos & PostgreSQL & 12+ \\
+Autenticación & JWT + bcrypt & 9.0.2 \\
+Documentación API & Swagger & 4.6.3 \\
+Testing & Jest + Supertest & 29.7.0 \\
+Logging & Winston & 3.10.0 \\
+\hline
 \end{tabular}
-\caption{Stack Tecnológico por Componente}
+\caption{Tecnologías Backend}
 \end{table}
 
-\section{Análisis Detallado por Componente}
+\subsubsection{Frontend Technologies}
 
-\subsection{Sistema POS Principal}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Componente} & \textbf{Tecnología} & \textbf{Versión} \\
+\hline
+Framework Principal & React & 18.3.1 \\
+Lenguaje & TypeScript & 5.5.3 \\
+Build Tool & Vite & 5.4.1 \\
+Styling & Tailwind CSS & 3.4.11 \\
+UI Components & Shadcn/ui & Latest \\
+State Management & TanStack Query & 5.56.2 \\
+Routing & React Router DOM & 6.26.2 \\
+Charts & Recharts & 2.12.7 \\
+\hline
+\end{tabular}
+\caption{Tecnologías Frontend}
+\end{table}
 
-\subsubsection{Frontend POS (menta-resto-system-pro)}
+\subsection{Arquitectura de Base de Datos}
 
-El frontend del POS es una aplicación React moderna que proporciona una interfaz intuitiva y profesional para las operaciones diarias del restaurante.
+\subsubsection{Estructura Multi-Tenant}
 
-\paragraph{Características Técnicas:}
+La base de datos implementa un modelo multi-tenant con las siguientes características:
+
 \begin{itemize}
-    \item \textbf{Framework:} React 18 con TypeScript para type safety
-    \item \textbf{Build Tool:} Vite para desarrollo rápido y builds optimizados
-    \item \textbf{UI Components:} Shadcn/ui + Radix UI para componentes accesibles
-    \item \textbf{Styling:} Tailwind CSS con diseño responsive
-    \item \textbf{Estado:} TanStack Query para gestión de estado servidor
-    \item \textbf{Routing:} React Router v6 para navegación SPA
+    \item \textbf{Separación por Sucursales}: Cada restaurante puede tener múltiples sucursales
+    \item \textbf{Isolación de Datos}: Los datos están completamente separados entre restaurantes
+    \item \textbf{Escalabilidad}: Estructura preparada para crecimiento horizontal
 \end{itemize}
 
-\paragraph{Funcionalidades Principales:}
+\subsubsection{Tablas Principales}
 
-\textbf{1. Sistema de Ventas Completo}
+\begin{longtable}{|l|l|l|}
+\hline
+\textbf{Tabla} & \textbf{Propósito} & \textbf{Registros Estimados} \\
+\hline
+restaurantes & Información de restaurantes & 10-100 \\
+sucursales & Ubicaciones por restaurante & 50-500 \\
+productos & Catálogo de productos & 1,000-10,000 \\
+ventas & Transacciones de venta & 100,000+ \\
+mesas & Gestión de mesas & 100-1,000 \\
+usuarios & Personal del sistema & 50-500 \\
+promociones & Sistema de descuentos & 100-1,000 \\
+inventario\_lotes & Control de stock & 5,000-50,000 \\
+\hline
+\end{longtable}
+
+\subsection{Análisis de Seguridad}
+
+\subsubsection{Medidas de Autenticación}
+
+\begin{enumerate}
+    \item \textbf{JWT Tokens}: Autenticación stateless con tokens seguros
+    \item \textbf{bcrypt Hashing}: Encriptación de contraseñas con salt
+    \item \textbf{Rate Limiting}: Protección contra ataques de fuerza bruta
+    \item \textbf{CORS Configuration}: Control de acceso cross-origin
+    \item \textbf{Helmet Security}: Headers de seguridad HTTP
+\end{enumerate}
+
+\subsubsection{Control de Acceso}
+
 \begin{itemize}
-    \item Carrito de compras con cálculo automático de totales
-    \item Soporte para múltiples métodos de pago
-    \item Aplicación automática de promociones y descuentos
-    \item Generación de facturas PDF con jsPDF
-    \item Manejo de modificadores de productos
+    \item \textbf{Roles Granulares}: Cajero, Mesero, Gerente, Admin, Cocinero
+    \item \textbf{Permisos por Endpoint}: Control específico por funcionalidad
+    \item \textbf{Auditoría Completa}: Log de todas las acciones críticas
+    \item \textbf{Validación de Entrada}: Sanitización de datos con express-validator
 \end{itemize}
 
-\textbf{2. Gestión Avanzada de Mesas}
-\begin{itemize}
-    \item Mapa visual interactivo de mesas
-    \item Estados en tiempo real (libre, ocupada, reservada)
-    \item Sistema de agrupación de mesas
-    \item Transferencia de productos entre mesas
-    \item División de cuentas por mesa
-\end{itemize}
+\section{Análisis Funcional}
 
-\textbf{3. Sistema de Reservas}
-\begin{itemize}
-    \item Calendario integrado con react-day-picker
-    \item Gestión de disponibilidad por horarios
-    \item Notificaciones automáticas
-    \item Historial de reservas por cliente
-\end{itemize}
+\subsection{Componente 1: Admin Console Backend}
 
-\textbf{4. Gestión de Inventario}
-\begin{itemize}
-    \item Control de stock en tiempo real
-    \item Sistema de lotes con fechas de vencimiento
-    \item Alertas de stock bajo
-    \item Movimientos de inventario auditables
-\end{itemize}
+\subsubsection{Funcionalidades Principales}
 
-\textbf{5. Sistema de Roles y Permisos}
-\begin{itemize}
-    \item \textbf{Cajero:} Ventas básicas y consultas
-    \item \textbf{Mesero:} Gestión de mesas y pedidos
-    \item \textbf{Gerente:} Reportes e inventario
-    \item \textbf{Admin:} Control total del sistema
-    \item \textbf{Cocinero:} Vista de cocina especializada
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{Gestión de Usuarios Administradores}
+    \begin{itemize}
+        \item CRUD completo de usuarios admin
+        \item Asignación de roles y permisos
+        \item Control de acceso por funcionalidad
+    \end{itemize}
+    
+    \item \textbf{Dashboard Centralizado}
+    \begin{itemize}
+        \item Métricas multi-restaurante en tiempo real
+        \item Comparativas entre sucursales
+        \item KPIs de rendimiento empresarial
+    \end{itemize}
+    
+    \item \textbf{Control de Restaurantes}
+    \begin{itemize}
+        \item Gestión de información de restaurantes
+        \item Configuración de sucursales
+        \item Control de estados y activación
+    \end{itemize}
+    
+    \item \textbf{Sistema de Pagos}
+    \begin{itemize}
+        \item Gestión de suscripciones
+        \item Control de pagos y facturación
+        \item Historial de transacciones
+    \end{itemize}
+\end{enumerate}
 
-\subsubsection{Backend POS (vegetarian\_restaurant\_backend)}
+\subsubsection{APIs Principales}
 
-El backend del POS es una API REST robusta construida con Node.js y Express, diseñada para manejar todas las operaciones del restaurante de manera eficiente y segura.
-
-\paragraph{Arquitectura del Backend:}
-
-\begin{lstlisting}[language=bash, caption=Estructura del Código Backend]
-src/
-├── config/          # Configuración (DB, env, logger, swagger)
-├── controllers/     # Lógica de negocio (11 controladores)
-├── models/          # Modelos de datos (9 modelos)
-├── routes/          # Definición de rutas (11 archivos)
-├── middlewares/     # Autenticación y validación
-├── services/        # Servicios auxiliares
-└── utils/           # Utilidades y helpers
+\begin{lstlisting}[language=javascript]
+// Endpoints principales del Admin Console
+/api/auth/login              // Autenticación de administradores
+/api/dashboard/metrics        // Métricas centralizadas
+/api/restaurantes            // CRUD de restaurantes
+/api/sucursales              // Gestión de sucursales
+/api/reportes                // Generación de reportes
+/api/pagos                   // Control de pagos
+/api/soporte                 // Centro de soporte
+/api/auditoria               // Log de auditoría
 \end{lstlisting}
 
-\paragraph{Controladores Principales:}
+\subsection{Componente 2: Multi-Resto Insights Hub}
+
+\subsubsection{Características del Frontend}
+
 \begin{itemize}
-    \item \textbf{authController:} Autenticación JWT y gestión de sesiones
-    \item \textbf{ventaController:} Procesamiento de ventas y transacciones
-    \item \textbf{mesaController:} Gestión de mesas y estados
-    \item \textbf{productoController:} Catálogo y gestión de productos
-    \item \textbf{inventarioController:} Control de stock y lotes
-    \item \textbf{reservaController:} Sistema de reservas
-    \item \textbf{dashboardController:} Métricas y estadísticas
-    \item \textbf{promocionController:} Sistema de descuentos
-    \item \textbf{egresoController:} Gestión de gastos
+    \item \textbf{Interfaz Moderna}: Diseño responsive con Shadcn/ui
+    \item \textbf{Dashboard Ejecutivo}: Métricas visuales en tiempo real
+    \item \textbf{Gestión Centralizada}: Control unificado de restaurantes
+    \item \textbf{Analytics Avanzados}: Gráficos y reportes interactivos
 \end{itemize}
 
-\paragraph{APIs Principales:}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{@{}llp{6cm}@{}}
-\toprule
-\textbf{Endpoint} & \textbf{Métodos} & \textbf{Funcionalidad} \\
-\midrule
-/api/v1/auth & POST & Autenticación y autorización \\
-/api/v1/productos & GET, POST, PUT, DELETE & Gestión de productos \\
-/api/v1/ventas & GET, POST, PUT, DELETE & Procesamiento de ventas \\
-/api/v1/mesas & GET, POST, PUT & Control de mesas \\
-/api/v1/reservas & GET, POST, PUT, DELETE & Sistema de reservas \\
-/api/v1/usuarios & GET, POST, PUT & Gestión de usuarios \\
-/api/v1/dashboard & GET & Métricas y estadísticas \\
-/api/v1/promociones & GET, POST, PUT & Sistema de descuentos \\
-/api/v1/inventario-lotes & GET, POST, PUT & Control de inventario \\
-/api/v1/grupos-mesas & GET, POST, PUT & Agrupación de mesas \\
-\bottomrule
-\end{tabular}
-\caption{APIs Principales del Backend POS}
-\end{table}
-
-\paragraph{Características de Seguridad:}
-\begin{itemize}
-    \item \textbf{Autenticación JWT:} Tokens seguros con expiración configurable
-    \item \textbf{Autorización por Roles:} Middleware granular de permisos
-    \item \textbf{Validación de Entrada:} express-validator en todos los endpoints
-    \item \textbf{Rate Limiting:} Protección contra ataques de fuerza bruta
-    \item \textbf{CORS Configurado:} Orígenes permitidos específicos
-    \item \textbf{Logging de Auditoría:} Winston para logs estructurados
-    \item \textbf{Multi-Tenant Security:} Aislamiento de datos por restaurante
-\end{itemize}
-
-\subsection{Consola de Administración (admin-console-backend)}
-
-La consola de administración es un backend especializado en TypeScript que proporciona funcionalidades de gestión centralizada para múltiples restaurantes.
-
-\paragraph{Características Técnicas:}
-\begin{itemize}
-    \item \textbf{Lenguaje:} TypeScript para mayor type safety
-    \item \textbf{Framework:} Express.js con middlewares de seguridad
-    \item \textbf{Base de Datos:} Conexión a PostgreSQL compartida
-    \item \textbf{Autenticación:} JWT específico para administradores
-    \item \textbf{Documentación:} Swagger/OpenAPI integrado
-    \item \textbf{Testing:} Jest + Supertest para pruebas automatizadas
-\end{itemize}
-
-\paragraph{Funcionalidades Administrativas:}
-
-\textbf{1. Dashboard Ejecutivo}
-\begin{itemize}
-    \item Métricas globales en tiempo real
-    \item Comparativas entre restaurantes
-    \item Top 5 restaurantes por ventas
-    \item Alertas del sistema automatizadas
-    \item Auditoría de acciones administrativas
-\end{itemize}
-
-\textbf{2. Gestión de Restaurantes}
-\begin{itemize}
-    \item CRUD completo de restaurantes
-    \item Activación/desactivación de establecimientos
-    \item Configuración individual por restaurante
-    \item Asignación de planes y servicios
-\end{itemize}
-
-\textbf{3. Control de Suscripciones}
-\begin{itemize}
-    \item Gestión de planes de servicio
-    \item Control de pagos y facturación
-    \item Estados de suscripción (activo, prueba, suspendido)
-    \item Historial de transacciones
-\end{itemize}
-
-\textbf{4. Centro de Soporte}
-\begin{itemize}
-    \item Sistema de tickets integrado
-    \item Gestión de consultas por restaurante
-    \item Estados de tickets (abierto, en proceso, cerrado)
-    \item Historial de interacciones
-\end{itemize}
-
-\textbf{5. Reportes Globales}
-\begin{itemize}
-    \item Ventas consolidadas multi-restaurante
-    \item Exportación a CSV con json2csv
-    \item Análisis comparativos por períodos
-    \item Métricas de rendimiento por ubicación
-\end{itemize}
-
-\subsection{Hub de Insights Multi-Restaurante}
-
-El frontend administrativo es una aplicación React moderna que proporciona una interfaz ejecutiva para la gestión centralizada de múltiples restaurantes.
-
-\paragraph{Características de la Interfaz:}
-\begin{itemize}
-    \item \textbf{Design System:} Shadcn/ui + Tailwind CSS
-    \item \textbf{Componentes:} 50+ componentes UI profesionales
-    \item \textbf{Charts:} Recharts para visualizaciones avanzadas
-    \item \textbf{Estado:} TanStack Query para sincronización servidor
-    \item \textbf{Formularios:} React Hook Form + Zod validation
-    \item \textbf{Routing:} React Router con protección de rutas
-\end{itemize}
-
-\paragraph{Módulos Principales:}
-
-\textbf{1. Dashboard Ejecutivo}
-\begin{itemize}
-    \item KPIs en tiempo real con gráficos interactivos
-    \item Comparativas de rendimiento entre restaurantes
-    \item Alertas y notificaciones prioritarias
-    \item Resumen de actividad reciente
-\end{itemize}
-
-\textbf{2. Analytics Globales}
-\begin{itemize}
-    \item Gráficos de tendencias de ventas
-    \item Análisis de patrones de consumo
-    \item Métricas de ocupación por horarios
-    \item Comparativas regionales
-\end{itemize}
-
-\textbf{3. Gestión de Restaurantes}
-\begin{itemize}
-    \item Lista completa con filtros avanzados
-    \item Formularios de creación y edición
-    \item Estados de operación en tiempo real
-    \item Asignación de configuraciones
-\end{itemize}
-
-\textbf{4. Control de Suscripciones}
-\begin{itemize}
-    \item Panel de facturación integrado
-    \item Gestión de planes y servicios
-    \item Historial de pagos detallado
-    \item Alertas de vencimientos
-\end{itemize}
-
-\subsection{Sistema de Impresión Distribuido}
-
-El sistema de impresión está compuesto por dos componentes que trabajan de manera coordinada para gestionar la impresión de comandas y tickets.
-
-\subsubsection{Agente de Impresión Independiente}
-
-Un servicio Node.js independiente que se instala localmente en cada restaurante para manejar impresoras térmicas.
-
-\paragraph{Características Técnicas:}
-\begin{itemize}
-    \item \textbf{Conectividad:} Socket.IO para comunicación en tiempo real
-    \item \textbf{Impresoras:} Soporte para EPSON, USB, TCP/IP
-    \item \textbf{Plantillas:} Sistema configurable de templates
-    \item \textbf{Modo Prueba:} DRY\_RUN para testing sin impresora
-    \item \textbf{Logging:} Winston para monitoreo de operaciones
-\end{itemize}
-
-\paragraph{Funcionalidades:}
-\begin{itemize}
-    \item Conexión automática al backend del POS
-    \item Autenticación por token y restaurante
-    \item Formateo automático de comandas
-    \item Manejo de errores y reconexión
-    \item Guardado de respaldo en archivos de texto
-\end{itemize}
-
-\subsubsection{Agente de Impresión Integrado}
-
-Una versión más avanzada integrada en el sistema POS con funcionalidades adicionales.
-
-\paragraph{Características Avanzadas:}
-\begin{itemize}
-    \item \textbf{Configuración Dinámica:} Templates personalizables
-    \item \textbf{Cola de Impresión:} Sistema de cola con reintentos
-    \item \textbf{Monitoreo:} Métricas de rendimiento y estadísticas
-    \item \textbf{Multi-Impresora:} Soporte para múltiples impresoras
-    \item \textbf{WebSocket Service:} Comunicación bidireccional
-\end{itemize}
-
-\section{Base de Datos y Arquitectura de Datos}
-
-\subsection{Diseño de Base de Datos}
-
-El sistema utiliza PostgreSQL como base de datos principal con una arquitectura multi-tenant que permite el manejo eficiente de múltiples restaurantes.
-
-\paragraph{Características de la Base de Datos:}
-\begin{itemize}
-    \item \textbf{SGBD:} PostgreSQL 13+ con extensiones JSON
-    \item \textbf{Arquitectura:} Multi-tenant con separación por id\_restaurante
-    \item \textbf{Integridad:} Constraints y foreign keys completas
-    \item \textbf{Triggers:} Automatización de actualizaciones de stock
-    \item \textbf{Índices:} Optimización para consultas frecuentes
-    \item \textbf{Auditoría:} Logs de cambios en tablas críticas
-\end{itemize}
-
-\subsection{Tablas Principales}
-
-\begin{table}[H]
-\centering
-\footnotesize
-\begin{longtable}{@{}lp{8cm}l@{}}
-\toprule
-\textbf{Tabla} & \textbf{Descripción} & \textbf{Registros} \\
-\midrule
-\endhead
-restaurantes & Datos maestros de restaurantes & Maestro \\
-sucursales & Sucursales por restaurante & Maestro \\
-vendedores & Usuarios del sistema POS & Maestro \\
-categorias & Categorías de productos & Maestro \\
-productos & Catálogo de productos & Maestro \\
-mesas & Configuración de mesas & Maestro \\
-ventas & Transacciones de venta & Transaccional \\
-detalle\_ventas & Líneas de detalle de ventas & Transaccional \\
-reservas & Sistema de reservas & Transaccional \\
-inventario\_lotes & Control de inventario por lotes & Transaccional \\
-promociones & Sistema de descuentos & Maestro \\
-egresos & Gestión de gastos & Transaccional \\
-auditoria\_pos & Log de auditoría del POS & Auditoría \\
-auditoria\_admin & Log de auditoría admin & Auditoría \\
-\bottomrule
-\end{longtable}
-\caption{Principales Tablas del Sistema}
-\end{table}
-
-\subsection{Sistema de Migraciones}
-
-El proyecto incluye un sistema robusto de migraciones y scripts de mantenimiento:
-
-\paragraph{Scripts de Migración:}
-\begin{itemize}
-    \item \textbf{migrate\_to\_multitenancy.sql:} Conversión a multi-tenant
-    \item \textbf{migrate\_products.js/ts:} Migración de productos desde JSON
-    \item \textbf{create\_mesa\_tables.sql:} Estructura inicial de mesas
-    \item \textbf{add\_auditoria\_pos.sql:} Sistema de auditoría
-\end{itemize}
-
-\paragraph{Scripts de Verificación:}
-\begin{itemize}
-    \item Más de 50 scripts de verificación automática
-    \item Validación de integridad referencial
-    \item Verificación de constraints y triggers
-    \item Monitoreo de performance de consultas
-\end{itemize}
-
-\section{Análisis de Seguridad}
-
-\subsection{Medidas de Seguridad Implementadas}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}lp{8cm}@{}}
-\toprule
-\textbf{Medida} & \textbf{Implementación} \\
-\midrule
-Autenticación & JWT con expiración configurable \\
-Encriptación & bcrypt para passwords con salt rounds \\
-Rate Limiting & express-rate-limit para prevenir ataques \\
-CORS & Configuración específica de orígenes permitidos \\
-Headers Seguridad & Helmet.js para headers de seguridad \\
-Validación Entrada & express-validator en todos los endpoints \\
-SQL Injection & Consultas parametrizadas con pg \\
-Autorización & Middleware granular por roles y permisos \\
-Auditoría & Logging completo de acciones críticas \\
-Multi-Tenant & Aislamiento de datos por restaurante \\
-\bottomrule
-\end{tabular}
-\caption{Medidas de Seguridad del Sistema}
-\end{table}
-
-\subsection{Sistema de Roles y Permisos}
+\subsubsection{Componentes Principales}
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=1.5cm, auto]
-    % Definir estilos
-    \tikzstyle{role} = [rectangle, draw=primaryblue, fill=primaryblue!20, text width=2.5cm, text centered, minimum height=1cm]
-    
-    % Nodos de roles
-    \node [role] (admin) {ADMIN\\Control Total};
-    \node [role, below left of=admin, xshift=-1cm] (gerente) {GERENTE\\Reportes + Inventario};
-    \node [role, below right of=admin, xshift=1cm] (cajero) {CAJERO\\Ventas Básicas};
-    \node [role, below of=gerente] (mesero) {MESERO\\Mesas + Pedidos};
-    \node [role, below of=cajero] (cocinero) {COCINERO\\Vista Cocina};
-    
-    % Conexiones jerárquicas
-    \draw [->] (admin) -- (gerente);
-    \draw [->] (admin) -- (cajero);
-    \draw [->] (gerente) -- (mesero);
-    \draw [->] (cajero) -- (cocinero);
-\end{tikzpicture}
-\caption{Jerarquía de Roles del Sistema}
+\begin{lstlisting}[language=bash]
+src/components/
+├── admin/          # Dashboard administrativo
+├── analytics/      # Componentes de análisis
+├── auth/           # Sistema de autenticación
+├── branches/       # Gestión de sucursales
+├── config/         # Configuración del sistema
+├── plans/          # Gestión de planes
+├── restaurants/    # Gestión de restaurantes
+├── subscriptions/  # Control de suscripciones
+├── support/        # Centro de soporte
+└── ui/            # Componentes UI base
+\end{lstlisting}
+\caption{Estructura de Componentes del Insights Hub}
 \end{figure}
 
-\section{Análisis de Performance y Escalabilidad}
+\subsection{Componente 3: Sistema POS Completo}
 
-\subsection{Optimizaciones de Performance}
+\subsubsection{Frontend POS (Menta-Resto-System-Pro)}
 
-\paragraph{Frontend:}
+\paragraph{Funcionalidades de Ventas}
 \begin{itemize}
-    \item \textbf{Code Splitting:} Vite con lazy loading de componentes
-    \item \textbf{Query Optimization:} TanStack Query con cache inteligente
-    \item \textbf{Bundle Optimization:} Tree shaking y minificación
-    \item \textbf{Image Optimization:} Lazy loading de imágenes
-    \item \textbf{Memoization:} React.memo en componentes pesados
+    \item \textbf{Carrito Inteligente}: Cálculo automático de totales, descuentos e impuestos
+    \item \textbf{Múltiples Métodos de Pago}: Efectivo, tarjeta, transferencia
+    \item \textbf{Generación de Facturas}: PDF automático con jsPDF
+    \item \textbf{Sistema de Promociones}: Descuentos automáticos y manuales
 \end{itemize}
 
-\paragraph{Backend:}
+\paragraph{Gestión de Mesas}
 \begin{itemize}
-    \item \textbf{Connection Pooling:} pg pool para PostgreSQL
-    \item \textbf{Query Optimization:} Índices en columnas frecuentes
-    \item \textbf{Caching:} apicache para endpoints estáticos
-    \item \textbf{Pagination:} Limit/offset en listados grandes
-    \item \textbf{Async Operations:} Operaciones no bloqueantes
+    \item \textbf{Mapa Visual}: Interfaz gráfica de mesas en tiempo real
+    \item \textbf{Estados Dinámicos}: Libre, ocupada, reservada, en limpieza
+    \item \textbf{Agrupación de Mesas}: Para eventos y grupos grandes
+    \item \textbf{Transferencia de Productos}: Entre mesas y división de cuentas
 \end{itemize}
 
-\subsection{Métricas de Escalabilidad}
+\paragraph{Sistema de Reservas}
+\begin{itemize}
+    \item \textbf{Calendario Integrado}: Gestión visual de reservas
+    \item \textbf{Control de Disponibilidad}: Verificación automática
+    \item \textbf{Notificaciones}: Alertas para confirmaciones
+    \item \textbf{Gestión de Clientes}: Base de datos de clientes
+\end{itemize}
 
+\subsubsection{Backend POS (Vegetarian Restaurant Backend)}
+
+\paragraph{Arquitectura del Backend}
+\begin{figure}[H]
+\centering
+\begin{lstlisting}[language=bash]
+src/
+├── config/         # Configuración (DB, env, logger, swagger)
+├── controllers/    # Lógica de negocio (11 controladores)
+├── models/         # Modelos de datos (9 modelos)
+├── routes/         # Definición de rutas (11 archivos)
+├── middlewares/    # Autenticación y validación
+├── services/       # Servicios auxiliares
+└── utils/          # Utilidades y helpers
+\end{lstlisting}
+\caption{Estructura del Backend POS}
+\end{figure}
+
+\paragraph{APIs Principales}
+\begin{lstlisting}[language=javascript]
+/api/v1/auth/              // Autenticación y autorización
+/api/v1/productos/         // Gestión de productos
+/api/v1/ventas/           // Procesamiento de ventas
+/api/v1/mesas/            // Control de mesas
+/api/v1/reservas/         // Sistema de reservas
+/api/v1/usuarios/         // Gestión de usuarios
+/api/v1/dashboard/        // Métricas y estadísticas
+/api/v1/promociones/      // Sistema de descuentos
+/api/v1/inventario-lotes/ // Control de inventario
+/api/v1/grupos-mesas/     // Agrupación de mesas
+/api/v1/sucursales/       // Multi-tenant
+\end{lstlisting}
+
+\section{Análisis de Calidad y Mantenibilidad}
+
+\subsection{Testing y Cobertura}
+
+\subsubsection{Backend Testing}
+\begin{itemize}
+    \item \textbf{Jest Framework}: Testing unitario y de integración
+    \item \textbf{Supertest}: Testing de APIs REST
+    \item \textbf{Cobertura}: Tests para todos los controladores principales
+    \item \textbf{Mocks}: Simulación de base de datos y servicios externos
+\end{itemize}
+
+\subsubsection{Frontend Testing}
+\begin{itemize}
+    \item \textbf{React Testing Library}: Testing de componentes
+    \item \textbf{Jest}: Framework de testing
+    \item \textbf{User-Centric Testing}: Enfoque en comportamiento del usuario
+\end{itemize}
+
+\subsection{Documentación}
+
+\subsubsection{Documentación Técnica}
+\begin{itemize}
+    \item \textbf{Swagger/OpenAPI}: Documentación automática de APIs
+    \item \textbf{README Detallados}: Instrucciones de instalación y uso
+    \item \textbf{Comentarios en Código}: Documentación inline
+    \item \textbf{Diagramas de Arquitectura}: Visualización de componentes
+\end{itemize}
+
+\subsubsection{Documentación de Usuario}
+\begin{itemize}
+    \item \textbf{Manuales de Instalación}: Scripts automatizados
+    \item \textbf{Guías de Configuración}: Paso a paso
+    \item \textbf{Videos Tutoriales}: Para usuarios finales
+    \item \textbf{FAQ}: Preguntas frecuentes
+\end{itemize}
+
+\subsection{Performance y Escalabilidad}
+
+\subsubsection{Optimizaciones Implementadas}
+\begin{itemize}
+    \item \textbf{Lazy Loading}: Carga diferida de componentes React
+    \item \textbf{Query Optimization}: TanStack Query para gestión de estado
+    \item \textbf{Connection Pooling}: PostgreSQL optimizado
+    \item \textbf{Caching}: apicache para respuestas frecuentes
+    \item \textbf{Socket.io}: Comunicación en tiempo real eficiente
+\end{itemize}
+
+\subsubsection{Métricas de Performance}
 \begin{table}[H]
 \centering
-\begin{tabular}{@{}lll@{}}
-\toprule
-\textbf{Métrica} & \textbf{Actual} & \textbf{Escalable a} \\
-\midrule
-Restaurantes & 1-10 & 1000+ \\
-Usuarios Concurrentes & 50 & 500+ \\
-Transacciones/hora & 1000 & 10000+ \\
-Mesas por Restaurante & 100 & 500+ \\
-Productos por Catálogo & 500 & 5000+ \\
-Almacenamiento & 10GB & 1TB+ \\
-\bottomrule
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Métrica} & \textbf{Valor Actual} & \textbf{Objetivo} \\
+\hline
+Tiempo de Respuesta API & < 200ms & < 100ms \\
+Tiempo de Carga Frontend & < 2s & < 1s \\
+Concurrent Users & 100+ & 1000+ \\
+Database Queries & Optimizadas & Indexadas \\
+\hline
 \end{tabular}
-\caption{Métricas de Escalabilidad}
+\caption{Métricas de Performance}
 \end{table}
 
-\section{Análisis Financiero y Comercial}
+\section{Análisis de Riesgos y Oportunidades}
 
-\subsection{Modelo de Negocio}
+\subsection{Riesgos Identificados}
 
-El sistema SITEMM está diseñado para operar bajo un modelo SaaS (Software as a Service) multi-tenant:
-
-\paragraph{Planes de Suscripción Sugeridos:}
-\begin{itemize}
-    \item \textbf{Básico:} \$50/mes - 1 restaurante, 5 usuarios, funciones básicas
-    \item \textbf{Profesional:} \$150/mes - 1 restaurante, 20 usuarios, analytics
-    \item \textbf{Empresarial:} \$400/mes - 5 restaurantes, usuarios ilimitados
-    \item \textbf{Enterprise:} Personalizado - Múltiples ubicaciones, soporte 24/7
-\end{itemize}
-
-\subsection{Análisis de Costos de Desarrollo}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}lrr@{}}
-\toprule
-\textbf{Componente} & \textbf{Horas Dev} & \textbf{Costo Estimado} \\
-\midrule
-Frontend POS & 800 & \$40,000 \\
-Backend POS & 600 & \$30,000 \\
-Admin Console & 400 & \$20,000 \\
-Insights Hub & 300 & \$15,000 \\
-Sistema Impresión & 200 & \$10,000 \\
-Base de Datos & 150 & \$7,500 \\
-Testing + QA & 200 & \$10,000 \\
-Documentación & 100 & \$5,000 \\
-\midrule
-\textbf{Total} & \textbf{2,750} & \textbf{\$137,500} \\
-\bottomrule
-\end{tabular}
-\caption{Análisis de Costos de Desarrollo}
-\end{table}
-
-\section{Evaluación de Fortalezas y Debilidades}
-
-\subsection{Fortalezas del Sistema}
-
+\subsubsection{Riesgos Técnicos}
 \begin{enumerate}
-    \item \textcolor{secondarygreen}{\textbf{Arquitectura Sólida:}} Separación clara de responsabilidades y escalabilidad
-    \item \textcolor{secondarygreen}{\textbf{Tecnologías Modernas:}} Stack actualizado y mantenible
-    \item \textcolor{secondarygreen}{\textbf{Funcionalidad Completa:}} Cubre todas las necesidades de un restaurante
-    \item \textcolor{secondarygreen}{\textbf{Multi-Tenant Nativo:}} Preparado para múltiples restaurantes
-    \item \textcolor{secondarygreen}{\textbf{Seguridad Robusta:}} Implementación completa de mejores prácticas
-    \item \textcolor{secondarygreen}{\textbf{Testing Extensivo:}} Cobertura de pruebas automatizadas
-    \item \textcolor{secondarygreen}{\textbf{Documentación API:}} Swagger/OpenAPI bien estructurado
-    \item \textcolor{secondarygreen}{\textbf{UI/UX Profesional:}} Interfaz moderna y responsive
+    \item \textbf{Complejidad de Configuración}
+    \begin{itemize}
+        \item \textbf{Descripción}: Setup manual requerido para base de datos
+        \item \textbf{Impacto}: Alto - Puede disuadir adopción
+        \item \textbf{Mitigación}: Scripts de automatización mejorados
+    \end{itemize}
+    
+    \item \textbf{Dependencias Externas}
+    \begin{itemize}
+        \item \textbf{Descripción}: Muchas dependencias npm pueden causar vulnerabilidades
+        \item \textbf{Impacto}: Medio - Requiere mantenimiento constante
+        \item \textbf{Mitigación}: Auditoría regular de dependencias
+    \end{itemize}
+    
+    \item \textbf{Escalabilidad de Base de Datos}
+    \begin{itemize}
+        \item \textbf{Descripción}: PostgreSQL puede tener limitaciones con muchos restaurantes
+        \item \textbf{Impacto}: Medio - Requiere optimización futura
+        \item \textbf{Mitigación}: Implementación de sharding y particionamiento
+    \end{itemize}
 \end{enumerate}
 
-\subsection{Áreas de Mejora}
-
+\subsubsection{Riesgos de Negocio}
 \begin{enumerate}
-    \item \textcolor{warningorange}{\textbf{Configuración Compleja:}} Setup inicial requiere conocimientos técnicos
-    \item \textcolor{warningorange}{\textbf{Dependencias Numerosas:}} Alto número de librerías externas
-    \item \textcolor{warningorange}{\textbf{Documentación Usuario:}} Falta manual para usuarios finales
-    \item \textcolor{warningorange}{\textbf{Deployment:}} No hay scripts de producción automatizados
-    \item \textcolor{warningorange}{\textbf{Monitoreo:}} Falta sistema de métricas en producción
-    \item \textcolor{warningorange}{\textbf{Backup:}} No hay estrategia de respaldo automatizada
+    \item \textbf{Competencia del Mercado}
+    \begin{itemize}
+        \item \textbf{Descripción}: Mercado saturado de soluciones POS
+        \item \textbf{Impacto}: Alto - Diferenciación crítica
+        \item \textbf{Mitigación}: Enfoque en multi-restaurante y analytics
+    \end{itemize}
+    
+    \item \textbf{Adopción de Usuarios}
+    \begin{itemize}
+        \item \textbf{Descripción}: Resistencia al cambio en restaurantes tradicionales
+        \item \textbf{Impacto}: Alto - Puede limitar crecimiento
+        \item \textbf{Mitigación}: Capacitación y soporte técnico
+    \end{itemize}
 \end{enumerate}
 
-\subsection{Recomendaciones de Mejora}
+\subsection{Oportunidades de Mejora}
 
-\paragraph{Corto Plazo (1-3 meses):}
-\begin{itemize}
-    \item Crear scripts de deployment automatizado con Docker
-    \item Desarrollar manual de usuario final
-    \item Implementar sistema de backup automatizado
-    \item Agregar métricas de monitoreo con Prometheus/Grafana
-\end{itemize}
-
-\paragraph{Mediano Plazo (3-6 meses):}
-\begin{itemize}
-    \item Desarrollar app móvil para meseros
-    \item Integrar pasarelas de pago externas
-    \item Implementar sistema de notificaciones push
-    \item Agregar soporte para múltiples idiomas
-\end{itemize}
-
-\paragraph{Largo Plazo (6-12 meses):}
-\begin{itemize}
-    \item Migrar a arquitectura de microservicios
-    \item Implementar machine learning para predicciones
-    \item Desarrollar marketplace de plugins
-    \item Integrar con sistemas contables externos
-\end{itemize}
-
-\section{Análisis Competitivo}
-
-\subsection{Comparación con Competidores}
-
-\begin{table}[H]
-\centering
-\footnotesize
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-\textbf{Característica} & \textbf{SITEMM} & \textbf{Square} & \textbf{Toast} & \textbf{Revel} \\
-\midrule
-Multi-Tenant & ✓ & ✓ & ✓ & ✓ \\
-Código Abierto & ✓ & ✗ & ✗ & ✗ \\
-Personalizable & ✓ & ✗ & Limitado & Limitado \\
-Analytics Avanzados & ✓ & ✓ & ✓ & ✓ \\
-Gestión Inventario & ✓ & ✓ & ✓ & ✓ \\
-Sistema Reservas & ✓ & Limitado & ✓ & ✓ \\
-Agente Impresión & ✓ & ✓ & ✓ & ✓ \\
-Costo Mensual & \$0-400 & \$60-165 & \$75-400 & \$99-500 \\
-\bottomrule
-\end{tabular}
-\caption{Comparación con Principales Competidores}
-\end{table}
-
-\subsection{Ventajas Competitivas}
-
+\subsubsection{Oportunidades Técnicas}
 \begin{enumerate}
-    \item \textbf{Código Abierto:} Sin vendor lock-in, personalización total
-    \item \textbf{Arquitectura Moderna:} Stack tecnológico actualizado
-    \item \textbf{Costo Competitivo:} Modelo de pricing flexible
-    \item \textbf{Funcionalidad Completa:} Sistema integral desde el día 1
-    \item \textbf{Multi-Idioma Ready:} Preparado para internacionalización
+    \item \textbf{Microservicios}
+    \begin{itemize}
+        \item \textbf{Descripción}: Migración a arquitectura de microservicios
+        \item \textbf{Beneficio}: Mayor escalabilidad y mantenibilidad
+        \item \textbf{Implementación}: Gradual por componente
+    \end{itemize}
+    
+    \item \textbf{Cloud Native}
+    \begin{itemize}
+        \item \textbf{Descripción}: Despliegue en contenedores Docker/Kubernetes
+        \item \textbf{Beneficio}: Escalabilidad automática y alta disponibilidad
+        \item \textbf{Implementación}: Refactoring de arquitectura
+    \end{itemize}
+    
+    \item \textbf{Machine Learning}
+    \begin{itemize}
+        \item \textbf{Descripción}: Predicción de demanda y optimización de inventario
+        \item \textbf{Beneficio}: Reducción de costos y mejora de eficiencia
+        \item \textbf{Implementación}: Integración con APIs de ML
+    \end{itemize}
 \end{enumerate}
 
-\section{Plan de Implementación}
+\subsubsection{Oportunidades de Negocio}
+\begin{enumerate}
+    \item \textbf{Expansión Internacional}
+    \begin{itemize}
+        \item \textbf{Descripción}: Adaptación para mercados internacionales
+        \item \textbf{Beneficio}: Crecimiento de mercado significativo
+        \item \textbf{Implementación}: Localización y compliance
+    \end{itemize}
+    
+    \item \textbf{Integración con Delivery}
+    \begin{itemize}
+        \item \textbf{Descripción}: APIs para plataformas de delivery
+        \item \textbf{Beneficio}: Nuevas fuentes de ingresos
+        \item \textbf{Implementación}: Desarrollo de APIs de integración
+    \end{itemize}
+    
+    \item \textbf{SaaS Enterprise}
+    \begin{itemize}
+        \item \textbf{Descripción}: Modelo de suscripción empresarial
+        \item \textbf{Beneficio}: Ingresos recurrentes predecibles
+        \item \textbf{Implementación}: Sistema de billing y licencias
+    \end{itemize}
+\end{enumerate}
 
-\subsection{Fases de Implementación}
+\section{Recomendaciones Estratégicas}
 
-\paragraph{Fase 1: Preparación (2-4 semanas)}
-\begin{itemize}
-    \item Setup de infraestructura de producción
-    \item Configuración de base de datos
-    \item Pruebas de integración completas
-    \item Capacitación del equipo técnico
-\end{itemize}
+\subsection{Recomendaciones Técnicas}
 
-\paragraph{Fase 2: Piloto (4-6 semanas)}
-\begin{itemize}
-    \item Implementación en 1-2 restaurantes piloto
-    \item Migración de datos existentes
-    \item Capacitación de usuarios finales
-    \item Ajustes basados en feedback
-\end{itemize}
+\subsubsection{Corto Plazo (0-6 meses)}
+\begin{enumerate}
+    \item \textbf{Automatización de Deployment}
+    \begin{itemize}
+        \item Implementar CI/CD con GitHub Actions
+        \item Automatizar testing y deployment
+        \item Reducir tiempo de deployment de días a horas
+    \end{itemize}
+    
+    \item \textbf{Mejora de Documentación}
+    \begin{itemize}
+        \item Crear manuales de usuario final
+        \item Documentar procesos de instalación
+        \item Desarrollar videos tutoriales
+    \end{itemize}
+    
+    \item \textbf{Optimización de Performance}
+    \begin{itemize}
+        \item Implementar caching más agresivo
+        \item Optimizar queries de base de datos
+        \item Reducir tiempo de carga del frontend
+    \end{itemize}
+\end{enumerate}
 
-\paragraph{Fase 3: Rollout (6-12 semanas)}
-\begin{itemize}
-    \item Implementación gradual en más ubicaciones
-    \item Monitoreo continuo de performance
-    \item Soporte técnico especializado
-    \item Optimizaciones basadas en uso real
-\end{itemize}
+\subsubsection{Mediano Plazo (6-18 meses)}
+\begin{enumerate}
+    \item \textbf{Migración a Microservicios}
+    \begin{itemize}
+        \item Separar componentes en servicios independientes
+        \item Implementar API Gateway
+        \item Mejorar escalabilidad y mantenibilidad
+    \end{itemize}
+    
+    \item \textbf{Implementación de Analytics Avanzados}
+    \begin{itemize}
+        \item Dashboard de BI más sofisticado
+        \item Predicciones de demanda
+        \item Optimización de inventario automática
+    \end{itemize}
+    
+    \item \textbf{Integración con Sistemas Externos}
+    \begin{itemize}
+        \item APIs para pasarelas de pago
+        \item Integración con sistemas contables
+        \item Conectores para plataformas de delivery
+    \end{itemize}
+\end{enumerate}
 
-\paragraph{Fase 4: Optimización (Continua)}
-\begin{itemize}
-    \item Análisis de métricas de uso
-    \item Desarrollo de nuevas funcionalidades
-    \item Mejoras de performance
-    \item Expansión a nuevos mercados
-\end{itemize}
+\subsubsection{Largo Plazo (18+ meses)}
+\begin{enumerate}
+    \item \textbf{Plataforma Cloud Native}
+    \begin{itemize}
+        \item Migración completa a Kubernetes
+        \item Auto-scaling basado en demanda
+        \item Multi-region deployment
+    \end{itemize}
+    
+    \item \textbf{Inteligencia Artificial}
+    \begin{itemize}
+        \item Chatbot para soporte técnico
+        \item Predicción de tendencias de venta
+        \item Optimización automática de menús
+    \end{itemize}
+    
+    \item \textbf{Expansión Internacional}
+    \begin{itemize}
+        \item Soporte multi-idioma
+        \item Compliance con regulaciones locales
+        \item Adaptación cultural de interfaces
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Recomendaciones de Negocio}
+
+\subsubsection{Estrategia de Mercado}
+\begin{enumerate}
+    \item \textbf{Posicionamiento Diferenciado}
+    \begin{itemize}
+        \item Enfoque en restaurantes multi-sucursal
+        \item Destacar analytics y control centralizado
+        \item Competir en funcionalidad, no en precio
+    \end{itemize}
+    
+    \item \textbf{Modelo de Negocio}
+    \begin{itemize}
+        \item Transición a modelo SaaS
+        \item Diferentes niveles de suscripción
+        \item Servicios de consultoría adicionales
+    \end{itemize}
+    
+    \item \textbf{Expansión de Mercado}
+    \begin{itemize}
+        \item Enfoque en mercados emergentes
+        \item Alianzas estratégicas con proveedores
+        \item Programas de referidos
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Desarrollo de Producto}
+\begin{enumerate}
+    \item \textbf{Roadmap de Funcionalidades}
+    \begin{itemize}
+        \item Priorizar features basadas en feedback de usuarios
+        \item Desarrollo iterativo con sprints cortos
+        \item Beta testing con clientes seleccionados
+    \end{itemize}
+    
+    \item \textbf{Experiencia de Usuario}
+    \begin{itemize}
+        \item Investigación de usuarios constante
+        \item A/B testing de nuevas funcionalidades
+        \item Optimización continua de flujos
+    \end{itemize}
+    
+    \item \textbf{Soporte y Servicio al Cliente}
+    \begin{itemize}
+        \item Equipo de soporte técnico dedicado
+        \item Documentación interactiva
+        \item Comunidad de usuarios
+    \end{itemize}
+\end{enumerate}
 
 \section{Conclusiones}
 
 \subsection{Evaluación General}
 
-El proyecto SITEMM representa un \textbf{sistema POS profesional y completo} que demuestra:
+El proyecto \textbf{Sitemm} representa una solución POS de nivel empresarial con características técnicas sólidas y funcionalidades completas. La arquitectura multi-componente permite una separación clara de responsabilidades y facilita el mantenimiento y escalabilidad del sistema.
+
+\subsection{Fortalezas Principales}
 
 \begin{enumerate}
-    \item \textcolor{primaryblue}{\textbf{Excelencia Técnica:}} Arquitectura bien diseñada con tecnologías modernas
-    \item \textcolor{primaryblue}{\textbf{Funcionalidad Integral:}} Cobertura completa de necesidades del restaurante
-    \item \textcolor{primaryblue}{\textbf{Escalabilidad Empresarial:}} Preparado para crecimiento significativo
-    \item \textcolor{primaryblue}{\textbf{Seguridad Robusta:}} Implementación de mejores prácticas de seguridad
-    \item \textcolor{primaryblue}{\textbf{Potencial Comercial:}} Viable para comercialización inmediata
+    \item \textbf{Arquitectura Robusta}: Separación clara entre componentes y responsabilidades
+    \item \textbf{Tecnologías Modernas}: Stack actualizado con React, Node.js, TypeScript
+    \item \textbf{Funcionalidad Completa}: Cubre todas las necesidades de un restaurante moderno
+    \item \textbf{Escalabilidad Multi-Tenant}: Preparado para múltiples restaurantes
+    \item \textbf{Seguridad Implementada}: Medidas de autenticación y autorización robustas
+    \item \textbf{Testing Extensivo}: Cobertura de pruebas para componentes críticos
 \end{enumerate}
+
+\subsection{Áreas de Mejora}
+
+\begin{enumerate}
+    \item \textbf{Complejidad de Instalación}: Requiere simplificación del proceso de setup
+    \item \textbf{Documentación de Usuario}: Necesita manuales más detallados
+    \item \textbf{Deployment Automatizado}: Falta de CI/CD y scripts de producción
+    \item \textbf{Performance}: Algunas optimizaciones pendientes
+\end{enumerate}
+
+\subsection{Potencial Comercial}
+
+El sistema tiene un \textbf{alto potencial comercial} debido a:
+
+\begin{itemize}
+    \item \textbf{Mercado en Crecimiento}: Industria gastronómica digitalizándose rápidamente
+    \item \textbf{Diferenciación Clara}: Enfoque multi-restaurante único
+    \item \textbf{Funcionalidad Completa}: Solución integral vs. herramientas parciales
+    \item \textbf{Tecnología Moderna}: Stack atractivo para desarrolladores
+\end{itemize}
 
 \subsection{Recomendación Final}
 
-\textcolor{secondarygreen}{\textbf{RECOMENDACIÓN: PROCEDER CON IMPLEMENTACIÓN}}
+El proyecto \textbf{Sitemm} está listo para comercialización con mejoras incrementales. Se recomienda:
 
-El sistema SITEMM está \textbf{listo para producción} con las siguientes consideraciones:
+\begin{enumerate}
+    \item \textbf{Inversión en UX/UI}: Mejorar experiencia de usuario final
+    \item \textbf{Desarrollo de Equipo}: Expandir equipo técnico y comercial
+    \item \textbf{Estrategia de Go-to-Market}: Plan de lanzamiento y posicionamiento
+    \item \textbf{Partnerships}: Alianzas con proveedores de hardware y servicios
+\end{enumerate}
 
-\paragraph{Para Implementación Inmediata:}
-\begin{itemize}
-    \item Sistema funcional y completo
-    \item Arquitectura escalable y segura
-    \item Documentación técnica adecuada
-    \item Stack tecnológico moderno y mantenible
-\end{itemize}
-
-\paragraph{Para Éxito Comercial:}
-\begin{itemize}
-    \item Desarrollar documentación de usuario final
-    \item Crear scripts de deployment automatizado
-    \item Implementar monitoreo de producción
-    \item Establecer procesos de soporte técnico
-\end{itemize}
-
-\subsection{Potencial de Mercado}
-
-El sistema tiene \textcolor{secondarygreen}{\textbf{alto potencial comercial}} debido a:
-
-\begin{itemize}
-    \item Mercado de POS en crecimiento (CAGR 10.2\% 2021-2026)
-    \item Diferenciación por código abierto y personalización
-    \item Modelo de pricing competitivo
-    \item Funcionalidades empresariales desde el inicio
-    \item Arquitectura preparada para escala global
-\end{itemize}
-
-\vspace{1cm}
-
-\begin{center}
-\textcolor{primaryblue}{\rule{10cm}{2pt}}\\
-\vspace{0.5cm}
-\textbf{\large Análisis Técnico Completo - Proyecto SITEMM}\\
-\textit{Sistema POS Multi-Restaurante Profesional}\\
-\vspace{0.5cm}
-\textcolor{primaryblue}{\rule{10cm}{2pt}}
-\end{center}
+El sistema representa una base sólida para construir un negocio exitoso en el mercado de soluciones POS para restaurantes.
 
 \end{document}

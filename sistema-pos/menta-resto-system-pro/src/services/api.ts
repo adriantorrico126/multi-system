@@ -149,8 +149,6 @@ const getSelectedSucursalId = () => {
 const getRestauranteId = () => {
   try {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    console.log('getRestauranteId - User:', user);
-    console.log('getRestauranteId - id_restaurante:', user.id_restaurante);
     // Temporalmente devolver 1 si no existe
     return user.id_restaurante || 1;
   } catch (error) {
@@ -164,19 +162,14 @@ const getSucursalId = () => {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const userRole = user.rol || user.role;
     
-    console.log('getSucursalId - User data:', user);
-    console.log('getSucursalId - User role:', userRole);
-    
     // Si es admin o gerente, usar la sucursal seleccionada
     if (userRole === 'admin' || userRole === 'gerente') {
       const selectedSucursalId = getSelectedSucursalId();
-      console.log('getSucursalId - Selected sucursal ID:', selectedSucursalId);
       return selectedSucursalId || null;
     }
     
     // Para otros roles, usar la sucursal del usuario
     const currentSucursalId = getCurrentSucursalId();
-    console.log('getSucursalId - Current sucursal ID:', currentSucursalId);
     return currentSucursalId || null;
   } catch (error) {
     console.error('Error getting sucursal ID:', error);
@@ -186,12 +179,11 @@ const getSucursalId = () => {
 
 export const getCategories = async () => {
   try {
-    const restauranteId = getRestauranteId();
-    if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?id_restaurante=${restauranteId}`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias`);
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
+      activo: category.activo,
     }));
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -201,9 +193,7 @@ export const getCategories = async () => {
 
 export const getAllCategories = async () => {
   try {
-    const restauranteId = getRestauranteId();
-    if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?id_restaurante=${restauranteId}&includeInactive=true`);
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?includeInactive=true`);
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
@@ -217,9 +207,7 @@ export const getAllCategories = async () => {
 
 export const createCategory = async (categoryData: { nombre: string }) => {
   try {
-    const restauranteId = getRestauranteId();
-    if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias`, { ...categoryData, id_restaurante: restauranteId });
+    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias`, categoryData);
     return response.data.data;
   } catch (error) {
     console.error('Error creating category:', error);

@@ -7,7 +7,6 @@ logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 lerna-debug.log*
 
 # Runtime data
@@ -65,3 +64,10 @@ typings/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
+
+# Custom temporary/test files
+insert-productos-creme.js
+admin-console-backend/insert-productos-produccion.js
+admin-console-backend/test-db.js
+admin-console-backend/verificar-restaurantes-produccion.js
+sistema-pos/test_categorias_frontend.html
