@@ -221,10 +221,13 @@ const CategoryList: React.FC = () => {
 
       {/* Dialog para agregar categoría */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="add-category-description">
           <DialogHeader>
             <DialogTitle>Nueva Categoría</DialogTitle>
           </DialogHeader>
+          <div id="add-category-description" className="sr-only">
+            Formulario para agregar una nueva categoría
+          </div>
           <div className="space-y-3">
             <Input
               placeholder="Nombre de la categoría"
@@ -250,10 +253,13 @@ const CategoryList: React.FC = () => {
 
       {/* Dialog para editar categoría */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="edit-category-description">
           <DialogHeader>
             <DialogTitle>Editar Categoría</DialogTitle>
           </DialogHeader>
+          <div id="edit-category-description" className="sr-only">
+            Formulario para editar una categoría existente
+          </div>
           <div className="space-y-3">
             <Input
               placeholder="Nombre de la categoría"
@@ -276,10 +282,13 @@ const CategoryList: React.FC = () => {
 
       {/* Dialog para confirmar eliminación */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="delete-category-description">
           <DialogHeader>
             <DialogTitle>Confirmar Eliminación</DialogTitle>
           </DialogHeader>
+          <div id="delete-category-description" className="sr-only">
+            Confirmación para eliminar una categoría
+          </div>
           <div className="space-y-3">
             <p className="text-gray-600">
               ¿Estás seguro de que quieres eliminar la categoría "{categoryToDelete?.nombre}"?

@@ -246,7 +246,7 @@ export function POSSystem() {
     if (showCajaBanner && arqueoActual && !isClosingBanner) {
       const timer = setTimeout(() => {
         handleCloseBanner();
-      }, 3000);
+      }, 2000); // Cambiado de 3000 a 2000 ms (2 segundos)
       
       return () => clearTimeout(timer);
     }
@@ -1205,10 +1205,10 @@ export function POSSystem() {
         </div>
             <button
               onClick={handleCloseBanner}
-              className="flex-shrink-0 w-6 h-6 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-200 group"
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center transition-all duration-200 group"
               aria-label="Cerrar banner"
             >
-              <X className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+              <span className="text-red-600 group-hover:text-red-700 font-bold text-lg leading-none">×</span>
             </button>
           </div>
         </div>

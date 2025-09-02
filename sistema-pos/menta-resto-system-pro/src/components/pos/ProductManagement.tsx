@@ -183,10 +183,20 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
       return;
     }
 
+    const categoriaEncontrada = categories.find(cat => cat.nombre === formData.category);
+    if (!categoriaEncontrada) {
+      toast({
+        title: "❌ Categoría Inválida",
+        description: "La categoría seleccionada no es válida",
+        variant: "destructive"
+      });
+      return;
+    }
+
     addProductMutation.mutate({
       nombre: formData.name.toUpperCase(),
       precio: parseFloat(formData.price),
-      id_categoria: categories.find(cat => cat.nombre === formData.category)?.id_categoria || 0,
+      id_categoria: categoriaEncontrada.id_categoria,
       stock_actual: parseInt(formData.stock) || 0,
       activo: formData.available,
       imagen_url: formData.description || undefined,
@@ -196,20 +206,60 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
   const handleEditProduct = () => {
     if (!editingProduct) return;
 
-    if (!formData.name || !formData.price || !formData.category) {
+    console.log('🔍 Debug - Editando producto:', editingProduct);
+    console.log('🔍 Debug - FormData:', formData);
+    console.log('🔍 Debug - Categorías:', categories);
+
+    if (!formData.name || !formData.price) {
       toast({
         title: "❌ Campos Requeridos",
-        description: "Los campos nombre, precio y categoría son obligatorios",
+        description: "Los campos nombre y precio son obligatorios",
         variant: "destructive"
       });
       return;
+    }
+
+    // Si no hay categoría seleccionada, usar la original del producto
+    let categoriaEncontrada = null;
+    if (formData.category) {
+      categoriaEncontrada = categories.find(cat => 
+        cat.nombre.toLowerCase() === formData.category.toLowerCase()
+      );
+    } else {
+      // Buscar por la categoría original del producto
+      categoriaEncontrada = categories.find(cat => 
+        cat.nombre.toLowerCase() === editingProduct.category?.toLowerCase()
+      );
+    }
+
+    console.log('🔍 Debug - Categoría encontrada para edición:', categoriaEncontrada);
+
+    if (!categoriaEncontrada) {
+      toast({
+        title: "❌ Categoría Inválida",
+        description: "No se pudo encontrar la categoría. Usando categoría original del producto.",
+        variant: "destructive"
+      });
+      // Usar la categoría original del producto
+      categoriaEncontrada = categories.find(cat => 
+        cat.nombre.toLowerCase() === editingProduct.category?.toLowerCase()
+      );
+      
+      if (!categoriaEncontrada) {
+        toast({
+          title: "❌ Error",
+          description: "No se pudo determinar la categoría del producto",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     updateProductMutation.mutate({
       id: editingProduct.id,
       nombre: formData.name.toUpperCase(),
       precio: parseFloat(formData.price),
-      id_categoria: categories.find(cat => cat.nombre === formData.category)?.id_categoria || 0,
+      id_categoria: categoriaEncontrada.id_categoria,
       activo: formData.available,
       imagen_url: formData.description || undefined,
     });
@@ -226,11 +276,22 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
   };
 
   const openEditDialog = (product: Product) => {
+    console.log('🔍 Debug - Producto a editar:', product);
+    console.log('🔍 Debug - Categorías disponibles:', categories);
+    console.log('🔍 Debug - Categoría del producto:', product.category);
+    
+    // Buscar la categoría exacta que coincida
+    const categoriaEncontrada = categories.find(cat => 
+      cat.nombre.toLowerCase() === product.category?.toLowerCase()
+    );
+    
+    console.log('🔍 Debug - Categoría encontrada:', categoriaEncontrada);
+    
     setEditingProduct(product);
     setFormData({
       name: product.name,
       price: product.price.toString(),
-      category: product.category,
+      category: categoriaEncontrada?.nombre || product.category || '',
       available: product.available,
       stock: product.stock_actual?.toString() || '0',
       description: product.imagen_url || ''
@@ -553,181 +614,290 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
         </CardContent>
       </Card>
 
-      {/* Diálogo para Agregar Producto */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Agregar Nuevo Producto
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5 pt-2">
-            <div>
-              <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Nombre del Producto</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="Nombre del producto"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="price" className="text-sm font-semibold text-gray-700">Precio (Bs)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                placeholder="0.00"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="category" className="text-sm font-semibold text-gray-700">Categoría</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                <SelectTrigger className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.id_categoria} value={category.nombre}>
-                      {category.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="stock" className="text-sm font-semibold text-gray-700">Stock Inicial</Label>
-              <Input
-                id="stock"
-                type="number"
-                value={formData.stock}
-                onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                placeholder="0"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Descripción (Opcional)</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Descripción del producto"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="available"
-                checked={formData.available}
-                onCheckedChange={(checked) => setFormData({...formData, available: checked})}
-              />
-              <Label htmlFor="available" className="text-sm font-semibold text-gray-700">Disponible</Label>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsAddDialogOpen(false)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleAddProduct} 
-                disabled={addProductMutation.isPending}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {addProductMutation.isPending ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+             {/* Diálogo para Agregar Producto */}
+       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+         <DialogContent className="max-w-lg bg-gradient-to-br from-white via-green-50/30 to-emerald-50/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-green-200/50" aria-describedby="add-product-description">
+           <DialogHeader className="text-center pb-4">
+             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+               <Plus className="h-8 w-8 text-white" />
+             </div>
+             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-emerald-900 bg-clip-text text-transparent">
+               Agregar Nuevo Producto
+             </DialogTitle>
+             <p className="text-gray-600 text-sm mt-1">Completa los datos para crear un nuevo producto</p>
+           </DialogHeader>
+           <div id="add-product-description" className="sr-only">
+             Formulario para agregar un nuevo producto al sistema
+           </div>
+           <div className="space-y-6 pt-4">
+             <div className="grid grid-cols-1 gap-6">
+               <div className="space-y-2">
+                 <Label htmlFor="name" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                   <Package className="h-4 w-4 text-green-600" />
+                   Nombre del Producto
+                 </Label>
+                 <Input
+                   id="name"
+                   value={formData.name}
+                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                   placeholder="Nombre del producto"
+                   className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                 />
+               </div>
+               
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="price" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                     <DollarSign className="h-4 w-4 text-green-600" />
+                     Precio (Bs)
+                   </Label>
+                   <Input
+                     id="price"
+                     type="number"
+                     step="0.01"
+                     value={formData.price}
+                     onChange={(e) => setFormData({...formData, price: e.target.value})}
+                     placeholder="0.00"
+                     className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                   />
+                 </div>
+                 
+                 <div className="space-y-2">
+                   <Label htmlFor="stock" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                     <Package className="h-4 w-4 text-orange-600" />
+                     Stock Inicial
+                   </Label>
+                   <Input
+                     id="stock"
+                     type="number"
+                     value={formData.stock}
+                     onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                     placeholder="0"
+                     className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                   />
+                 </div>
+               </div>
+               
+               <div className="space-y-2">
+                 <Label htmlFor="category" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                   <Tag className="h-4 w-4 text-purple-600" />
+                   Categoría
+                 </Label>
+                 <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                   <SelectTrigger className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md">
+                     <SelectValue placeholder="Seleccionar categoría" />
+                   </SelectTrigger>
+                   <SelectContent className="bg-white/95 backdrop-blur-md border border-gray-200/50 shadow-xl rounded-xl">
+                     {categories.map(category => (
+                       <SelectItem 
+                         key={category.id_categoria} 
+                         value={category.nombre}
+                         className="hover:bg-purple-50 focus:bg-purple-50 cursor-pointer rounded-lg m-1"
+                       >
+                         {category.nombre}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+               
+               <div className="space-y-2">
+                 <Label htmlFor="description" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                   <Edit className="h-4 w-4 text-gray-600" />
+                   Descripción (Opcional)
+                 </Label>
+                 <Input
+                   id="description"
+                   value={formData.description}
+                   onChange={(e) => setFormData({...formData, description: e.target.value})}
+                   placeholder="Descripción del producto"
+                   className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-gray-500 focus:ring-2 focus:ring-gray-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                 />
+               </div>
+               
+               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50/50 to-emerald-50/50 rounded-xl border border-green-200/30">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                     <Activity className="h-5 w-5 text-white" />
+                   </div>
+                   <div>
+                     <Label htmlFor="available" className="text-sm font-semibold text-gray-700">Disponibilidad</Label>
+                     <p className="text-xs text-gray-500">Controla si el producto está disponible para venta</p>
+                   </div>
+                 </div>
+                 <Switch
+                   id="available"
+                   checked={formData.available}
+                   onCheckedChange={(checked) => setFormData({...formData, available: checked})}
+                   className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-emerald-600"
+                 />
+               </div>
+             </div>
+             
+             <div className="flex justify-end gap-4 pt-6 border-t border-gray-200/50">
+               <Button 
+                 variant="outline" 
+                 onClick={() => setIsAddDialogOpen(false)}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 h-12 font-semibold"
+               >
+                 Cancelar
+               </Button>
+               <Button 
+                 onClick={handleAddProduct} 
+                 disabled={addProductMutation.isPending}
+                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-8 h-12 font-semibold"
+               >
+                 {addProductMutation.isPending ? (
+                   <div className="flex items-center gap-2">
+                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     Guardando...
+                   </div>
+                 ) : (
+                   <div className="flex items-center gap-2">
+                     <Plus className="h-4 w-4" />
+                     Crear Producto
+                   </div>
+                 )}
+               </Button>
+             </div>
+           </div>
+         </DialogContent>
+       </Dialog>
 
-      {/* Diálogo para Editar Producto */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Editar Producto
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5 pt-2">
-            <div>
-              <Label htmlFor="edit-name" className="text-sm font-semibold text-gray-700">Nombre del Producto</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-price" className="text-sm font-semibold text-gray-700">Precio (Bs)</Label>
-              <Input
-                id="edit-price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-category" className="text-sm font-semibold text-gray-700">Categoría</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                <SelectTrigger className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.id_categoria} value={category.nombre}>
-                      {category.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-description" className="text-sm font-semibold text-gray-700">Descripción (Opcional)</Label>
-              <Input
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-available"
-                checked={formData.available}
-                onCheckedChange={(checked) => setFormData({...formData, available: checked})}
-              />
-              <Label htmlFor="edit-available" className="text-sm font-semibold text-gray-700">Disponible</Label>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsEditDialogOpen(false)}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleEditProduct} 
-                disabled={updateProductMutation.isPending}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {updateProductMutation.isPending ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+             {/* Diálogo para Editar Producto */}
+       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+         <DialogContent className="max-w-lg bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-blue-200/50" aria-describedby="edit-product-description">
+           <DialogHeader className="text-center pb-4">
+             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+               <Edit className="h-8 w-8 text-white" />
+             </div>
+             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+               Editar Producto
+             </DialogTitle>
+             <p className="text-gray-600 text-sm mt-1">Modifica los datos del producto seleccionado</p>
+           </DialogHeader>
+           <div id="edit-product-description" className="sr-only">
+             Formulario para editar un producto existente en el sistema
+           </div>
+           <div className="space-y-6 pt-4">
+             <div className="grid grid-cols-1 gap-6">
+               <div className="space-y-2">
+                 <Label htmlFor="edit-name" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                   <Package className="h-4 w-4 text-blue-600" />
+                   Nombre del Producto
+                 </Label>
+                 <Input
+                   id="edit-name"
+                   value={formData.name}
+                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                   className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                   placeholder="Ingresa el nombre del producto"
+                 />
+               </div>
+               
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label htmlFor="edit-price" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                     <DollarSign className="h-4 w-4 text-green-600" />
+                     Precio (Bs)
+                   </Label>
+                   <Input
+                     id="edit-price"
+                     type="number"
+                     step="0.01"
+                     value={formData.price}
+                     onChange={(e) => setFormData({...formData, price: e.target.value})}
+                     className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                     placeholder="0.00"
+                   />
+                 </div>
+                 
+                 <div className="space-y-2">
+                   <Label htmlFor="edit-category" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                     <Tag className="h-4 w-4 text-purple-600" />
+                     Categoría
+                   </Label>
+                   <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                     <SelectTrigger className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md">
+                       <SelectValue placeholder="Seleccionar categoría" />
+                     </SelectTrigger>
+                     <SelectContent className="bg-white/95 backdrop-blur-md border border-gray-200/50 shadow-xl rounded-xl">
+                       {categories.map(category => (
+                         <SelectItem 
+                           key={category.id_categoria} 
+                           value={category.nombre}
+                           className="hover:bg-purple-50 focus:bg-purple-50 cursor-pointer rounded-lg m-1"
+                         >
+                           {category.nombre}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+               
+               <div className="space-y-2">
+                 <Label htmlFor="edit-description" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                   <Edit className="h-4 w-4 text-gray-600" />
+                   Descripción (Opcional)
+                 </Label>
+                 <Input
+                   id="edit-description"
+                   value={formData.description}
+                   onChange={(e) => setFormData({...formData, description: e.target.value})}
+                   className="bg-white/90 backdrop-blur-sm border-gray-200/50 focus:border-gray-500 focus:ring-2 focus:ring-gray-500/30 rounded-xl h-12 px-4 transition-all duration-200 hover:shadow-md"
+                   placeholder="Descripción del producto"
+                 />
+               </div>
+               
+               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-xl border border-blue-200/30">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                     <Activity className="h-5 w-5 text-white" />
+                   </div>
+                   <div>
+                     <Label htmlFor="edit-available" className="text-sm font-semibold text-gray-700">Disponibilidad</Label>
+                     <p className="text-xs text-gray-500">Controla si el producto está disponible para venta</p>
+                   </div>
+                 </div>
+                 <Switch
+                   id="edit-available"
+                   checked={formData.available}
+                   onCheckedChange={(checked) => setFormData({...formData, available: checked})}
+                   className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-blue-500 data-[state=checked]:to-indigo-600"
+                 />
+               </div>
+             </div>
+             
+             <div className="flex justify-end gap-4 pt-6 border-t border-gray-200/50">
+               <Button 
+                 variant="outline" 
+                 onClick={() => setIsEditDialogOpen(false)}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 h-12 font-semibold"
+               >
+                 Cancelar
+               </Button>
+               <Button 
+                 onClick={handleEditProduct} 
+                 disabled={updateProductMutation.isPending}
+                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-8 h-12 font-semibold"
+               >
+                 {updateProductMutation.isPending ? (
+                   <div className="flex items-center gap-2">
+                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     Guardando...
+                   </div>
+                 ) : (
+                   <div className="flex items-center gap-2">
+                     <Edit className="h-4 w-4" />
+                     Guardar Cambios
+                   </div>
+                 )}
+               </Button>
+             </div>
+           </div>
+         </DialogContent>
+       </Dialog>
 
       {/* Diálogo de Confirmación de Eliminación */}
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>

@@ -71,3 +71,4 @@ admin-console-backend/insert-productos-produccion.js
 admin-console-backend/test-db.js
 admin-console-backend/verificar-restaurantes-produccion.js
 sistema-pos/test_categorias_frontend.html
+sistema-pos/test_user_update.js

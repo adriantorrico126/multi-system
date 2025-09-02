@@ -365,6 +365,26 @@ export const createUser = async (userData: {
   }
 };
 
+export const updateUser = async (userId: string, userData: {
+  nombre: string;
+  username: string;
+  email?: string;
+  password?: string;
+  rol: string;
+  id_sucursal: number;
+  activo: boolean;
+}) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users/${userId}`, { ...userData, id_restaurante: restauranteId });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
+
 // Productos
 export const getProducts = async (aplicarDescuentos = true) => {
   try {

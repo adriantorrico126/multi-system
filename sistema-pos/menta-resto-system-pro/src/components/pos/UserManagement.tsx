@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, createUser, getBranches, deleteUser } from '@/services/api';
+import { getUsers, createUser, getBranches, deleteUser, updateUser } from '@/services/api';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
@@ -138,8 +138,7 @@ export function UserManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, userData }: { userId: string; userData: any }) => {
-      // Implementar actualización de usuario cuando esté disponible en la API
-      return Promise.resolve();
+      return updateUser(userId, userData);
     },
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: ['users'] });
@@ -621,56 +620,59 @@ export function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* Diálogo para Agregar Usuario */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Registrar Nuevo Usuario
-            </DialogTitle>
-          </DialogHeader>
+             {/* Diálogo para Agregar Usuario */}
+       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+         <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50" aria-describedby="add-user-description">
+           <DialogHeader>
+             <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+               Registrar Nuevo Usuario
+             </DialogTitle>
+           </DialogHeader>
+           <div id="add-user-description" className="sr-only">
+             Formulario para registrar un nuevo usuario en el sistema
+           </div>
           <div className="space-y-5 pt-2">
             <div>
               <Label htmlFor="nombre" className="text-sm font-semibold text-gray-700">Nombre Completo</Label>
-              <Input
-                id="nombre"
-                value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                placeholder="Nombre completo del usuario"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="nombre"
+                 value={formData.nombre || ''}
+                 onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                 placeholder="Nombre completo del usuario"
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div>
               <Label htmlFor="username" className="text-sm font-semibold text-gray-700">Nombre de Usuario</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                placeholder="username"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="username"
+                 value={formData.username || ''}
+                 onChange={(e) => setFormData({...formData, username: e.target.value})}
+                 placeholder="username"
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div>
               <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder="usuario@email.com"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="email"
+                 type="email"
+                 value={formData.email || ''}
+                 onChange={(e) => setFormData({...formData, email: e.target.value})}
+                 placeholder="usuario@email.com"
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div className="relative">
               <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Contraseña</Label>
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                placeholder="Contraseña segura"
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="password"
+                 type={showPassword ? "text" : "password"}
+                 value={formData.password || ''}
+                 onChange={(e) => setFormData({...formData, password: e.target.value})}
+                 placeholder="Contraseña segura"
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
               <Button
                 variant="ghost"
                 size="sm"
@@ -697,13 +699,13 @@ export function UserManagement() {
             </div>
             <div>
               <Label htmlFor="sucursal" className="text-sm font-semibold text-gray-700">Sucursal</Label>
-              <Select value={formData.id_sucursal.toString()} onValueChange={(value) => setFormData({...formData, id_sucursal: Number(value)})}>
+              <Select value={(formData.id_sucursal || 0).toString()} onValueChange={(value) => setFormData({...formData, id_sucursal: Number(value)})}>
                 <SelectTrigger className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map(branch => (
-                    <SelectItem key={branch.id_sucursal} value={branch.id_sucursal.toString()}>
+                    <SelectItem key={branch.id_sucursal} value={(branch.id_sucursal || 0).toString()}>
                       {branch.nombre}
                     </SelectItem>
                   ))}
@@ -730,52 +732,55 @@ export function UserManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Editar Usuario */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Editar Usuario
-            </DialogTitle>
-          </DialogHeader>
+             {/* Editar Usuario */}
+       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+         <DialogContent className="max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50" aria-describedby="edit-user-description">
+           <DialogHeader>
+             <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+               Editar Usuario
+             </DialogTitle>
+           </DialogHeader>
+           <div id="edit-user-description" className="sr-only">
+             Formulario para editar un usuario existente en el sistema
+           </div>
           <div className="space-y-5 pt-2">
             <div>
               <Label htmlFor="edit-nombre" className="text-sm font-semibold text-gray-700">Nombre Completo</Label>
-              <Input
-                id="edit-nombre"
-                value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="edit-nombre"
+                 value={formData.nombre || ''}
+                 onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div>
               <Label htmlFor="edit-username" className="text-sm font-semibold text-gray-700">Nombre de Usuario</Label>
-              <Input
-                id="edit-username"
-                value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="edit-username"
+                 value={formData.username || ''}
+                 onChange={(e) => setFormData({...formData, username: e.target.value})}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div>
               <Label htmlFor="edit-email" className="text-sm font-semibold text-gray-700">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="edit-email"
+                 type="email"
+                 value={formData.email || ''}
+                 onChange={(e) => setFormData({...formData, email: e.target.value})}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
             </div>
             <div className="relative">
               <Label htmlFor="edit-password" className="text-sm font-semibold text-gray-700">Contraseña (dejar en blanco para no cambiar)</Label>
-              <Input
-                id="edit-password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
-              />
+                             <Input
+                 id="edit-password"
+                 type={showPassword ? "text" : "password"}
+                 value={formData.password || ''}
+                 onChange={(e) => setFormData({...formData, password: e.target.value})}
+                 className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+               />
               <Button
                 variant="ghost"
                 size="sm"
@@ -806,7 +811,7 @@ export function UserManagement() {
             <div>
               <Label htmlFor="edit-sucursal" className="text-sm font-semibold text-gray-700">Sucursal</Label>
               <Select
-                value={formData.id_sucursal.toString()}
+                value={(formData.id_sucursal || 0).toString()}
                 onValueChange={(value) => setFormData({...formData, id_sucursal: Number(value)})}
               >
                 <SelectTrigger className="bg-white/80 backdrop-blur-sm border-gray-200/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
@@ -814,7 +819,7 @@ export function UserManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map(branch => (
-                    <SelectItem key={branch.id_sucursal} value={branch.id_sucursal.toString()}>
+                    <SelectItem key={branch.id_sucursal} value={(branch.id_sucursal || 0).toString()}>
                       {branch.nombre}
                     </SelectItem>
                   ))}
