@@ -132,6 +132,11 @@ export function POSSystem() {
   const [resumenCaja, setResumenCaja] = useState<any>(null);
   const [showCajaBanner, setShowCajaBanner] = useState<boolean>(true);
   const [isClosingBanner, setIsClosingBanner] = useState<boolean>(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState<boolean>(false);
+  
+  const handleToggleHeader = useCallback(() => {
+    setIsHeaderCollapsed(prev => !prev);
+  }, []);
   
   React.useEffect(() => {
     const interval = setInterval(() => setNow(dayjs()), 1000 * 30);
@@ -1144,6 +1149,8 @@ export function POSSystem() {
           selectedBranchId={selectedBranchId ?? undefined}
           onSucursalChange={isAdmin ? handleSucursalChange : undefined}
           onOpenConfig={() => setConfigOpen(true)}
+          isHeaderCollapsed={isHeaderCollapsed}
+          onToggleHeader={handleToggleHeader}
         />
       ) : showHeader && branchesLoading ? (
         <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm px-6 py-4">

@@ -48,6 +48,8 @@ interface HeaderProps {
   salesCount?: number;
   onLogout?: () => void;
   onOpenConfig?: () => void;
+  isHeaderCollapsed?: boolean;
+  onToggleHeader?: () => void;
 }
 
 export function Header({ 
@@ -58,7 +60,9 @@ export function Header({
   currentUser,
   salesCount = 0,
   onLogout,
-  onOpenConfig
+  onOpenConfig,
+  isHeaderCollapsed = false,
+  onToggleHeader
 }: HeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -320,52 +324,86 @@ export function Header({
     </Sheet>
   );
 
-  return (
-         <div className="bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
-       <header className="px-6 sm:px-8 py-4 sm:py-6">
-         <div className="flex items-center justify-between">
-           {/* Logo y título */}
-           <div className="flex items-center space-x-4 sm:space-x-6">
-             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl">
-               <FaUtensils className="text-white text-xl sm:text-2xl" />
-             </div>
-             <div className="min-w-0">
-               <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent truncate">
-                 Sistema POS
-               </h1>
-               <div className="flex items-center space-x-2">
-                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                 <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
-                   {currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal'}
-                 </p>
-               </div>
-             </div>
-           </div>
+    return (
+    <div className={`bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm transition-all duration-300 header-collapsible ${
+      mobileInfo.isMobile && isHeaderCollapsed ? 'collapsed' : ''
+    }`}>
+      <header className={`transition-all duration-300 header-content ${
+        mobileInfo.isMobile && isHeaderCollapsed ? 'px-2 py-1' : 'px-6 sm:px-8 py-4 sm:py-6'
+      }`}>
+        <div className="flex items-center justify-between">
+          {/* Logo y título */}
+          <div className={`flex items-center transition-all duration-300 ${
+            mobileInfo.isMobile && isHeaderCollapsed ? 'space-x-2' : 'space-x-4 sm:space-x-6'
+          }`}>
+            <div className={`bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl transition-all duration-300 ${
+              mobileInfo.isMobile && isHeaderCollapsed ? 'w-6 h-6' : 'w-12 h-12 sm:w-14 sm:h-14'
+            }`}>
+              <FaUtensils className={`text-white transition-all duration-300 ${
+                mobileInfo.isMobile && isHeaderCollapsed ? 'text-xs' : 'text-xl sm:text-2xl'
+              }`} />
+            </div>
+            <div className={`min-w-0 transition-all duration-300 ${
+              mobileInfo.isMobile && isHeaderCollapsed ? 'hidden' : ''
+            }`}>
+              <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent truncate">
+                Sistema POS
+              </h1>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
+                  {currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-                     {/* Navegación - Desktop */}
-           <div className="hidden lg:flex items-center space-x-3">
-             {visibleNavigationItems.slice(0, 4).map((item) => (
-               <Button
-                 key={item.label}
-                 variant="outline"
-                 size="sm"
-                 className={`flex items-center space-x-2 whitespace-nowrap rounded-lg transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm px-4 py-3 min-w-[140px] h-12 ${
-                   item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
-                 }`}
-                 onClick={() => navigate(item.path)}
-               >
-                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
-                   item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
-                 }`}>
-                   <item.icon className="h-4 w-4" />
-                 </div>
-                 <span className="font-semibold text-sm">{item.label}</span>
-               </Button>
-             ))}
-           </div>
+                               {/* Navegación - Desktop */}
+          <div className={`hidden lg:flex items-center space-x-3 transition-all duration-300 ${
+            mobileInfo.isMobile && isHeaderCollapsed ? 'hidden' : ''
+          }`}>
+            {visibleNavigationItems.slice(0, 4).map((item) => (
+              <Button
+                key={item.label}
+                variant="outline"
+                size="sm"
+                className={`flex items-center space-x-2 whitespace-nowrap rounded-lg transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm px-4 py-3 min-w-[140px] h-12 ${
+                  item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                  item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <item.icon className="h-4 w-4" />
+                </div>
+                <span className="font-semibold text-sm">{item.label}</span>
+              </Button>
+            ))}
+          </div>
 
-                     {/* Información del usuario y controles */}
-           <div className="flex items-center space-x-3 sm:space-x-6">
+          {/* Botón para alternar header en móvil */}
+          {mobileInfo.isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleHeader}
+              className={`lg:hidden rounded-lg hover:bg-gray-100 transition-all duration-200 header-toggle-btn ${
+                isHeaderCollapsed ? 'p-1' : 'p-2'
+              }`}
+            >
+              {isHeaderCollapsed ? (
+                <FaBars className="h-4 w-4 text-gray-600" />
+              ) : (
+                <FaTimes className="h-5 w-5 text-gray-600" />
+              )}
+            </Button>
+          )}
+
+                               {/* Información del usuario y controles */}
+          <div className={`flex items-center space-x-3 sm:space-x-6 transition-all duration-300 ${
+            mobileInfo.isMobile && isHeaderCollapsed ? 'hidden' : ''
+          }`}>
              {/* Selector de sucursal SOLO PARA ADMINISTRADORES - Desktop */}
              {branches && branches.length > 0 && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
                <div className="hidden md:block">

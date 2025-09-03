@@ -435,14 +435,94 @@
   @apply bg-red-50 border-red-200 text-red-800;
 }
 
-/* Mejoras para menú móvil del header */
-.mobile-menu-scroll {
+/* Header colapsable para móvil */
+.header-collapsible {
+  transition: all 0.3s ease-in-out;
+}
+
+.header-collapsible.collapsed {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  overflow: hidden;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.header-collapsible.collapsed .header-content {
+  transform: translateY(-100%);
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  max-height: 0;
+}
+
+.header-collapsible .header-content {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Botón de alternar header */
+.header-toggle-btn {
+  position: relative;
+  z-index: 10;
+}
+
+.header-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Barra de scroll personalizada para el carrito móvil */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Mejoras para el carrito móvil */
+.mobile-cart-scroll {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-.mobile-menu-content {
-  padding-bottom: 2rem;
+/* Footer del carrito móvil */
+.mobile-cart-footer {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(to right, #f9fafb, #ffffff);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Animación suave para el contenido cuando el header se colapsa */
+.main-content-with-collapsible-header {
+  transition: padding-top 0.3s ease-in-out;
+}
+
+/* Forzar altura mínima en móvil cuando está colapsado */
+@media (max-width: 768px) {
+  .header-collapsible.collapsed {
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+  }
 }
 
 .notification-warning {

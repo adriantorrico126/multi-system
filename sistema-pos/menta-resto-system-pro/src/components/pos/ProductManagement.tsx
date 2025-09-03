@@ -194,7 +194,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
     }
 
     addProductMutation.mutate({
-      nombre: formData.name.toUpperCase(),
+      nombre: formData.name,
       precio: parseFloat(formData.price),
       id_categoria: categoriaEncontrada.id_categoria,
       stock_actual: parseInt(formData.stock) || 0,
@@ -257,7 +257,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
 
     updateProductMutation.mutate({
       id: editingProduct.id,
-      nombre: formData.name.toUpperCase(),
+      nombre: formData.name,
       precio: parseFloat(formData.price),
       id_categoria: categoriaEncontrada.id_categoria,
       activo: formData.available,
