@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Restaurant POS Multi-Sucursal Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    /* Primary Brand Colors (Blues) */
+    --primary: 227 96% 50%; /* #0C2FF2 */
+    --primary-medium: 230 96% 48%; /* #0540F2 */  
+    --primary-light: 218 96% 48%; /* #056CF2 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Neutral Colors */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%; /* #0D0D0D */
+    --surface: 0 0% 95%; /* #F2F2F2 */
+    
+    /* Semantic Colors */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 227 96% 50%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Component Colors */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+    --border: 0 0% 90%;
+    --input: 0 0% 95%;
+    --ring: 227 96% 50%;
+    
+    /* Restaurant Specific Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(227 96% 50%), hsl(218 96% 48%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    --gradient-hero: linear-gradient(135deg, hsl(227 96% 50% / 0.9), hsl(218 96% 48% / 0.8));
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 4px hsl(227 96% 50% / 0.1);
+    --shadow-md: 0 8px 25px hsl(227 96% 50% / 0.15);
+    --shadow-lg: 0 25px 50px hsl(227 96% 50% / 0.25);
+    --shadow-glow: 0 0 40px hsl(227 96% 50% / 0.3);
+    
+    /* Typography */
+    --font-heading: 'Inter', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* Spacing & Layout */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    --surface: 0 0% 8%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 5%), hsl(0 0% 8%));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+@layer utilities {
+  /* Custom gradient utilities */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-surface {
+    background: var(--gradient-surface);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  /* Custom shadow utilities */
+  .shadow-restaurant-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .shadow-restaurant-md {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .shadow-restaurant-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Font families */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  
+  .font-body {
+    font-family: var(--font-body);
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-fast {
+    transition: var(--transition-fast);
+  }
+}

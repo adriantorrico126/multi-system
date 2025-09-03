@@ -611,16 +611,16 @@ export default function MesaMap() {
       }));
 
       // Usar createSale para crear la venta en estado pendiente_caja
-      // await createSale({ // This line was removed as per the new_code, as createSale is no longer imported.
-      //   items,
-      //   total: cartTotal,
-      //   paymentMethod: 'pendiente_caja', // o 'efectivo' si el backend lo requiere, pero el estado debe ser pendiente_caja
-      //   cashier: user.username || user.nombre || 'mesero',
-      //   id_sucursal,
-      //   mesa_numero: selectedMesa.numero,
-      //   id_mesa: selectedMesa.id_mesa,
-      //   tipo_servicio: 'Mesa',
-      // });
+      await createSale({
+        items,
+        total: cartTotal,
+        paymentMethod: 'pendiente_caja',
+        cashier: user.username || user.nombre || 'mesero',
+        id_sucursal,
+        mesa_numero: selectedMesa.numero,
+        id_mesa: selectedMesa.id_mesa,
+        tipo_servicio: 'Mesa',
+      });
     },
     onSuccess: () => {
       setCart([]);

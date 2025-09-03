@@ -10,6 +10,13 @@ import {
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
 import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { 
   FaUser, 
   FaSignOutAlt, 
   FaCog, 
@@ -24,9 +31,13 @@ import {
   FaCheckCircle,
   FaMoneyBillWave,
   FaChartLine,
-  FaInfoCircle
+  FaInfoCircle,
+  FaBars,
+  FaTimes,
+  FaHome
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
   currentBranch?: any;
@@ -52,6 +63,8 @@ export function Header({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileInfo = useMobile();
 
   const handleLogout = () => {
     if (onLogout) {
@@ -60,6 +73,7 @@ export function Header({
       logout();
     }
     setIsMenuOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   const handleBranchChange = (branchId: string) => {
@@ -67,10 +81,24 @@ export function Header({
       onSucursalChange(branchId);
     }
     setIsMenuOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
   };
 
   // Navegación principal optimizada
   const navigationItems = [
+    { 
+      icon: FaHome, 
+      label: 'Inicio', 
+      path: '/', 
+      show: true,
+      color: 'from-blue-500 to-indigo-600',
+      description: 'Página principal'
+    },
     { 
       icon: FaCashRegister, 
       label: 'Arqueo', 
@@ -168,240 +196,339 @@ export function Header({
     return selectedBranchId === branchId || selectedBranchId === branch.id_sucursal || selectedBranchId === branch.id;
   };
 
-  return (
-    <div className="bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
-      {/* Header principal - TODO EN UNA SOLA LÍNEA */}
-      <header className="px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo y título */}
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
-              <FaUtensils className="text-white text-xl" />
+  // Filtrar elementos de navegación visibles
+  const visibleNavigationItems = navigationItems.filter(item => 
+    item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol))
+  );
+
+  // Componente de navegación móvil
+  const MobileNavigation = () => (
+    <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="lg:hidden bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-gray-50"
+        >
+          <FaBars className="h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-white/95 backdrop-blur-sm flex flex-col">
+        <SheetHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
+          <SheetTitle className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center">
+              <FaUtensils className="text-white text-lg" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                Sistema POS
-              </h1>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-sm text-gray-600 font-medium">
-                  {currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal'}
-                </p>
+              <h2 className="text-lg font-bold text-gray-900">Sistema POS</h2>
+              <p className="text-sm text-gray-600">Menú de navegación</p>
+            </div>
+          </SheetTitle>
+        </SheetHeader>
+        
+        <div className="flex-1 overflow-y-auto scrollbar-hide py-4 space-y-2 mobile-menu-scroll mobile-menu-content">
+          {/* Información del usuario */}
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200 mb-4">
+            <div className="flex items-center space-x-3">
+              <div className={`w-10 h-10 bg-gradient-to-r ${getRoleColor(user?.rol)} rounded-xl flex items-center justify-center`}>
+                <RoleIcon className="text-white text-lg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{user?.nombre || user?.username}</p>
+                <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
               </div>
             </div>
           </div>
 
-          {/* Navegación principal - EN LA MISMA LÍNEA */}
-          <div className="flex items-center space-x-4">
-            {navigationItems
-              .filter(item => item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol)))
-              .map((item) => (
-                <Button
-                  key={item.label}
-                  variant="outline"
-                  size="sm"
-                  className={`flex items-center space-x-2 whitespace-nowrap rounded-lg transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm px-4 py-2 min-w-[140px] h-12 ${
-                    item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                  onClick={() => navigate(item.path)}
-                >
-                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
-                    item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    <item.icon className="h-3 w-3" />
-                  </div>
-                  <div className="text-left">
-                    <span className="font-semibold text-sm">{item.label}</span>
-                    <p className="text-xs text-gray-500 leading-tight">{item.description}</p>
-                  </div>
-                </Button>
-              ))}
+          {/* Navegación */}
+          <div className="space-y-1">
+            {visibleNavigationItems.map((item) => (
+              <Button
+                key={item.label}
+                variant="ghost"
+                className="w-full justify-start h-14 px-4 rounded-lg hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200"
+                onClick={() => handleNavigation(item.path)}
+              >
+                <div className={`w-8 h-8 bg-gradient-to-r ${item.color} rounded-lg flex items-center justify-center mr-3`}>
+                  <item.icon className="h-4 w-4 text-white" />
+                </div>
+                <div className="text-left">
+                  <span className="font-semibold text-gray-900">{item.label}</span>
+                  <p className="text-xs text-gray-500">{item.description}</p>
+                </div>
+              </Button>
+            ))}
           </div>
 
-          {/* Información del usuario y sucursal */}
-          <div className="flex items-center space-x-4">
-            {/* Selector de sucursal SOLO PARA ADMINISTRADORES */}
-            {branches && branches.length > 0 && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-400 transition-all duration-300 shadow-md hover:shadow-lg px-4 py-2 h-12"
-                  >
-                    <FaBuilding className="h-4 w-4 mr-2 text-blue-600" />
-                    <span className="truncate max-w-32 font-semibold text-blue-900">
-                      {currentBranch ? getBranchName(currentBranch) : 'Sucursal'}
-                    </span>
-                    <FaMapMarkerAlt className="h-3 w-3 ml-2 text-blue-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl rounded-xl">
-                  {/* Header del selector */}
-                  <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200/50 rounded-t-xl">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
-                        <FaBuilding className="text-white text-lg" />
+          {/* Selector de sucursal para administradores */}
+          {branches && branches.length > 0 && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 px-4">Sucursal Actual</h3>
+              <div className="space-y-2">
+                {branches.map((branch) => {
+                  const branchId = getBranchId(branch);
+                  const isSelected = isBranchSelected(branch);
+                  
+                  return (
+                    <Button
+                      key={branchId}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`w-full justify-start h-12 px-4 rounded-lg transition-all duration-200 ${
+                        isSelected 
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' 
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => handleBranchChange(branchId)}
+                    >
+                      <FaBuilding className="h-4 w-4 mr-3" />
+                      <div className="text-left">
+                        <span className="font-semibold">{getBranchName(branch)}</span>
+                        <p className="text-xs opacity-80">{getBranchLocation(branch)}</p>
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-lg">Seleccionar Sucursal</h3>
-                        <p className="text-sm text-gray-600">
-                          {branches.length} sucursal{branches.length !== 1 ? 'es' : ''} disponible{branches.length !== 1 ? 's' : ''}
-                        </p>
+                      {isSelected && <FaCheckCircle className="h-4 w-4 ml-auto" />}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Botones de acción */}
+          <div className="pt-4 border-t border-gray-200 space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-12"
+              onClick={() => {
+                if (onOpenConfig) onOpenConfig();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              <FaCog className="h-4 w-4 mr-3" />
+              Configuración
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full justify-start h-12"
+              onClick={handleLogout}
+            >
+              <FaSignOutAlt className="h-4 w-4 mr-3" />
+              Cerrar Sesión
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+
+  return (
+         <div className="bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm">
+       <header className="px-6 sm:px-8 py-4 sm:py-6">
+         <div className="flex items-center justify-between">
+           {/* Logo y título */}
+           <div className="flex items-center space-x-4 sm:space-x-6">
+             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl">
+               <FaUtensils className="text-white text-xl sm:text-2xl" />
+             </div>
+             <div className="min-w-0">
+               <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent truncate">
+                 Sistema POS
+               </h1>
+               <div className="flex items-center space-x-2">
+                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                 <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
+                   {currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal'}
+                 </p>
+               </div>
+             </div>
+           </div>
+
+                     {/* Navegación - Desktop */}
+           <div className="hidden lg:flex items-center space-x-3">
+             {visibleNavigationItems.slice(0, 4).map((item) => (
+               <Button
+                 key={item.label}
+                 variant="outline"
+                 size="sm"
+                 className={`flex items-center space-x-2 whitespace-nowrap rounded-lg transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm px-4 py-3 min-w-[140px] h-12 ${
+                   item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
+                 }`}
+                 onClick={() => navigate(item.path)}
+               >
+                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                   item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
+                 }`}>
+                   <item.icon className="h-4 w-4" />
+                 </div>
+                 <span className="font-semibold text-sm">{item.label}</span>
+               </Button>
+             ))}
+           </div>
+
+                     {/* Información del usuario y controles */}
+           <div className="flex items-center space-x-3 sm:space-x-6">
+             {/* Selector de sucursal SOLO PARA ADMINISTRADORES - Desktop */}
+             {branches && branches.length > 0 && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
+               <div className="hidden md:block">
+                 <DropdownMenu>
+                   <DropdownMenuTrigger asChild>
+                     <Button 
+                       variant="outline" 
+                       size="sm" 
+                       className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-400 transition-all duration-300 shadow-md hover:shadow-lg px-4 py-3 h-12"
+                     >
+                       <FaBuilding className="h-4 w-4 mr-2 text-blue-600" />
+                       <span className="truncate max-w-28 sm:max-w-36 font-semibold text-blue-900 text-sm">
+                         {currentBranch ? getBranchName(currentBranch) : 'Sucursal'}
+                       </span>
+                     </Button>
+                   </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl rounded-xl">
+                    {/* Header del selector */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200/50 rounded-t-xl">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                          <FaBuilding className="text-white text-lg" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg">Seleccionar Sucursal</h3>
+                          <p className="text-sm text-gray-600">
+                            {branches.length} sucursal{branches.length !== 1 ? 'es' : ''} disponible{branches.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Lista de sucursales */}
-                  <div className="p-2 max-h-64 overflow-y-auto scrollbar-hide">
-                    {branches.map((branch) => {
-                      const branchId = getBranchId(branch);
-                      const isSelected = isBranchSelected(branch);
-                      
-                      return (
-                        <DropdownMenuItem
-                          key={branchId}
-                          onClick={() => handleBranchChange(branchId)}
-                          className={`p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer rounded-lg m-1 ${
-                            isSelected 
-                              ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-l-4 border-blue-500 shadow-md' 
-                              : 'hover:shadow-sm'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                isSelected 
-                                  ? 'bg-gradient-to-r from-blue-500 to-indigo-500' 
-                                  : 'bg-gray-100'
-                              }`}>
-                                {isSelected ? (
-                                  <FaCheckCircle className="text-white text-lg" />
-                                ) : (
-                                  <FaBuilding className="text-gray-600 text-lg" />
-                                )}
-                              </div>
-                              <div>
-                                <span className={`font-semibold text-lg ${
-                                  isSelected ? 'text-blue-900' : 'text-gray-900'
+                    
+                    {/* Lista de sucursales */}
+                    <div className="p-2 max-h-64 overflow-y-auto scrollbar-hide">
+                      {branches.map((branch) => {
+                        const branchId = getBranchId(branch);
+                        const isSelected = isBranchSelected(branch);
+                        
+                        return (
+                          <DropdownMenuItem
+                            key={branchId}
+                            onClick={() => handleBranchChange(branchId)}
+                            className={`p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 cursor-pointer rounded-lg m-1 ${
+                              isSelected 
+                                ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-l-4 border-blue-500 shadow-md' 
+                                : 'hover:shadow-sm'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                  isSelected 
+                                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500' 
+                                    : 'bg-gray-100'
                                 }`}>
-                                  {getBranchName(branch)}
-                                </span>
-                                <div className="flex items-center space-x-1 mt-1">
-                                  <FaMapMarkerAlt className="h-3 w-3 text-gray-500" />
-                                  <span className="text-sm text-gray-600">{getBranchLocation(branch)}</span>
+                                  {isSelected ? (
+                                    <FaCheckCircle className="text-white text-lg" />
+                                  ) : (
+                                    <FaBuilding className="text-gray-600 text-lg" />
+                                  )}
                                 </div>
-                                <div className="text-xs text-gray-400 mt-1">
-                                  ID: {branchId}
+                                <div>
+                                  <span className={`font-semibold text-lg ${
+                                    isSelected ? 'text-blue-900' : 'text-gray-900'
+                                  }`}>
+                                    {getBranchName(branch)}
+                                  </span>
+                                  <div className="flex items-center space-x-1 mt-1">
+                                    <FaMapMarkerAlt className="h-3 w-3 text-gray-500" />
+                                    <span className="text-sm text-gray-600">{getBranchLocation(branch)}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    ID: {branchId}
+                                  </div>
                                 </div>
                               </div>
+                              
+                              {isSelected && (
+                                <div className="flex items-center space-x-2">
+                                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                                    <FaCheckCircle className="h-3 w-3 mr-1" />
+                                    Activa
+                                  </Badge>
+                                </div>
+                              )}
                             </div>
-                            
-                            {isSelected && (
-                              <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                                <span className="text-xs text-blue-600 font-bold uppercase tracking-wide">
-                                  Activa
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Footer informativo */}
-                  <div className="p-3 bg-gray-50 border-t border-gray-200/50 rounded-b-xl">
-                    <p className="text-xs text-gray-500 text-center">
-                      💡 Solo administradores pueden cambiar de sucursal
-                    </p>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {/* Indicador de sucursal para usuarios no-admin (solo lectura) */}
-            {branches && branches.length > 0 && !(user?.rol === 'admin' || user?.rol === 'super_admin') && (
-              <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 h-12">
-                <FaBuilding className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">
-                  {currentBranch ? getBranchName(currentBranch) : 'Sucursal'}
-                </span>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
 
-            {/* Usuario */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 hover:bg-white hover:border-blue-400 transition-all duration-200 p-2 h-12">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <RoleIcon className="text-white text-lg" />
-                  </div>
-                  <div className="hidden lg:block text-left">
-                    <p className="text-sm font-semibold text-gray-900">{user?.nombre || 'Usuario'}</p>
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${getRoleColor(user?.rol)}`}></div>
-                      <p className="text-xs text-gray-600 font-medium capitalize">{user?.rol || 'Rol'}</p>
-                    </div>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl">
-                {/* Header del usuario */}
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200/50">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <RoleIcon className="text-white text-xl" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{user?.nombre || 'Usuario'}</p>
-                      <p className="text-sm text-gray-600 font-medium capitalize">{user?.rol || 'Rol'}</p>
-                      <p className="text-xs text-gray-500">{user?.username || 'username'}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Configuración */}
-                {onOpenConfig && (
-                  <DropdownMenuItem 
-                    onClick={onOpenConfig}
-                    className="p-3 hover:bg-blue-50 transition-all duration-200 cursor-pointer"
-                  >
-                    <div className="flex items-center space-x-3 w-full">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                        <FaCog className="text-white text-sm" />
+                         {/* Información del usuario - Desktop */}
+             <div className="hidden md:flex items-center space-x-4">
+               <div className="flex items-center space-x-3">
+                 <div className={`w-10 h-10 bg-gradient-to-r ${getRoleColor(user?.rol)} rounded-lg flex items-center justify-center`}>
+                   <RoleIcon className="text-white text-base" />
+                 </div>
+                 <div className="text-right">
+                   <p className="text-base font-semibold text-gray-900 truncate max-w-28">
+                     {user?.nombre || user?.username}
+                   </p>
+                   <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
+                 </div>
+               </div>
+             </div>
+
+                         {/* Menú móvil */}
+             <MobileNavigation />
+ 
+             {/* Controles de usuario - Desktop */}
+             <div className="hidden md:flex items-center space-x-3">
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-gray-50 px-4 py-3 h-12"
+                   >
+                     <FaUser className="h-4 w-4" />
+                   </Button>
+                 </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-2xl rounded-xl">
+                  <div className="p-4 border-b border-gray-200/50">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 bg-gradient-to-r ${getRoleColor(user?.rol)} rounded-xl flex items-center justify-center`}>
+                        <RoleIcon className="text-white text-lg" />
                       </div>
                       <div>
-                        <span className="font-medium text-gray-900">Configuración</span>
-                        <p className="text-xs text-gray-500">Ajustes del sistema</p>
+                        <p className="font-semibold text-gray-900">{user?.nombre || user?.username}</p>
+                        <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
                       </div>
                     </div>
-                  </DropdownMenuItem>
-                )}
-                
-                <DropdownMenuSeparator />
-                
-                {/* Cerrar Sesión */}
-                <DropdownMenuItem 
-                  onClick={handleLogout} 
-                  className="p-3 hover:bg-red-50 transition-all duration-200 cursor-pointer border-l-4 border-transparent hover:border-red-500"
-                >
-                  <div className="flex items-center space-x-3 w-full">
-                    <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-                      <FaSignOutAlt className="text-white text-sm" />
-                    </div>
-                    <div>
-                      <span className="font-medium text-red-700">Cerrar Sesión</span>
-                      <p className="text-xs text-red-500">Salir del sistema</p>
-                    </div>
                   </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      if (onOpenConfig) onOpenConfig();
+                      setIsMenuOpen(false);
+                    }}
+                    className="p-3 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <FaCog className="h-4 w-4 mr-3 text-gray-600" />
+                    Configuración
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="p-3 hover:bg-red-50 cursor-pointer text-red-600"
+                  >
+                    <FaSignOutAlt className="h-4 w-4 mr-3" />
+                    Cerrar Sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>

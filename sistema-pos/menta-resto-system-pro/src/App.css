@@ -289,9 +289,129 @@
 
 
 
-/* Estilos para iconos con animación */
-.icon-bounce {
-  animation: bounce 2s infinite;
+/* Estilos para scrollbar personalizado */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Ocultar carrito lateral en móvil y tablet - REGLA PRINCIPAL */
+.desktop-cart-only {
+  display: none !important;
+}
+
+/* Solo mostrar en pantallas muy grandes (2xl = 1536px+) */
+@media (min-width: 1536px) {
+  .desktop-cart-only {
+    display: flex !important;
+  }
+}
+
+/* Regla adicional para asegurar que se oculte en móviles */
+@media (max-width: 1024px) {
+  .desktop-cart-only {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Estilos específicos para móvil */
+@media (max-width: 768px) {
+  .mobile-cart-button {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 50;
+  }
+  
+  .mobile-nav-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .mobile-nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .mobile-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .mobile-product-card {
+    padding: 0.75rem;
+  }
+  
+  /* Mejoras para navegación de pestañas en móvil */
+  .mobile-nav-container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .mobile-nav-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-nav-button {
+    min-width: fit-content;
+    flex-shrink: 0;
+  }
+  
+  /* Ajustar contenido principal para móvil */
+  .main-content-mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Estilos para el carrito móvil */
+.mobile-cart-sheet {
+  border-radius: 1rem 1rem 0 0;
+}
+
+.mobile-cart-content {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Animaciones para móvil */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.mobile-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Estilos para botones flotantes */
+.floating-button {
+  position: fixed;
+  z-index: 50;
+  transition: all 0.2s ease-in-out;
+}
+
+.floating-button:hover {
+  transform: scale(1.05);
+}
+
+.floating-button:active {
+  transform: scale(0.95);
 }
 
 @keyframes bounce {
@@ -313,6 +433,16 @@
 
 .notification-error {
   @apply bg-red-50 border-red-200 text-red-800;
+}
+
+/* Mejoras para menú móvil del header */
+.mobile-menu-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-menu-content {
+  padding-bottom: 2rem;
 }
 
 .notification-warning {

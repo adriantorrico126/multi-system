@@ -48,7 +48,13 @@ import {
   CheckCircle,
   Trash2,
   X,
-  Bell
+  Bell,
+  Menu,
+  Home,
+  CreditCard,
+  Receipt,
+  Database,
+  UserCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
@@ -69,6 +75,14 @@ import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
 import { egresosApi } from '@/services/egresosApi';
 import { useNavigate } from 'react-router-dom';
+import { MobileCart } from './MobileCart';
+import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -1216,97 +1230,119 @@ export function POSSystem() {
         </div>
       )}
 
-      {/* Navegación de Pestañas Principales */}
-      <nav className="border-b border-gray-200/50 bg-white/80 backdrop-blur-sm px-6 py-3 shadow-lg flex-shrink-0">
-        <div className="flex flex-row gap-3">
+      {/* Navegación de Pestañas Principales - Mejorada para móvil */}
+      <nav className="border-b border-gray-200/50 bg-white/80 backdrop-blur-sm px-2 sm:px-6 py-2 sm:py-3 shadow-lg flex-shrink-0 mobile-nav-container">
+        <div className="flex flex-row gap-1 sm:gap-3 overflow-x-auto scrollbar-hide pb-1 mobile-nav-scroll">
           <Button
             variant={activeTab === 'pos' ? 'default' : 'outline'}
             onClick={() => handleTabChange('pos')}
-            className="rounded-xl transition-all duration-200"
+            className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
           >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-                  Punto de Venta
+            <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Punto de Venta</span>
+            <span className="sm:hidden">POS</span>
           </Button>
           {gestionMesasHabilitada && (
             <>
               <Button
                 variant={activeTab === 'orders' ? 'default' : 'outline'}
                 onClick={() => handleTabChange('orders')}
-                className="rounded-xl transition-all duration-200"
+                className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
               >
-                <ClipboardList className="h-5 w-5 mr-2" />
-                  Pedidos
+                <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Pedidos</span>
+                <span className="sm:hidden">Pedidos</span>
               </Button>
             </>
           )}
-          <Button onClick={goCaja} variant="outline" className="rounded-xl transition-all duration-200">Caja</Button>
+          <Button 
+            onClick={goCaja} 
+            variant="outline" 
+            className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+          >
+            <span className="hidden sm:inline">Caja</span>
+            <span className="sm:hidden">Caja</span>
+          </Button>
           {arqueoActual && (
-            <Button onClick={handlePrepararCierre} variant="destructive" className="rounded-xl transition-all duration-200">Cerrar Caja</Button>
+            <Button 
+              onClick={handlePrepararCierre} 
+              variant="destructive" 
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+            >
+              <span className="hidden sm:inline">Cerrar Caja</span>
+              <span className="sm:hidden">Cerrar</span>
+            </Button>
           )}
           {(user.rol === 'cajero') && (
             <Button
               variant={activeTab === 'mesero' ? 'default' : 'outline'}
               onClick={() => handleTabChange('mesero')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
             >
-              <Users className="h-5 w-5 mr-2" />
-              Mesero
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Mesero</span>
+              <span className="sm:hidden">Mesero</span>
             </Button>
           )}
           {user.rol === 'cajero' && (
             <Button
               variant={activeTab === 'pedidos-pendientes' ? 'default' : 'outline'}
               onClick={() => handleTabChange('pedidos-pendientes')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
             >
-              <Clock className="h-5 w-5 mr-2" />
-              Pedidos Pendientes
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Pedidos Pendientes</span>
+              <span className="sm:hidden">Pendientes</span>
             </Button>
           )}
           {canSeeSales && (
             <Button
               variant={activeTab === 'sales' ? 'default' : 'outline'}
               onClick={() => handleTabChange('sales')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
             >
-              <FileText className="h-5 w-5 mr-2" />
-                  Historial de Ventas
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Historial de Ventas</span>
+              <span className="sm:hidden">Historial</span>
             </Button>
           )}
           {showAdminFeatures && (
             <Button
               variant={activeTab === 'dashboard' ? 'default' : 'outline'}
               onClick={() => handleTabChange('dashboard')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
             >
-              <LayoutDashboard className="h-5 w-5 mr-2" />
-                  Dashboard
+              <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Admin</span>
             </Button>
           )}
           {(user.rol === 'admin' || user.rol === 'super_admin') && (
             <Button
               variant={activeTab === 'promociones' ? 'default' : 'outline'}
               onClick={() => handleTabChange('promociones')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Tag className="h-5 w-5 mr-2" />
-                  Promociones
+              <Tag className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Promociones</span>
+              <span className="sm:hidden">Promos</span>
             </Button>
           )}
           {(user.rol === 'admin' || user.rol === 'super_admin') && (
             <Button
               variant="outline"
               onClick={() => navigate('/egresos')}
-              className="rounded-xl transition-all duration-200"
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-                  Egresos
+              <span className="hidden sm:inline">Egresos</span>
+              <span className="sm:hidden">Egresos</span>
             </Button>
           )}
           {(['admin','cocinero'].includes(user.rol)) && (
             <div className="relative">
               <Button
                 variant="outline"
-                className="rounded-xl transition-all duration-200 relative"
+                className="rounded-xl transition-all duration-200 relative whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
                 onClick={() => {
                   if (notifications.length === 0) {
                     toast({ title: 'Notificaciones', description: 'Sin notificaciones' });
@@ -1403,25 +1439,25 @@ export function POSSystem() {
       {/* Contenido Principal de la Aplicación */}
       <main className="flex flex-1 overflow-hidden">
         {/* Contenido de las Pestañas */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto main-content-mobile">
           {/* Vista de Punto de Venta (POS) */}
           {activeTab === 'pos' && (
-            <div className="flex flex-col h-full p-6 min-w-0">
+            <div className="flex flex-col h-full p-3 sm:p-6 min-w-0">
               {/* Buscador de productos */}
-              <div className="w-full mb-4">
+              <div className="w-full mb-3 sm:mb-4">
                 <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                   <Input
                     placeholder="Buscar productos por nombre..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-12 text-base w-full"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base w-full"
                   />
                 </div>
               </div>
               
               {/* Filtros de categoría */}
-              <div className="w-full flex flex-wrap gap-2 items-center justify-start mb-6">
+              <div className="w-full flex flex-wrap gap-1 sm:gap-2 items-center justify-start mb-4 sm:mb-6">
                 <CategoryFilter
                   selectedCategory={selectedCategory}
                   onSelectCategory={(categoryId: string) => setSelectedCategory(categoryId)}
@@ -1440,7 +1476,7 @@ export function POSSystem() {
                   </div>
                 ) : filteredProducts.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
                     {filteredProducts.map((product) => (
                         <ProductCard key={String(product.id)} product={product} onAddToCart={addToCart} />
                     ))}
@@ -1572,9 +1608,9 @@ export function POSSystem() {
           )}
           </div>
 
-        {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS */}
+        {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS - SOLO DESKTOP */}
         {activeTab === 'pos' && (
-          <aside className="w-95 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex flex-col flex-shrink-0">
+          <aside className="hidden 2xl:flex w-95 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex-col flex-shrink-0 desktop-cart-only">
             {/* Header del Carrito */}
             <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center justify-between mb-2">
@@ -1907,6 +1943,23 @@ export function POSSystem() {
         </div>
       </div>
     )}
+    
+    {/* Carrito móvil */}
+    <MobileCart
+      cart={cart}
+      total={total}
+      subtotal={subtotal}
+      totalDescuentos={totalDescuentos}
+      appliedPromociones={appliedPromociones}
+      onUpdateQuantity={updateQuantity}
+      onRemoveItem={removeFromCart}
+      onCheckout={() => setShowCheckout(true)}
+      tipoServicio={tipoServicio}
+      setTipoServicio={setTipoServicio}
+      mesaNumero={mesaNumero}
+      setMesaNumero={setMesaNumero}
+      config={config}
+    />
   </div>
 );
 }

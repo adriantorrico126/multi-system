@@ -1,66 +1,45 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useMobile } from '@/hooks/use-mobile';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import { 
-  FaBars, 
-  FaHome, 
-  FaUtensils, 
-  FaChartBar, 
-  FaBoxes, 
-  FaUsers, 
-  FaReceipt, 
-  FaPrint,
-  FaCog,
-  FaSignOutAlt,
-  FaMobile,
-  FaTablet,
-  FaDesktop,
-  FaRedo,
-  FaBell,
-  FaShoppingCart,
-  FaQrcode,
-  FaCreditCard,
-  FaCalculator,
-  FaHistory,
-  FaCog as FaSettings,
-  FaUser
-} from 'react-icons/fa';
+  Home,
+  ShoppingCart,
+  CreditCard,
+  Receipt,
+  Users,
+  Package,
+  Settings,
+  Menu,
+  BarChart3,
+  ClipboardList,
+  Building,
+  Tag,
+  UtensilsCrossed,
+  Database,
+  UserCheck,
+  LogOut
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface MobileNavigationProps {
-  currentBranch?: any;
-  branches?: any[];
-  onSucursalChange?: (branchId: string) => void;
-  selectedBranchId?: string;
+  cartItemsCount?: number;
+  onOpenConfig?: () => void;
   onLogout?: () => void;
 }
 
-export function MobileNavigation({
-  currentBranch,
-  branches,
-  onSucursalChange,
-  selectedBranchId,
-  onLogout
-}: MobileNavigationProps) {
+export function MobileNavigation({ cartItemsCount = 0, onOpenConfig, onLogout }: MobileNavigationProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout } = useAuth();
-  const { isMobile, isTablet, screenSize, orientation, isTouch, isIOS, isAndroid } = useMobile();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Solo mostrar en dispositivos móviles
-  if (!isMobile && !isTablet) {
-    return null;
-  }
+  const mobileInfo = useMobile();
 
   const handleLogout = () => {
     if (onLogout) {
@@ -68,258 +47,205 @@ export function MobileNavigation({
     } else {
       logout();
     }
-    setIsMenuOpen(false);
-  };
-
-  const handleBranchChange = (branchId: string) => {
-    if (onSucursalChange) {
-      onSucursalChange(branchId);
-    }
-    setIsMenuOpen(false);
   };
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    setIsMenuOpen(false);
   };
 
-  // Navegación principal del POS
-  const mainNavItems = [
+  // Navegación principal optimizada para móviles
+  const navigationItems = [
     { 
-      icon: FaHome, 
+      icon: Home, 
       label: 'Inicio', 
       path: '/', 
-      description: 'Panel principal del sistema',
-      badge: null
+      show: true,
+      color: 'from-blue-500 to-indigo-600',
+      description: 'Página principal'
     },
     { 
-      icon: FaUtensils, 
-      label: 'Cocina', 
-      path: '/kitchen', 
-      description: 'Gestión de pedidos y preparación',
-      badge: null
+      icon: ShoppingCart, 
+      label: 'Punto de Venta', 
+      path: '/', 
+      show: ['admin', 'cajero', 'mesero', 'super_admin'].includes(user?.rol),
+      color: 'from-green-500 to-emerald-600',
+      description: 'Realizar ventas'
     },
     { 
-      icon: FaChartBar, 
-      label: 'Dashboard', 
-      path: '/dashboard', 
-      description: 'Estadísticas y reportes',
-      badge: null
+      icon: CreditCard, 
+      label: 'Arqueo', 
+      path: '/arqueo', 
+      show: ['admin', 'cajero', 'super_admin'].includes(user?.rol),
+      color: 'from-emerald-500 to-green-600',
+      description: 'Gestión de caja'
     },
     { 
-      icon: FaBoxes, 
+      icon: Receipt, 
+      label: 'Egresos', 
+      path: '/egresos-caja', 
+      show: ['cajero'].includes(user?.rol),
+      color: 'from-red-500 to-pink-600',
+      description: 'Registrar gastos'
+    },
+    { 
+      icon: Package, 
       label: 'Inventario', 
-      path: '/inventory', 
-      description: 'Control de stock y productos',
-      badge: null
+      path: '/inventario', 
+      show: ['admin', 'super_admin'].includes(user?.rol),
+      color: 'from-blue-500 to-indigo-600',
+      description: 'Control de stock'
     },
     { 
-      icon: FaUsers, 
+      icon: UtensilsCrossed, 
+      label: 'Cocina', 
+      path: '/cocina', 
+      show: ['admin', 'cocinero', 'super_admin'].includes(user?.rol),
+      color: 'from-orange-500 to-red-600',
+      description: 'Gestión de pedidos'
+    },
+    { 
+      icon: ClipboardList, 
+      label: 'Pedidos', 
+      path: '/pedidos', 
+      show: ['admin', 'mesero', 'cajero', 'super_admin'].includes(user?.rol),
+      color: 'from-purple-500 to-pink-600',
+      description: 'Gestión de pedidos'
+    },
+    { 
+      icon: BarChart3, 
+      label: 'Historial', 
+      path: '/historial-ventas', 
+      show: ['admin', 'cajero', 'super_admin'].includes(user?.rol),
+      color: 'from-gray-500 to-slate-600',
+      description: 'Historial de ventas'
+    },
+    { 
+      icon: Users, 
       label: 'Usuarios', 
-      path: '/users', 
-      description: 'Gestión de personal',
-      badge: null
+      path: '/usuarios', 
+      show: ['admin', 'super_admin'].includes(user?.rol),
+      color: 'from-teal-500 to-cyan-600',
+      description: 'Gestión de usuarios'
     },
     { 
-      icon: FaReceipt, 
-      label: 'Ventas', 
-      path: '/sales', 
-      description: 'Historial de transacciones',
-      badge: null
+      icon: Tag, 
+      label: 'Categorías', 
+      path: '/categorias', 
+      show: ['admin', 'super_admin'].includes(user?.rol),
+      color: 'from-amber-500 to-orange-600',
+      description: 'Gestión de categorías'
     },
     { 
-      icon: FaPrint, 
-      label: 'Impresión', 
-      path: '/print', 
-      description: 'Configuración de impresoras',
-      badge: null
+      icon: Building, 
+      label: 'Sucursales', 
+      path: '/sucursales', 
+      show: ['admin', 'super_admin'].includes(user?.rol),
+      color: 'from-indigo-500 to-purple-600',
+      description: 'Gestión de sucursales'
+    },
+    { 
+      icon: Database, 
+      label: 'Productos', 
+      path: '/productos', 
+      show: ['admin', 'super_admin'].includes(user?.rol),
+      color: 'from-cyan-500 to-blue-600',
+      description: 'Gestión de productos'
     },
   ];
 
-  // Navegación específica por rol
-  const roleNavItems = [];
-  
-  if (user?.rol === 'admin' || user?.rol === 'super_admin') {
-    roleNavItems.push(
-      { icon: FaCog, label: 'Configuración', path: '/config', description: 'Ajustes del sistema' },
-      { icon: FaHistory, label: 'Auditoría', path: '/audit', description: 'Registros del sistema' }
-    );
-  }
-  
-  if (user?.rol === 'cajero' || user?.rol === 'admin') {
-    roleNavItems.push(
-      { icon: FaCreditCard, label: 'Egresos', path: '/egresos-caja', description: 'Gastos de caja' },
-      { icon: FaCalculator, label: 'Arqueo', path: '/arqueo', description: 'Cierre de caja' }
-    );
-  }
+  // Filtrar elementos de navegación visibles
+  const visibleNavigationItems = navigationItems.filter(item => 
+    item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol))
+  );
 
-  if (user?.rol === 'mesero') {
-    roleNavItems.push(
-      { icon: FaQrcode, label: 'Mesas', path: '/mesas', description: 'Gestión de mesas' },
-      { icon: FaShoppingCart, label: 'Pedidos', path: '/pedidos', description: 'Nuevos pedidos' }
-    );
+  // Solo mostrar en móviles
+  if (!mobileInfo.isMobile) {
+    return null;
   }
-
-  const allNavItems = [...mainNavItems, ...roleNavItems];
 
   return (
     <>
-      {/* Botón de menú flotante para móviles pequeños */}
-      {isMobile && screenSize === 'xs' && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild>
-              <Button 
-                size="lg" 
-                className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-2xl hover:shadow-3xl transition-all duration-300"
-              >
-                <FaBars className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
-              <SheetHeader className="text-center pb-4">
-                <SheetTitle className="flex items-center justify-center space-x-2">
-                  <FaMobile className="text-blue-600" />
-                  <span>Menú Principal</span>
-                </SheetTitle>
-              </SheetHeader>
-              
-              <div className="space-y-4 overflow-y-auto pb-20">
-                {/* Información del usuario */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                      <FaUser className="text-white text-lg" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{user?.nombre || 'Usuario'}</p>
-                      <p className="text-sm text-gray-600">{user?.rol || 'Rol'}</p>
-                      <p className="text-xs text-gray-500">{user?.username || 'username'}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="text-xs">
-                        {isMobile ? 'Móvil' : 'Tablet'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sucursal actual */}
-                {currentBranch && (
-                  <div className="bg-gray-50 rounded-2xl p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{currentBranch.name}</p>
-                        <p className="text-sm text-gray-600">{currentBranch.location}</p>
-                      </div>
-                      {branches && branches.length > 1 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsMenuOpen(false)}
-                          className="text-xs"
-                        >
-                          Cambiar
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Navegación principal */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 px-2">Navegación</h3>
-                  {allNavItems.map((item) => (
-                    <button
-                      key={item.path}
-                      onClick={() => handleNavigation(item.path)}
-                      className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-200 ${
-                        location.pathname === item.path
-                          ? 'bg-blue-100 border-2 border-blue-300'
-                          : 'bg-white hover:bg-gray-50 border-2 border-transparent'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        location.pathname === item.path
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-gray-900">{item.label}</p>
-                        <p className="text-xs text-gray-500">{item.description}</p>
-                      </div>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-2">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Acciones rápidas */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 px-2">Acciones</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleNavigation('/notifications')}
-                      className="flex flex-col items-center space-y-2 p-4 h-auto"
-                    >
-                      <FaBell className="h-5 w-5" />
-                      <span className="text-xs">Notificaciones</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleNavigation('/settings')}
-                      className="flex flex-col items-center space-y-2 p-4 h-auto"
-                    >
-                      <FaSettings className="h-5 w-5" />
-                      <span className="text-xs">Ajustes</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Cerrar sesión */}
-                <Button
-                  variant="destructive"
-                  onClick={handleLogout}
-                  className="w-full py-4 rounded-2xl"
-                >
-                  <FaSignOutAlt className="mr-2" />
-                  Cerrar Sesión
-                </Button>
+      {/* Botón flotante de navegación */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            className="fixed bottom-20 left-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl border-0"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[300px] bg-white/95 backdrop-blur-sm">
+          <SheetHeader className="border-b border-gray-200 pb-4">
+            <SheetTitle className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center">
+                <Menu className="text-white text-lg" />
               </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      )}
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Sistema POS</h2>
+                <p className="text-sm text-gray-600">Navegación rápida</p>
+              </div>
+            </SheetTitle>
+          </SheetHeader>
+          
+          <div className="py-4 space-y-2">
+            {/* Información del usuario */}
+            <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200 mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <UserCheck className="text-white text-lg" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{user?.nombre || user?.username}</p>
+                  <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
+                </div>
+              </div>
+            </div>
 
-      {/* Navegación inferior para tablets */}
-      {isTablet && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-40">
-          <div className="flex items-center justify-around">
-            {mainNavItems.slice(0, 5).map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                className={`flex flex-col items-center space-y-1 p-2 rounded-xl transition-all duration-200 ${
-                  location.pathname === item.path
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+            {/* Navegación */}
+            <div className="space-y-1">
+              {visibleNavigationItems.map((item) => (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  className="w-full justify-start h-14 px-4 rounded-lg hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200"
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <div className={`w-8 h-8 bg-gradient-to-r ${item.color} rounded-lg flex items-center justify-center mr-3`}>
+                    <item.icon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-gray-900">{item.label}</span>
+                    <p className="text-xs text-gray-500">{item.description}</p>
+                  </div>
+                </Button>
+              ))}
+            </div>
+
+            {/* Botones de acción */}
+            <div className="pt-4 border-t border-gray-200 space-y-2">
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12"
+                onClick={() => {
+                  if (onOpenConfig) onOpenConfig();
+                }}
               >
-                <item.icon className="h-5 w-5" />
-                <span className="text-xs font-medium">{item.label}</span>
-              </button>
-            ))}
+                <Settings className="h-4 w-4 mr-3" />
+                Configuración
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full justify-start h-12"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-3" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
-        </nav>
-      )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
-/ /   B u i l d   f o r c e :   0 8 / 2 8 / 2 0 2 5   2 2 : 3 5 : 0 6  
- 

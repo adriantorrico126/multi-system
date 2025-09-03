@@ -1,0 +1,316 @@
+/* Estilos específicos para móviles */
+@media (max-width: 768px) {
+  /* Mejorar la experiencia táctil */
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ajustar espaciado para móviles */
+  .mobile-spacing {
+    padding: 0.75rem;
+    margin: 0.5rem;
+  }
+
+  /* Optimizar botones para móviles */
+  .mobile-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Mejorar navegación móvil */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    z-index: 40;
+  }
+
+  /* Ajustar modales para móviles */
+  .mobile-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  /* Optimizar formularios para móviles */
+  .mobile-form input,
+  .mobile-form select,
+  .mobile-form textarea {
+    font-size: 16px; /* Evita zoom en iOS */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+
+  /* Mejorar tablas para móviles */
+  .mobile-table {
+    font-size: 0.875rem;
+  }
+
+  .mobile-table th,
+  .mobile-table td {
+    padding: 0.5rem;
+  }
+
+  /* Optimizar cards para móviles */
+  .mobile-card {
+    margin: 0.5rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Mejorar botones flotantes */
+  .mobile-fab {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 50;
+  }
+
+  /* Ajustar texto para móviles */
+  .mobile-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .mobile-text-lg {
+    font-size: 1rem;
+  }
+
+  .mobile-text-xl {
+    font-size: 1.125rem;
+  }
+
+  /* Optimizar grid para móviles */
+  .mobile-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  /* Mejorar scroll para móviles */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Optimizar imágenes para móviles */
+  .mobile-image {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Mejorar feedback táctil */
+  .mobile-touch-feedback {
+    transition: transform 0.1s ease;
+  }
+
+  .mobile-touch-feedback:active {
+    transform: scale(0.95);
+  }
+
+  /* Ajustar espaciado de contenido */
+  .mobile-content {
+    padding: 1rem;
+    margin-bottom: 4rem; /* Espacio para navegación móvil */
+  }
+
+  /* Optimizar header para móviles */
+  .mobile-header {
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Mejorar sidebar para móviles */
+  .mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    background: white;
+  }
+
+  /* Optimizar tabs para móviles */
+  .mobile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mejorar dropdowns para móviles */
+  .mobile-dropdown {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  /* Optimizar tooltips para móviles */
+  .mobile-tooltip {
+    display: none; /* Ocultar tooltips en móviles */
+  }
+
+  /* Mejorar accesibilidad táctil */
+  .mobile-accessible {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Optimizar animaciones para móviles */
+  .mobile-animation {
+    transition: all 0.2s ease;
+  }
+
+  /* Mejorar feedback visual */
+  .mobile-feedback {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mobile-feedback::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+
+  .mobile-feedback:active::after {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Estilos específicos para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .tablet-optimized {
+    padding: 1rem;
+  }
+
+  .tablet-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* Estilos para orientación landscape en móviles */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mobile-landscape {
+    padding: 0.5rem;
+  }
+
+  .mobile-landscape .mobile-header {
+    padding: 0.5rem;
+  }
+
+  .mobile-landscape .mobile-content {
+    padding: 0.5rem;
+    margin-bottom: 2rem;
+  }
+}
+
+/* Estilos para pantallas de alta densidad */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .high-dpi {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Estilos para dispositivos con notch */
+@supports (padding: max(0px)) {
+  .notch-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Mejoras de rendimiento para móviles */
+.mobile-performance {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Optimización de fuentes para móviles */
+.mobile-font {
+  font-display: swap;
+  font-feature-settings: "liga" 1, "kern" 1;
+}
+
+/* Mejoras de contraste para móviles */
+.mobile-contrast {
+  color-scheme: light dark;
+}
+
+/* Optimización de imágenes para móviles */
+.mobile-image-optimized {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Mejoras de scroll para móviles */
+.mobile-scroll-optimized {
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+}
+
+.mobile-scroll-item {
+  scroll-snap-align: start;
+}
+
+/* Optimización de formularios para móviles */
+.mobile-form-optimized input[type="text"],
+.mobile-form-optimized input[type="email"],
+.mobile-form-optimized input[type="password"],
+.mobile-form-optimized input[type="number"],
+.mobile-form-optimized input[type="tel"],
+.mobile-form-optimized input[type="url"],
+.mobile-form-optimized textarea {
+  font-size: 16px;
+  -webkit-appearance: none;
+  border-radius: 0.5rem;
+}
+
+/* Mejoras de accesibilidad para móviles */
+.mobile-accessible-focus:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Optimización de animaciones para móviles */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-animation {
+    transition: none;
+  }
+}
+
+/* Mejoras de rendimiento para dispositivos de gama baja */
+@media (max-width: 480px) {
+  .low-end-optimized {
+    transform: none;
+    filter: none;
+    backdrop-filter: none;
+  }
+}
