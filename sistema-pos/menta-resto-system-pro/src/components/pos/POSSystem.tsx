@@ -100,6 +100,8 @@ export function POSSystem() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Usar useTheme directamente sin try-catch
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [notifications, setNotifications] = React.useState<any[]>([]);
@@ -226,7 +228,7 @@ export function POSSystem() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [arqueoActual, showCajaBanner]);
+  }, []); // Removidas las dependencias problemáticas
 
   // Función para cerrar el banner con animación
   const handleCloseBanner = () => {

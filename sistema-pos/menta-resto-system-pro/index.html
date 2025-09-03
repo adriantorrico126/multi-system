@@ -97,13 +97,99 @@
     </style>
   </head>
   <body class="h-full">
+    <!-- Script para limpiar cache y desregistrar Service Workers -->
+    <script>
+      // LIMPIAR CACHE Y DESREGISTRAR SERVICE WORKERS
+      (function() {
+        'use strict';
+        
+        // Declarar variables globales para evitar spam de logs
+        window.__swCleanupShown = false;
+        window.__swLogShown = false;
+        
+        // Limpiar cache del navegador
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) {
+              caches.delete(name);
+              console.log('🗑️ Cache eliminado:', name);
+            }
+          });
+        }
+        
+        // Desregistrar Service Workers
+        if ('serviceWorker' in navigator) {
+          console.log('🔧 Iniciando desregistro completo de Service Workers...');
+          
+          // Función para desregistrar todos los service workers
+          async function unregisterAllServiceWorkers() {
+            try {
+              // Obtener todos los registros
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              
+              // Solo mostrar logs si hay Service Workers registrados
+              if (registrations.length > 0 && !window.__swLogShown) {
+                console.log('🔧 Encontrados', registrations.length, 'Service Workers registrados');
+                window.__swLogShown = true;
+              }
+              
+              // Desregistrar cada uno
+              for (let registration of registrations) {
+                if (!window.__swLogShown) {
+                  console.log('🔧 Desregistrando SW:', registration.scope);
+                }
+                await registration.unregister();
+              }
+              
+              // También intentar desregistrar el service worker actual
+              if (navigator.serviceWorker.controller) {
+                if (!window.__swLogShown) {
+                  console.log('🔧 Desregistrando SW controlador actual');
+                }
+                await navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'});
+              }
+              
+              if (registrations.length > 0 && !window.__swLogShown) {
+                console.log('✅ Todos los Service Workers desregistrados');
+                window.__swLogShown = true;
+              }
+            } catch (error) {
+              console.error('❌ Error desregistrando Service Workers:', error);
+            }
+          }
+          
+          // Prevenir futuros registros
+          const originalRegister = navigator.serviceWorker.register;
+          navigator.serviceWorker.register = function() {
+            console.log('🔧 BLOQUEADO: Intento de registrar Service Worker');
+            return Promise.reject(new Error('Service Workers deshabilitados manualmente'));
+          };
+          
+          // Ejecutar desregistro inmediatamente
+          unregisterAllServiceWorkers();
+          
+          // También ejecutar cuando el DOM esté listo
+          document.addEventListener('DOMContentLoaded', unregisterAllServiceWorkers);
+          
+          // Ejecutar periódicamente para asegurar que no se registren nuevos
+          setInterval(unregisterAllServiceWorkers, 5000);
+          
+          // Solo mostrar el log una vez
+          if (!window.__swCleanupShown) {
+            console.log('✅ Sistema anti-Service Worker activado');
+            window.__swCleanupShown = true;
+          }
+        } else {
+          console.log('✅ Service Workers no soportados en este navegador');
+        }
+      })();
+    </script>
 
-    
     <!-- Root de la aplicación -->
     <div id="root"></div>
     
     <!-- Script principal -->
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx?v=20240902"></script>
     
     <!-- Scripts de optimización -->
     <script>

@@ -1,5 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
+// Declaración global para TypeScript
+declare global {
+  interface Window {
+    __themeWarningShown?: boolean;
+    __themeDebugShown?: boolean;
+  }
+}
+
 type Theme = 'light' | 'dark';
 
 interface ThemeContextProps {
@@ -20,6 +28,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
+    console.log('🎨 ThemeProvider inicializado con tema:', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -35,6 +44,20 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
+  
+  // Solo mostrar el log una vez para evitar spam infinito
+  if (!window.__themeDebugShown) {
+    console.log('🔍 useTheme llamado, contexto disponible:', !!context);
+    window.__themeDebugShown = true;
+  }
+  
+  if (!context) {
+    // Solo mostrar el warning una vez para evitar spam infinito
+    if (!window.__themeWarningShown) {
+      console.warn('useTheme called outside ThemeProvider, returning default values');
+      window.__themeWarningShown = true;
+    }
+    return { theme: 'light' as Theme, toggleTheme: () => {} };
+  }
   return context;
 }; 

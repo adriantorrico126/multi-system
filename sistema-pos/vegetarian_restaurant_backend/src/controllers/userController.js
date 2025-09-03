@@ -116,8 +116,13 @@ exports.deleteUser = async (req, res, next) => {
 };
 
 exports.updateUser = async (req, res, next) => {
+  console.log('🔍 [updateUser] Request body:', req.body);
+  console.log('🔍 [updateUser] Request params:', req.params);
+  console.log('🔍 [updateUser] User from token:', req.user);
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('❌ [updateUser] Errores de validación:', errors.array());
     logger.warn('Errores de validación al actualizar usuario:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
@@ -127,6 +132,8 @@ exports.updateUser = async (req, res, next) => {
     const { nombre, username, email, password, rol, id_sucursal, activo } = req.body;
     const id_restaurante = req.user.id_restaurante;
 
+    console.log('🔍 [updateUser] Datos extraídos:', { id, nombre, username, email, password: password ? '***' : 'undefined', rol, id_sucursal, activo, id_restaurante });
+
     // Verificar que el usuario existe y pertenece al restaurante
     const existingUser = await pool.query(
       'SELECT id_vendedor FROM vendedores WHERE id_vendedor = $1 AND id_restaurante = $2',
@@ -134,6 +141,7 @@ exports.updateUser = async (req, res, next) => {
     );
 
     if (existingUser.rows.length === 0) {
+      console.log('❌ [updateUser] Usuario no encontrado:', { id, id_restaurante });
       logger.warn(`Intento de actualización de usuario fallido: usuario ${id} no encontrado en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ 
         message: 'Usuario no encontrado.' 
@@ -148,6 +156,7 @@ exports.updateUser = async (req, res, next) => {
       );
 
       if (usernameCheck.rows.length > 0) {
+        console.log('❌ [updateUser] Username ya en uso:', { username, id_restaurante, id });
         logger.warn(`Intento de actualización de usuario fallido: el username ${username} ya está en uso.`);
         return res.status(400).json({ 
           message: 'El nombre de usuario ya está en uso.' 
@@ -160,7 +169,7 @@ exports.updateUser = async (req, res, next) => {
       UPDATE vendedores 
       SET nombre = $1, username = $2, email = $3, rol = $4, id_sucursal = $5, activo = $6
     `;
-    let params = [nombre, username, email, rol, id_sucursal, activo];
+    let params = [nombre, username, email || null, rol, id_sucursal, activo];
 
     // Si se proporciona una nueva contraseña, incluirla en la actualización
     if (password && password.trim() !== '') {
@@ -173,8 +182,12 @@ exports.updateUser = async (req, res, next) => {
     updateQuery += ` WHERE id_vendedor = $${params.length + 1} AND id_restaurante = $${params.length + 2} RETURNING id_vendedor, nombre, username, email, rol, id_sucursal, activo, id_restaurante`;
     params.push(id, id_restaurante);
 
+    console.log('🔍 [updateUser] Query final:', updateQuery);
+    console.log('🔍 [updateUser] Parámetros:', params);
+
     const { rows } = await pool.query(updateQuery, params);
 
+    console.log('✅ [updateUser] Usuario actualizado exitosamente:', rows[0]);
     logger.info(`Usuario ${username} actualizado exitosamente.`);
     res.status(200).json({
       message: 'Usuario actualizado exitosamente.',
@@ -182,6 +195,7 @@ exports.updateUser = async (req, res, next) => {
     });
 
   } catch (error) {
+    console.error('❌ [updateUser] Error en la base de datos:', error);
     logger.error('Error al actualizar usuario:', error);
     next(error);
   }

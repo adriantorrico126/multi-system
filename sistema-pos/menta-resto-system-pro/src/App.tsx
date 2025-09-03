@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { OrientationBanner } from "./components/OrientationBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { RestaurantChangeHandler } from "./components/RestaurantChangeHandler";
 // import { useMobile } from "./hooks/use-mobile";
 
@@ -57,9 +58,11 @@ function AppContent() {
 }
 
 const App = () => (
-  <AuthProvider>
-    <AppContent />
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

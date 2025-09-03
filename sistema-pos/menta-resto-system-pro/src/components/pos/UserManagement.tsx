@@ -187,36 +187,62 @@ export function UserManagement() {
   });
 
   const handleAddUser = () => {
-    if (!formData.nombre || !formData.username || !formData.password || !formData.rol || formData.id_sucursal === 0) {
+    if (!formData.nombre || !formData.username || !formData.password || !formData.rol) {
       toast({
         title: "❌ Campos Requeridos",
-        description: "Todos los campos son obligatorios",
+        description: "Los campos nombre, usuario, contraseña y rol son obligatorios",
         variant: "destructive",
       });
       return;
     }
 
+    // Validar email si se proporciona
+    if (formData.email && formData.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast({
+          title: "❌ Email Inválido",
+          description: "Por favor ingresa un email válido",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     createUserMutation.mutate({
       nombre: formData.nombre,
       username: formData.username,
-      email: formData.email,
+      email: formData.email && formData.email.trim() !== '' ? formData.email : undefined,
       password: formData.password,
       rol: formData.rol,
       activo: formData.activo,
-      id_sucursal: formData.id_sucursal,
+      id_sucursal: formData.id_sucursal === 0 ? null : formData.id_sucursal,
     });
   };
 
   const handleEditUser = () => {
     if (!editingUser) return;
 
-    if (!formData.nombre || !formData.username || !formData.rol || formData.id_sucursal === 0) {
+    if (!formData.nombre || !formData.username || !formData.rol) {
       toast({
         title: "❌ Campos Requeridos",
-        description: "Los campos nombre, usuario, rol y sucursal son obligatorios",
+        description: "Los campos nombre, usuario y rol son obligatorios",
         variant: "destructive",
       });
       return;
+    }
+
+    // Validar email si se proporciona
+    if (formData.email && formData.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast({
+          title: "❌ Email Inválido",
+          description: "Por favor ingresa un email válido",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     updateUserMutation.mutate({
@@ -224,11 +250,11 @@ export function UserManagement() {
       userData: {
         nombre: formData.nombre,
         username: formData.username,
-        email: formData.email,
+        email: formData.email && formData.email.trim() !== '' ? formData.email : undefined,
         password: formData.password || undefined, // Solo enviar si se cambió
         rol: formData.rol,
         activo: formData.activo,
-        id_sucursal: formData.id_sucursal,
+        id_sucursal: formData.id_sucursal === 0 ? null : formData.id_sucursal,
       },
     });
   };
@@ -245,10 +271,20 @@ export function UserManagement() {
 
   const openEditDialog = (user: User) => {
     setEditingUser(user);
+    
+    // Validar y limpiar el email si es inválido
+    let cleanEmail = user.email;
+    if (cleanEmail && cleanEmail.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        cleanEmail = ''; // Limpiar email inválido
+      }
+    }
+    
     setFormData({
       nombre: user.nombre,
       username: user.username,
-      email: user.email,
+      email: cleanEmail || '',
       password: '', // No mostrar contraseña actual
       rol: user.rol,
       activo: user.activo,

@@ -371,16 +371,29 @@ export const updateUser = async (userId: string, userData: {
   email?: string;
   password?: string;
   rol: string;
-  id_sucursal: number;
+  id_sucursal?: number;
   activo: boolean;
 }) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
-    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users/${userId}`, { ...userData, id_restaurante: restauranteId });
+    
+    // Crear una copia de userData sin id_sucursal si es null
+    const dataToSend = { ...userData, id_restaurante: restauranteId };
+    if (dataToSend.id_sucursal === null || dataToSend.id_sucursal === undefined) {
+      delete dataToSend.id_sucursal;
+    }
+    
+    console.log('🔍 [updateUser] Datos a enviar:', dataToSend);
+    console.log('🔍 [updateUser] URL:', `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users/${userId}`);
+    
+    const response = await api.put(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/users/${userId}`, dataToSend);
+    console.log('✅ [updateUser] Respuesta exitosa:', response.data);
     return response.data.data;
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('❌ [updateUser] Error completo:', error);
+    console.error('❌ [updateUser] Error response:', error.response?.data);
+    console.error('❌ [updateUser] Error status:', error.response?.status);
     throw error;
   }
 };
