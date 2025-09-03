@@ -698,8 +698,16 @@ export function POSSystem() {
 
       // Bloquear si no hay caja abierta
       if (!arqueoActual) {
-        toast({ title: 'Caja no abierta', description: 'Debes aperturar caja antes de registrar ventas.' });
-        setShowArqueoModal(true);
+        if (user.rol === 'mesero') {
+          toast({ 
+            title: 'Caja no abierta', 
+            description: 'Un cajero o administrador debe aperturar caja antes de que puedas registrar ventas.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({ title: 'Caja no abierta', description: 'Debes aperturar caja antes de registrar ventas.' });
+          setShowArqueoModal(true);
+        }
         return;
       }
 
@@ -1127,9 +1135,16 @@ export function POSSystem() {
       e.preventDefault();
       e.stopPropagation();
     }
-    // Abrir UI de Caja local (sin navegar a /arqueo)
-    if (!arqueoActual) {
+    // Solo mostrar modal de apertura de caja si NO es mesero
+    if (!arqueoActual && user.rol !== 'mesero') {
       setShowArqueoModal(true);
+    } else if (!arqueoActual && user.rol === 'mesero') {
+      // Para meseros, mostrar mensaje de que debe abrir caja un cajero/admin
+      toast({
+        title: 'Caja no abierta',
+        description: 'Un cajero o administrador debe aperturar caja antes de que puedas registrar ventas.',
+        variant: 'destructive'
+      });
     }
   };
 

@@ -94,11 +94,23 @@ exports.createVenta = async (req, res, next) => {
     const tipoServicio = normalizeServiceType(tipo_servicio);
     logger.info('Backend: Parsed data:', { items, total, paymentMethod, cashier, branch, id_sucursal, tipo_servicio: tipoServicio, id_mesa, mesa_numero, id_restaurante });
 
-    // Requerir caja abierta para el día actual (solo para roles operativos, no mesero)
-    if (!['mesero'].includes(req.user.rol)) {
-      const hoy = new Date();
-      const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-      const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+    // Requerir caja abierta para el día actual
+    // Para meseros: verificar que CUALQUIER cajero/admin haya abierto caja en la sucursal
+    // Para otros roles: verificar que ellos mismos hayan abierto caja
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+    
+    if (req.user.rol === 'mesero') {
+      // Para meseros: verificar que haya una caja abierta en la sucursal (por cualquier cajero/admin)
+      const q = `SELECT id_arqueo FROM arqueos_caja WHERE id_restaurante = $1 AND (id_sucursal = $2 OR $2 IS NULL) AND estado = 'abierto' AND fecha_apertura BETWEEN $3 AND $4 LIMIT 1`;
+      const vals = [id_restaurante, req.user.id_sucursal || null, inicio, fin];
+      const { rows: caja } = await pool.query(q, vals);
+      if (caja.length === 0) {
+        return res.status(403).json({ message: 'Un cajero o administrador debe aperturar caja antes de que los meseros puedan registrar ventas.' });
+      }
+    } else if (!['cocinero'].includes(req.user.rol)) {
+      // Para cajeros y admins: verificar su propia apertura de caja
       const q = `SELECT id_arqueo FROM arqueos_caja WHERE id_restaurante = $1 AND (id_sucursal = $2 OR $2 IS NULL) AND estado = 'abierto' AND fecha_apertura BETWEEN $3 AND $4 LIMIT 1`;
       const vals = [id_restaurante, req.user.id_sucursal || null, inicio, fin];
       const { rows: caja } = await pool.query(q, vals);
@@ -1143,6 +1155,18 @@ exports.crearPedidoMesero = async (req, res, next) => {
       items,
       observaciones
     } = req.body;
+    
+    // Verificar que haya una caja abierta en la sucursal (por cualquier cajero/admin)
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+    const q = `SELECT id_arqueo FROM arqueos_caja WHERE id_restaurante = $1 AND (id_sucursal = $2 OR $2 IS NULL) AND estado = 'abierto' AND fecha_apertura BETWEEN $3 AND $4 LIMIT 1`;
+    const vals = [id_restaurante || req.user.id_restaurante, id_sucursal || req.user.id_sucursal || null, inicio, fin];
+    const { rows: caja } = await pool.query(q, vals);
+    if (caja.length === 0) {
+      return res.status(403).json({ message: 'Un cajero o administrador debe aperturar caja antes de que los meseros puedan crear pedidos.' });
+    }
+    
     // Validaciones básicas
     if (!id_mesa || !id_sucursal || !id_restaurante || !id_vendedor || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Datos incompletos para crear el pedido.' });
