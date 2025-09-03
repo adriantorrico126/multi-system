@@ -204,8 +204,13 @@ export function POSSystem() {
             setShowCajaBanner(true);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error al verificar arqueo:', error);
+        // Solo mostrar error si no es un error 403 de caja no abierta
+        if (error.response?.status !== 403 || 
+            !error.response?.data?.message?.includes('cajero o administrador debe aperturar caja')) {
+          console.error('Error no relacionado con caja:', error);
+        }
       }
     })();
   }, []);
@@ -236,8 +241,12 @@ export function POSSystem() {
             }
           }
         }
-      } catch (_) {
-        // silencioso
+      } catch (error: any) {
+        // Solo mostrar error si no es un error 403 de caja no abierta
+        if (error.response?.status !== 403 || 
+            !error.response?.data?.message?.includes('cajero o administrador debe aperturar caja')) {
+          console.error('Error al refrescar arqueo:', error);
+        }
       }
     }
     // chequeo inicial + polling
@@ -808,10 +817,17 @@ export function POSSystem() {
         console.error('Backend error message:', error.response.data.message);
         console.error('Backend error details:', error.response.data.details);
       }
+      
       // Manejar errores específicos del backend
       let errorTitle = '❌ Error al Registrar Venta';
       let errorDescription = 'No se pudo registrar la venta en el sistema. Intenta nuevamente.';
-      if (error.response?.data?.message) {
+      
+      // Manejar específicamente el error de caja no abierta para meseros
+      if (error.name === 'CajaNoAbiertaError' || 
+          (error.response?.status === 403 && error.response?.data?.message?.includes('cajero o administrador debe aperturar caja'))) {
+        errorTitle = 'Caja no abierta';
+        errorDescription = 'Un cajero o administrador debe aperturar caja antes de que puedas registrar ventas.';
+      } else if (error.response?.data?.message) {
         errorDescription = error.response.data.message;
         if (error.response?.data?.details) {
           errorDescription += ' ' + error.response.data.details;
@@ -1277,15 +1293,28 @@ export function POSSystem() {
               </Button>
             </>
           )}
-          <Button 
-            onClick={goCaja} 
-            variant="outline" 
-            className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
-          >
-            <span className="hidden sm:inline">Caja</span>
-            <span className="sm:hidden">Caja</span>
-          </Button>
-          {arqueoActual && (
+          {user.rol === 'mesero' && (
+            <Button
+              variant={activeTab === 'mesas' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('mesas')}
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Mesas</span>
+              <span className="sm:hidden">Mesas</span>
+            </Button>
+          )}
+          {user.rol !== 'mesero' && (
+            <Button 
+              onClick={goCaja} 
+              variant="outline" 
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+            >
+              <span className="hidden sm:inline">Caja</span>
+              <span className="sm:hidden">Caja</span>
+            </Button>
+          )}
+          {arqueoActual && user.rol !== 'mesero' && (
             <Button 
               onClick={handlePrepararCierre} 
               variant="destructive" 
@@ -1552,6 +1581,15 @@ export function POSSystem() {
                   userRole={roleForSales as any}
                 />
                   </div>
+            </div>
+          )}
+
+          {/* Vista de Mesas para Meseros */}
+          {activeTab === 'mesas' && user?.rol === 'mesero' && (
+            <div className="p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                <MesaManagement sucursalId={user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+              </div>
             </div>
           )}
 

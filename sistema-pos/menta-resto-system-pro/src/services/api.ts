@@ -60,7 +60,16 @@ api.interceptors.response.use(
       return Promise.reject(new Error('Sesión expirada. Por favor, inicia sesión nuevamente.'));
     }
 
-    // Para 403 (forbidden) u otros errores, no cerrar sesión automáticamente
+    // Manejar errores 403 específicos de caja para meseros
+    if (status === 403 && message.includes('cajero o administrador debe aperturar caja')) {
+      console.log('🔍 [API Interceptor] Error 403 de caja para mesero - mensaje personalizado');
+      // Crear un error más amigable para el usuario
+      const userFriendlyError = new Error('Un cajero o administrador debe aperturar caja antes de que puedas registrar ventas.');
+      userFriendlyError.name = 'CajaNoAbiertaError';
+      return Promise.reject(userFriendlyError);
+    }
+
+    // Para otros errores 403 u otros errores, no cerrar sesión automáticamente
     return Promise.reject(error);
   }
 );
@@ -1732,8 +1741,20 @@ export const splitBillMesa = async (id_mesa: number, asignaciones: { id_detalle:
 };
 
 export const getArqueoActualPOS = async () => {
-  const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/actual`);
-  return response.data.data;
+  try {
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/arqueo/actual`);
+    return response.data.data;
+  } catch (error: any) {
+    // Manejar específicamente el error 403 de caja no abierta
+    if (error.response?.status === 403 && 
+        error.response?.data?.message?.includes('cajero o administrador debe aperturar caja')) {
+      // Para meseros, no mostrar error, simplemente retornar null
+      // El componente POSSystem ya maneja este caso
+      return null;
+    }
+    // Para otros errores, re-lanzar el error
+    throw error;
+  }
 };
 
 export const abrirArqueoPOS = async (monto_inicial: number, observaciones?: string) => {

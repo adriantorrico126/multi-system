@@ -24,6 +24,7 @@ import {
 import { Sale } from '@/types/restaurant';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface SaleDetailsModalProps {
   sale: Sale | null;
@@ -34,6 +35,8 @@ interface SaleDetailsModalProps {
 
 export function SaleDetailsModal({ sale, isOpen, onClose, onDelete }: SaleDetailsModalProps) {
   if (!sale) return null;
+  
+  const mobileInfo = useMobile();
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -114,7 +117,7 @@ export function SaleDetailsModal({ sale, isOpen, onClose, onDelete }: SaleDetail
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className={`grid gap-4 ${mobileInfo.isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'}`}>
                 <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -122,7 +125,7 @@ export function SaleDetailsModal({ sale, isOpen, onClose, onDelete }: SaleDetail
                     </div>
                     <span className="font-semibold text-gray-700">Fecha y Hora</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className={`font-bold text-gray-900 ${mobileInfo.isMobile ? 'text-base' : 'text-lg'}`}>
                     {formatDate(sale.timestamp)}
                   </p>
                 </div>
@@ -134,7 +137,7 @@ export function SaleDetailsModal({ sale, isOpen, onClose, onDelete }: SaleDetail
                     </div>
                     <span className="font-semibold text-gray-700">Cajero</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className={`font-bold text-gray-900 ${mobileInfo.isMobile ? 'text-base' : 'text-lg'}`}>
                     {sale.cashier}
                   </p>
                 </div>
@@ -146,7 +149,7 @@ export function SaleDetailsModal({ sale, isOpen, onClose, onDelete }: SaleDetail
                     </div>
                     <span className="font-semibold text-gray-700">Sucursal</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className={`font-bold text-gray-900 ${mobileInfo.isMobile ? 'text-base' : 'text-lg'}`}>
                     {sale.branch}
                   </p>
                 </div>

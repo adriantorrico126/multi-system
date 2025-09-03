@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Edit, Trash2, FileText, Download, Calendar, Filter, BarChart3, TrendingUp, DollarSign, Users, Package, Building, CreditCard, Tag, Settings, Eye, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useMobile } from '@/hooks/use-mobile';
 import { exportVentasFiltradas } from '@/services/api';
 import { exportSalesToCSV } from '@/utils/csvExport';
 import * as XLSX from 'xlsx';
@@ -42,6 +43,7 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
   const [loadingExport, setLoadingExport] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const { toast } = useToast();
+  const mobileInfo = useMobile();
 
   // Nuevo estado para exportación avanzada
   const [fechaInicio, setFechaInicio] = useState('');
@@ -1932,65 +1934,136 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
           </div>
           
           <div className="flex-1 overflow-auto p-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Fecha/Hora</TableHead>
-                  <TableHead>Cajero</TableHead>
-                  <TableHead>Sucursal</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Pago</TableHead>
-                  <TableHead>Productos</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            {mobileInfo.isMobile ? (
+              // Vista móvil: Tarjetas en lugar de tabla
+              <div className="space-y-4">
                 {filteredSales.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">#{sale.id}</TableCell>
-                    <TableCell>{formatDate(sale.timestamp)}</TableCell>
-                    <TableCell>{sale.cashier}</TableCell>
-                    <TableCell>{sale.branch}</TableCell>
-                    <TableCell>
-                      <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                        Bs{sale.total.toFixed(2)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{sale.paymentMethod}</TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="text-sm text-gray-900">
-                        {sale.items.length <= 2 
-                          ? sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')
-                          : `${sale.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(' ')} +${sale.items.length - 2} más`
-                        }
+                  <Card key={sale.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="font-mono text-sm">
+                              #{sale.id}
+                            </Badge>
+                            <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                              Bs{sale.total.toFixed(2)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-1">
+                            <Calendar className="h-3 w-3 inline mr-1" />
+                            {formatDate(sale.timestamp)}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-1">
+                            <Users className="h-3 w-3 inline mr-1" />
+                            {sale.cashier}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-2">
+                            <Building className="h-3 w-3 inline mr-1" />
+                            {sale.branch}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleShowDetails(sale)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                          >
+                            <Eye className="h-3 w-3" />
+                            <span className="hidden sm:inline">Ver</span>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteSale(sale.id)}
+                            className="flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span className="hidden sm:inline">Eliminar</span>
+                          </Button>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleShowDetails(sale)}
-                          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Detalles
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteSale(sale.id)}
-                          className="rounded-lg transition-all duration-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      
+                      <div className="border-t pt-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CreditCard className="h-3 w-3 text-gray-500" />
+                          <span className="text-xs text-gray-600">{sale.paymentMethod}</span>
+                        </div>
+                        <div className="text-xs text-gray-700">
+                          <Package className="h-3 w-3 inline mr-1" />
+                          {sale.items.length <= 2 
+                            ? sale.items.map(item => `${item.name} x${item.quantity}`).join(', ')
+                            : `${sale.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(', ')} +${sale.items.length - 2} más`
+                          }
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            ) : (
+              // Vista desktop: Tabla tradicional
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Fecha/Hora</TableHead>
+                    <TableHead>Cajero</TableHead>
+                    <TableHead>Sucursal</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Pago</TableHead>
+                    <TableHead>Productos</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSales.map((sale) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium">#{sale.id}</TableCell>
+                      <TableCell>{formatDate(sale.timestamp)}</TableCell>
+                      <TableCell>{sale.cashier}</TableCell>
+                      <TableCell>{sale.branch}</TableCell>
+                      <TableCell>
+                        <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                          Bs{sale.total.toFixed(2)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{sale.paymentMethod}</TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="text-sm text-gray-900">
+                          {sale.items.length <= 2 
+                            ? sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')
+                            : `${sale.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`).join(' ')} +${sale.items.length - 2} más`
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleShowDetails(sale)}
+                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Detalles
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteSale(sale.id)}
+                            className="rounded-lg transition-all duration-200"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
             {filteredSales.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No se encontraron ventas

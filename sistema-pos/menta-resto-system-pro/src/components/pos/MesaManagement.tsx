@@ -915,7 +915,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
         )}
 
         <Tabs defaultValue="management" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white shadow-sm border border-gray-200 rounded-lg p-1">
+          <TabsList className={`grid w-full ${user?.rol === 'mesero' ? 'grid-cols-2' : 'grid-cols-3'} bg-white shadow-sm border border-gray-200 rounded-lg p-1`}>
             <TabsTrigger value="management" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               <Activity className="h-4 w-4" />
               Gestión Operativa
@@ -924,10 +924,12 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
               <Users2 className="h-4 w-4" />
               Grupos de Mesas
             </TabsTrigger>
-            <TabsTrigger value="configuration" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              <Settings className="h-4 w-4" />
-              Configuración
-            </TabsTrigger>
+            {user?.rol !== 'mesero' && (
+              <TabsTrigger value="configuration" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+                <Settings className="h-4 w-4" />
+                Configuración
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="management" className="space-y-6 mt-6">

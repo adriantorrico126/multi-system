@@ -5,7 +5,7 @@ const { authenticateToken, authorizeRoles, ensureTenantContext } = require('../m
 
 router.use(authenticateToken, ensureTenantContext);
 
-router.get('/actual', authorizeRoles('admin','cajero','super_admin','cocinero'), arqueoController.getArqueoActual);
+router.get('/actual', authorizeRoles('admin','cajero','super_admin','cocinero','mesero'), arqueoController.getArqueoActual);
 router.post('/abrir', authorizeRoles('admin','cajero','super_admin'), arqueoController.abrirArqueo);
 router.post('/cerrar', authorizeRoles('admin','cajero','super_admin'), arqueoController.cerrarArqueo);
 

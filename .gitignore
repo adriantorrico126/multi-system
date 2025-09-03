@@ -72,3 +72,14 @@ admin-console-backend/test-db.js
 admin-console-backend/verificar-restaurantes-produccion.js
 sistema-pos/test_categorias_frontend.html
 sistema-pos/test_user_update.js
+sistema-pos/test_arqueo_final.js
+sistema-pos/test_arqueo_mesero.js
+sistema-pos/test_caja_error_handling.js
+sistema-pos/test_caja_mesero.js
+sistema-pos/test_error_messages.html
+sistema-pos/test_error_toast.js
+sistema-pos/test_historial_responsive.js
+sistema-pos/test_mesero_comentarios_movil.js
+sistema-pos/test_mesero_mesa_management.js
+sistema-pos/test_mesero_mesas.js
+sistema-pos/test_server_status.js
