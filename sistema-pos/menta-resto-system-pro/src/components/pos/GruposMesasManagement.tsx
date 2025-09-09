@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Users2, 
   Coffee, 
@@ -22,8 +23,11 @@ import {
   User,
   Receipt,
   CreditCard,
-  Settings
+  Settings,
+  Menu,
+  Info
 } from 'lucide-react';
+import { useMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { 
   listarGruposActivosCompletos,
@@ -62,9 +66,12 @@ interface GruposMesasManagementProps {
 export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMobile } = useMobile();
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoMesa | null>(null);
   const [showPrefactura, setShowPrefactura] = useState(false);
   const [prefacturaData, setPrefacturaData] = useState<any>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [selectedGrupoForInfo, setSelectedGrupoForInfo] = useState<GrupoMesa | null>(null);
 
   // Query para obtener grupos activos con información completa
   const { data: grupos = [], isLoading, refetch } = useQuery({
@@ -171,30 +178,71 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
   return (
     <div className="space-y-6">
       {/* Header con estadísticas */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-4 md:p-6 text-white">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Gestión de Grupos de Mesas</h2>
-            <p className="text-blue-100">Administra los grupos de mesas unidas</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg md:text-2xl font-bold truncate">Gestión de Grupos de Mesas</h2>
+            <p className="text-blue-100 text-sm md:text-base">Administra los grupos de mesas unidas</p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{grupos.length}</div>
-              <div className="text-sm text-blue-100">Grupos Activos</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                {grupos.reduce((sum, grupo) => sum + grupo.mesas.length, 0)}
+          
+          {/* Menú hamburguesa para mobile */}
+          {isMobile ? (
+            <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <SheetHeader>
+                  <SheetTitle className="text-left">Estadísticas</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4 mt-6">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{grupos.length}</div>
+                      <div className="text-sm text-blue-700">Grupos Activos</div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {grupos.reduce((sum, grupo) => sum + grupo.mesas.length, 0)}
+                      </div>
+                      <div className="text-sm text-green-700">Mesas Agrupadas</div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        ${grupos.reduce((sum, grupo) => sum + grupo.total_acumulado_grupo, 0).toFixed(2)}
+                      </div>
+                      <div className="text-sm text-purple-700">Total Acumulado</div>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{grupos.length}</div>
+                <div className="text-sm text-blue-100">Grupos Activos</div>
               </div>
-              <div className="text-sm text-blue-100">Mesas Agrupadas</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                ${grupos.reduce((sum, grupo) => sum + grupo.total_acumulado_grupo, 0).toFixed(2)}
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  {grupos.reduce((sum, grupo) => sum + grupo.mesas.length, 0)}
+                </div>
+                <div className="text-sm text-blue-100">Mesas Agrupadas</div>
               </div>
-              <div className="text-sm text-blue-100">Total Acumulado</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">
+                  ${grupos.reduce((sum, grupo) => sum + grupo.total_acumulado_grupo, 0).toFixed(2)}
+                </div>
+                <div className="text-sm text-blue-100">Total Acumulado</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -208,75 +256,85 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
           <p className="text-gray-500">Los grupos de mesas aparecerán aquí cuando se creen</p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1'}`}>
           {grupos.map((grupo) => (
             <Card key={grupo.id_grupo_mesa} className="overflow-hidden border-2 border-gray-100 hover:border-blue-200 transition-all duration-200">
               <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
+                  <div className={`flex items-center ${isMobile ? 'space-x-3' : 'space-x-4'}`}>
                     <div className="p-2 bg-blue-100 rounded-lg">
                       <Users2 className="h-5 w-5 text-blue-600" />
                     </div>
-                    <div>
-                      <CardTitle className="text-lg font-bold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className={`font-bold text-gray-900 ${isMobile ? 'text-base' : 'text-lg'}`}>
                         Grupo #{grupo.id_grupo_mesa}
                       </CardTitle>
-                      <div className="flex items-center space-x-4 mt-1">
+                      <div className={`flex items-center ${isMobile ? 'flex-wrap gap-2 mt-2' : 'space-x-4 mt-1'}`}>
                         <Badge className={getEstadoColor(grupo.estado)}>
                           {getEstadoIcon(grupo.estado)}
                           <span className="ml-1">{grupo.estado}</span>
                         </Badge>
                         <div className="flex items-center space-x-1 text-sm text-gray-600">
                           <User className="h-4 w-4" />
-                          <span>{grupo.nombre_mesero || grupo.username_mesero || 'Sin asignar'}</span>
+                          <span className={isMobile ? 'truncate' : ''}>{grupo.nombre_mesero || grupo.username_mesero || 'Sin asignar'}</span>
                         </div>
                         <div className="flex items-center space-x-1 text-sm text-gray-600">
                           <Clock className="h-4 w-4" />
-                          <span>{formatDate(grupo.created_at)}</span>
+                          <span className={isMobile ? 'text-xs' : ''}>{formatDate(grupo.created_at)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600">
+                  <div className={`flex items-center ${isMobile ? 'justify-between' : 'space-x-2'}`}>
+                    <div className={`text-right ${isMobile ? 'flex-1' : ''}`}>
+                      <div className={`font-bold text-green-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                         ${grupo.total_acumulado_grupo.toFixed(2)}
                       </div>
                       <div className="text-sm text-gray-500">
                         {grupo.mesas.length} mesa{grupo.mesas.length !== 1 ? 's' : ''}
                       </div>
                     </div>
+                    {isMobile && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedGrupoForInfo(grupo)}
+                        className="ml-2"
+                      >
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="p-6">
+              <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
                 {/* Mesas del grupo */}
-                <div className="mb-6">
+                <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
                   <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <MapPin className="h-4 w-4 mr-2" />
                     Mesas del Grupo
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
                     {grupo.mesas.map((mesa) => (
-                      <div key={mesa.id_mesa} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={mesa.id_mesa} className={`flex items-center justify-between ${isMobile ? 'p-2' : 'p-3'} bg-gray-50 rounded-lg border border-gray-200`}>
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">{mesa.numero}</span>
+                          <div className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center`}>
+                            <span className={`text-white font-bold ${isMobile ? 'text-xs' : 'text-sm'}`}>{mesa.numero}</span>
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-900">Mesa {mesa.numero}</div>
-                            <div className="text-sm text-gray-500">
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium text-gray-900 ${isMobile ? 'text-sm' : ''}`}>Mesa {mesa.numero}</div>
+                            <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                               {mesa.capacidad} personas • {mesa.estado}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-green-600">
+                          <div className={`font-bold text-green-600 ${isMobile ? 'text-sm' : ''}`}>
                             ${(Number(mesa.total_acumulado) || 0).toFixed(2)}
                           </div>
                           {mesa.hora_apertura && (
-                            <div className="text-xs text-gray-500">
+                            <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-xs'}`}>
                               {new Date(mesa.hora_apertura).toLocaleTimeString()}
                             </div>
                           )}
@@ -287,17 +345,18 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
                 </div>
 
                 {/* Acciones */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-600">
+                <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'} pt-4 border-t border-gray-200`}>
+                  <div className={`text-gray-600 ${isMobile ? 'text-sm text-center' : 'text-sm'}`}>
                     <span className="font-medium">{grupo.mesas.length}</span> mesa{grupo.mesas.length !== 1 ? 's' : ''} unida{grupo.mesas.length !== 1 ? 's' : ''} • 
                     Total: <span className="font-bold text-green-600">${grupo.total_acumulado_grupo.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className={`flex items-center ${isMobile ? 'space-x-2 w-full' : 'space-x-2'}`}>
                     <Button
                       onClick={() => handleGenerarPrefactura(grupo.id_grupo_mesa)}
                       variant="outline"
                       size="sm"
                       disabled={generarPrefacturaMutation.isPending}
+                      className={isMobile ? 'flex-1' : ''}
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Prefactura
@@ -307,6 +366,7 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
                       variant="destructive"
                       size="sm"
                       disabled={cerrarGrupoMutation.isPending}
+                      className={isMobile ? 'flex-1' : ''}
                     >
                       <X className="h-4 w-4 mr-2" />
                       Cerrar Grupo
@@ -480,6 +540,111 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
                 <p className="text-sm text-gray-600">Cargando prefactura...</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información para mobile */}
+      <Dialog open={!!selectedGrupoForInfo} onOpenChange={() => setSelectedGrupoForInfo(null)}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Info className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-gray-900">
+                  Detalles del Grupo #{selectedGrupoForInfo?.id_grupo_mesa}
+                </DialogTitle>
+                <DialogDescription>
+                  Información completa del grupo de mesas
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {selectedGrupoForInfo && (
+            <div className="space-y-4">
+              {/* Información básica */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Información General</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Estado:</span>
+                    <Badge className={getEstadoColor(selectedGrupoForInfo.estado)}>
+                      {getEstadoIcon(selectedGrupoForInfo.estado)}
+                      <span className="ml-1">{selectedGrupoForInfo.estado}</span>
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Mesero:</span>
+                    <span className="text-sm font-medium">{selectedGrupoForInfo.nombre_mesero || selectedGrupoForInfo.username_mesero || 'Sin asignar'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Fecha creación:</span>
+                    <span className="text-sm font-medium">{formatDate(selectedGrupoForInfo.created_at)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Total acumulado:</span>
+                    <span className="text-sm font-bold text-green-600">${selectedGrupoForInfo.total_acumulado_grupo.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mesas del grupo */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">Mesas del Grupo</h3>
+                <div className="space-y-2">
+                  {selectedGrupoForInfo.mesas.map((mesa) => (
+                    <div key={mesa.id_mesa} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
+                          <span className="text-white font-bold text-xs">{mesa.numero}</span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">Mesa {mesa.numero}</div>
+                          <div className="text-xs text-gray-500">{mesa.capacidad} personas</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-green-600 text-sm">
+                          ${(Number(mesa.total_acumulado) || 0).toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-500">{mesa.estado}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => {
+                    handleGenerarPrefactura(selectedGrupoForInfo.id_grupo_mesa);
+                    setSelectedGrupoForInfo(null);
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={generarPrefacturaMutation.isPending}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Prefactura
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleCerrarGrupo(selectedGrupoForInfo.id_grupo_mesa);
+                    setSelectedGrupoForInfo(null);
+                  }}
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={cerrarGrupoMutation.isPending}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cerrar Grupo
+                </Button>
               </div>
             </div>
           )}
