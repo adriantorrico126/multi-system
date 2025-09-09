@@ -29,7 +29,8 @@ import {
   PieChart,
   Activity,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Menu
 } from 'lucide-react';
 
 // Importar APIs y tipos
@@ -65,6 +66,7 @@ const EgresosPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes' | 'informacion'>('dashboard');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMobileTabsMenu, setShowMobileTabsMenu] = useState<boolean>(false);
 
   // Estados de datos
   const [egresos, setEgresos] = useState<Egreso[]>([]);
@@ -113,6 +115,29 @@ const EgresosPage: React.FC = () => {
     total: 0,
     limit: 20
   });
+
+  // =====================================================
+  // FUNCIONES AUXILIARES
+  // =====================================================
+
+  const getTabInfo = (tab: string) => {
+    switch (tab) {
+      case 'dashboard':
+        return { icon: BarChart3, text: 'Dashboard' };
+      case 'egresos':
+        return { icon: DollarSign, text: 'Egresos' };
+      case 'categorias':
+        return { icon: FileText, text: 'Categorías' };
+      case 'presupuestos':
+        return { icon: PieChart, text: 'Presupuestos' };
+      case 'reportes':
+        return { icon: Activity, text: 'Reportes' };
+      case 'informacion':
+        return { icon: FileText, text: 'Información' };
+      default:
+        return { icon: BarChart3, text: 'Dashboard' };
+    }
+  };
 
   // =====================================================
   // EFECTOS
@@ -535,7 +560,8 @@ const EgresosPage: React.FC = () => {
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        {/* Desktop Navigation */}
+        <TabsList className="hidden lg:grid w-full grid-cols-6">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Dashboard
@@ -557,15 +583,124 @@ const EgresosPage: React.FC = () => {
             <PieChart className="h-4 w-4" />
             Presupuestos
           </TabsTrigger>
-                     <TabsTrigger value="reportes" className="flex items-center gap-2">
-             <Activity className="h-4 w-4" />
-             Reportes
-           </TabsTrigger>
-           <TabsTrigger value="informacion" className="flex items-center gap-2">
-             <FileText className="h-4 w-4" />
-             Información
-           </TabsTrigger>
-         </TabsList>
+          <TabsTrigger value="reportes" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Reportes
+          </TabsTrigger>
+          <TabsTrigger value="informacion" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Información
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Mobile Navigation */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              {(() => {
+                const { icon: Icon, text } = getTabInfo(activeTab);
+                return (
+                  <>
+                    <Icon className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium text-gray-900">{text}</span>
+                    {activeTab === 'egresos' && egresosPendientes.length > 0 && (
+                      <Badge variant="destructive" className="ml-1">
+                        {egresosPendientes.length}
+                      </Badge>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMobileTabsMenu(!showMobileTabsMenu)}
+              className="p-2"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileTabsMenu && (
+            <div className="mt-2 p-2 bg-white border rounded-lg shadow-lg">
+              <div className="space-y-1">
+                <Button
+                  variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant={activeTab === 'egresos' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('egresos');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Egresos
+                  {egresosPendientes.length > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      {egresosPendientes.length}
+                    </Badge>
+                  )}
+                </Button>
+                <Button
+                  variant={activeTab === 'categorias' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('categorias');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Categorías
+                </Button>
+                <Button
+                  variant={activeTab === 'presupuestos' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('presupuestos');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <PieChart className="h-4 w-4 mr-2" />
+                  Presupuestos
+                </Button>
+                <Button
+                  variant={activeTab === 'reportes' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('reportes');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Reportes
+                </Button>
+                <Button
+                  variant={activeTab === 'informacion' ? 'default' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setActiveTab('informacion');
+                    setShowMobileTabsMenu(false);
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Información
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="mt-6">

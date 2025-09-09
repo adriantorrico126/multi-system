@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sale } from '@/types/restaurant';
 import { 
   TrendingUp, 
@@ -23,10 +24,11 @@ import {
   ArrowDownRight,
   Eye,
   Download,
-  RefreshCw
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getVentasHoy, getVentasOrdenadas } from '@/services/api';
+import { getVentasHoy, getVentasOrdenadas, getProducts } from '@/services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -54,6 +56,10 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
   // Cambiar la fecha por defecto para mostrar todas las fechas
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Estados para modal de información de productos
+  const [selectedProductForInfo, setSelectedProductForInfo] = useState<any | null>(null);
+  const [isProductInfoDialogOpen, setIsProductInfoDialogOpen] = useState(false);
 
   // Obtener la sucursal actual del localStorage
   const getCurrentSucursalId = () => {
@@ -102,6 +108,27 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
     queryFn: () => getVentasOrdenadas(50),
     enabled: true, // Habilitar siempre para debugging
   });
+
+  // Query para obtener productos con detalles completos
+  const { data: productosCompletos = [] } = useQuery({
+    queryKey: ['products-detailed'],
+    queryFn: () => getProducts(),
+    enabled: true,
+  });
+
+  // Función para abrir modal de información de producto
+  const openProductInfoDialog = (productName: string, unitsSold: number, percentage: number) => {
+    // Buscar el producto completo en la lista de productos
+    const productComplete = productosCompletos.find((p: any) => p.name === productName);
+    if (productComplete) {
+      setSelectedProductForInfo({
+        ...productComplete,
+        unitsSold: unitsSold,
+        percentage: percentage
+      });
+      setIsProductInfoDialogOpen(true);
+    }
+  };
 
   // Usar ventas ordenadas para mostrar todas las fechas, o ventas del día si se selecciona una fecha específica
   const ventasFiltradas = selectedDate && format(selectedDate, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd') 
@@ -277,23 +304,24 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
                 const maxUnits = Math.max(1, ...top.map(t=>t.units));
                 return top.map((product:any, index:number) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs font-bold">{index + 1}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{product.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs sm:text-sm font-medium text-gray-800 break-words">{product.name}</p>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openProductInfoDialog(product.name, product.units, Math.round((product.units/maxUnits)*100))}
+                            className="p-1 h-5 w-5 hover:bg-blue-100 text-blue-600 hover:text-blue-700 flex-shrink-0"
+                          >
+                            <Info className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <p className="text-xs text-gray-500">{product.units} unidades</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full" 
-                          style={{ width: `${Math.round((product.units/maxUnits)*100)}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-600">{Math.round((product.units/maxUnits)*100)}%</span>
                     </div>
                   </div>
                 ));
@@ -392,6 +420,122 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de información de productos */}
+      <Dialog open={isProductInfoDialogOpen} onOpenChange={setIsProductInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              Detalles del Producto
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProductForInfo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Nombre</span>
+                  <p className="font-medium">{selectedProductForInfo.name}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Categoría</span>
+                  <p className="font-medium">{selectedProductForInfo.category || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Precio</span>
+                  <p className="font-medium text-green-600">
+                    <span translate="no">Bs</span> {selectedProductForInfo.price?.toFixed(2) || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Stock Actual</span>
+                  <p className="font-medium">{selectedProductForInfo.stock_actual || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Estado</span>
+                  <div className="mt-1">
+                    <Badge variant={selectedProductForInfo.available ? "default" : "secondary"} className="text-xs">
+                      {selectedProductForInfo.available ? 'Disponible' : 'No Disponible'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-500">Unidades Vendidas</span>
+                  <p className="font-medium text-blue-600">{selectedProductForInfo.unitsSold || 0}</p>
+                </div>
+              </div>
+              
+              {/* Barra de porcentaje de popularidad */}
+              <div>
+                <span className="text-gray-500">Popularidad</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-300" 
+                      style={{ width: `${selectedProductForInfo.percentage || 0}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-gray-600 whitespace-nowrap">
+                    {selectedProductForInfo.percentage || 0}%
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Relativo al producto más vendido
+                </p>
+              </div>
+              
+              {selectedProductForInfo.price_original && selectedProductForInfo.price_original !== selectedProductForInfo.price && (
+                <div>
+                  <span className="text-gray-500">Precio Original</span>
+                  <p className="font-medium text-gray-600 line-through">
+                    <span translate="no">Bs</span> {selectedProductForInfo.price_original.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              
+              {selectedProductForInfo.discount_applied && selectedProductForInfo.discount_applied > 0 && (
+                <div>
+                  <span className="text-gray-500">Descuento Aplicado</span>
+                  <p className="font-medium text-red-600">
+                    {selectedProductForInfo.discount_applied}%
+                  </p>
+                </div>
+              )}
+              
+              {selectedProductForInfo.imagen_url && (
+                <div>
+                  <span className="text-gray-500">Imagen</span>
+                  <div className="mt-2">
+                    <img 
+                      src={selectedProductForInfo.imagen_url} 
+                      alt={selectedProductForInfo.name}
+                      className="w-20 h-20 object-cover rounded-lg border"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setIsProductInfoDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });
+

@@ -22,7 +22,12 @@ import {
   TrendingUp, 
   AlertTriangle,
   Download,
-  Settings
+  Settings,
+  Eye,
+  Menu,
+  Calendar,
+  User,
+  DollarSign
 } from 'lucide-react';
 import { 
   getLotesPorVencer,
@@ -85,6 +90,33 @@ const InventoryPage: React.FC = () => {
   const [movementType, setMovementType] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'productos' | 'lotes' | 'reportes'>('dashboard');
   const [filteredInventory, setFilteredInventory] = useState<Product[]>([]);
+  
+  // Estados para modales de información y menú móvil
+  const [selectedProductForInfo, setSelectedProductForInfo] = useState<Product | null>(null);
+  const [isProductInfoDialogOpen, setIsProductInfoDialogOpen] = useState(false);
+  const [selectedMovementForInfo, setSelectedMovementForInfo] = useState<Movement | null>(null);
+  const [isMovementInfoDialogOpen, setIsMovementInfoDialogOpen] = useState(false);
+  const [showMobileTabsMenu, setShowMobileTabsMenu] = useState(false);
+
+  const openProductInfoDialog = (product: Product) => {
+    setSelectedProductForInfo(product);
+    setIsProductInfoDialogOpen(true);
+  };
+
+  const openMovementInfoDialog = (movement: Movement) => {
+    setSelectedMovementForInfo(movement);
+    setIsMovementInfoDialogOpen(true);
+  };
+
+  const getTabInfo = (tab: string) => {
+    const tabs = {
+      dashboard: { icon: BarChart3, text: 'Dashboard' },
+      productos: { icon: Package, text: 'Productos' },
+      lotes: { icon: FileText, text: 'Lotes' },
+      reportes: { icon: TrendingUp, text: 'Reportes' }
+    };
+    return tabs[tab as keyof typeof tabs] || { icon: Package, text: 'Productos' };
+  };
 
   const fetchInventoryData = async () => {
     setLoading(true);
@@ -213,11 +245,11 @@ const InventoryPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-3 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Inventario Profesional</h1>
-          <p className="text-gray-600 mt-2">Sistema completo de gestión de inventario para restaurantes</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Gestión de Inventario Profesional</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Sistema completo de gestión de inventario para restaurantes</p>
         </div>
       </div>
 
@@ -238,7 +270,8 @@ const InventoryPage: React.FC = () => {
 
       {!loading && (
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          {/* Vista desktop: TabsList normal */}
+          <TabsList className="hidden lg:grid w-full grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -257,6 +290,73 @@ const InventoryPage: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* Vista móvil: Botón con menú desplegable */}
+          <div className="lg:hidden mb-4">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setShowMobileTabsMenu(!showMobileTabsMenu)}
+                className="flex items-center gap-2 w-full justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  {React.createElement(getTabInfo(activeTab).icon, { className: "h-4 w-4" })}
+                  <span>{getTabInfo(activeTab).text}</span>
+                </div>
+                <Menu className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Menú desplegable móvil */}
+            {showMobileTabsMenu && (
+              <div className="mt-2 space-y-2">
+                <Button
+                  variant={activeTab === 'dashboard' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant={activeTab === 'productos' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveTab('productos');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Productos
+                </Button>
+                <Button
+                  variant={activeTab === 'lotes' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveTab('lotes');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Lotes
+                </Button>
+                <Button
+                  variant={activeTab === 'reportes' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveTab('reportes');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Reportes
+                </Button>
+              </div>
+            )}
+          </div>
+
           <TabsContent value="dashboard" className="mt-6">
             <InventoryDashboard
               inventory={inventory}
@@ -266,73 +366,92 @@ const InventoryPage: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="productos" className="mt-6">
-            <div className="space-y-6">
+          <TabsContent value="productos" className="mt-4 sm:mt-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Resumen de inventario */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     Resumen de Inventario
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Producto</TableHead>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead>Stock Actual</TableHead>
-                        <TableHead>Precio</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredInventory.map((product) => (
-                        <TableRow key={product.id_producto}>
-                          <TableCell className="font-medium">{product.nombre}</TableCell>
-                          <TableCell>{product.categoria_nombre}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                (product.stock_actual || 0) === 0 ? "destructive" : 
-                                (product.stock_actual || 0) <= 10 ? "secondary" : "default"
-                              }
-                            >
-                              {product.stock_actual || 0}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>Bs {(typeof product.precio === 'number' ? product.precio : parseFloat(product.precio) || 0).toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                (product.stock_actual || 0) === 0 ? "destructive" : 
-                                (product.stock_actual || 0) <= 10 ? "secondary" : "default"
-                              }
-                            >
-                              {(product.stock_actual || 0) === 0 ? 'Sin Stock' : 
-                               (product.stock_actual || 0) <= 10 ? 'Stock Bajo' : 'Stock OK'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
+                <CardContent className="p-3 sm:p-6 pt-0">
+                  {/* Vista móvil: Tarjetas */}
+                  <div className="lg:hidden space-y-3">
+                    {filteredInventory.map((product) => (
+                      <Card key={product.id_producto} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-gray-900 truncate">{product.nombre}</h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openProductInfoDialog(product)}
+                                  className="p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <span className="truncate">{product.categoria_nombre}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Stock:</span>
+                                  <Badge 
+                                    variant={
+                                      (product.stock_actual || 0) === 0 ? "destructive" : 
+                                      (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {product.stock_actual || 0}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Precio:</span>
+                                  <span className="text-sm font-medium text-green-600">
+                                    Bs {(typeof product.precio === 'number' ? product.precio : parseFloat(product.precio) || 0).toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Estado:</span>
+                                  <Badge 
+                                    variant={
+                                      (product.stock_actual || 0) === 0 ? "destructive" : 
+                                      (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {(product.stock_actual || 0) === 0 ? 'Sin Stock' : 
+                                     (product.stock_actual || 0) <= 10 ? 'Stock Bajo' : 'Stock OK'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
                                   onClick={() => setSelectedProduct(product)}
+                                  className="text-xs"
                                 >
                                   Ajustar Stock
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent>
+                              <DialogContent className="max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>Ajustar Stock de {selectedProduct?.nombre}</DialogTitle>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                   <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="changeAmount" className="text-right">
+                                    <Label htmlFor="changeAmount" className="text-right text-sm">
                                       Cantidad
                                     </Label>
                                     <Input
@@ -344,7 +463,7 @@ const InventoryPage: React.FC = () => {
                                     />
                                   </div>
                                   <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="movementType" className="text-right">
+                                    <Label htmlFor="movementType" className="text-right text-sm">
                                       Tipo de Movimiento
                                     </Label>
                                     <Select onValueChange={setMovementType} value={movementType}>
@@ -361,65 +480,220 @@ const InventoryPage: React.FC = () => {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button onClick={handleUpdateStock} disabled={loading}>
+                                  <Button onClick={handleUpdateStock} disabled={loading} className="w-full sm:w-auto">
                                     {loading ? 'Guardando...' : 'Guardar Cambios'}
                                   </Button>
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
-                          </TableCell>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Vista desktop: Tabla */}
+                  <div className="hidden lg:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Producto</TableHead>
+                          <TableHead>Categoría</TableHead>
+                          <TableHead>Stock Actual</TableHead>
+                          <TableHead>Precio</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Acciones</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredInventory.map((product) => (
+                          <TableRow key={product.id_producto}>
+                            <TableCell className="font-medium">{product.nombre}</TableCell>
+                            <TableCell>{product.categoria_nombre}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  (product.stock_actual || 0) === 0 ? "destructive" : 
+                                  (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                                }
+                              >
+                                {product.stock_actual || 0}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>Bs {(typeof product.precio === 'number' ? product.precio : parseFloat(product.precio) || 0).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  (product.stock_actual || 0) === 0 ? "destructive" : 
+                                  (product.stock_actual || 0) <= 10 ? "secondary" : "default"
+                                }
+                              >
+                                {(product.stock_actual || 0) === 0 ? 'Sin Stock' : 
+                                 (product.stock_actual || 0) <= 10 ? 'Stock Bajo' : 'Stock OK'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedProduct(product)}
+                                  >
+                                    Ajustar Stock
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Ajustar Stock de {selectedProduct?.nombre}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="changeAmount" className="text-right">
+                                        Cantidad
+                                      </Label>
+                                      <Input
+                                        id="changeAmount"
+                                        type="number"
+                                        value={changeAmount}
+                                        onChange={(e) => setChangeAmount(e.target.value)}
+                                        className="col-span-3"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                      <Label htmlFor="movementType" className="text-right">
+                                        Tipo de Movimiento
+                                      </Label>
+                                      <Select onValueChange={setMovementType} value={movementType}>
+                                        <SelectTrigger className="col-span-3">
+                                          <SelectValue placeholder="Selecciona tipo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="entrada">Entrada</SelectItem>
+                                          <SelectItem value="salida">Salida</SelectItem>
+                                          <SelectItem value="ajuste_positivo">Ajuste Positivo</SelectItem>
+                                          <SelectItem value="ajuste_negativo">Ajuste Negativo</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button onClick={handleUpdateStock} disabled={loading}>
+                                      {loading ? 'Guardando...' : 'Guardar Cambios'}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Historial de movimientos */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                     Historial de Movimientos de Stock
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Producto</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Cantidad</TableHead>
-                        <TableHead>Stock Anterior</TableHead>
-                        <TableHead>Stock Actual</TableHead>
-                        <TableHead>Vendedor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {movements.map((movement) => (
-                        <TableRow key={movement.id_movimiento}>
-                          <TableCell>{new Date(movement.fecha_movimiento).toLocaleString()}</TableCell>
-                          <TableCell className="font-medium">{movement.producto_nombre}</TableCell>
-                          <TableCell>
-                            <Badge variant={movement.tipo_movimiento === 'entrada' ? 'default' : 'secondary'}>
-                              {movement.tipo_movimiento}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{movement.cantidad}</TableCell>
-                          <TableCell>{movement.stock_anterior}</TableCell>
-                          <TableCell>{movement.stock_actual}</TableCell>
-                          <TableCell>{movement.vendedor_username}</TableCell>
+                <CardContent className="p-3 sm:p-6 pt-0">
+                  {/* Vista móvil: Tarjetas */}
+                  <div className="lg:hidden space-y-3">
+                    {movements.map((movement) => (
+                      <Card key={movement.id_movimiento} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-gray-900 truncate">{movement.producto_nombre}</h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openMovementInfoDialog(movement)}
+                                  className="p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>{new Date(movement.fecha_movimiento).toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Tipo:</span>
+                                  <Badge variant={movement.tipo_movimiento === 'entrada' ? 'default' : 'secondary'} className="text-xs">
+                                    {movement.tipo_movimiento}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Cantidad:</span>
+                                  <span className="text-sm font-medium text-blue-600">{movement.cantidad}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Stock Anterior:</span>
+                                  <span className="text-sm font-medium text-gray-600">{movement.stock_anterior}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Stock Actual:</span>
+                                  <span className="text-sm font-medium text-green-600">{movement.stock_actual}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <User className="h-3 w-3" />
+                                  <span className="truncate">{movement.vendedor_username}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Vista desktop: Tabla */}
+                  <div className="hidden lg:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Producto</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Cantidad</TableHead>
+                          <TableHead>Stock Anterior</TableHead>
+                          <TableHead>Stock Actual</TableHead>
+                          <TableHead>Vendedor</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {movements.map((movement) => (
+                          <TableRow key={movement.id_movimiento}>
+                            <TableCell>{new Date(movement.fecha_movimiento).toLocaleString()}</TableCell>
+                            <TableCell className="font-medium">{movement.producto_nombre}</TableCell>
+                            <TableCell>
+                              <Badge variant={movement.tipo_movimiento === 'entrada' ? 'default' : 'secondary'}>
+                                {movement.tipo_movimiento}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{movement.cantidad}</TableCell>
+                            <TableCell>{movement.stock_anterior}</TableCell>
+                            <TableCell>{movement.stock_actual}</TableCell>
+                            <TableCell>{movement.vendedor_username}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="lotes" className="mt-6">
+          <TabsContent value="lotes" className="mt-4 sm:mt-6">
             <LotesManagement
               lotes={lotes}
               products={inventory}
@@ -429,7 +703,7 @@ const InventoryPage: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="reportes" className="mt-6">
+          <TabsContent value="reportes" className="mt-4 sm:mt-6">
             <InventoryReports
               inventory={inventory}
               lotes={lotes}
@@ -438,6 +712,167 @@ const InventoryPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Modal de información para productos */}
+      <Dialog open={isProductInfoDialogOpen} onOpenChange={setIsProductInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Detalles del Producto
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProductForInfo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">ID</Label>
+                  <p className="font-medium">{selectedProductForInfo.id_producto}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Categoría</Label>
+                  <p className="font-medium">{selectedProductForInfo.categoria_nombre}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Nombre del Producto</Label>
+                <p className="font-medium">{selectedProductForInfo.nombre}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">Stock Actual</Label>
+                  <div className="mt-1">
+                    <Badge 
+                      variant={
+                        (selectedProductForInfo.stock_actual || 0) === 0 ? "destructive" : 
+                        (selectedProductForInfo.stock_actual || 0) <= 10 ? "secondary" : "default"
+                      }
+                    >
+                      {selectedProductForInfo.stock_actual || 0}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Estado</Label>
+                  <div className="mt-1">
+                    <Badge 
+                      variant={
+                        (selectedProductForInfo.stock_actual || 0) === 0 ? "destructive" : 
+                        (selectedProductForInfo.stock_actual || 0) <= 10 ? "secondary" : "default"
+                      }
+                    >
+                      {(selectedProductForInfo.stock_actual || 0) === 0 ? 'Sin Stock' : 
+                       (selectedProductForInfo.stock_actual || 0) <= 10 ? 'Stock Bajo' : 'Stock OK'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Precio</Label>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-400" />
+                  <span className="text-lg font-bold text-green-600">
+                    Bs {(typeof selectedProductForInfo.precio === 'number' ? selectedProductForInfo.precio : parseFloat(selectedProductForInfo.precio) || 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsProductInfoDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información para movimientos */}
+      <Dialog open={isMovementInfoDialogOpen} onOpenChange={setIsMovementInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Detalles del Movimiento
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedMovementForInfo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">ID Movimiento</Label>
+                  <p className="font-medium">{selectedMovementForInfo.id_movimiento}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Fecha</Label>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span className="font-medium">{new Date(selectedMovementForInfo.fecha_movimiento).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Producto</Label>
+                <p className="font-medium">{selectedMovementForInfo.producto_nombre}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">Tipo de Movimiento</Label>
+                  <div className="mt-1">
+                    <Badge variant={selectedMovementForInfo.tipo_movimiento === 'entrada' ? 'default' : 'secondary'}>
+                      {selectedMovementForInfo.tipo_movimiento}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Cantidad</Label>
+                  <p className="text-lg font-bold text-blue-600">{selectedMovementForInfo.cantidad}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">Stock Anterior</Label>
+                  <p className="font-medium text-gray-600">{selectedMovementForInfo.stock_anterior}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Stock Actual</Label>
+                  <p className="font-medium text-green-600">{selectedMovementForInfo.stock_actual}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Vendedor</Label>
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-400" />
+                  <span className="font-medium">{selectedMovementForInfo.vendedor_username}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsMovementInfoDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

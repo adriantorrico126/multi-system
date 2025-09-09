@@ -40,6 +40,8 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
   const [searchTerm, setSearchTerm] = useState('');
   const [saleForDetails, setSaleForDetails] = useState<Sale | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedSaleForInfo, setSelectedSaleForInfo] = useState<Sale | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const [loadingExport, setLoadingExport] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -83,6 +85,11 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
   const handleShowDetails = (sale: Sale) => {
     setSaleForDetails(sale);
     setShowDetailsModal(true);
+  };
+
+  const openInfoDialog = (sale: Sale) => {
+    setSelectedSaleForInfo(sale);
+    setIsInfoDialogOpen(true);
   };
 
   // --- Exportación avanzada ---
@@ -1891,49 +1898,51 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
   return (
     <div className="h-full flex flex-col">
       {userRole === 'admin' && (
-        <div className="flex gap-2 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80 px-6 pt-4 pb-4">
+        <div className="flex flex-col sm:flex-row gap-2 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80 px-3 sm:px-6 pt-4 pb-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setActiveTab('historial')}
-            className={activeTab === 'historial' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}
+            className={`w-full sm:w-auto ${activeTab === 'historial' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}`}
           >
             <FileText className="h-4 w-4 mr-2" />
-            Historial de Ventas
+            <span className="hidden sm:inline">Historial de Ventas</span>
+            <span className="sm:hidden">Historial</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setActiveTab('avanzadas')}
-            className={activeTab === 'avanzadas' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}
+            className={`w-full sm:w-auto ${activeTab === 'avanzadas' ? 'bg-blue-50 border-blue-200 text-blue-700' : ''}`}
           >
             <Settings className="h-4 w-4 mr-2" />
-            Funciones Avanzadas
+            <span className="hidden sm:inline">Funciones Avanzadas</span>
+            <span className="sm:hidden">Avanzadas</span>
           </Button>
         </div>
       )}
       
       {activeTab === 'historial' && (
         <div className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/50 to-white/50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-6 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/50 to-white/50 gap-4">
             <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 Historial de Ventas ({filteredSales.length})
               </h2>
-              <p className="text-gray-600 text-sm mt-1">Gestiona y revisa todas las transacciones</p>
+              <p className="text-gray-600 text-sm mt-1 hidden sm:block">Gestiona y revisa todas las transacciones</p>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Buscar por ID, cajero o producto..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-80"
+                className="pl-10 w-full sm:w-80"
               />
             </div>
           </div>
           
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-3 sm:p-6">
             {mobileInfo.isMobile ? (
               // Vista móvil: Tarjetas en lugar de tabla
               <div className="space-y-4">
@@ -1949,6 +1958,14 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
                             <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
                               Bs{sale.total.toFixed(2)}
                             </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openInfoDialog(sale)}
+                              className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
                           </div>
                           <p className="text-sm text-gray-600 mb-1">
                             <Calendar className="h-3 w-3 inline mr-1" />
@@ -1958,9 +1975,13 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
                             <Users className="h-3 w-3 inline mr-1" />
                             {sale.cashier}
                           </p>
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-gray-600 mb-1">
                             <Building className="h-3 w-3 inline mr-1" />
                             {sale.branch}
+                          </p>
+                          <p className="text-sm text-gray-600 mb-2">
+                            <CreditCard className="h-3 w-3 inline mr-1" />
+                            {sale.paymentMethod}
                           </p>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -2008,29 +2029,66 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Fecha/Hora</TableHead>
-                    <TableHead>Cajero</TableHead>
-                    <TableHead>Sucursal</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Pago</TableHead>
-                    <TableHead>Productos</TableHead>
-                    <TableHead>Acciones</TableHead>
+                    <TableHead className="hidden lg:table-cell">Fecha/Hora</TableHead>
+                    <TableHead className="hidden lg:table-cell">Cajero</TableHead>
+                    <TableHead className="hidden lg:table-cell">Sucursal</TableHead>
+                    <TableHead className="hidden lg:table-cell">Total</TableHead>
+                    <TableHead className="hidden lg:table-cell">Pago</TableHead>
+                    <TableHead className="hidden lg:table-cell">Productos</TableHead>
+                    <TableHead className="text-right hidden lg:table-cell">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSales.map((sale) => (
                     <TableRow key={sale.id}>
-                      <TableCell className="font-medium">#{sale.id}</TableCell>
-                      <TableCell>{formatDate(sale.timestamp)}</TableCell>
-                      <TableCell>{sale.cashier}</TableCell>
-                      <TableCell>{sale.branch}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate">#{sale.id}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => openInfoDialog(sale)}
+                                className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="lg:hidden mt-1 space-y-1">
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Calendar className="h-3 w-3" />
+                                <span className="truncate">{formatDate(sale.timestamp)}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Users className="h-3 w-3" />
+                                <span className="truncate">{sale.cashier}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Building className="h-3 w-3" />
+                                <span className="truncate">{sale.branch}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <CreditCard className="h-3 w-3" />
+                                <span className="truncate">{sale.paymentMethod}</span>
+                              </div>
+                              <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
+                                Bs{sale.total.toFixed(2)}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(sale.timestamp)}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{sale.cashier}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{sale.branch}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
                           Bs{sale.total.toFixed(2)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{sale.paymentMethod}</TableCell>
-                      <TableCell className="max-w-xs">
+                      <TableCell className="hidden lg:table-cell">{sale.paymentMethod}</TableCell>
+                      <TableCell className="max-w-xs hidden lg:table-cell">
                         <div className="text-sm text-gray-900">
                           {sale.items.length <= 2 
                             ? sale.items.map(item => `${item.name} x${item.quantity}`).join(' ')
@@ -2038,7 +2096,7 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
                           }
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-right hidden lg:table-cell">
                         <div className="flex items-center gap-3">
                           <Button
                             variant="outline"
@@ -2237,6 +2295,115 @@ Este informe utiliza métodos estadísticos estándar para el análisis de datos
           </div>
         </div>
       )}
+
+      {/* Modal de información de venta */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Información de Venta
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSaleForInfo && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">ID de Venta</label>
+                <p className="text-lg font-semibold text-gray-900">#{selectedSaleForInfo.id}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Fecha y Hora</label>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{formatDate(selectedSaleForInfo.timestamp)}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Cajero</label>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{selectedSaleForInfo.cashier}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Sucursal</label>
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{selectedSaleForInfo.branch}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Método de Pago</label>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{selectedSaleForInfo.paymentMethod}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Total</label>
+                <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                  Bs{selectedSaleForInfo.total.toFixed(2)}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Productos</label>
+                <div className="space-y-1">
+                  {selectedSaleForInfo.items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <Package className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-900">{item.name} x{item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsInfoDialogOpen(false);
+                setSelectedSaleForInfo(null);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+            {selectedSaleForInfo && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleShowDetails(selectedSaleForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver Detalles
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleDeleteSale(selectedSaleForInfo.id);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

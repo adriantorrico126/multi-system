@@ -58,9 +58,11 @@ export function PromocionManagement() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPromocion, setSelectedPromocion] = useState<Promocion | null>(null);
+  const [selectedPromocionForInfo, setSelectedPromocionForInfo] = useState<Promocion | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
-    tipo: 'porcentaje' as const,
+    tipo: 'porcentaje' as 'porcentaje' | 'monto_fijo' | 'precio_fijo',
     valor: 0,
     fecha_inicio: '',
     fecha_fin: '',
@@ -245,29 +247,35 @@ export function PromocionManagement() {
     }
   };
 
+  const openInfoDialog = (promocion: Promocion) => {
+    setSelectedPromocionForInfo(promocion);
+    setIsInfoDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+xx      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestión de Promociones</h2>
-          <p className="text-gray-600">Administra las promociones y descuentos de tu restaurante</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Promociones</h2>
+          <p className="text-gray-600 text-sm mt-1 hidden sm:block">Administra las promociones y descuentos de tu restaurante</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-green-600 hover:bg-green-700">
+        <Button onClick={() => setShowCreateModal(true)} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          Nueva Promoción
+          <span className="hidden sm:inline">Nueva Promoción</span>
+          <span className="sm:hidden">Nueva</span>
         </Button>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Activas</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 hidden sm:block">Activas</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">
                   {promociones.filter(p => p.estado_promocion === 'activa').length}
                 </p>
               </div>
@@ -276,12 +284,12 @@ export function PromocionManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 hidden sm:block">Pendientes</p>
+                <p className="text-lg sm:text-2xl font-bold text-yellow-600">
                   {promociones.filter(p => p.estado_promocion === 'pendiente').length}
                 </p>
               </div>
@@ -290,12 +298,12 @@ export function PromocionManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Expiradas</p>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 hidden sm:block">Expiradas</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">
                   {promociones.filter(p => p.estado_promocion === 'expirada').length}
                 </p>
               </div>
@@ -304,12 +312,12 @@ export function PromocionManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center space-x-2">
-              <Tag className="h-5 w-5 text-blue-600" />
+              <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-blue-600">{promociones.length}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600 hidden sm:block">Total</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{promociones.length}</p>
               </div>
             </div>
           </CardContent>
@@ -318,10 +326,10 @@ export function PromocionManagement() {
 
       {/* Tabla de Promociones */}
       <Card>
-        <CardHeader>
-          <CardTitle>Promociones Registradas</CardTitle>
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl">Promociones Registradas</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {isLoadingPromociones ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
@@ -335,83 +343,127 @@ export function PromocionManagement() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Promoción</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Vigencia</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Vista móvil: Tarjetas */}
+              <div className="lg:hidden space-y-3">
                 {promociones.map((promocion) => (
-                  <TableRow key={promocion.id_promocion}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{promocion.nombre}</p>
+                  <Card key={promocion.id_promocion} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900 truncate">{promocion.nombre}</h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openInfoDialog(promocion)}
+                              className="p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Tag className="h-3 w-3" />
+                              <span className="truncate">{promocion.nombre_producto || 'Producto no encontrado'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Badge className={`text-xs ${getEstadoColor(promocion.estado_promocion || '')}`}>
+                                {promocion.estado_promocion || 'N/A'}
+                              </Badge>
+                              <span className="text-sm font-medium text-green-600">
+                                {promocion.tipo === 'porcentaje' ? `${promocion.valor}%` : `$${promocion.valor}`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-gray-600">
-                        {promocion.nombre_producto || 'Producto no encontrado'}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getTipoIcon(promocion.tipo)}
-                        <span className="text-sm">{getTipoLabel(promocion.tipo)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">
-                        {promocion.tipo === 'porcentaje' ? `${promocion.valor}%` : `$${promocion.valor}`}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <p>Desde: {new Date(promocion.fecha_inicio).toLocaleDateString()}</p>
-                        <p>Hasta: {new Date(promocion.fecha_fin).toLocaleDateString()}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getEstadoColor(promocion.estado_promocion || '')}>
-                        {promocion.estado_promocion || 'N/A'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDetailsModal(promocion)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(promocion)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDeleteModal(promocion)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Vista desktop: Tabla */}
+              <div className="hidden lg:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Promoción</TableHead>
+                      <TableHead>Producto</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Vigencia</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {promociones.map((promocion) => (
+                      <TableRow key={promocion.id_promocion}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{promocion.nombre}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm text-gray-600">
+                            {promocion.nombre_producto || 'Producto no encontrado'}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getTipoIcon(promocion.tipo)}
+                            <span className="text-sm">{getTipoLabel(promocion.tipo)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">
+                            {promocion.tipo === 'porcentaje' ? `${promocion.valor}%` : `$${promocion.valor}`}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>Desde: {new Date(promocion.fecha_inicio).toLocaleDateString()}</p>
+                            <p>Hasta: {new Date(promocion.fecha_fin).toLocaleDateString()}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getEstadoColor(promocion.estado_promocion || '')}>
+                            {promocion.estado_promocion || 'N/A'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDetailsModal(promocion)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditModal(promocion)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteModal(promocion)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -726,6 +778,144 @@ export function PromocionManagement() {
               Cerrar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información de promoción */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              Información de Promoción
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPromocionForInfo && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Nombre de la Promoción</label>
+                <p className="text-lg font-semibold text-gray-900">{selectedPromocionForInfo.nombre}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">ID</label>
+                <p className="text-sm text-gray-600">#{selectedPromocionForInfo.id_promocion}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Producto</label>
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{selectedPromocionForInfo.nombre_producto || 'Producto no encontrado'}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Tipo de Descuento</label>
+                <div className="flex items-center gap-2">
+                  {getTipoIcon(selectedPromocionForInfo.tipo)}
+                  <p className="text-sm text-gray-900">{getTipoLabel(selectedPromocionForInfo.tipo)}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Valor</label>
+                <p className="text-lg font-semibold text-green-600">
+                  {selectedPromocionForInfo.tipo === 'porcentaje' ? `${selectedPromocionForInfo.valor}%` : `$${selectedPromocionForInfo.valor}`}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Vigencia</label>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-900">Desde: {new Date(selectedPromocionForInfo.fecha_inicio).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-900">Hasta: {new Date(selectedPromocionForInfo.fecha_fin).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Estado</label>
+                <Badge className={getEstadoColor(selectedPromocionForInfo.estado_promocion || '')}>
+                  {selectedPromocionForInfo.estado_promocion || 'N/A'}
+                </Badge>
+              </div>
+              
+              {selectedPromocionForInfo.precio_original && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Información de Descuento</label>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Precio Original:</span>
+                      <span className="font-medium">${selectedPromocionForInfo.precio_original}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Descuento:</span>
+                      <span className="font-medium text-red-600">-${calcularDescuento(selectedPromocionForInfo).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold border-t pt-1 mt-1">
+                      <span>Precio Final:</span>
+                      <span className="text-green-600">${(selectedPromocionForInfo.precio_original - calcularDescuento(selectedPromocionForInfo)).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsInfoDialogOpen(false);
+                setSelectedPromocionForInfo(null);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+            {selectedPromocionForInfo && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    openDetailsModal(selectedPromocionForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Ver Detalles
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    openEditModal(selectedPromocionForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    openDeleteModal(selectedPromocionForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

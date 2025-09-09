@@ -50,56 +50,56 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Estadísticas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categorías Activas</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Categorías Activas</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCategorias}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{totalCategorias}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">
               Categorías configuradas
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egresos Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Egresos Pendientes</CardTitle>
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEgresosPendientes}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{totalEgresosPendientes}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">
               Requieren atención
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monto Pendiente</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Monto Pendiente</CardTitle>
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">
               {egresosUtils.formatCurrency(montoTotalPendiente)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground hidden sm:block">
               Total por procesar
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Por Aprobar</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">Por Aprobar</CardTitle>
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{egresosPorAprobar.length}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{egresosPorAprobar.length}</div>
+            <p className="text-xs text-muted-foreground hidden sm:block">
               Esperan aprobación
             </p>
           </CardContent>
@@ -109,9 +109,10 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
       {/* Acciones rápidas */}
       <div className="flex flex-wrap gap-4">
         {egresosUtils.canEdit(userRole) && (
-          <Button onClick={onCreateEgreso}>
+          <Button onClick={onCreateEgreso} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Nuevo Egreso
+            <span className="hidden sm:inline">Nuevo Egreso</span>
+            <span className="sm:hidden">Nuevo</span>
           </Button>
         )}
       </div>
@@ -119,31 +120,34 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
       {/* Egresos pendientes de aprobación */}
       {egresosUtils.canApprove(userRole) && egresosPorAprobar.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
-              Egresos Pendientes de Aprobación
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="flex items-center text-lg sm:text-xl">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-orange-500" />
+              <span className="hidden sm:inline">Egresos Pendientes de Aprobación</span>
+              <span className="sm:hidden">Pendientes</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6 pt-0">
             <div className="space-y-3">
               {egresosPorAprobar.slice(0, 5).map((egreso) => (
-                <div key={egreso.id_egreso} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
+                <div key={egreso.id_egreso} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: egreso.categoria_color }}
                       />
-                      <span className="font-medium">{egreso.concepto}</span>
+                      <span className="font-medium truncate">{egreso.concepto}</span>
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {egreso.categoria_nombre} • {egresosUtils.formatDate(egreso.fecha_egreso)}
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      <div className="sm:hidden">{egreso.categoria_nombre}</div>
+                      <div className="sm:hidden">{egresosUtils.formatDate(egreso.fecha_egreso)}</div>
+                      <div className="hidden sm:block">{egreso.categoria_nombre} • {egresosUtils.formatDate(egreso.fecha_egreso)}</div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <span className="font-semibold">
+                  <div className="flex items-center justify-between sm:justify-end sm:space-x-3">
+                    <span className="font-semibold text-sm sm:text-base">
                       {egresosUtils.formatCurrency(egreso.monto)}
                     </span>
                     
@@ -153,17 +157,18 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
                         size="sm"
                         onClick={() => onViewEgreso(egreso)}
                         title="Ver detalles"
+                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onAprobarEgreso(egreso.id_egreso)}
-                        className="text-green-600 hover:text-green-700"
+                        className="text-green-600 hover:text-green-700 p-1 h-6 w-6 sm:h-8 sm:w-8"
                         title="Aprobar"
                       >
-                        <CheckCircle className="h-4 w-4" />
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   </div>
@@ -172,7 +177,7 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
               
               {egresosPorAprobar.length > 5 && (
                 <div className="text-center pt-2">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Y {egresosPorAprobar.length - 5} más...
                   </p>
                 </div>
@@ -185,21 +190,21 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
       {/* Resumen por categorías */}
       {categorias.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Resumen por Categorías</CardTitle>
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl">Resumen por Categorías</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {categorias.map((categoria) => (
                 <div key={categoria.id_categoria_egreso} className="p-3 border rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
                     <div
-                      className="w-4 h-4 rounded-full"
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: categoria.color }}
                     />
-                    <span className="font-medium">{categoria.nombre}</span>
+                    <span className="font-medium text-sm sm:text-base truncate">{categoria.nombre}</span>
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                     <div>Total: {egresosUtils.formatCurrency(categoria.total_gastado || 0)}</div>
                     <div>Egresos: {categoria.total_egresos || 0}</div>
                   </div>
@@ -213,18 +218,19 @@ export const EgresosDashboard: React.FC<EgresosDashboardProps> = ({
       {/* Mensaje cuando no hay datos */}
       {totalCategorias === 0 && (
         <Card>
-          <CardContent className="text-center py-8">
-            <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <CardContent className="text-center py-6 sm:py-8 p-3 sm:p-6">
+            <DollarSign className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
               Bienvenido al Sistema de Egresos
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-sm sm:text-base text-gray-600 mb-4">
               Comienza creando categorías para organizar tus gastos empresariales.
             </p>
             {egresosUtils.canEdit(userRole) && (
-              <Button onClick={onCreateEgreso}>
+              <Button onClick={onCreateEgreso} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Crear Primera Categoría
+                <span className="hidden sm:inline">Crear Primera Categoría</span>
+                <span className="sm:hidden">Crear Categoría</span>
               </Button>
             )}
           </CardContent>

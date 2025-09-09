@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Label } from '../ui/label';
 import { 
   DollarSign, 
   User, 
@@ -10,7 +12,9 @@ import {
   TrendingUp, 
   TrendingDown,
   Users,
-  FileText
+  FileText,
+  Eye,
+  CreditCard
 } from 'lucide-react';
 import { type Egreso, egresosUtils } from '../../services/egresosApi';
 
@@ -22,6 +26,13 @@ interface EgresosInfoProps {
 export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) => {
   // Estado para indicar si se están cargando los datos
   const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedEgresoForInfo, setSelectedEgresoForInfo] = useState<Egreso | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+
+  const openInfoDialog = (egreso: Egreso) => {
+    setSelectedEgresoForInfo(egreso);
+    setIsInfoDialogOpen(true);
+  };
   
   // Detectar si los datos están cargando y debuggear
   React.useEffect(() => {
@@ -260,89 +271,238 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
 
       {/* Egresos Recientes */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             Egresos Recientes
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0">
           {egresosRecientes.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No hay egresos para mostrar
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Cajero</TableHead>
-                    <TableHead>Concepto</TableHead>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead>Monto</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Método Pago</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {egresosRecientes.map((egreso) => (
-                    <TableRow key={egreso.id_egreso}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{egresosUtils.formatDate(egreso.fecha_egreso)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-blue-400" />
-                          <span className="text-sm">{egreso.registrado_por_nombre || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{egreso.concepto}</div>
-                          {egreso.descripcion && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {egreso.descripcion}
+            <>
+              {/* Vista móvil: Tarjetas */}
+              <div className="lg:hidden space-y-3">
+                {egresosRecientes.map((egreso) => (
+                  <Card key={egreso.id_egreso} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900 truncate">{egreso.concepto}</h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openInfoDialog(egreso)}
+                              className="p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Calendar className="h-3 w-3" />
+                              <span>{egresosUtils.formatDate(egreso.fecha_egreso)}</span>
                             </div>
-                          )}
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <User className="h-3 w-3" />
+                              <span className="truncate">{egreso.registrado_por_nombre || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: egreso.categoria_color }}
+                              />
+                              <span className="truncate">{egreso.categoria_nombre}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Badge className={`text-xs ${getEstadoBadge(egreso.estado).props.className}`}>
+                                {egreso.estado.toUpperCase()}
+                              </Badge>
+                              <span className="text-sm font-medium text-green-600">
+                                {egresosUtils.formatCurrency(egreso.monto)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: egreso.categoria_color }}
-                          />
-                          <span className="text-sm">{egreso.categoria_nombre}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">
-                          {egresosUtils.formatCurrency(egreso.monto)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {getEstadoBadge(egreso.estado)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <DollarSign className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm capitalize">
-                            {egreso.metodo_pago.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Vista desktop: Tabla */}
+              <div className="hidden lg:block">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Cajero</TableHead>
+                        <TableHead>Concepto</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Monto</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Método Pago</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {egresosRecientes.map((egreso) => (
+                        <TableRow key={egreso.id_egreso}>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="h-4 w-4 text-gray-400" />
+                              <span>{egresosUtils.formatDate(egreso.fecha_egreso)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-blue-400" />
+                              <span className="text-sm">{egreso.registrado_por_nombre || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{egreso.concepto}</div>
+                              {egreso.descripcion && (
+                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                  {egreso.descripcion}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: egreso.categoria_color }}
+                              />
+                              <span className="text-sm">{egreso.categoria_nombre}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium">
+                              {egresosUtils.formatCurrency(egreso.monto)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {getEstadoBadge(egreso.estado)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <DollarSign className="h-4 w-4 text-gray-400" />
+                              <span className="text-sm capitalize">
+                                {egreso.metodo_pago.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de información para móvil */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Detalles del Egreso
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedEgresoForInfo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">ID</Label>
+                  <p className="font-medium">{selectedEgresoForInfo.id_egreso}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Fecha</Label>
+                  <p className="font-medium">{egresosUtils.formatDate(selectedEgresoForInfo.fecha_egreso)}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Concepto</Label>
+                <p className="font-medium">{selectedEgresoForInfo.concepto}</p>
+              </div>
+              
+              {selectedEgresoForInfo.descripcion && (
+                <div>
+                  <Label className="text-gray-500">Descripción</Label>
+                  <p className="text-sm">{selectedEgresoForInfo.descripcion}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">Cajero</Label>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-blue-400" />
+                    <span className="font-medium">{selectedEgresoForInfo.registrado_por_nombre || 'N/A'}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Estado</Label>
+                  <div className="mt-1">
+                    {getEstadoBadge(selectedEgresoForInfo.estado)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-gray-500">Categoría</Label>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: selectedEgresoForInfo.categoria_color }}
+                    />
+                    <span className="font-medium">{selectedEgresoForInfo.categoria_nombre}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Método de Pago</Label>
+                  <div className="flex items-center gap-1">
+                    <CreditCard className="h-4 w-4 text-gray-400" />
+                    <span className="font-medium capitalize">
+                      {selectedEgresoForInfo.metodo_pago.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-gray-500">Monto</Label>
+                <p className="text-lg font-bold text-green-600">
+                  {egresosUtils.formatCurrency(selectedEgresoForInfo.monto)}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsInfoDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
