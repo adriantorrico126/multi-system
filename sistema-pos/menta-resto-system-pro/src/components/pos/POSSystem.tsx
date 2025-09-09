@@ -1689,7 +1689,7 @@ export function POSSystem() {
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS - SOLO DESKTOP */}
         {activeTab === 'pos' && (
-          <aside className="hidden 2xl:flex w-95 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex-col flex-shrink-0 desktop-cart-only">
+          <aside className="flex w-80 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex-col flex-shrink-0 desktop-cart-only">
             {/* Header del Carrito */}
             <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center justify-between mb-2">

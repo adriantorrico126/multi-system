@@ -1,0 +1,9 @@
+# Dependencias para el Sistema de Migraciones de Base de Datos
+# Sistema POS - Pago Diferido
+
+# Conector de PostgreSQL para Python
+psycopg2-binary==2.9.9
+
+# Utilidades adicionales (opcionales)
+python-dotenv==1.0.0
+colorama==0.4.6
