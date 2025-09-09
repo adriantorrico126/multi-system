@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface CheckoutModalProps {
   items: CartItem[];
-  onConfirmSale: (paymentMethod: string, invoiceData?: InvoiceData) => void;
+  onConfirmSale: (paymentMethod: string, invoiceData?: InvoiceData, additionalData?: any) => void;
   onCancel: () => void;
   mesaNumero?: number | null; // Add mesaNumero prop
 }
@@ -35,6 +35,10 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
     telefono: '',
     direccion: ''
   });
+  
+  // Nuevos estados para pago diferido
+  const [tipoPago, setTipoPago] = useState<'anticipado' | 'diferido'>('anticipado');
+  const [observacionesPago, setObservacionesPago] = useState<string>('');
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -42,7 +46,13 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleConfirm = () => {
-    onConfirmSale(selectedPayment, needsInvoice ? invoiceData : undefined);
+    // Preparar datos adicionales para pago diferido
+    const additionalData = {
+      tipo_pago: tipoPago,
+      observaciones_pago: tipoPago === 'diferido' ? observacionesPago : null
+    };
+    
+    onConfirmSale(selectedPayment, needsInvoice ? invoiceData : undefined, additionalData);
   };
 
   // Función para imprimir comanda
@@ -200,21 +210,71 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
             </div>
           </div>
 
-          {/* Método de pago */}
+          {/* Tipo de Pago */}
           <div>
-            <Label className="text-base font-semibold">Método de Pago</Label>
+            <Label className="text-base font-semibold">Tipo de Pago</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {paymentMethods.map((method) => (
-                <Button
-                  key={method}
-                  variant={selectedPayment === method ? "default" : "outline"}
-                  onClick={() => setSelectedPayment(method)}
-                >
-                  {method}
-                </Button>
-              ))}
+              <Button
+                variant={tipoPago === 'anticipado' ? "default" : "outline"}
+                onClick={() => setTipoPago('anticipado')}
+                className="flex items-center gap-2"
+              >
+                <CreditCard className="h-4 w-4" />
+                Pago Anticipado
+              </Button>
+              <Button
+                variant={tipoPago === 'diferido' ? "default" : "outline"}
+                onClick={() => setTipoPago('diferido')}
+                className="flex items-center gap-2"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Pago al Final
+              </Button>
             </div>
+            
+            {tipoPago === 'diferido' && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 font-medium mb-2">
+                  💡 Información sobre Pago Diferido
+                </p>
+                <ul className="text-xs text-yellow-700 space-y-1">
+                  <li>• El cliente pagará al finalizar el consumo</li>
+                  <li>• Se registrará el método de pago cuando se cobre</li>
+                  <li>• El pedido se procesará normalmente</li>
+                </ul>
+                <div className="mt-2">
+                  <Label htmlFor="observacionesPago" className="text-xs font-medium">
+                    Observaciones (opcional)
+                  </Label>
+                  <Input
+                    id="observacionesPago"
+                    value={observacionesPago}
+                    onChange={(e) => setObservacionesPago(e.target.value)}
+                    placeholder="Ej: Cliente conocido, pagará con tarjeta..."
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Método de pago - Solo mostrar si es pago anticipado */}
+          {tipoPago === 'anticipado' && (
+            <div>
+              <Label className="text-base font-semibold">Método de Pago</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {paymentMethods.map((method) => (
+                  <Button
+                    key={method}
+                    variant={selectedPayment === method ? "default" : "outline"}
+                    onClick={() => setSelectedPayment(method)}
+                  >
+                    {method}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Facturación */}
           <div>

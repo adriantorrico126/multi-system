@@ -64,4 +64,7 @@ router.patch('/:id/aprobar', authenticateToken, authorizeRoles('cajero', 'admin'
 // Rechazar pedido de mesero
 router.patch('/:id/rechazar', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.rechazarPedidoMesero);
 
+// Marcar venta diferida como pagada
+router.patch('/:id/marcar-pagada', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.marcarVentaDiferidaComoPagada);
+
 module.exports = router; 

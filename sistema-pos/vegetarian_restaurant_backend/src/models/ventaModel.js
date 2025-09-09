@@ -1,7 +1,7 @@
 const { pool } = require('../config/database');
 
 const Venta = {
-  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante, rol_usuario }, client = pool) {
+  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante, rol_usuario, tipo_pago = 'anticipado', estado_pago = 'pagado', observaciones_pago = null }, client = pool) {
     // Validación extra: si es venta por mesa, id_mesa y mesa_numero deben ser válidos
     if (tipo_servicio === 'Mesa' && (id_mesa == null || mesa_numero == null)) {
       throw new Error(`[VENTA MODEL] No se puede crear venta: id_mesa o mesa_numero es null o undefined. id_mesa: ${id_mesa}, mesa_numero: ${mesa_numero}`);
@@ -11,11 +11,11 @@ const Venta = {
     let estadoInicial = 'recibido';
     
     const query = `
-      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7::int, $8, $9)
-      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante;
+      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante, tipo_pago, estado_pago, observaciones_pago)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7::int, $8, $9, $10, $11, $12)
+      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante, tipo_pago, estado_pago, observaciones_pago;
     `;
-    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante];
+    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante, tipo_pago, estado_pago, observaciones_pago];
     
     const { rows } = await client.query(query, values);
     return rows[0];

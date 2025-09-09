@@ -10,7 +10,9 @@ export function useCart() {
       const savedCart = localStorage.getItem('pos-cart');
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
-      console.error('Error loading cart from localStorage:', error);
+      console.error('Error loading cart from localStorage, clearing cart:', error);
+      // Si hay un error al parsear, limpiar el carrito corrupto
+      localStorage.removeItem('pos-cart');
       return [];
     }
   });
@@ -20,7 +22,9 @@ export function useCart() {
       const savedPromociones = localStorage.getItem('pos-applied-promociones');
       return savedPromociones ? JSON.parse(savedPromociones) : [];
     } catch (error) {
-      console.error('Error loading promociones from localStorage:', error);
+      console.error('Error loading promociones from localStorage, clearing promociones:', error);
+      // Si hay un error al parsear, limpiar las promociones corruptas
+      localStorage.removeItem('pos-applied-promociones');
       return [];
     }
   });

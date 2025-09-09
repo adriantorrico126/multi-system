@@ -87,7 +87,9 @@ exports.createVenta = async (req, res, next) => {
       tipo_servicio = 'Mesa',
       id_mesa = null,
       mesa_numero = null, // <-- Aceptar mesa_numero
-      invoiceData
+      invoiceData,
+      tipo_pago = 'anticipado', // Nuevo: tipo de pago (anticipado o diferido)
+      observaciones_pago = null // Nuevo: observaciones para pagos diferidos
     } = req.body;
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
@@ -251,44 +253,67 @@ exports.createVenta = async (req, res, next) => {
     
     // Buscar método de pago directamente
     let pago = null;
-    const paymentMethodNorm = (paymentMethod || '').trim();
-    if (paymentMethodNorm.toLowerCase() === 'pendiente_caja') {
-      // Buscar el id_pago real de 'pendiente_caja' en la base de datos
-      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['pendiente_caja', id_restaurante]);
+    let estado_pago = 'pagado'; // Por defecto, pagado
+    
+    // Si es pago diferido, usar método especial y estado pendiente
+    if (tipo_pago === 'diferido') {
+      logger.info('Backend: Procesando pago diferido');
+      estado_pago = 'pendiente';
+      
+      // Buscar o crear método de pago diferido
+      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['Pago Diferido', id_restaurante]);
       if (pagoResult.rows.length === 0) {
-        // Inserción idempotente por constraint compuesta
         const insertResult = await pool.query(
-          `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo
-           RETURNING *`,
-          ['pendiente_caja', true, id_restaurante]
+          'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) RETURNING *',
+          ['Pago Diferido', true, id_restaurante]
         );
         pago = insertResult.rows[0];
-        logger.info('Backend: Método de pago pendiente_caja creado automáticamente:', pago);
+        logger.info('Backend: Método de pago diferido creado:', pago);
       } else {
         pago = pagoResult.rows[0];
-        logger.info('Backend: Método de pago pendiente_caja encontrado:', pago);
+        logger.info('Backend: Método de pago diferido encontrado:', pago);
       }
     } else {
-      logger.info('Backend: Searching for payment method:', paymentMethodNorm, 'in restaurant:', id_restaurante);
-      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
-      pago = pagoResult.rows[0];
-      logger.info('Backend: Pago found (scoped):', pago);
-      if (!pago) {
-        // Intentar insertar para el restaurante actual, y ante conflicto por descripción global, recuperar existente
-        try {
+      // Pago anticipado - lógica original
+      const paymentMethodNorm = (paymentMethod || '').trim();
+      if (paymentMethodNorm.toLowerCase() === 'pendiente_caja') {
+        // Buscar el id_pago real de 'pendiente_caja' en la base de datos
+        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['pendiente_caja', id_restaurante]);
+        if (pagoResult.rows.length === 0) {
+          // Inserción idempotente por constraint compuesta
           const insertResult = await pool.query(
-            'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo RETURNING *',
-            [paymentMethodNorm, true, id_restaurante]
+            `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo
+             RETURNING *`,
+            ['pendiente_caja', true, id_restaurante]
           );
           pago = insertResult.rows[0];
-        } catch (dupErr) {
-          // En caso de que la tabla aún no tenga el índice único correcto en algunas instalaciones
-          const fallback = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
-          pago = fallback.rows[0];
+          logger.info('Backend: Método de pago pendiente_caja creado automáticamente:', pago);
+        } else {
+          pago = pagoResult.rows[0];
+          logger.info('Backend: Método de pago pendiente_caja encontrado:', pago);
         }
-        logger.info('Backend: Método de pago creado/recuperado:', pago);
+      } else {
+        logger.info('Backend: Searching for payment method:', paymentMethodNorm, 'in restaurant:', id_restaurante);
+        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
+        pago = pagoResult.rows[0];
+        logger.info('Backend: Pago found (scoped):', pago);
+        if (!pago) {
+          // Intentar insertar para el restaurante actual, y ante conflicto por descripción global, recuperar existente
+          try {
+            const insertResult = await pool.query(
+              'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo RETURNING *',
+              [paymentMethodNorm, true, id_restaurante]
+            );
+            pago = insertResult.rows[0];
+          } catch (dupErr) {
+            // En caso de que la tabla aún no tenga el índice único correcto en algunas instalaciones
+            const fallback = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
+            pago = fallback.rows[0];
+          }
+          logger.info('Backend: Método de pago creado/recuperado:', pago);
+        }
       }
     }
 
@@ -439,7 +464,10 @@ exports.createVenta = async (req, res, next) => {
           id_mesa: idMesaFinal,
           mesa_numero: mesaNumero,
           id_restaurante, // Pasar id_restaurante a createVenta
-          rol_usuario: req.user.rol // Pasar el rol del usuario
+          rol_usuario: req.user.rol, // Pasar el rol del usuario
+          tipo_pago, // Nuevo: tipo de pago
+          estado_pago, // Nuevo: estado del pago
+          observaciones_pago // Nuevo: observaciones del pago
         }, client);
       } catch (modelError) {
         await client.query('ROLLBACK');
@@ -490,6 +518,43 @@ exports.createVenta = async (req, res, next) => {
         client
       );
       logger.info('Backend: Detalles created successfully:', detalles);
+      
+      // Si es pago diferido, crear registro en pagos_diferidos
+      if (tipo_pago === 'diferido') {
+        logger.info('Backend: Creando registro de pago diferido');
+        try {
+          const fechaVencimiento = new Date();
+          fechaVencimiento.setDate(fechaVencimiento.getDate() + 7); // 7 días para pagar
+          
+          const pagoDiferidoQuery = `
+            INSERT INTO pagos_diferidos (
+              id_venta, 
+              id_mesa, 
+              total_pendiente, 
+              fecha_vencimiento, 
+              estado, 
+              observaciones, 
+              id_restaurante
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
+          `;
+          
+          const pagoDiferidoResult = await client.query(pagoDiferidoQuery, [
+            venta.id_venta,
+            idMesaFinal, // Puede ser null para delivery/para llevar
+            total,
+            fechaVencimiento,
+            'pendiente',
+            observaciones_pago,
+            id_restaurante
+          ]);
+          
+          logger.info('Backend: Pago diferido creado:', pagoDiferidoResult.rows[0]);
+        } catch (pagoDiferidoError) {
+          logger.error('Backend: Error al crear pago diferido:', pagoDiferidoError.message);
+          // No fallar la transacción por error en pago diferido
+        }
+      }
       
       // Si es venta por mesa, actualizar automáticamente la prefactura
       if (tipo_servicio === 'Mesa' && idMesaFinal) {
@@ -1366,5 +1431,95 @@ exports.rechazarPedidoMesero = async (req, res, next) => {
   } catch (error) {
     logger.error('Error al rechazar pedido de mesero:', error.message);
     res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Marcar venta diferida como pagada
+ * PATCH /api/v1/ventas/:id/marcar-pagada
+ */
+exports.marcarVentaDiferidaComoPagada = async (req, res, next) => {
+  const { id } = req.params;
+  const { id_pago_final, observaciones } = req.body;
+  const user = req.user;
+  const ventaId = parseInt(id, 10);
+  const id_restaurante = req.user.id_restaurante;
+
+  try {
+    // Validar que se proporcione el método de pago final
+    if (!id_pago_final) {
+      return res.status(400).json({ 
+        message: 'El método de pago final es requerido para marcar la venta como pagada.' 
+      });
+    }
+
+    // Verificar que la venta existe y es de tipo diferido
+    const ventaQuery = `
+      SELECT id_venta, estado, tipo_pago, estado_pago, total, id_restaurante 
+      FROM ventas 
+      WHERE id_venta = $1 AND id_restaurante = $2
+    `;
+    const ventaResult = await pool.query(ventaQuery, [ventaId, id_restaurante]);
+    
+    if (ventaResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Venta no encontrada.' });
+    }
+    
+    const venta = ventaResult.rows[0];
+    
+    if (venta.tipo_pago !== 'diferido') {
+      return res.status(400).json({ 
+        message: 'Solo se pueden marcar como pagadas las ventas de tipo diferido.' 
+      });
+    }
+    
+    if (venta.estado_pago !== 'pendiente') {
+      return res.status(400).json({ 
+        message: 'Esta venta ya fue marcada como pagada.' 
+      });
+    }
+
+    // Verificar que el método de pago existe
+    const pagoQuery = `
+      SELECT id_pago, descripcion 
+      FROM metodos_pago 
+      WHERE id_pago = $1 AND id_restaurante = $2
+    `;
+    const pagoResult = await pool.query(pagoQuery, [id_pago_final, id_restaurante]);
+    
+    if (pagoResult.rows.length === 0) {
+      return res.status(400).json({ 
+        message: 'Método de pago no encontrado.' 
+      });
+    }
+
+    // Usar la función de la base de datos para marcar como pagada
+    const resultado = await pool.query(
+      'SELECT marcar_venta_diferida_como_pagada($1, $2, $3, $4) as resultado',
+      [ventaId, id_pago_final, user.id_vendedor || user.id, observaciones]
+    );
+
+    const resultadoData = resultado.rows[0].resultado;
+    
+    if (!resultadoData.success) {
+      return res.status(400).json({ 
+        message: resultadoData.message 
+      });
+    }
+    
+    logger.info(`Venta diferida ${ventaId} marcada como pagada por ${user?.username || 'desconocido'} para el restaurante ${id_restaurante}. Método: ${pagoResult.rows[0].descripcion}`);
+    
+    res.status(200).json({
+      message: 'Venta marcada como pagada exitosamente.',
+      data: {
+        venta_id: ventaId,
+        total: venta.total,
+        fecha_pago: resultadoData.fecha_pago,
+        metodo_pago: pagoResult.rows[0].descripcion
+      }
+    });
+  } catch (error) {
+    logger.error('Error al marcar venta diferida como pagada:', error.message);
+    res.status(500).json({ message: 'Error interno del servidor.' });
   }
 };

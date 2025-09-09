@@ -52,6 +52,8 @@ import {
   cerrarGrupoMesas,
   consultarGrupoPorMesa,
   marcarMesaComoPagada,
+  marcarVentaDiferidaComoPagada,
+  getMetodosPago,
   getUsers,
   getReservasByMesa,
   limpiarEstadosMesas,
@@ -63,6 +65,7 @@ import { printService, PrintData } from '@/services/printService';
 import MesaConfiguration from './MesaConfiguration';
 import { GruposMesasManagement } from './GruposMesasManagement';
 import { ReservaModal } from './ReservaModal';
+import { PaymentMethodModal } from './PaymentMethodModal';
 import { useAuth } from '@/context/AuthContext';
 import ReservaDetallesModal from './ReservaDetallesModal';
 
@@ -232,6 +235,11 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   // Estado local para la prefactura
   const [prefacturaDataLocal, setPrefacturaDataLocal] = useState<any>(null);
 
+  // Estados para el modal de método de pago
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [selectedMesaForPayment, setSelectedMesaForPayment] = useState<Mesa | null>(null);
+  const [metodosPago, setMetodosPago] = useState<any[]>([]);
+
   // Cargar meseros cuando se abre el modal
   useEffect(() => {
     if (showMeseroModal) {
@@ -246,6 +254,33 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       setIsLoadingMeseros(false);
     }
   }, [showMeseroModal]);
+
+  // Cargar métodos de pago cuando se abre el modal
+  useEffect(() => {
+    if (showPaymentMethodModal) {
+      const cargarMetodosPago = async () => {
+        try {
+          console.log('🔍 Cargando métodos de pago...');
+          const metodos = await getMetodosPago();
+          console.log('✅ Métodos de pago cargados:', metodos);
+          setMetodosPago(metodos);
+        } catch (error) {
+          console.error('❌ Error cargando métodos de pago:', error);
+          // Métodos de pago correctos por defecto si falla la carga
+          const metodosPorDefecto = [
+            { id_pago: 1, descripcion: 'Efectivo' },
+            { id_pago: 2, descripcion: 'Tarjeta de Crédito' },
+            { id_pago: 3, descripcion: 'Tarjeta de Débito' },
+            { id_pago: 4, descripcion: 'Transferencia' },
+            { id_pago: 5, descripcion: 'Pago Móvil' }
+          ];
+          console.log('⚠️ Usando métodos por defecto:', metodosPorDefecto);
+          setMetodosPago(metodosPorDefecto);
+        }
+      };
+      cargarMetodosPago();
+    }
+  }, [showPaymentMethodModal]);
 
   // Función para manejar la creación del grupo
   const handleCrearGrupo = () => {
@@ -267,6 +302,26 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     queryFn: () => getMesas(sucursalId),
     enabled: !!sucursalId,
   });
+
+  // Verificar ventas diferidas cuando se cargan las mesas
+  useEffect(() => {
+    if (mesas && mesas.length > 0) {
+      // Verificar solo las mesas que están en estado 'pendiente_cobro' o 'en_uso'
+      const mesasParaVerificar = mesas.filter(mesa => 
+        mesa.estado === 'pendiente_cobro' || mesa.estado === 'en_uso'
+      );
+      
+      console.log(`🔍 Verificando ${mesasParaVerificar.length} mesas para ventas diferidas...`);
+      
+      mesasParaVerificar.forEach(async (mesa) => {
+        try {
+          await verificarVentasDiferidas(mesa);
+        } catch (error) {
+          console.error(`Error verificando ventas diferidas para mesa ${mesa.numero}:`, error);
+        }
+      });
+    }
+  }, [mesas]);
 
   // Obtener estadísticas
   const { data: estadisticas } = useQuery<EstadisticasMesas>({
@@ -396,7 +451,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   // Mutación para marcar como pagado
   const marcarComoPagadoMutation = useMutation({
     mutationFn: ({ id_mesa }: { id_mesa: number }) => marcarMesaComoPagada({ id_mesa }),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Mesa Marcada como Pagada",
         description: `Mesa ${data.data.mesa.numero} marcada como pagada exitosamente.`,
@@ -414,6 +469,32 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
     },
   });
 
+  // Mutación para marcar ventas diferidas como pagadas
+  const marcarVentaDiferidaMutation = useMutation({
+    mutationFn: ({ id_venta, id_pago_final, observaciones }: { 
+      id_venta: number; 
+      id_pago_final: number; 
+      observaciones?: string; 
+    }) => marcarVentaDiferidaComoPagada({ id_venta, id_pago_final, observaciones }),
+    onSuccess: (data) => {
+      toast({
+        title: "Venta Marcada como Pagada",
+        description: `Venta marcada como pagada exitosamente.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] });
+      queryClient.invalidateQueries({ queryKey: ['estadisticas-mesas', sucursalId] });
+      setShowPaymentMethodModal(false);
+      setSelectedMesaForPayment(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Error al marcar venta como pagada.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const generarPrefacturaMutation = useMutation({
     mutationFn: (mesa: Mesa) => generarPrefactura(mesa.id_mesa),
     onSuccess: (data) => {
@@ -424,6 +505,17 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       setShowPrefactura(true);
       // Forzar la actualización de la query
       queryClient.setQueryData(['prefactura', data.data.mesa.id_mesa], data);
+      
+      // Verificar si tiene ventas diferidas y actualizar el estado
+      const mesa = data.data.mesa;
+      const tieneVentasDiferidas = data.data.historial_detallado?.some((venta: any) => 
+        venta.tipo_pago === 'diferido' && venta.estado_pago === 'pendiente'
+      ) || false;
+      
+      setVentasDiferidasPorMesa(prev => ({
+        ...prev,
+        [mesa.id_mesa]: tieneVentasDiferidas
+      }));
     },
     onError: (error: any) => {
       console.error('❌ Error generando prefactura:', error);
@@ -647,14 +739,202 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
 
   const handleGenerarPrefactura = async (mesa: Mesa) => {
     generarPrefacturaMutation.mutate(mesa);
+    // También verificar si tiene ventas diferidas para actualizar el estado
+    await verificarVentasDiferidas(mesa);
   };
 
-  const handleMarcarComoPagado = (mesa: Mesa) => {
-    marcarComoPagadoMutation.mutate({ id_mesa: mesa.id_mesa });
+  const handleMarcarComoPagado = async (mesa: Mesa) => {
+    try {
+      console.log(`🔍 handleMarcarComoPagado para mesa ${mesa.numero}`);
+      
+      // TEMPORAL: Para Mesa 1, siempre abrir modal de método de pago
+      if (mesa.numero === 1) {
+        console.log(`🔍 Mesa ${mesa.numero}: Abriendo modal de método de pago (FORZADO)`);
+        setSelectedMesaForPayment(mesa);
+        setShowPaymentMethodModal(true);
+        return;
+      }
+      
+      // Obtener la prefactura de la mesa para verificar si hay ventas de pago diferido
+      const prefacturaData = await generarPrefactura(mesa.id_mesa);
+      
+      // Verificar si hay ventas de pago diferido
+      const tieneVentasDiferidas = prefacturaData?.data?.historial_detallado?.some((venta: any) => 
+        venta.tipo_pago === 'diferido' && venta.estado_pago === 'pendiente'
+      );
+      
+      console.log(`🔍 Mesa ${mesa.numero}: tieneVentasDiferidas=${tieneVentasDiferidas}`);
+      
+      if (tieneVentasDiferidas) {
+        // Si hay ventas de pago diferido, abrir modal de método de pago
+        console.log(`🔍 Mesa ${mesa.numero}: Abriendo modal de método de pago`);
+        setSelectedMesaForPayment(mesa);
+        setShowPaymentMethodModal(true);
+      } else {
+        // Si no hay ventas de pago diferido, usar el flujo normal
+        console.log(`🔍 Mesa ${mesa.numero}: Usando flujo normal de pago`);
+        marcarComoPagadoMutation.mutate({ id_mesa: mesa.id_mesa });
+      }
+    } catch (error) {
+      console.error('Error verificando tipo de pago:', error);
+      // En caso de error, usar el flujo normal
+      marcarComoPagadoMutation.mutate({ id_mesa: mesa.id_mesa });
+    }
   };
 
   const handleCerrarConFactura = (mesa: Mesa) => {
     // Implementar lógica para cerrar mesa con factura especial
+  };
+
+  // Función para manejar la confirmación del método de pago
+  const handleConfirmPaymentMethod = async (paymentMethod: string) => {
+    console.log('🔍 handleConfirmPaymentMethod - paymentMethod:', paymentMethod);
+    console.log('🔍 handleConfirmPaymentMethod - selectedMesaForPayment:', selectedMesaForPayment);
+    
+    if (!selectedMesaForPayment) return;
+
+    try {
+      // Obtener la prefactura para encontrar las ventas de pago diferido
+      const prefacturaData = await generarPrefactura(selectedMesaForPayment.id_mesa);
+      console.log('🔍 Prefactura obtenida:', prefacturaData);
+      
+      const ventasDiferidas = prefacturaData?.data?.historial_detallado?.filter((venta: any) => 
+        venta.tipo_pago === 'diferido' && venta.estado_pago === 'pendiente'
+      );
+      
+      console.log('🔍 Ventas diferidas encontradas:', ventasDiferidas);
+
+      if (ventasDiferidas && ventasDiferidas.length > 0) {
+        console.log('✅ Procesando ventas diferidas...');
+        
+        // Encontrar el método de pago correspondiente
+        const metodoPago = metodosPago.find(mp => 
+          mp.descripcion.toLowerCase().includes(paymentMethod.toLowerCase()) ||
+          paymentMethod.toLowerCase().includes(mp.descripcion.toLowerCase())
+        );
+
+        console.log('🔍 Método de pago encontrado:', metodoPago);
+
+        if (!metodoPago) {
+          console.log('❌ Método de pago no encontrado');
+          toast({
+            title: "Error",
+            description: "Método de pago no encontrado",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Marcar cada venta diferida como pagada
+        for (const venta of ventasDiferidas) {
+          console.log('🔍 Marcando venta como pagada:', venta.id_venta);
+          await marcarVentaDiferidaMutation.mutateAsync({
+            id_venta: venta.id_venta,
+            id_pago_final: metodoPago.id_pago,
+            observaciones: `Cobrado con ${metodoPago.descripcion}`
+          });
+        }
+
+        // Después de marcar todas las ventas como pagadas, cerrar la mesa normalmente
+        console.log('✅ Cerrando mesa normalmente...');
+        marcarComoPagadoMutation.mutate({ id_mesa: selectedMesaForPayment.id_mesa });
+      } else {
+        console.log('⚠️ No hay ventas diferidas, usando flujo normal...');
+        // Si no hay ventas diferidas, usar el flujo normal
+        marcarComoPagadoMutation.mutate({ id_mesa: selectedMesaForPayment.id_mesa });
+      }
+      
+      // Cerrar el modal
+      console.log('✅ Cerrando modal...');
+      setShowPaymentMethodModal(false);
+      setSelectedMesaForPayment(null);
+      
+    } catch (error) {
+      console.error('❌ Error procesando pago:', error);
+      toast({
+        title: "Error",
+        description: "Error al procesar el pago",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Estado para almacenar información de ventas diferidas por mesa
+  const [ventasDiferidasPorMesa, setVentasDiferidasPorMesa] = useState<{[key: number]: boolean}>({});
+
+  // Función para verificar si una mesa tiene ventas de pago diferido
+  const verificarVentasDiferidas = async (mesa: Mesa): Promise<boolean> => {
+    try {
+      console.log(`🔍 Verificando ventas diferidas para mesa ${mesa.numero}...`);
+      
+      const prefacturaData = await generarPrefactura(mesa.id_mesa);
+      const tieneVentasDiferidas = prefacturaData?.data?.historial_detallado?.some((venta: any) => 
+        venta.tipo_pago === 'diferido' && venta.estado_pago === 'pendiente'
+      ) || false;
+      
+      console.log(`✅ Mesa ${mesa.numero}: tieneVentasDiferidas=${tieneVentasDiferidas}`);
+      
+      // Actualizar el estado local
+      setVentasDiferidasPorMesa(prev => ({
+        ...prev,
+        [mesa.id_mesa]: tieneVentasDiferidas
+      }));
+      
+      return tieneVentasDiferidas;
+    } catch (error) {
+      console.error(`❌ Error verificando ventas diferidas para mesa ${mesa.numero}:`, error);
+      return false;
+    }
+  };
+
+  // Función para determinar si una mesa tiene ventas de pago diferido (versión síncrona)
+  const tieneVentasDiferidas = (mesa: Mesa): boolean => {
+    console.log(`🔍 Verificando mesa ${mesa.numero}:`, {
+      estado: mesa.estado,
+      total_acumulado: mesa.total_acumulado,
+      ventasDiferidasPorMesa: ventasDiferidasPorMesa[mesa.id_mesa],
+      prefacturaDataLocal: !!prefacturaDataLocal?.data?.historial_detallado
+    });
+    
+    // Primero verificar en el estado local
+    if (ventasDiferidasPorMesa[mesa.id_mesa] !== undefined) {
+      console.log(`✅ Mesa ${mesa.numero}: usando estado local = ${ventasDiferidasPorMesa[mesa.id_mesa]}`);
+      return ventasDiferidasPorMesa[mesa.id_mesa];
+    }
+    
+    // Verificar si hay datos de prefactura local que contengan ventas diferidas
+    if (prefacturaDataLocal?.data?.historial_detallado) {
+      const tieneDiferidas = prefacturaDataLocal.data.historial_detallado.some((venta: any) => 
+        venta.tipo_pago === 'diferido' && venta.estado_pago === 'pendiente'
+      );
+      console.log(`✅ Mesa ${mesa.numero}: usando prefactura local = ${tieneDiferidas}`);
+      return tieneDiferidas;
+    }
+    
+    // Verificación más agresiva: si tiene total acumulado y está en uso o pendiente_cobro
+    const tieneTotalAcumulado = mesa.total_acumulado && mesa.total_acumulado > 0;
+    const estaEnUsoOPendiente = mesa.estado === 'en_uso' || mesa.estado === 'pendiente_cobro';
+    const resultado = tieneTotalAcumulado && estaEnUsoOPendiente;
+    
+    console.log(`✅ Mesa ${mesa.numero}: usando heurística = ${resultado} (total: ${tieneTotalAcumulado}, estado: ${estaEnUsoOPendiente})`);
+    
+    return resultado;
+  };
+
+  // Función para obtener el texto del botón de pago
+  const getPaymentButtonText = (mesa: Mesa): string => {
+    // TEMPORAL: Para Mesa 1, siempre mostrar "Cobrar" para probar
+    if (mesa.numero === 1) {
+      console.log(`🔍 Mesa ${mesa.numero}: FORZANDO "Cobrar" para prueba`);
+      return 'Cobrar';
+    }
+    
+    const tieneDiferidas = tieneVentasDiferidas(mesa);
+    const textoBoton = tieneDiferidas ? 'Cobrar' : 'Marcar como Pagado';
+    
+    console.log(`🔍 Mesa ${mesa.numero}: estado=${mesa.estado}, total=${mesa.total_acumulado}, tieneDiferidas=${tieneDiferidas}, textoBoton="${textoBoton}"`);
+    
+    return textoBoton;
   };
 
   // Función para abrir modal de reserva
@@ -1218,7 +1498,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               disabled={marcarComoPagadoMutation.isPending}
                             >
                               <CreditCard className="h-3 w-3 mr-1" />
-                              Pagado
+                              {getPaymentButtonText(mesa)}
                             </Button>
                             <Button 
                               onClick={() => handleLiberarMesa(mesa.id_mesa)}
@@ -1243,7 +1523,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               disabled={marcarComoPagadoMutation.isPending}
                             >
                               <CreditCard className="h-4 w-4 mr-2" />
-                              Marcar como Pagado
+                              {getPaymentButtonText(mesa)}
                             </Button>
                             <Button 
                               onClick={() => handleCerrarConFactura(mesa)}
@@ -1936,7 +2216,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <CreditCard className="h-4 w-4 mr-2" />
-                          Marcar como Pagado
+                          {selectedMesa ? getPaymentButtonText(selectedMesa) : 'Marcar como Pagado'}
                         </Button>
                         <Button
                           onClick={() => handleCerrarConFactura(selectedMesa)}
@@ -1999,6 +2279,22 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
             />
           );
         })()}
+
+        {/* Modal de Método de Pago */}
+        {showPaymentMethodModal && selectedMesaForPayment && (
+          <PaymentMethodModal
+            isOpen={showPaymentMethodModal}
+            onClose={() => {
+              setShowPaymentMethodModal(false);
+              setSelectedMesaForPayment(null);
+            }}
+            onConfirm={handleConfirmPaymentMethod}
+            mesaNumero={selectedMesaForPayment.numero}
+            total={selectedMesaForPayment.total_acumulado || 0}
+            isLoading={marcarVentaDiferidaMutation.isPending}
+            metodosPago={metodosPago}
+          />
+        )}
       </div>
     </div>
   );

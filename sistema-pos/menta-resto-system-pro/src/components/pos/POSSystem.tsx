@@ -624,7 +624,7 @@ export function POSSystem() {
    * @param invoiceData - Datos opcionales para la factura.
    */
   const confirmSale = useCallback(
-    async (paymentMethod: string, invoiceData?: any) => {
+    async (paymentMethod: string, invoiceData?: any, additionalData?: any) => {
       if (cart.length === 0) {
         toast({
           title: '🛒 Carrito Vacío',
@@ -764,6 +764,8 @@ export function POSSystem() {
         // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
         tipo_servicio: tipoServicio,
         invoiceData,
+        // Datos adicionales para pago diferido
+        ...(additionalData || {})
       });
 
       // Usa el ID real de la venta devuelto por el backend

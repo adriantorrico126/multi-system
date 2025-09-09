@@ -550,7 +550,10 @@ export const createSale = async (sale: {
     nit: string;
     businessName: string;
     customerName?: string;
-  }
+  };
+  // Nuevos campos para pago diferido
+  tipo_pago?: 'anticipado' | 'diferido';
+  observaciones_pago?: string;
 }) => {
   const restauranteId = getRestauranteId();
   if (!restauranteId) throw new Error('Restaurante ID not found.');
@@ -573,7 +576,10 @@ export const createSale = async (sale: {
     tipo_servicio: sale.tipo_servicio || 'Mesa',
     mesa_numero: sale.mesa_numero,
     invoiceData: sale.invoiceData,
-    id_restaurante: restauranteId // Añadir id_restaurante al payload
+    id_restaurante: restauranteId, // Añadir id_restaurante al payload
+    // Nuevos campos para pago diferido
+    tipo_pago: sale.tipo_pago || 'anticipado',
+    observaciones_pago: sale.observaciones_pago || null
   };
   if (sale.id_mesa) payload.id_mesa = sale.id_mesa; // <-- Enviar id_mesa si está presente
 
@@ -988,6 +994,30 @@ export const cerrarMesaConFactura = async (data: {
   }
 };
 
+// Marcar venta diferida como pagada con método de pago específico
+export const marcarVentaDiferidaComoPagada = async (data: {
+  id_venta: number;
+  id_pago_final: number;
+  observaciones?: string;
+}) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.patch(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${data.id_venta}/marcar-pagada`,
+      {
+        id_pago_final: data.id_pago_final,
+        observaciones: data.observaciones
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error al marcar venta diferida como pagada:', error);
+    throw error;
+  }
+};
+
 // Marcar mesa como pagada (nuevo flujo)
 export const marcarMesaComoPagada = async (data: {
   id_mesa: number;
@@ -999,6 +1029,22 @@ export const marcarMesaComoPagada = async (data: {
     return response.data;
   } catch (error) {
     console.error('Error al marcar mesa como pagada:', error);
+    throw error;
+  }
+};
+
+// Obtener métodos de pago disponibles
+export const getMetodosPago = async () => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const response = await api.get(
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos-pago?id_restaurante=${restauranteId}`
+    );
+    return response.data.data;
+  } catch (error) {
+    console.error('Error obteniendo métodos de pago:', error);
     throw error;
   }
 };
@@ -1058,7 +1104,7 @@ export const eliminarMesa = async (id_mesa: number) => {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}?id_restaurante=${restauranteId}`);
-    return response.data; // Cambiar de response.data.data a response.data
+    return response.data;
   } catch (error) {
     console.error('Error al eliminar mesa:', error);
     throw error;

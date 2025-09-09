@@ -207,11 +207,21 @@ exports.liberarMesa = async (req, res, next) => {
       // Liberar la mesa (marcar como libre sin facturar)
       const mesaLiberada = await Mesa.liberarMesa(id_mesa, id_restaurante, client);
       
-      // Cerrar prefactura anterior si existe (sin facturar)
-      const prefactura = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
-      if (prefactura) {
-        await Mesa.cerrarPrefactura(prefactura.id_prefactura, 0, id_restaurante, client); // Total 0 porque no se factura
-        logger.info(`Prefactura anterior cerrada para mesa ${id_mesa}`);
+      // Cerrar TODAS las prefacturas abiertas de esta mesa (sin facturar)
+      const prefacturasAbiertasQuery = `
+        SELECT id_prefactura, fecha_apertura, total_acumulado
+        FROM prefacturas 
+        WHERE id_mesa = $1 AND estado = 'abierta' AND id_restaurante = $2
+        ORDER BY fecha_apertura DESC
+      `;
+      const prefacturasAbiertasResult = await client.query(prefacturasAbiertasQuery, [id_mesa, id_restaurante]);
+      
+      if (prefacturasAbiertasResult.rows.length > 0) {
+        logger.info(`Cerrando ${prefacturasAbiertasResult.rows.length} prefacturas abiertas para mesa ${id_mesa}`);
+        for (const prefactura of prefacturasAbiertasResult.rows) {
+          await Mesa.cerrarPrefactura(prefactura.id_prefactura, 0, id_restaurante, client); // Total 0 porque no se factura
+          logger.info(`Prefactura ID ${prefactura.id_prefactura} cerrada (abierta desde ${prefactura.fecha_apertura})`);
+        }
       }
       
       // Crear nueva prefactura limpia para la siguiente sesión
@@ -320,14 +330,20 @@ exports.generarPrefactura = async (req, res, next) => {
       return res.status(400).json({ message: 'ID de mesa es requerido.' });
     }
 
-    // Obtener mesa con información completa
+    // Obtener mesa con información completa y la prefactura más reciente
     const mesaQuery = `
       SELECT 
         m.*,
         COALESCE(p.fecha_apertura, m.hora_apertura) as fecha_apertura_prefactura,
-        p.estado as estado_prefactura
+        p.estado as estado_prefactura,
+        p.id_prefactura
       FROM mesas m
-      LEFT JOIN prefacturas p ON m.id_mesa = p.id_mesa AND p.estado = 'abierta'
+      LEFT JOIN (
+        SELECT DISTINCT ON (id_mesa) id_prefactura, id_mesa, fecha_apertura, estado
+        FROM prefacturas 
+        WHERE estado = 'abierta' AND id_restaurante = $2
+        ORDER BY id_mesa, fecha_apertura DESC
+      ) p ON m.id_mesa = p.id_mesa
       WHERE m.id_mesa = $1 AND m.id_restaurante = $2
     `;
     const mesaResult = await pool.query(mesaQuery, [id_mesa, id_restaurante]);
@@ -336,6 +352,30 @@ exports.generarPrefactura = async (req, res, next) => {
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
     const mesa = mesaResult.rows[0];
+
+    // Si no hay prefactura abierta, crear una nueva automáticamente
+    if (!mesa.id_prefactura || mesa.estado_prefactura !== 'abierta') {
+      logger.info(`No hay prefactura abierta para mesa ${id_mesa}, creando una nueva...`);
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const nuevaPrefactura = await Mesa.crearPrefactura(id_mesa, null, id_restaurante, client);
+        await client.query('COMMIT');
+        
+        // Actualizar la fecha de apertura de la mesa
+        mesa.fecha_apertura_prefactura = nuevaPrefactura.fecha_apertura;
+        mesa.id_prefactura = nuevaPrefactura.id_prefactura;
+        mesa.estado_prefactura = 'abierta';
+        
+        logger.info(`Nueva prefactura creada: ID ${nuevaPrefactura.id_prefactura}, fecha: ${nuevaPrefactura.fecha_apertura}`);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        logger.error('Error al crear nueva prefactura:', error);
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
 
     // Debug: Verificar datos de la mesa
     logger.info(`Generando prefactura para mesa con ID ${id_mesa}, número: ${mesa.numero}, sucursal: ${mesa.id_sucursal}, restaurante: ${id_restaurante}`);
@@ -745,6 +785,9 @@ exports.eliminarMesaForzada = async (req, res, next) => {
       if (forzar === 'true') {
         logger.info(`Eliminación forzada de mesa ${id_mesa} solicitada`);
         
+        // Primero cambiar el tipo de servicio de las ventas para evitar el trigger
+        await client.query('UPDATE ventas SET tipo_servicio = \'Para Llevar\' WHERE id_mesa = $1', [id_mesa]);
+        
         // Limpiar prefacturas
         await client.query('DELETE FROM prefacturas WHERE id_mesa = $1', [id_mesa]);
         
@@ -754,7 +797,7 @@ exports.eliminarMesaForzada = async (req, res, next) => {
         // Remover de grupos
         await client.query('DELETE FROM mesas_en_grupo WHERE id_mesa = $1', [id_mesa]);
         
-        // Actualizar ventas para remover referencia
+        // Actualizar ventas para remover referencia (no eliminar ventas, solo remover referencia a mesa)
         await client.query('UPDATE ventas SET id_mesa = NULL, mesa_numero = NULL WHERE id_mesa = $1', [id_mesa]);
         
         logger.info(`Dependencias de mesa ${id_mesa} limpiadas`);
@@ -826,13 +869,90 @@ exports.eliminarMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       
+      // Verificar que la mesa existe y está libre
+      const mesa = await client.query('SELECT estado FROM mesas WHERE id_mesa = $1 AND id_restaurante = $2', [id_mesa, id_restaurante]);
+      if (mesa.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Mesa no encontrada.' });
+      }
+      
+      if (mesa.rows[0].estado !== 'libre') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: 'No se puede eliminar una mesa que está en uso. Libere la mesa primero.' });
+      }
+
+      // Verificar dependencias
+      const dependencias = await client.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM prefacturas WHERE id_mesa = $1) as prefacturas_count,
+          (SELECT COUNT(*) FROM ventas WHERE id_mesa = $1) as ventas_count,
+          (SELECT COUNT(*) FROM reservas WHERE id_mesa = $1) as reservas_count,
+          (SELECT COUNT(*) FROM mesas_en_grupo WHERE id_mesa = $1) as grupos_count
+      `, [id_mesa]);
+
+      const deps = dependencias.rows[0];
+      
+      // Si hay dependencias, hacer limpieza automática
+      if (deps.prefacturas_count > 0 || deps.ventas_count > 0 || deps.reservas_count > 0 || deps.grupos_count > 0) {
+        logger.info(`Limpieza automática de dependencias para mesa ${id_mesa}`);
+        
+        // Primero cambiar el tipo de servicio de las ventas para evitar el trigger
+        if (deps.ventas_count > 0) {
+          await client.query('UPDATE ventas SET tipo_servicio = \'Para Llevar\' WHERE id_mesa = $1', [id_mesa]);
+          logger.info(`Tipo de servicio actualizado para ventas de mesa ${id_mesa}`);
+        }
+        
+        // Cambiar estados problemáticos a estados válidos
+        if (deps.ventas_count > 0) {
+          await client.query('UPDATE ventas SET estado = \'cancelado\' WHERE id_mesa = $1 AND estado IN (\'aceptado\', \'pendiente\', \'en_proceso\')', [id_mesa]);
+          logger.info(`Estados de ventas actualizados para mesa ${id_mesa}`);
+        }
+        
+        // Limpiar prefacturas primero (para evitar violación de llave foránea)
+        if (deps.prefacturas_count > 0) {
+          await client.query('DELETE FROM prefacturas WHERE id_mesa = $1', [id_mesa]);
+          logger.info(`Prefacturas eliminadas para mesa ${id_mesa}`);
+        }
+        
+        // Limpiar detalles de ventas
+        if (deps.ventas_count > 0) {
+          await client.query('DELETE FROM detalle_ventas WHERE id_venta IN (SELECT id_venta FROM ventas WHERE id_mesa = $1)', [id_mesa]);
+          logger.info(`Detalles de ventas eliminados para mesa ${id_mesa}`);
+        }
+        
+        // Limpiar ventas
+        if (deps.ventas_count > 0) {
+          await client.query('DELETE FROM ventas WHERE id_mesa = $1', [id_mesa]);
+          logger.info(`Ventas eliminadas para mesa ${id_mesa}`);
+        }
+        
+        // Limpiar reservas
+        if (deps.reservas_count > 0) {
+          await client.query('DELETE FROM reservas WHERE id_mesa = $1', [id_mesa]);
+          logger.info(`Reservas eliminadas para mesa ${id_mesa}`);
+        }
+        
+        // Limpiar grupos
+        if (deps.grupos_count > 0) {
+          await client.query('DELETE FROM mesas_en_grupo WHERE id_mesa = $1', [id_mesa]);
+          logger.info(`Grupos eliminados para mesa ${id_mesa}`);
+        }
+      }
+      
+      // Ahora eliminar la mesa
       const mesaEliminada = await Mesa.eliminarMesa(id_mesa, id_restaurante, client);
       
       await client.query('COMMIT');
       logger.info(`Mesa con ID ${id_mesa} eliminada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa con ID ${id_mesa} eliminada exitosamente.`,
-        data: mesaEliminada
+        data: mesaEliminada,
+        dependencias_limpiadas: {
+          prefacturas: deps.prefacturas_count,
+          ventas: deps.ventas_count,
+          reservas: deps.reservas_count,
+          grupos: deps.grupos_count
+        }
       });
     } catch (error) {
       await client.query('ROLLBACK');
