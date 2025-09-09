@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { crearMesa, getMesas, actualizarMesa, eliminarMesa } from '@/services/api';
+import { crearMesa, getMesas, actualizarMesa, eliminarMesa, eliminarMesaForzada } from '@/services/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface MesaConfigurationProps {
@@ -165,9 +165,36 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
       queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] });
     },
     onError: (error: any) => {
+      console.error('Error al eliminar mesa:', error);
+      const errorMessage = error.response?.data?.message || error.message || "Error al eliminar la mesa.";
+      
       toast({
-        title: "Error",
-        description: error.response?.data?.message || "Error al eliminar la mesa.",
+        title: "Error al Eliminar Mesa",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutación para eliminar mesa forzadamente
+  const eliminarMesaForzadaMutation = useMutation({
+    mutationFn: (id_mesa: number) => eliminarMesaForzada(id_mesa),
+    onSuccess: () => {
+      toast({
+        title: "Mesa Eliminada Forzadamente",
+        description: "La mesa y sus dependencias han sido eliminadas exitosamente.",
+      });
+      setShowDeleteModal(false);
+      setSelectedMesa(null);
+      queryClient.invalidateQueries({ queryKey: ['mesas', sucursalId] });
+    },
+    onError: (error: any) => {
+      console.error('Error al eliminar mesa forzadamente:', error);
+      const errorMessage = error.response?.data?.message || error.message || "Error al eliminar la mesa.";
+      
+      toast({
+        title: "Error al Eliminar Mesa",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -231,6 +258,11 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
   const confirmarEliminarMesa = () => {
     if (!selectedMesa) return;
     eliminarMesaMutation.mutate(selectedMesa.id_mesa);
+  };
+
+  const confirmarEliminarMesaForzada = () => {
+    if (!selectedMesa) return;
+    eliminarMesaForzadaMutation.mutate(selectedMesa.id_mesa);
   };
 
   const getEstadoColor = (estado: string) => {
@@ -1088,9 +1120,17 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
                 <DialogTitle className="text-lg font-bold text-gray-900">
                   Confirmar Eliminación
                 </DialogTitle>
-                <p className="text-sm text-gray-500">
-                  ¿Estás seguro de que quieres eliminar la mesa {selectedMesa?.numero}? Esta acción no se puede deshacer.
-                </p>
+                <div className="text-sm text-gray-500 space-y-2">
+                  <p>¿Estás seguro de que quieres eliminar la mesa {selectedMesa?.numero}?</p>
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <p className="font-medium text-yellow-800">Opciones de eliminación:</p>
+                    <ul className="text-xs text-yellow-700 mt-1 space-y-1">
+                      <li><strong>Eliminar Mesa:</strong> Solo si está libre y sin dependencias</li>
+                      <li><strong>Eliminar Forzadamente:</strong> Elimina mesa y todas sus dependencias</li>
+                    </ul>
+                  </div>
+                  <p className="text-red-600 font-medium">Esta acción no se puede deshacer.</p>
+                </div>
               </div>
             </div>
           </DialogHeader>
@@ -1103,12 +1143,13 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
               <Button
                 variant="outline"
                 onClick={() => setShowDeleteModal(false)}
+                disabled={eliminarMesaMutation.isPending || eliminarMesaForzadaMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={confirmarEliminarMesa}
-                disabled={eliminarMesaMutation.isPending}
+                disabled={eliminarMesaMutation.isPending || eliminarMesaForzadaMutation.isPending}
                 className="bg-red-600 hover:bg-red-700"
               >
                 {eliminarMesaMutation.isPending ? (
@@ -1120,6 +1161,24 @@ export default function MesaConfiguration({ sucursalId }: MesaConfigurationProps
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Eliminar Mesa
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={confirmarEliminarMesaForzada}
+                disabled={eliminarMesaMutation.isPending || eliminarMesaForzadaMutation.isPending}
+                className="bg-red-800 hover:bg-red-900"
+                variant="destructive"
+              >
+                {eliminarMesaForzadaMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar Forzadamente
                   </>
                 )}
               </Button>

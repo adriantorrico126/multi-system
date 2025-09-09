@@ -1065,6 +1065,18 @@ export const eliminarMesa = async (id_mesa: number) => {
   }
 };
 
+export const eliminarMesaForzada = async (id_mesa: number) => {
+  try {
+    const restauranteId = getRestauranteId();
+    if (!restauranteId) throw new Error('Restaurante ID not found.');
+    const response = await api.delete(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/mesas/configuracion/${id_mesa}/forzar?id_restaurante=${restauranteId}&forzar=true`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al eliminar mesa forzadamente:', error);
+    throw error;
+  }
+};
+
 // Ventas filtradas por sucursal
 export const getVentasHoy = async (fecha?: string) => {
   try {

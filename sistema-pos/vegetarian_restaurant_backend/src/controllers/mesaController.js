@@ -725,6 +725,92 @@ exports.actualizarMesa = async (req, res, next) => {
   }
 };
 
+// Eliminar mesa con limpieza forzada
+exports.eliminarMesaForzada = async (req, res, next) => {
+  try {
+    const { id_mesa } = req.params;
+    const { forzar = false } = req.query;
+    const id_restaurante = req.user.id_restaurante;
+
+    if (!id_mesa) {
+      logger.warn('ID de mesa es requerido para eliminar mesa.');
+      return res.status(400).json({ message: 'ID de mesa es requerido.' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Si se fuerza la eliminación, limpiar dependencias primero
+      if (forzar === 'true') {
+        logger.info(`Eliminación forzada de mesa ${id_mesa} solicitada`);
+        
+        // Limpiar prefacturas
+        await client.query('DELETE FROM prefacturas WHERE id_mesa = $1', [id_mesa]);
+        
+        // Limpiar reservas
+        await client.query('DELETE FROM reservas WHERE id_mesa = $1', [id_mesa]);
+        
+        // Remover de grupos
+        await client.query('DELETE FROM mesas_en_grupo WHERE id_mesa = $1', [id_mesa]);
+        
+        // Actualizar ventas para remover referencia
+        await client.query('UPDATE ventas SET id_mesa = NULL, mesa_numero = NULL WHERE id_mesa = $1', [id_mesa]);
+        
+        logger.info(`Dependencias de mesa ${id_mesa} limpiadas`);
+      }
+      
+      const mesaEliminada = await Mesa.eliminarMesa(id_mesa, id_restaurante, client);
+      
+      await client.query('COMMIT');
+      logger.info(`Mesa con ID ${id_mesa} eliminada exitosamente para el restaurante ${id_restaurante}.`);
+      res.status(200).json({
+        message: `Mesa con ID ${id_mesa} eliminada exitosamente${forzar === 'true' ? ' (con limpieza forzada)' : ''}.`,
+        data: mesaEliminada,
+        forzada: forzar === 'true'
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      logger.error('Error en transacción al eliminar mesa:', error);
+      
+      // Manejar errores específicos
+      if (error.message.includes('Mesa no encontrada')) {
+        return res.status(404).json({ message: 'Mesa no encontrada.' });
+      }
+      
+      if (error.message.includes('No se puede eliminar una mesa que está en uso') && forzar !== 'true') {
+        return res.status(400).json({ 
+          message: 'No se puede eliminar una mesa que está en uso. Use ?forzar=true para eliminar de todos modos.',
+          suggestion: 'Agregue ?forzar=true al final de la URL para eliminar la mesa y sus dependencias'
+        });
+      }
+      
+      if (error.message.includes('registros relacionados')) {
+        return res.status(400).json({ 
+          message: error.message,
+          suggestion: 'Use ?forzar=true para eliminar la mesa y sus dependencias'
+        });
+      }
+      
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    logger.error('Error al eliminar mesa:', error);
+    
+    // Manejar errores de base de datos
+    if (error.code === '23503') { // Foreign key violation
+      return res.status(400).json({ 
+        message: 'No se puede eliminar la mesa porque tiene registros relacionados.',
+        suggestion: 'Use ?forzar=true para eliminar la mesa y sus dependencias'
+      });
+    }
+    
+    next(error);
+  }
+};
+
 // Eliminar mesa
 exports.eliminarMesa = async (req, res, next) => {
   try {
@@ -751,12 +837,34 @@ exports.eliminarMesa = async (req, res, next) => {
     } catch (error) {
       await client.query('ROLLBACK');
       logger.error('Error en transacción al eliminar mesa:', error);
+      
+      // Manejar errores específicos
+      if (error.message.includes('Mesa no encontrada')) {
+        return res.status(404).json({ message: 'Mesa no encontrada.' });
+      }
+      
+      if (error.message.includes('No se puede eliminar una mesa que está en uso')) {
+        return res.status(400).json({ message: 'No se puede eliminar una mesa que está en uso. Libere la mesa primero.' });
+      }
+      
+      if (error.message.includes('registros relacionados')) {
+        return res.status(400).json({ message: error.message });
+      }
+      
       throw error;
     } finally {
       client.release();
     }
   } catch (error) {
     logger.error('Error al eliminar mesa:', error);
+    
+    // Manejar errores de base de datos
+    if (error.code === '23503') { // Foreign key violation
+      return res.status(400).json({ 
+        message: 'No se puede eliminar la mesa porque tiene registros relacionados. Elimine primero las dependencias.' 
+      });
+    }
+    
     next(error);
   }
 };

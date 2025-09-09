@@ -20,6 +20,9 @@ router.post('/configuracion', authorizeRoles('admin', 'super_admin'), mesaContro
 // Actualizar mesa
 router.put('/configuracion/:id_mesa', authorizeRoles('admin', 'super_admin'), mesaController.actualizarMesa);
 
+// Eliminar mesa con limpieza forzada (MÁS ESPECÍFICA PRIMERO)
+router.delete('/configuracion/:id_mesa/forzar', authorizeRoles('admin', 'super_admin'), mesaController.eliminarMesaForzada);
+
 // Eliminar mesa
 router.delete('/configuracion/:id_mesa', authorizeRoles('admin', 'super_admin'), mesaController.eliminarMesa);
 

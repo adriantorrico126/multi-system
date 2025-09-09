@@ -339,8 +339,28 @@ const Mesa = {
       throw new Error('No se puede eliminar una mesa que está en uso');
     }
 
+    // Verificar dependencias antes de eliminar
+    const dependencias = await client.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM prefacturas WHERE id_mesa = $1) as prefacturas_count,
+        (SELECT COUNT(*) FROM ventas WHERE id_mesa = $1) as ventas_count,
+        (SELECT COUNT(*) FROM reservas WHERE id_mesa = $1) as reservas_count,
+        (SELECT COUNT(*) FROM mesas_en_grupo WHERE id_mesa = $1) as grupos_count
+    `, [id_mesa]);
+
+    const deps = dependencias.rows[0];
+    if (deps.prefacturas_count > 0 || deps.ventas_count > 0 || deps.reservas_count > 0 || deps.grupos_count > 0) {
+      throw new Error('No se puede eliminar la mesa porque tiene registros relacionados. Elimine primero las prefacturas, ventas, reservas o grupos asociados.');
+    }
+
+    // Eliminar la mesa
     const query = `DELETE FROM mesas WHERE id_mesa = $1 AND id_restaurante = $2 RETURNING *`;
     const { rows } = await client.query(query, [id_mesa, id_restaurante]);
+    
+    if (rows.length === 0) {
+      throw new Error('No se pudo eliminar la mesa');
+    }
+    
     return rows[0];
   },
 
