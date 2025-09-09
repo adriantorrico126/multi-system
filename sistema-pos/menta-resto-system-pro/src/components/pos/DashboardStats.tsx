@@ -141,42 +141,44 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
     : 0;
 
   return (
-    <div className="space-y-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+    <div className="space-y-4 sm:space-y-6 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
       {/* Header del Dashboard */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Dashboard Ejecutivo
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Análisis completo de rendimiento y métricas de negocio
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1">
-            <Activity className="h-4 w-4 mr-1" />
-            En Tiempo Real
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+            <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+            <span className="hidden sm:inline">En Tiempo Real</span>
+            <span className="sm:hidden">Real</span>
           </Badge>
-          <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-3 py-1">
-            <TrendingUp className="h-4 w-4 mr-1" />
-            Actualizado
+          <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+            <span className="hidden sm:inline">Actualizado</span>
+            <span className="sm:hidden">Act</span>
           </Badge>
         </div>
       </div>
 
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Ventas (periodo seleccionado / hoy por defecto) */}
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-700 mb-1">Ventas (período)</p>
-                <p className="text-3xl font-bold text-green-800">{totalVentas}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-800">{totalVentas}</p>
                 <p className="text-xs text-green-600 mt-1">Transacciones realizadas</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -184,15 +186,15 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
 
         {/* Pedidos Activos */}
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-blue-700 mb-1">Pedidos Activos</p>
-                <p className="text-3xl font-bold text-blue-800">{orders.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-800">{orders.length}</p>
                 <p className="text-xs text-blue-600 mt-1">En preparación</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                <Package className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -200,15 +202,15 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
 
         {/* Productos Vendidos */}
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-700 mb-1">Productos vendidos</p>
-                <p className="text-3xl font-bold text-purple-800">{totalItemsVendidos}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-purple-800">{totalItemsVendidos}</p>
                 <p className="text-xs text-purple-600 mt-1">Unidades en el período</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center">
-                <ShoppingCart className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center">
+                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -216,15 +218,15 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
 
         {/* Ticket promedio (rendimiento de venta) */}
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-orange-700 mb-1">Ticket promedio</p>
-                <p className="text-3xl font-bold text-orange-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
                 <p className="text-xs text-orange-600 mt-1">Promedio por transacción</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
-                <Zap className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -232,10 +234,10 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
       </div>
 
       {/* Análisis Detallado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Gráfico de Ventas */}
         <Card className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Tendencia de Ventas</h3>
               <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
@@ -254,7 +256,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
 
         {/* Productos Más Vendidos */}
         <Card className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Productos Populares</h3>
               <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
@@ -302,7 +304,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
       </div>
 
       {/* Estadísticas Adicionales */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <Card className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -311,7 +313,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Ingresos Totales</p>
-                <p className="text-xl font-bold text-gray-800">{totalIngresos.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-800">{totalIngresos.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
               </div>
             </div>
           </CardContent>
@@ -325,7 +327,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Transacciones</p>
-                <p className="text-xl font-bold text-gray-800">{totalVentas}</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-800">{totalVentas}</p>
               </div>
             </div>
           </CardContent>
@@ -339,7 +341,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Ticket Promedio</p>
-                <p className="text-xl font-bold text-gray-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
               </div>
             </div>
           </CardContent>
@@ -354,7 +356,7 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Button 
               variant="outline" 
               className="h-auto p-4 bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"

@@ -62,6 +62,8 @@ export function UserManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedUserForInfo, setSelectedUserForInfo] = useState<User | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -215,7 +217,6 @@ export function UserManagement() {
       email: formData.email && formData.email.trim() !== '' ? formData.email : undefined,
       password: formData.password,
       rol: formData.rol,
-      activo: formData.activo,
       id_sucursal: formData.id_sucursal === 0 ? null : formData.id_sucursal,
     });
   };
@@ -253,7 +254,6 @@ export function UserManagement() {
         email: formData.email && formData.email.trim() !== '' ? formData.email : undefined,
         password: formData.password || undefined, // Solo enviar si se cambió
         rol: formData.rol,
-        activo: formData.activo,
         id_sucursal: formData.id_sucursal === 0 ? null : formData.id_sucursal,
       },
     });
@@ -291,6 +291,11 @@ export function UserManagement() {
       id_sucursal: user.id_sucursal,
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openInfoDialog = (user: User) => {
+    setSelectedUserForInfo(user);
+    setIsInfoDialogOpen(true);
   };
 
   const getRoleIcon = (role: string) => {
@@ -342,99 +347,101 @@ export function UserManagement() {
   }, [users]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header del Dashboard de Usuarios */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
             Gestión de Usuarios
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Administra usuarios, roles y permisos del sistema
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
             className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
+            <RefreshCw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Actualizar</span>
+            <span className="sm:hidden">Act</span>
           </Button>
           
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Usuario
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nuevo Usuario</span>
+            <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
       </div>
 
       {/* Estadísticas de Usuarios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-700">Total Usuarios</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                <p className="text-xs sm:text-sm font-medium text-blue-700">Total Usuarios</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-900">{stats.total}</p>
               </div>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-1 sm:p-2 bg-blue-500/10 rounded-lg">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700">Usuarios Activos</p>
-                <p className="text-2xl font-bold text-green-900">{stats.active}</p>
+                <p className="text-xs sm:text-sm font-medium text-green-700">Usuarios Activos</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-900">{stats.active}</p>
               </div>
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <UserCheck className="h-5 w-5 text-green-600" />
+              <div className="p-1 sm:p-2 bg-green-500/10 rounded-lg">
+                <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-red-700">Usuarios Inactivos</p>
-                <p className="text-2xl font-bold text-red-900">{stats.inactive}</p>
+                <p className="text-xs sm:text-sm font-medium text-red-700">Usuarios Inactivos</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-900">{stats.inactive}</p>
               </div>
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <User className="h-5 w-5 text-red-600" />
+              <div className="p-1 sm:p-2 bg-red-500/10 rounded-lg">
+                <User className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-700">Administradores</p>
-                <p className="text-2xl font-bold text-purple-900">{stats.admins}</p>
+                <p className="text-xs sm:text-sm font-medium text-purple-700">Administradores</p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-900">{stats.admins}</p>
               </div>
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <Shield className="h-5 w-5 text-purple-600" />
+              <div className="p-1 sm:p-2 bg-purple-500/10 rounded-lg">
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-orange-700">Personal</p>
@@ -448,7 +455,7 @@ export function UserManagement() {
         </Card>
 
         <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-cyan-700">Cocineros</p>
@@ -470,7 +477,7 @@ export function UserManagement() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -484,7 +491,7 @@ export function UserManagement() {
             </div>
             
             <Select value={selectedRole} onValueChange={value => setSelectedRole(value)}>
-              <SelectTrigger className="w-48 bg-white/80 backdrop-blur-sm border-gray-200/50">
+              <SelectTrigger className="w-full sm:w-48 bg-white/80 backdrop-blur-sm border-gray-200/50">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -499,7 +506,7 @@ export function UserManagement() {
             </Select>
             
             <Select value={selectedStatus} onValueChange={value => setSelectedStatus(value)}>
-              <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
+              <SelectTrigger className="w-full sm:w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -531,18 +538,18 @@ export function UserManagement() {
                 <TableHeader>
                   <TableRow className="border-b border-gray-200 bg-gradient-to-r from-gray-50/80 to-white/80">
                     <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Usuario</TableHead>
-                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Email</TableHead>
-                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Rol</TableHead>
-                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Sucursal</TableHead>
-                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Estado</TableHead>
-                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Fecha Creación</TableHead>
-                    <TableHead className="h-14 px-6 text-center align-middle font-semibold text-gray-700">Acciones</TableHead>
+                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Email</TableHead>
+                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Rol</TableHead>
+                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Sucursal</TableHead>
+                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Estado</TableHead>
+                    <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Fecha Creación</TableHead>
+                    <TableHead className="h-14 px-6 text-center align-middle font-semibold text-gray-700 hidden lg:table-cell">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={2} className="text-center py-8 text-gray-500">
                         <div className="flex flex-col items-center gap-2">
                           <Users className="h-12 w-12 text-gray-400" />
                           <p>No se encontraron usuarios</p>
@@ -558,31 +565,41 @@ export function UserManagement() {
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold">
                               {user.nombre.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{user.nombre}</p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-gray-900 truncate">{user.nombre}</p>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openInfoDialog(user)}
+                                  className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
                               <p className="text-sm text-gray-600">@{user.username}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-700">{user.email}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <Badge className={`${getRoleBadgeColor(user.rol)} flex items-center gap-1`}>
                             {getRoleIcon(user.rol)}
                             {getRoleDisplayName(user.rol)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <Building className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-700">{user.sucursal_nombre}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <Badge 
                             variant={user.activo ? "success" : "destructive"}
                             className="flex items-center gap-1"
@@ -591,7 +608,7 @@ export function UserManagement() {
                             {user.activo ? 'Activo' : 'Inactivo'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-700">
@@ -599,7 +616,7 @@ export function UserManagement() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <div className="flex items-center justify-center gap-2">
                             <TooltipProvider>
                               <Tooltip>
@@ -879,6 +896,122 @@ export function UserManagement() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Información del Usuario */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-blue-200/50">
+          <DialogHeader className="text-center pb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Eye className="h-8 w-8 text-white" />
+            </div>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+              Información del Usuario
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedUserForInfo && (
+            <div className="space-y-6 pt-4">
+              {/* Información Principal */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                    {selectedUserForInfo.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">{selectedUserForInfo.nombre}</h3>
+                    <p className="text-sm text-gray-600">@{selectedUserForInfo.username}</p>
+                  </div>
+                </div>
+                
+                {/* Detalles del Usuario */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">Email</span>
+                    </div>
+                    <span className="text-sm text-gray-700 truncate max-w-32">
+                      {selectedUserForInfo.email}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-gray-700">Rol</span>
+                    </div>
+                    <Badge className={`${getRoleBadgeColor(selectedUserForInfo.rol)} flex items-center gap-1`}>
+                      {getRoleIcon(selectedUserForInfo.rol)}
+                      {getRoleDisplayName(selectedUserForInfo.rol)}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-gray-700">Sucursal</span>
+                    </div>
+                    <span className="text-sm text-gray-700">
+                      {selectedUserForInfo.sucursal_nombre}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">Estado</span>
+                    </div>
+                    <Badge 
+                      variant={selectedUserForInfo.activo ? "success" : "destructive"}
+                      className="flex items-center gap-1"
+                    >
+                      {selectedUserForInfo.activo ? <UserCheck className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                      {selectedUserForInfo.activo ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium text-gray-700">Fecha Creación</span>
+                    </div>
+                    <span className="text-sm text-gray-700">
+                      {new Date(selectedUserForInfo.created_at).toLocaleDateString('es-BO')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Botones de Acción */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    openEditDialog(selectedUserForInfo);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                {(selectedUserForInfo.rol !== 'admin' && selectedUserForInfo.rol !== 'super_admin') && (
+                  <Button
+                    onClick={() => {
+                      setIsInfoDialogOpen(false);
+                      setUserToDelete(selectedUserForInfo.id);
+                    }}
+                    variant="destructive"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

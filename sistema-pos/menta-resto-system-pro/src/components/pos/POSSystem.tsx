@@ -1436,12 +1436,12 @@ export function POSSystem() {
       {/* Navegación de Pestañas de Administración (Secundarias) */}
       {activeTab === 'dashboard' && showAdminFeatures && (
         <nav className="border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80 backdrop-blur-sm px-6 py-3 shadow-inner flex-shrink-0">
-          <div className="flex flex-row gap-3">
+          <div className="flex flex-row gap-3 overflow-x-auto scrollbar-hide horizontal-scroll">
             <Button
               variant={activeDashboardSubTab === 'summary' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('summary')}
-              className="rounded-lg transition-all duration-200"
+              className="rounded-lg transition-all duration-200 flex-shrink-0 whitespace-nowrap"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Resumen
@@ -1450,7 +1450,7 @@ export function POSSystem() {
               variant={activeDashboardSubTab === 'products' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('products')}
-              className="rounded-lg transition-all duration-200"
+              className="rounded-lg transition-all duration-200 flex-shrink-0 whitespace-nowrap"
             >
               <Package className="h-4 w-4 mr-2" />
               Productos
@@ -1459,7 +1459,7 @@ export function POSSystem() {
               variant={activeDashboardSubTab === 'users' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDashboardSubTabChange('users')}
-              className="rounded-lg transition-all duration-200"
+              className="rounded-lg transition-all duration-200 flex-shrink-0 whitespace-nowrap"
             >
               <Users className="h-4 w-4 mr-2" />
               Usuarios
@@ -1512,22 +1512,22 @@ export function POSSystem() {
         <div className="flex-1 overflow-auto main-content-mobile">
           {/* Vista de Punto de Venta (POS) */}
           {activeTab === 'pos' && (
-            <div className="flex flex-col h-full p-3 sm:p-6 min-w-0">
+            <div className="flex flex-col h-full p-4 sm:p-6 min-w-0">
               {/* Buscador de productos */}
-              <div className="w-full mb-3 sm:mb-4">
+              <div className="w-full mb-4">
                 <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     placeholder="Buscar productos por nombre..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base w-full"
+                    className="pl-10 h-12 text-base w-full"
                   />
                 </div>
               </div>
               
               {/* Filtros de categoría */}
-              <div className="w-full flex flex-wrap gap-1 sm:gap-2 items-center justify-start mb-4 sm:mb-6">
+              <div className="w-full flex flex-wrap gap-2 items-center justify-start mb-6">
                 <CategoryFilter
                   selectedCategory={selectedCategory}
                   onSelectCategory={(categoryId: string) => setSelectedCategory(categoryId)}
@@ -1546,7 +1546,7 @@ export function POSSystem() {
                   </div>
                 ) : filteredProducts.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4">
                     {filteredProducts.map((product) => (
                         <ProductCard key={String(product.id)} product={product} onAddToCart={addToCart} />
                     ))}
@@ -1689,7 +1689,7 @@ export function POSSystem() {
 
         {/* Panel del Carrito de Compras y Opciones de Servicio SOLO en POS - SOLO DESKTOP */}
         {activeTab === 'pos' && (
-          <aside className="flex w-80 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex-col flex-shrink-0 desktop-cart-only">
+          <aside className="hidden lg:flex w-80 bg-gradient-to-br from-white via-gray-50/50 to-white border-l border-gray-200/50 shadow-2xl flex-col flex-shrink-0 desktop-cart-only">
             {/* Header del Carrito */}
             <div className="p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div className="flex items-center justify-between mb-2">

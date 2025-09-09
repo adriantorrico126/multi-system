@@ -8,6 +8,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { RestaurantChangeHandler } from "./components/RestaurantChangeHandler";
+import "./styles/mobile-responsive.css";
 // import { useMobile } from "./hooks/use-mobile";
 
 const Index = lazy(() => import("./pages/Index"));

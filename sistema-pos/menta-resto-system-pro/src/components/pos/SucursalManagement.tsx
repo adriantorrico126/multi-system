@@ -59,6 +59,8 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sucursalToDelete, setSucursalToDelete] = useState<Sucursal | null>(null);
+  const [selectedSucursalForInfo, setSelectedSucursalForInfo] = useState<Sucursal | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -231,20 +233,26 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
     setIsAddDialogOpen(true);
   };
 
+  const openInfoDialog = (sucursal: Sucursal) => {
+    setSelectedSucursalForInfo(sucursal);
+    setIsInfoDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
+        <CardHeader className="p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl lg:text-3xl">
+              <Building className="h-5 w-5 sm:h-6 sm:w-6" />
               Gestión de Sucursales
             </CardTitle>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={openAddDialog}>
+                <Button onClick={openAddDialog} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
-                  Agregar Sucursal
+                  <span className="hidden sm:inline">Agregar Sucursal</span>
+                  <span className="sm:hidden">Agregar</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -292,7 +300,7 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <div className="mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -316,16 +324,16 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Ciudad</TableHead>
-                    <TableHead>Dirección</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="hidden lg:table-cell">Ciudad</TableHead>
+                    <TableHead className="hidden lg:table-cell">Dirección</TableHead>
+                    <TableHead className="hidden lg:table-cell">Estado</TableHead>
+                    <TableHead className="text-right hidden lg:table-cell">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSucursales.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={1} className="text-center py-8 text-gray-500">
                         {searchTerm ? 'No se encontraron sucursales que coincidan con la búsqueda.' : 'No hay sucursales registradas.'}
                       </TableCell>
                     </TableRow>
@@ -335,24 +343,48 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <Store className="h-4 w-4 text-gray-500" />
-                            {sucursal.nombre}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate">{sucursal.nombre}</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openInfoDialog(sucursal)}
+                                  className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="lg:hidden mt-1 space-y-1">
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <MapPin className="h-3 w-3" />
+                                  <span className="truncate">{sucursal.ciudad}</span>
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {sucursal.direccion || 'Sin dirección'}
+                                </div>
+                                <Badge variant={sucursal.activo ? "default" : "secondary"} className="text-xs">
+                                  {sucursal.activo ? "Activa" : "Inactiva"}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-500" />
                             {sucursal.ciudad}
                           </div>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
+                        <TableCell className="max-w-xs truncate hidden lg:table-cell">
                           {sucursal.direccion || 'Sin dirección'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Badge variant={sucursal.activo ? "default" : "secondary"}>
                             {sucursal.activo ? "Activa" : "Inactiva"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right hidden lg:table-cell">
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="outline"
@@ -452,6 +484,89 @@ export function SucursalManagement({ currentUserRole }: SucursalManagementProps)
                 {deleteSucursalMutation.isPending ? 'Eliminando...' : 'Eliminar'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información de sucursal */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              Información de Sucursal
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSucursalForInfo && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Nombre</label>
+                <p className="text-lg font-semibold text-gray-900">{selectedSucursalForInfo.nombre}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">ID</label>
+                <p className="text-sm text-gray-600">#{selectedSucursalForInfo.id_sucursal}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Ciudad</label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm text-gray-900">{selectedSucursalForInfo.ciudad}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Dirección</label>
+                <p className="text-sm text-gray-900">{selectedSucursalForInfo.direccion || 'Sin dirección'}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Estado</label>
+                <Badge variant={selectedSucursalForInfo.activo ? "default" : "secondary"}>
+                  {selectedSucursalForInfo.activo ? "Activa" : "Inactiva"}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsInfoDialogOpen(false);
+                setSelectedSucursalForInfo(null);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+            {selectedSucursalForInfo && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleEditSucursal(selectedSucursalForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleDeleteSucursal(selectedSucursalForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

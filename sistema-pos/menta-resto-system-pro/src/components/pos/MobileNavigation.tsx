@@ -165,12 +165,12 @@ export function MobileNavigation({ cartItemsCount = 0, onOpenConfig, onLogout }:
 
   return (
     <>
-      {/* Botón flotante de navegación */}
+      {/* Botón flotante de navegación mejorado */}
       <Sheet>
         <SheetTrigger asChild>
           <Button
             variant="outline"
-            className="fixed bottom-20 left-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl border-0"
+            className="fixed bottom-20 left-4 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl border-0 touch-manipulation active:scale-95 transition-transform duration-150"
           >
             <Menu className="h-6 w-6" />
           </Button>

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
-import { Plus, Edit, Trash, Tag } from 'lucide-react';
+import { Plus, Edit, Trash, Tag, Eye } from 'lucide-react';
 
 interface Category {
   id_categoria: number;
@@ -27,6 +27,8 @@ const CategoryList: React.FC = () => {
   const [newCatName, setNewCatName] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [selectedCategoryForInfo, setSelectedCategoryForInfo] = useState<Category | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,6 +114,11 @@ const CategoryList: React.FC = () => {
     setDeleteOpen(true);
   };
 
+  const openInfoDialog = (category: Category) => {
+    setSelectedCategoryForInfo(category);
+    setIsInfoDialogOpen(true);
+  };
+
   const handleConfirmEdit = () => {
     if (!editingCategory || !newCatName.trim()) {
       toast({ title: 'Validación', description: 'Ingresa un nombre válido.', variant: 'destructive' });
@@ -128,19 +135,20 @@ const CategoryList: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <Tag className="h-5 w-5" />
+        <CardHeader className="p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl lg:text-3xl">
+              <Tag className="h-5 w-5 sm:h-6 sm:w-6" />
               Gestión de Categorías
             </CardTitle>
-            <Button onClick={() => setAddOpen(true)}>
+            <Button onClick={() => setAddOpen(true)} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Agregar Categoría
+              <span className="hidden sm:inline">Agregar Categoría</span>
+              <span className="sm:hidden">Agregar</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <div className="mb-4">
             <div className="relative">
               <Input
@@ -165,30 +173,49 @@ const CategoryList: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="hidden lg:table-cell">Estado</TableHead>
+                    <TableHead className="text-right hidden lg:table-cell">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={1} className="text-center py-8 text-gray-500">
                         {searchTerm ? 'No se encontraron categorías que coincidan con la búsqueda.' : 'No hay categorías registradas.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredCategories.map((cat) => (
                       <TableRow key={cat.id_categoria}>
-                        <TableCell className="font-medium flex items-center gap-2">
-                          <Tag className="h-4 w-4 text-gray-500" />
-                          {cat.nombre}
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-gray-500" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate">{cat.nombre}</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openInfoDialog(cat)}
+                                  className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="lg:hidden mt-1">
+                                <Badge variant={cat.activo !== false ? "default" : "secondary"} className="text-xs">
+                                  {cat.activo !== false ? "Activa" : "Inactiva"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Badge variant={cat.activo !== false ? "default" : "secondary"}>
                             {cat.activo !== false ? "Activa" : "Inactiva"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right hidden lg:table-cell">
                           <div className="flex justify-end gap-2">
                             <Button 
                               variant="outline" 
@@ -309,6 +336,76 @@ const CategoryList: React.FC = () => {
             >
               {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de información de categoría */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              Información de Categoría
+            </DialogTitle>
+          </DialogHeader>
+          {selectedCategoryForInfo && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Nombre</label>
+                <p className="text-lg font-semibold text-gray-900">{selectedCategoryForInfo.nombre}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">ID</label>
+                <p className="text-sm text-gray-600">#{selectedCategoryForInfo.id_categoria}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Estado</label>
+                <Badge variant={selectedCategoryForInfo.activo !== false ? "default" : "secondary"}>
+                  {selectedCategoryForInfo.activo !== false ? "Activa" : "Inactiva"}
+                </Badge>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsInfoDialogOpen(false);
+                setSelectedCategoryForInfo(null);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cerrar
+            </Button>
+            {selectedCategoryForInfo && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleEdit(selectedCategoryForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleDelete(selectedCategoryForInfo);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

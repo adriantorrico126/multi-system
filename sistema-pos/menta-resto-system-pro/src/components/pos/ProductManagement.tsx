@@ -58,6 +58,8 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [selectedProductForInfo, setSelectedProductForInfo] = useState<Product | null>(null);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -304,6 +306,11 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
     setIsAddDialogOpen(true);
   };
 
+  const openInfoDialog = (product: Product) => {
+    setSelectedProductForInfo(product);
+    setIsInfoDialogOpen(true);
+  };
+
   const getStockStatus = (stock: number) => {
     if (stock === 0) return { color: 'destructive', text: 'Sin Stock' };
     if (stock < 10) return { color: 'warning', text: 'Stock Bajo' };
@@ -315,122 +322,124 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header del Dashboard de Productos */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
             Gestión de Productos
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Administra el catálogo de productos y controla el inventario
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={() => queryClient.invalidateQueries({ queryKey: ['products'] })}
             className="bg-white/80 backdrop-blur-sm border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
+            <RefreshCw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Actualizar</span>
+            <span className="sm:hidden">Act</span>
           </Button>
           
           <Button
             onClick={openAddDialog}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Producto
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nuevo Producto</span>
+            <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
       </div>
 
       {/* Estadísticas de Productos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-700">Total Productos</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+                <p className="text-xs sm:text-sm font-medium text-blue-700">Total Productos</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-900">{stats.total}</p>
               </div>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Package className="h-5 w-5 text-blue-600" />
+              <div className="p-1 sm:p-2 bg-blue-500/10 rounded-lg">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700">Productos Activos</p>
-                <p className="text-2xl font-bold text-green-900">{stats.active}</p>
+                <p className="text-xs sm:text-sm font-medium text-green-700">Productos Activos</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-900">{stats.active}</p>
               </div>
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <Activity className="h-5 w-5 text-green-600" />
+              <div className="p-1 sm:p-2 bg-green-500/10 rounded-lg">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-red-700">Productos Inactivos</p>
-                <p className="text-2xl font-bold text-red-900">{stats.inactive}</p>
+                <p className="text-xs sm:text-sm font-medium text-red-700">Productos Inactivos</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-900">{stats.inactive}</p>
               </div>
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <Package className="h-5 w-5 text-red-600" />
+              <div className="p-1 sm:p-2 bg-red-500/10 rounded-lg">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-700">Stock Bajo</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.lowStock}</p>
+                <p className="text-xs sm:text-sm font-medium text-orange-700">Stock Bajo</p>
+                <p className="text-lg sm:text-2xl font-bold text-orange-900">{stats.lowStock}</p>
               </div>
-              <div className="p-2 bg-orange-500/10 rounded-lg">
-                <TrendingDown className="h-5 w-5 text-orange-600" />
+              <div className="p-1 sm:p-2 bg-orange-500/10 rounded-lg">
+                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-700">Categorías</p>
-                <p className="text-2xl font-bold text-purple-900">{stats.categories}</p>
+                <p className="text-xs sm:text-sm font-medium text-purple-700">Categorías</p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-900">{stats.categories}</p>
               </div>
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <Tag className="h-5 w-5 text-purple-600" />
+              <div className="p-1 sm:p-2 bg-purple-500/10 rounded-lg">
+                <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-cyan-700">Precio Promedio</p>
-                <p className="text-2xl font-bold text-cyan-900">
+                <p className="text-xs sm:text-sm font-medium text-cyan-700">Precio Promedio</p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-bold text-cyan-900">
                   Bs {stats.avgPrice.toFixed(2)}
                 </p>
               </div>
-              <div className="p-2 bg-cyan-500/10 rounded-lg">
-                <DollarSign className="h-5 w-5 text-cyan-600" />
+              <div className="p-1 sm:p-2 bg-cyan-500/10 rounded-lg">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
               </div>
             </div>
           </CardContent>
@@ -445,7 +454,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -459,7 +468,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
             </div>
             
             <Select value={selectedCategory} onValueChange={value => setSelectedCategory(value)}>
-              <SelectTrigger className="w-48 bg-white/80 backdrop-blur-sm border-gray-200/50">
+              <SelectTrigger className="w-full sm:w-48 bg-white/80 backdrop-blur-sm border-gray-200/50">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -474,7 +483,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
             </Select>
             
             <Select value={selectedStatus} onValueChange={value => setSelectedStatus(value)}>
-              <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
+              <SelectTrigger className="w-full sm:w-40 bg-white/80 backdrop-blur-sm border-gray-200/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -500,17 +509,17 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
               <TableHeader>
                 <TableRow className="border-b border-gray-200 bg-gradient-to-r from-gray-50/80 to-white/80">
                   <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Producto</TableHead>
-                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Categoría</TableHead>
-                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Precio</TableHead>
-                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Stock</TableHead>
-                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700">Estado</TableHead>
+                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Categoría</TableHead>
+                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Precio</TableHead>
+                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Stock</TableHead>
+                  <TableHead className="h-14 px-6 text-left align-middle font-semibold text-gray-700 hidden lg:table-cell">Estado</TableHead>
                   <TableHead className="h-14 px-6 text-center align-middle font-semibold text-gray-700">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={2} className="text-center py-8 text-gray-500">
                       <div className="flex flex-col items-center gap-2">
                         <Package className="h-12 w-12 text-gray-400" />
                         <p>No se encontraron productos</p>
@@ -528,18 +537,28 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
                             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-semibold">
                               {product.name.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{product.name}</p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-gray-900 truncate">{product.name}</p>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => openInfoDialog(product)}
+                                  className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </div>
                               <p className="text-sm text-gray-600">ID: {product.id}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
                             {product.category}
                           </Badge>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-green-600" />
                             <span className="font-semibold text-green-700">
@@ -547,7 +566,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <Badge 
                             variant={stockStatus.color as any}
                             className="flex items-center gap-1"
@@ -556,7 +575,7 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
                             {product.stock_actual || 0} - {stockStatus.text}
                           </Badge>
                         </TableCell>
-                        <TableCell className="p-6 align-middle">
+                        <TableCell className="p-6 align-middle hidden lg:table-cell">
                           <Badge 
                             variant={product.available ? "success" : "destructive"}
                             className="flex items-center gap-1"
@@ -898,6 +917,113 @@ export function ProductManagement({ products, categories, currentUserRole, idRes
            </div>
          </DialogContent>
        </Dialog>
+
+      {/* Modal de Información del Producto */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-md bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-blue-200/50">
+          <DialogHeader className="text-center pb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Eye className="h-8 w-8 text-white" />
+            </div>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+              Información del Producto
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProductForInfo && (
+            <div className="space-y-6 pt-4">
+              {/* Información Principal */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                    {selectedProductForInfo.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">{selectedProductForInfo.name}</h3>
+                    <p className="text-sm text-gray-600">ID: {selectedProductForInfo.id}</p>
+                  </div>
+                </div>
+                
+                {/* Detalles del Producto */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-gray-700">Categoría</span>
+                    </div>
+                    <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
+                      {selectedProductForInfo.category}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-gray-700">Precio</span>
+                    </div>
+                    <span className="font-semibold text-green-700">
+                      {getPriceDisplay(selectedProductForInfo.price)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium text-gray-700">Stock</span>
+                    </div>
+                    <Badge 
+                      variant={getStockStatus(selectedProductForInfo.stock_actual || 0).color as any}
+                      className="flex items-center gap-1"
+                    >
+                      <Package className="h-3 w-3" />
+                      {selectedProductForInfo.stock_actual || 0} - {getStockStatus(selectedProductForInfo.stock_actual || 0).text}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">Estado</span>
+                    </div>
+                    <Badge 
+                      variant={selectedProductForInfo.available ? "success" : "destructive"}
+                      className="flex items-center gap-1"
+                    >
+                      {selectedProductForInfo.available ? <Activity className="h-3 w-3" /> : <Package className="h-3 w-3" />}
+                      {selectedProductForInfo.available ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Botones de Acción */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    openEditDialog(selectedProductForInfo);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsInfoDialogOpen(false);
+                    handleDeleteProduct(selectedProductForInfo.id);
+                  }}
+                  variant="destructive"
+                  className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de Confirmación de Eliminación */}
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>

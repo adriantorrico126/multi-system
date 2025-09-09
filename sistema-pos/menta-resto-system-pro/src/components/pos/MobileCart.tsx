@@ -87,12 +87,14 @@ export function MobileCart({
              <Button
                variant="default"
                size="sm"
-               className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl hover:shadow-2xl border-0 relative transform hover:scale-105 transition-all duration-200"
+               className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-xl hover:shadow-2xl border-0 relative transform hover:scale-105 active:scale-95 transition-all duration-200 touch-manipulation"
              >
                <ShoppingCart className="h-7 w-7" />
-               <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center animate-pulse">
-                 {cart.length}
-               </Badge>
+               {cart.length > 0 && (
+                 <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center animate-pulse">
+                   {cart.length}
+                 </Badge>
+               )}
              </Button>
            </div>
          </SheetTrigger>
@@ -236,18 +238,18 @@ export function MobileCart({
                           )}
                         </div>
                         
-                        {/* Controles */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Controles mejorados para táctil */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                            className="h-7 w-7 p-0 bg-white border-gray-300 shadow-sm"
+                            className="h-8 w-8 p-0 bg-white border-gray-300 shadow-sm touch-manipulation active:scale-95 transition-transform duration-150"
                           >
-                            <Minus className="h-3 w-3" />
+                            <Minus className="h-4 w-4" />
                           </Button>
                           
-                          <span className="w-8 text-center text-sm font-bold text-gray-700">
+                          <span className="w-8 text-center text-sm font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded">
                             {item.quantity}
                           </span>
                           
@@ -255,18 +257,18 @@ export function MobileCart({
                             variant="outline"
                             size="sm"
                             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="h-7 w-7 p-0 bg-white border-gray-300 shadow-sm"
+                            className="h-8 w-8 p-0 bg-white border-gray-300 shadow-sm touch-manipulation active:scale-95 transition-transform duration-150"
                           >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-4 w-4" />
                           </Button>
                           
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => onRemoveItem(item.id)}
-                            className="h-7 w-7 p-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-sm"
+                            className="h-8 w-8 p-0 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-sm touch-manipulation active:scale-95 transition-transform duration-150"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>

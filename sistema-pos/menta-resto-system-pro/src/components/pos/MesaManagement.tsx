@@ -34,7 +34,9 @@ import {
   Unlink,
   Eye,
   MoveRight,
-  Printer
+  Printer,
+  Menu,
+  List
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -220,6 +222,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
   const [meseros, setMeseros] = useState<any[]>([]);
   const [isLoadingMeseros, setIsLoadingMeseros] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMobileTabsMenu, setShowMobileTabsMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState('management');
   
   // Estados para el sistema de reservas
   const [showReservaModal, setShowReservaModal] = useState(false);
@@ -1133,52 +1138,117 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
       {/* Header Profesional */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 sm:py-0 sm:h-16">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Grid3X3 className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Gestión de Mesas</h1>
-                  <p className="text-sm text-gray-500">Control operativo y agrupación</p>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Mesas</h1>
+                  <p className="text-sm sm:text-base text-gray-500 hidden sm:block">Control operativo y agrupación</p>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
+              {/* Botón de menú móvil */}
               <Button
-                onClick={() => { refetchMesas(); }}
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
                 variant="outline"
                 size="sm"
-                className="flex items-center space-x-2"
+                className="lg:hidden flex items-center space-x-2"
               >
-                <RefreshCw className="h-4 w-4" />
-                <span>Actualizar</span>
+                <Menu className="h-4 w-4" />
+                <span>Menú</span>
               </Button>
-              
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+
+              {/* Botones de escritorio */}
+              <div className="hidden lg:flex items-center space-x-3">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  onClick={() => { refetchMesas(); }}
+                  variant="outline"
                   size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 px-3"
+                  className="flex items-center space-x-2"
                 >
-                  <Grid3X3 className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Actualizar</span>
                 </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 px-3"
-                >
-                  <Table className="h-4 w-4" />
-                </Button>
+                
+                <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="h-8 px-3"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-8 px-3"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Menú móvil desplegable */}
+      {showMobileMenu && (
+        <div className="lg:hidden bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="space-y-3">
+              {/* Botón de actualizar */}
+              <Button
+                onClick={() => { 
+                  refetchMesas(); 
+                  setShowMobileMenu(false); 
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full flex items-center justify-center space-x-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span>Actualizar Datos</span>
+              </Button>
+
+              {/* Selector de vista */}
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setViewMode('grid');
+                    setShowMobileMenu(false);
+                  }}
+                  className="flex-1 flex items-center justify-center space-x-2"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                  <span>Vista Grid</span>
+                </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setViewMode('list');
+                      setShowMobileMenu(false);
+                    }}
+                    className="flex-1 flex items-center justify-center space-x-2"
+                  >
+                    <List className="h-4 w-4" />
+                    <span>Vista Lista</span>
+                  </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mensaje si no hay mesas */}
@@ -1194,8 +1264,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
           </div>
         )}
 
-        <Tabs defaultValue="management" className="w-full">
-          <TabsList className={`grid w-full ${user?.rol === 'mesero' ? 'grid-cols-2' : 'grid-cols-3'} bg-white shadow-sm border border-gray-200 rounded-lg p-1`}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Pestañas para escritorio */}
+          <TabsList className={`hidden lg:grid w-full ${user?.rol === 'mesero' ? 'grid-cols-2' : 'grid-cols-3'} bg-white shadow-sm border border-gray-200 rounded-lg p-1`}>
             <TabsTrigger value="management" className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
               <Activity className="h-4 w-4" />
               Gestión Operativa
@@ -1212,73 +1283,135 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
             )}
           </TabsList>
 
+          {/* Menú móvil para pestañas */}
+          <div className="lg:hidden">
+            <Button
+              onClick={() => setShowMobileTabsMenu(!showMobileTabsMenu)}
+              variant="outline"
+              className="w-full flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                {activeTab === 'management' && <Activity className="h-4 w-4" />}
+                {activeTab === 'grupos' && <Users2 className="h-4 w-4" />}
+                {activeTab === 'configuration' && <Settings className="h-4 w-4" />}
+                <span>
+                  {activeTab === 'management' && 'Gestión Operativa'}
+                  {activeTab === 'grupos' && 'Grupos de Mesas'}
+                  {activeTab === 'configuration' && 'Configuración'}
+                </span>
+              </div>
+              <Menu className="h-4 w-4" />
+            </Button>
+
+            {/* Menú desplegable de pestañas */}
+            {showMobileTabsMenu && (
+              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                <Button
+                  onClick={() => {
+                    setActiveTab('management');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  variant={activeTab === 'management' ? 'default' : 'ghost'}
+                  className="w-full justify-start rounded-none"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Gestión Operativa
+                </Button>
+                <Button
+                  onClick={() => {
+                    setActiveTab('grupos');
+                    setShowMobileTabsMenu(false);
+                  }}
+                  variant={activeTab === 'grupos' ? 'default' : 'ghost'}
+                  className="w-full justify-start rounded-none"
+                >
+                  <Users2 className="h-4 w-4 mr-2" />
+                  Grupos de Mesas
+                </Button>
+                {user?.rol !== 'mesero' && (
+                  <Button
+                    onClick={() => {
+                      setActiveTab('configuration');
+                      setShowMobileTabsMenu(false);
+                    }}
+                    variant={activeTab === 'configuration' ? 'default' : 'ghost'}
+                    className="w-full justify-start rounded-none"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configuración
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
           <TabsContent value="management" className="space-y-6 mt-6">
             {/* Estadísticas Mejoradas */}
             {estadisticas && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-blue-800">Total Mesas</CardTitle>
-                    <Users className="h-4 w-4 text-blue-600" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-blue-800">Total Mesas</CardTitle>
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-900">{estadisticas.total_mesas}</div>
-                    <p className="text-xs text-blue-600 mt-1">Disponibles en sucursal</p>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-blue-900">{estadisticas.total_mesas}</div>
+                    <p className="text-xs text-blue-600 mt-1 hidden sm:block">Disponibles en sucursal</p>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-green-800">Libres</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-green-800">Libres</CardTitle>
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-900">{estadisticas.mesas_libres}</div>
-                    <p className="text-xs text-green-600 mt-1">Listas para usar</p>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-green-900">{estadisticas.mesas_libres}</div>
+                    <p className="text-xs text-green-600 mt-1 hidden sm:block">Listas para usar</p>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-blue-800">En Uso</CardTitle>
-                    <Coffee className="h-4 w-4 text-blue-600" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-blue-800">En Uso</CardTitle>
+                    <Coffee className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-900">{estadisticas.mesas_en_uso}</div>
-                    <p className="text-xs text-blue-600 mt-1">Activas actualmente</p>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-blue-900">{estadisticas.mesas_en_uso}</div>
+                    <p className="text-xs text-blue-600 mt-1 hidden sm:block">Activas actualmente</p>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-purple-800">Pagadas</CardTitle>
-                    <CreditCard className="h-4 w-4 text-purple-600" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-purple-800">Pagadas</CardTitle>
+                    <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-purple-900">{estadisticas.mesas_pagadas || 0}</div>
-                    <p className="text-xs text-purple-600 mt-1">Completadas hoy</p>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-purple-900">{estadisticas.mesas_pagadas || 0}</div>
+                    <p className="text-xs text-purple-600 mt-1 hidden sm:block">Completadas hoy</p>
                   </CardContent>
                 </Card>
                 
                 <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-orange-800">Total Acumulado</CardTitle>
-                    <DollarSign className="h-4 w-4 text-orange-600" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-orange-800">Total Acumulado</CardTitle>
+                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-orange-900">${(Number(estadisticas.total_acumulado_general) || 0).toFixed(2)}</div>
-                    <p className="text-xs text-orange-600 mt-1">Ventas del día</p>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="text-lg sm:text-2xl font-bold text-orange-900">${(Number(estadisticas.total_acumulado_general) || 0).toFixed(2)}</div>
+                    <p className="text-xs text-orange-600 mt-1 hidden sm:block">Ventas del día</p>
                   </CardContent>
                 </Card>
               </div>
             )}
 
             {/* Panel de Acciones */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <div className="flex items-center space-x-2">
-                    <Users2 className="h-5 w-5 text-blue-600" />
+                    <Users2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                     <span className="text-sm font-medium text-gray-700">
                       {selectedMesas.length} mesa{selectedMesas.length !== 1 ? 's' : ''} seleccionada{selectedMesas.length !== 1 ? 's' : ''}
                     </span>
@@ -1286,21 +1419,22 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                   
                   {selectedMesas.length > 0 && (
                     <div className="flex items-center space-x-2">
-                      <Target className="h-4 w-4 text-green-600" />
+                      <Target className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                       <span className="text-xs text-green-600 font-medium">Listo para agrupar</span>
                     </div>
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowGrupos(!showGrupos)}
-                    className="flex items-center space-x-2"
+                    className="flex items-center justify-center space-x-2 w-full sm:w-auto"
                   >
                     <TrendingUp className="h-4 w-4" />
-                    <span>{showGrupos ? 'Ocultar' : 'Ver'} Grupos</span>
+                    <span className="hidden sm:inline">{showGrupos ? 'Ocultar' : 'Ver'} Grupos</span>
+                    <span className="sm:hidden">Grupos</span>
                   </Button>
                   
                   <Button
@@ -1308,10 +1442,11 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     size="sm"
                     disabled={selectedMesas.length < 2}
                     onClick={() => setShowMeseroModal(true)}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                    className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                   >
                     <Plus className="h-4 w-4" />
-                    <span>Unir Mesas</span>
+                    <span className="hidden sm:inline">Unir Mesas</span>
+                    <span className="sm:hidden">Unir</span>
                   </Button>
 
                   <Button
@@ -1319,10 +1454,11 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                     size="sm"
                     onClick={() => limpiarEstadosMesasMutation.mutate()}
                     disabled={limpiarEstadosMesasMutation.isPending}
-                    className="flex items-center space-x-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+                    className="flex items-center justify-center space-x-2 text-orange-600 border-orange-200 hover:bg-orange-50 w-full sm:w-auto"
                   >
                     <RefreshCw className={`h-4 w-4 ${limpiarEstadosMesasMutation.isPending ? 'animate-spin' : ''}`} />
-                    <span>Limpiar Estados</span>
+                    <span className="hidden sm:inline">Limpiar Estados</span>
+                    <span className="sm:hidden">Limpiar</span>
                   </Button>
                 </div>
               </div>
@@ -1330,7 +1466,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
 
             {/* Grid de Mesas con selección */}
             {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                 {mesas.map((mesa) => (
                   <Card 
                     key={mesa.id_mesa} 
@@ -1358,14 +1494,14 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                       </div>
                     )}
 
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 p-3 sm:p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">{mesa.numero}</span>
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-xs sm:text-sm">{mesa.numero}</span>
                           </div>
                           <div>
-                            <CardTitle className="text-lg font-bold text-gray-900">
+                            <CardTitle className="text-sm sm:text-lg font-bold text-gray-900">
                               Mesa {mesa.numero}
                             </CardTitle>
                             <p className="text-xs text-gray-500">ID: {mesa.id_mesa}</p>
@@ -1378,9 +1514,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                       </div>
                     </CardHeader>
 
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6 pt-0">
                       {/* Información de capacidad */}
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-2">
                           <Users className="h-4 w-4 text-gray-600" />
                           <span className="text-sm font-medium text-gray-700">Capacidad</span>
@@ -1431,13 +1567,15 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                             >
                               {selectedMesas.includes(mesa.id_mesa) ? (
                                 <>
-                                  <X className="h-4 w-4 mr-2" />
-                                  Quitar de Selección
+                                  <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                  <span className="hidden sm:inline">Quitar de Selección</span>
+                                  <span className="sm:hidden">Quitar</span>
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  Seleccionar para Unir
+                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                  <span className="hidden sm:inline">Seleccionar para Unir</span>
+                                  <span className="sm:hidden">Seleccionar</span>
                                 </>
                               )}
                             </Button>
@@ -1449,8 +1587,9 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               className="w-full bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                               size="sm"
                             >
-                              <Calendar className="h-4 w-4 mr-2" />
-                              Reservas
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Reservas</span>
+                              <span className="sm:hidden">Reservar</span>
                             </Button>
                           </div>
                         )}
@@ -1475,7 +1614,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                             <Button 
                               onClick={() => handleGenerarPrefactura(mesa)}
                               variant="outline"
-                              className="w-full"
+                              className="w-full transition-transform duration-150"
                               size="sm"
                             >
                               <FileText className="h-4 w-4 mr-2" />
@@ -1485,7 +1624,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               onClick={() => handleImprimirComandaRapida(mesa)}
                               size="sm"
                               variant="outline"
-                              className="border-blue-300 text-blue-800 hover:bg-blue-100 font-medium"
+                              className="border-blue-300 text-blue-800 hover:bg-blue-100 font-medium transition-transform duration-150"
                             >
                               <Printer className="h-3 w-3 mr-1" />
                               Imprimir
@@ -1493,7 +1632,7 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                             <Button 
                               onClick={() => handleMarcarComoPagado(mesa)}
                               variant="default"
-                              className="w-full bg-green-600 hover:bg-green-700"
+                              className="w-full bg-green-600 hover:bg-green-700 transition-transform duration-150"
                               size="sm"
                               disabled={marcarComoPagadoMutation.isPending}
                             >
@@ -1586,16 +1725,16 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                         <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Mesa
                         </TableHead>
-                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                           Estado
                         </TableHead>
-                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                           Capacidad
                         </TableHead>
-                        <TableHead className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <TableHead className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                           Total Acumulado
                         </TableHead>
-                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                           Acciones
                         </TableHead>
                       </TableRow>
@@ -1608,19 +1747,38 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
                                 <span className="text-white font-bold text-sm">{mesa.numero}</span>
                               </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">Mesa {mesa.numero}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900">Mesa {mesa.numero}</div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedMesaForDetalles(mesa);
+                                      setShowDetallesModal(true);
+                                    }}
+                                    className="lg:hidden p-1 h-6 w-6 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </div>
                                 <div className="text-sm text-gray-500">ID: {mesa.id_mesa}</div>
+                                <div className="lg:hidden mt-1">
+                                  <Badge className={`${getEstadoColor(mesa.estado)} text-xs font-medium`}>
+                                    {getEstadoIcon(mesa.estado)}
+                                    <span className="ml-1 capitalize">{mesa.estado.replace('_', ' ')}</span>
+                                  </Badge>
+                                </div>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                             <Badge className={`${getEstadoColor(mesa.estado)} text-xs font-medium`}>
                               {getEstadoIcon(mesa.estado)}
                               <span className="ml-1 capitalize">{mesa.estado.replace('_', ' ')}</span>
                             </Badge>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                             <div className="flex items-center space-x-2">
                               <Users className="h-4 w-4 text-gray-400" />
                               <span className="text-sm font-medium text-gray-900">
@@ -1628,12 +1786,12 @@ export function MesaManagement({ sucursalId, idRestaurante }: MesaManagementProp
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap text-right">
+                          <TableCell className="px-6 py-4 whitespace-nowrap text-right hidden lg:table-cell">
                             <span className="text-sm font-bold text-green-600">
                               ${(Number(mesa.total_acumulado) || 0).toFixed(2)}
                             </span>
                           </TableCell>
-                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                          <TableCell className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                             <div className="flex items-center space-x-2">
                               {mesa.estado === 'libre' && (
                                 <Button

@@ -53,46 +53,49 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium text-sm leading-tight flex-1 mr-2">{product.name}</h3>
-          <Badge variant="success" className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-lg text-xs sm:text-sm flex-shrink-0">
-            <span translate="no">Bs</span> {product.price}
-          </Badge>
-        </div>
-        
-        <div className="flex justify-between items-center mt-3 sm:mt-4">
-          <span className="text-xs text-muted-foreground">{product.category}</span>
+    <Card className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer group bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-sm touch-manipulation h-full">
+      <CardContent className="p-3 h-full flex flex-col">
+        {/* Información del producto */}
+        <div className="flex-1 flex flex-col justify-between">
+          <div>
+            {/* Badge de stock */}
+            <Badge 
+              variant={product.stock_actual === 0 ? "destructive" : product.stock_actual <= 5 ? "destructive" : "default"} 
+              className={`mb-2 text-xs px-2 py-1 ${product.stock_actual > 5 ? 'bg-blue-500 text-white border-blue-500' : ''}`}
+            >
+              Stock: {product.stock_actual}
+            </Badge>
+            
+            <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-2 leading-tight">
+              {product.name}
+            </h3>
+            <p className="text-lg font-bold text-green-600 mb-2">
+              <span translate="no">Bs</span> {product.price}
+            </p>
+            <span className="text-xs text-gray-500">{product.category}</span>
+          </div>
           
           {/* Botones adaptados para móvil */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-2 mt-3">
             {/* Botón principal: Agregar al carrito directamente */}
             <Button
               size="sm"
               onClick={handleQuickAddToCart}
-              className={`transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg ${
-                mobileInfo.isMobile 
-                  ? 'opacity-100 w-8 h-8 p-0 rounded-full' 
-                  : 'opacity-0 group-hover:opacity-100'
-              }`}
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg min-h-[40px] text-sm font-medium"
             >
-              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Plus className="h-4 w-4 mr-1" />
+              Agregar
             </Button>
 
-            {/* Botón secundario: Modal para notas y modificadores - disponible en móvil y desktop */}
+            {/* Botón secundario: Modal para notas y modificadores */}
             <AlertDialog open={isDialogOpen} onOpenChange={handleOpenDialog}>
               <AlertDialogTrigger asChild>
                 <Button
                   size="sm"
                   variant="outline"
-                  className={`transition-all duration-200 border-blue-300 text-blue-600 hover:bg-blue-50 ${
-                    mobileInfo.isMobile 
-                      ? 'opacity-100 w-8 h-8 p-0 rounded-full' 
-                      : 'opacity-0 group-hover:opacity-100'
-                  }`}
+                  className="border-blue-300 text-blue-600 hover:bg-blue-50 min-h-[40px] w-10 p-0"
                 >
-                  <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <Edit3 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-white border border-gray-200 rounded-xl shadow-2xl max-w-md">
