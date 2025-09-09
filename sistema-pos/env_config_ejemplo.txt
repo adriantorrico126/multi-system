@@ -1,0 +1,38 @@
+# Configuración para crear restaurantes en producción
+# Copia este archivo como .env y ajusta los valores según tu configuración
+
+# Configuración de la base de datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=restaurant_pos
+DB_USER=postgres
+DB_PASSWORD=tu_password_aqui
+
+# Configuración del entorno
+NODE_ENV=production
+
+# Ejemplo de configuración para diferentes entornos:
+
+# DESARROLLO LOCAL:
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_NAME=restaurant_pos_dev
+# DB_USER=postgres
+# DB_PASSWORD=password
+
+# PRODUCCIÓN:
+# DB_HOST=tu-servidor-produccion.com
+# DB_PORT=5432
+# DB_NAME=restaurant_pos_prod
+# DB_USER=usuario_produccion
+# DB_PASSWORD=password_seguro_produccion
+# NODE_ENV=production
+
+# STAGING:
+# DB_HOST=servidor-staging.com
+# DB_PORT=5432
+# DB_NAME=restaurant_pos_staging
+# DB_USER=usuario_staging
+# DB_PASSWORD=password_staging
+# NODE_ENV=staging
+

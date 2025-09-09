@@ -83,6 +83,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useConnectionError } from '@/hooks/useConnectionError';
+import ConnectionError from '@/components/ConnectionError';
 
 // Tipo local para sucursal para evitar conflictos con Header
 interface Sucursal {
@@ -114,6 +116,9 @@ export function POSSystem() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Hook para manejo de errores de conexión
+  const { connectionError, clearConnectionError, retryConnection } = useConnectionError();
   
   // Usar useTheme directamente sin try-catch
   const { theme, toggleTheme } = useTheme();
@@ -468,7 +473,7 @@ export function POSSystem() {
   const canSeeSales = ['admin', 'cajero', 'cocinero', 'super_admin'].includes(user.rol as any);
 
   // --- Estado Local del Componente ---
-  const { cart, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, totalDescuentos, total, appliedPromociones } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart, clearCart, clearCartAfterSale, subtotal, totalDescuentos, total, appliedPromociones } = useCart();
   const [activeTab, setActiveTab] = useState('pos');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -802,6 +807,9 @@ export function POSSystem() {
         console.error('Frontend: Error refreshing inventory or orders:', inventoryError);
         // Opcional: mostrar un toast si el refresh falla
       }
+
+      // 🛡️ Limpiar carrito solo después de venta exitosa
+      clearCartAfterSale();
 
       toast({
         title: '✅ Venta Registrada',
@@ -1166,6 +1174,15 @@ export function POSSystem() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
+      {/* Componente de Error de Conexión */}
+      {connectionError && (
+        <ConnectionError 
+          error={connectionError}
+          onRetry={retryConnection}
+          onDismiss={clearConnectionError}
+        />
+      )}
+      
       {showHeader && !branchesLoading ? (
         <Header
           currentUser={{

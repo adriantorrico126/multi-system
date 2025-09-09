@@ -1,11 +1,47 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Product, CartItem } from '@/types/restaurant';
 import { useQuery } from '@tanstack/react-query';
 import { getPromocionesActivas } from '@/services/api';
 
 export function useCart() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [appliedPromociones, setAppliedPromociones] = useState<any[]>([]);
+  // Cargar carrito desde localStorage al inicializar
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = localStorage.getItem('pos-cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error);
+      return [];
+    }
+  });
+  
+  const [appliedPromociones, setAppliedPromociones] = useState<any[]>(() => {
+    try {
+      const savedPromociones = localStorage.getItem('pos-applied-promociones');
+      return savedPromociones ? JSON.parse(savedPromociones) : [];
+    } catch (error) {
+      console.error('Error loading promociones from localStorage:', error);
+      return [];
+    }
+  });
+
+  // Guardar carrito en localStorage cada vez que cambie
+  useEffect(() => {
+    try {
+      localStorage.setItem('pos-cart', JSON.stringify(cart));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  }, [cart]);
+
+  // Guardar promociones en localStorage cada vez que cambien
+  useEffect(() => {
+    try {
+      localStorage.setItem('pos-applied-promociones', JSON.stringify(appliedPromociones));
+    } catch (error) {
+      console.error('Error saving promociones to localStorage:', error);
+    }
+  }, [appliedPromociones]);
 
   const { data: promociones = [] } = useQuery({
     queryKey: ['promociones-activas'],
@@ -101,7 +137,20 @@ export function useCart() {
   const clearCart = useCallback(() => {
     setCart([]);
     setAppliedPromociones([]);
+    // Limpiar también del localStorage
+    try {
+      localStorage.removeItem('pos-cart');
+      localStorage.removeItem('pos-applied-promociones');
+    } catch (error) {
+      console.error('Error clearing cart from localStorage:', error);
+    }
   }, []);
+
+  // 🛡️ Nueva función para limpiar carrito solo después de venta exitosa
+  const clearCartAfterSale = useCallback(() => {
+    console.log('🛒 Limpiando carrito después de venta exitosa');
+    clearCart();
+  }, [clearCart]);
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + (item.originalPrice || item.price) * item.quantity, 0);
@@ -124,6 +173,7 @@ export function useCart() {
     updateQuantity,
     removeFromCart,
     clearCart,
+    clearCartAfterSale, // 🛡️ Nueva función exportada
     subtotal,
     totalDescuentos,
     total,

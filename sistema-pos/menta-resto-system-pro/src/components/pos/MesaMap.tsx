@@ -824,7 +824,10 @@ export default function MesaMap() {
     setSelectedMesa(mesa);
     setDrawerOpen(true);
     setIsTakingOrder(false); // Reset to info view when a new mesa is selected
-    setCart([]); // Clear cart
+    
+    // 🛡️ NO limpiar el carrito automáticamente al cambiar de mesa
+    // setCart([]); // ❌ REMOVIDO: Esto causaba que el carrito desapareciera
+    
     setSearchTerm(''); // Clear product search
     setSelectedCategory('all'); // Reset category filter
   }, []);
@@ -842,6 +845,12 @@ export default function MesaMap() {
       }
       return [{ ...prod, quantity: 1 }, ...prev]; // Add new items to the top of the cart
     });
+  }, []);
+
+  // 🛡️ Nueva función para limpiar carrito manualmente (solo cuando sea necesario)
+  const handleClearCart = useCallback(() => {
+    console.log('🛒 Limpiando carrito manualmente');
+    setCart([]);
   }, []);
 
   const handleRemoveFromCart = useCallback((prod: Product) => {

@@ -3,7 +3,7 @@ import axios from 'axios';
 // Crear una instancia global de Axios
 const api = axios.create();
 
-// Interceptor global para manejar expiración de JWT
+// Interceptor global para manejar expiración de JWT y errores de conexión
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -11,6 +11,29 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const message = error?.response?.data?.message?.toLowerCase?.() || '';
     const code = error?.response?.data?.code;
+    const errorCode = error?.code;
+    const errorMessage = error?.message || '';
+
+    // Detectar errores de conexión SSL/Red
+    const isNetworkError = errorCode === 'ERR_NETWORK' || 
+                          errorCode === 'ERR_CERT_AUTHORITY_INVALID' ||
+                          errorMessage.includes('Network Error') ||
+                          errorMessage.includes('ERR_CERT_AUTHORITY_INVALID');
+
+    if (isNetworkError) {
+      console.log('🔍 [API Interceptor] Error de conexión detectado:', errorCode);
+      
+      // Crear un error más específico para errores de conexión
+      const connectionError = new Error(errorMessage);
+      connectionError.name = 'ConnectionError';
+      
+      // Añadir información adicional sobre el tipo de error
+      if (errorCode === 'ERR_CERT_AUTHORITY_INVALID') {
+        connectionError.name = 'SSLError';
+      }
+      
+      return Promise.reject(connectionError);
+    }
 
     // Manejar tokens expirados o inválidos
     const isAuthFailure = status === 401 && (
@@ -1343,6 +1366,44 @@ export const asociarModificadoresADetalle = async (id_detalle_venta: number, id_
 };
 
 export { api };
+// Función para manejar errores de conexión en componentes React
+export const handleConnectionError = (error: any, retryCallback?: () => void) => {
+  console.log('🔍 [Connection Handler] Manejando error de conexión:', error);
+  
+  if (error.name === 'NetworkError' || error.code === 'ERR_NETWORK' || error.code === 'ERR_CERT_AUTHORITY_INVALID') {
+    // Mostrar mensaje de error de conexión
+    const errorMessage = 'Error de conexión con el servidor. Verificando conectividad...';
+    
+    // Si hay un callback de reintento, ejecutarlo después de 3 segundos
+    if (retryCallback) {
+      setTimeout(() => {
+        console.log('🔍 [Connection Handler] Reintentando operación...');
+        retryCallback();
+      }, 3000);
+    }
+    
+    return errorMessage;
+  }
+  
+  return error.message || 'Error desconocido';
+};
+
+// Función para verificar conectividad
+export const checkConnectivity = async () => {
+  try {
+    const response = await fetch('https://api.forkast.vip/api/v1/test', {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-cache'
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.log('🔍 [Connectivity Check] Error:', error);
+    return false;
+  }
+};
+
 
 export const getPedidosMeseroPendientes = async (id_sucursal: number, id_restaurante: number) => {
   const response = await api.get(
