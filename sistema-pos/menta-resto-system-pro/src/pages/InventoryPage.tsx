@@ -271,7 +271,7 @@ const InventoryPage: React.FC = () => {
       {!loading && (
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
           {/* Vista desktop: TabsList normal */}
-          <TabsList className="hidden lg:grid w-full grid-cols-4">
+          <TabsList className="hidden md:grid w-full grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -291,7 +291,7 @@ const InventoryPage: React.FC = () => {
           </TabsList>
 
           {/* Vista móvil: Botón con menú desplegable */}
-          <div className="lg:hidden mb-4">
+          <div className="md:hidden mb-4">
             <div className="flex items-center justify-between">
               <Button
                 variant="outline"
