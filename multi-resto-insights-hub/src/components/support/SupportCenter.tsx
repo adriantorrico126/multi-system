@@ -20,7 +20,8 @@ import {
   Mail,
   FileText,
   Star,
-  Send
+  Send,
+  RefreshCw
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -198,179 +199,326 @@ export const SupportCenter: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {loading && <div className="text-center text-blue-600">Cargando tickets de soporte...</div>}
-      {error && <div className="text-center text-red-600">{error}</div>}
-      {/* Estadísticas del Centro de Soporte */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Tickets Abiertos</p>
-                <p className="text-2xl font-bold text-blue-600">{openTickets}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      {/* Header del Sistema de Soporte */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              Centro de Soporte Técnico
+            </h1>
+            <p className="text-slate-300 text-lg">
+              Sistema avanzado de gestión de tickets y soporte técnico
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-slate-400">Última actualización</p>
+              <p className="text-white font-semibold">{new Date().toLocaleTimeString()}</p>
+            </div>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Estados de Carga y Error */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-blue-400 text-lg">Cargando tickets de soporte...</p>
+          </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6 text-red-400" />
+            <p className="text-red-300">{error}</p>
+          </div>
+        </div>
+      )}
+      {/* KPIs del Sistema de Soporte */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* KPI Tickets Abiertos */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-900/20 to-blue-800/10 border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors duration-300">
+                <MessageSquare className="h-8 w-8 text-blue-400" />
               </div>
-              <MessageSquare className="h-8 w-8 text-blue-500" />
+              <div className="text-right">
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Tickets Abiertos</p>
+              <p className="text-3xl font-bold text-white">{openTickets}</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full" style={{width: `${Math.min((openTickets / Math.max(safeTickets.length, 1)) * 100, 100)}%`}}></div>
+                </div>
+                <span className="text-xs text-slate-400">{Math.round((openTickets / Math.max(safeTickets.length, 1)) * 100)}%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">En Proceso</p>
-                <p className="text-2xl font-bold text-amber-600">{inProgressTickets}</p>
+
+        {/* KPI En Proceso */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-amber-900/20 to-amber-800/10 border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-amber-500/20 rounded-xl group-hover:bg-amber-500/30 transition-colors duration-300">
+                <Clock className="h-8 w-8 text-amber-400" />
               </div>
-              <Clock className="h-8 w-8 text-amber-500" />
+              <div className="text-right">
+                <div className="w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">En Proceso</p>
+              <p className="text-3xl font-bold text-white">{inProgressTickets}</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-amber-500 h-2 rounded-full" style={{width: `${Math.min((inProgressTickets / Math.max(safeTickets.length, 1)) * 100, 100)}%`}}></div>
+                </div>
+                <span className="text-xs text-slate-400">{Math.round((inProgressTickets / Math.max(safeTickets.length, 1)) * 100)}%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Urgentes</p>
-                <p className="text-2xl font-bold text-red-600">{urgentTickets}</p>
+
+        {/* KPI Urgentes */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-red-500/20 rounded-xl group-hover:bg-red-500/30 transition-colors duration-300">
+                <AlertTriangle className="h-8 w-8 text-red-400" />
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
+              <div className="text-right">
+                <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Urgentes</p>
+              <p className="text-3xl font-bold text-white">{urgentTickets}</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-red-500 h-2 rounded-full" style={{width: `${Math.min((urgentTickets / Math.max(safeTickets.length, 1)) * 100, 100)}%`}}></div>
+                </div>
+                <span className="text-xs text-slate-400">{Math.round((urgentTickets / Math.max(safeTickets.length, 1)) * 100)}%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600">Sin Asignar</p>
-                <p className="text-2xl font-bold text-gray-600">{unassignedTickets}</p>
+
+        {/* KPI Sin Asignar */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-slate-900/20 to-slate-800/10 border-slate-500/30 hover:border-slate-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-slate-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-slate-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-slate-500/20 rounded-xl group-hover:bg-slate-500/30 transition-colors duration-300">
+                <User className="h-8 w-8 text-slate-400" />
               </div>
-              <User className="h-8 w-8 text-gray-500" />
+              <div className="text-right">
+                <div className="w-3 h-3 bg-slate-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Sin Asignar</p>
+              <p className="text-3xl font-bold text-white">{unassignedTickets}</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-slate-500 h-2 rounded-full" style={{width: `${Math.min((unassignedTickets / Math.max(safeTickets.length, 1)) * 100, 100)}%`}}></div>
+                </div>
+                <span className="text-xs text-slate-400">{Math.round((unassignedTickets / Math.max(safeTickets.length, 1)) * 100)}%</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Centro de Soporte */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Centro de Soporte Técnico</CardTitle>
-          <CardDescription>Gestiona todos los tickets de soporte de los restaurantes</CardDescription>
+      {/* Centro de Soporte Técnico */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/50 backdrop-blur-md">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16"></div>
+        <CardHeader className="relative z-10 pb-4">
+          <CardTitle className="text-2xl font-bold text-white flex items-center space-x-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Headphones className="h-6 w-6 text-blue-400" />
+            </div>
+            <span>Centro de Soporte Técnico</span>
+          </CardTitle>
+          <CardDescription className="text-slate-300 text-lg mt-2">
+            Gestiona todos los tickets de soporte de los restaurantes
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por restaurante o asunto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        <CardContent className="relative z-10">
+          {/* Filtros y Búsqueda Avanzada */}
+          <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700/50">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                  <Input
+                    placeholder="🔍 Búsqueda inteligente: restaurante o asunto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 pr-4 py-3 bg-slate-700/50 border-slate-600/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-white placeholder-slate-400 rounded-xl transition-all duration-300"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="w-48 bg-slate-700/50 border-slate-600/50 focus:border-blue-500 text-white rounded-xl">
+                    <SelectValue placeholder="⚡ Prioridad" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 rounded-xl">
+                    <SelectItem value="all" className="text-white hover:bg-slate-700">🌐 Todas las prioridades</SelectItem>
+                    <SelectItem value="urgent" className="text-white hover:bg-slate-700">🔴 Urgente</SelectItem>
+                    <SelectItem value="high" className="text-white hover:bg-slate-700">🟠 Alta</SelectItem>
+                    <SelectItem value="medium" className="text-white hover:bg-slate-700">🟡 Media</SelectItem>
+                    <SelectItem value="low" className="text-white hover:bg-slate-700">🟢 Baja</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-48 bg-slate-700/50 border-slate-600/50 focus:border-blue-500 text-white rounded-xl">
+                    <SelectValue placeholder="📊 Estado" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 rounded-xl">
+                    <SelectItem value="all" className="text-white hover:bg-slate-700">🌐 Todos los estados</SelectItem>
+                    <SelectItem value="open" className="text-white hover:bg-slate-700">🔵 Abierto</SelectItem>
+                    <SelectItem value="in_progress" className="text-white hover:bg-slate-700">🟡 En Proceso</SelectItem>
+                    <SelectItem value="resolved" className="text-white hover:bg-slate-700">🟢 Resuelto</SelectItem>
+                    <SelectItem value="closed" className="text-white hover:bg-slate-700">⚫ Cerrado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="bg-slate-700/50 px-3 py-2 rounded-lg border border-slate-600/50">
+                  <span className="text-sm text-slate-300">
+                    {filteredTickets.length} de {safeTickets.length} tickets
+                  </span>
+                </div>
               </div>
             </div>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Prioridad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las prioridades</SelectItem>
-                <SelectItem value="urgent">Urgente</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="low">Baja</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="open">Abierto</SelectItem>
-                <SelectItem value="in_progress">En Proceso</SelectItem>
-                <SelectItem value="resolved">Resuelto</SelectItem>
-                <SelectItem value="closed">Cerrado</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
-          {/* Tabla de Tickets */}
-          <div className="border rounded-lg">
+          {/* Tabla Tecnológica de Tickets */}
+          <div className="relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5"></div>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Ticket</TableHead>
-                  <TableHead>Restaurante</TableHead>
-                  <TableHead>Asunto</TableHead>
-                  <TableHead>Prioridad</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Asignado a</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Acciones</TableHead>
+                <TableRow className="border-slate-700/50 hover:bg-slate-700/20">
+                  <TableHead className="text-slate-300 font-semibold">🎫 Ticket</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">🏢 Restaurante</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">📋 Asunto</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">⚡ Prioridad</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">📊 Estado</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">👤 Asignado a</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">📅 Fecha</TableHead>
+                  <TableHead className="text-slate-300 font-semibold">⚙️ Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getCategoryIcon(ticket.category)}
-                        <span className="font-medium">{ticket.id}</span>
+                  <TableRow 
+                    key={ticket.id}
+                    className="group border-slate-700/50 hover:bg-slate-700/20 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10"
+                  >
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
+                          {getCategoryIcon(ticket.category)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white group-hover:text-blue-300 transition-colors">#{ticket.id}</p>
+                          <p className="text-sm text-slate-400">ID: {ticket.id}</p>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{ticket.restaurantName}</p>
-                        <p className="text-sm text-gray-500">{ticket.contact}</p>
+                    <TableCell className="py-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-white group-hover:text-blue-300 transition-colors">{ticket.restaurantName}</p>
+                        <div className="flex items-center space-x-2">
+                          <User className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-slate-400">{ticket.contact}</span>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{ticket.subject}</p>
-                        <p className="text-sm text-gray-500 truncate max-w-xs">
+                    <TableCell className="py-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-white group-hover:text-blue-300 transition-colors">{ticket.subject}</p>
+                        <p className="text-sm text-slate-400 truncate max-w-xs">
                           {ticket.description}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {getPriorityBadge(ticket.priority)}
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        {getPriorityBadge(ticket.priority)}
+                        <div className={`w-2 h-2 rounded-full ${
+                          ticket.priority === 'urgent' ? 'bg-red-400 animate-pulse' : 
+                          ticket.priority === 'high' ? 'bg-orange-400' : 
+                          ticket.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                        }`}></div>
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge(ticket.status)}
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        {getStatusBadge(ticket.status)}
+                        <div className={`w-2 h-2 rounded-full ${
+                          ticket.status === 'open' ? 'bg-blue-400 animate-pulse' : 
+                          ticket.status === 'in_progress' ? 'bg-amber-400' : 
+                          ticket.status === 'resolved' ? 'bg-green-400' : 'bg-gray-400'
+                        }`}></div>
+                      </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       {ticket.assignedTo ? (
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{ticket.assignedTo}</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
+                            <User className="h-4 w-4 text-slate-300" />
+                          </div>
+                          <span className="text-sm text-slate-300">{ticket.assignedTo}</span>
                         </div>
                       ) : (
-                        <Badge variant="outline">Sin asignar</Badge>
+                        <Badge variant="outline" className="bg-slate-700/50 text-slate-300 border-slate-600/50">Sin asignar</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="text-sm">{ticket.createdAt}</p>
+                    <TableCell className="py-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-slate-300">{ticket.createdAt}</span>
+                        </div>
                         {ticket.updatedAt !== ticket.createdAt && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-slate-400">
                             Actualizado: {ticket.updatedAt}
                           </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="bg-slate-700/50 hover:bg-slate-600 text-white border-slate-600/50">
                             Acciones
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setSelectedTicket(ticket)}>
+                        <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                          <DropdownMenuItem onClick={() => setSelectedTicket(ticket)} className="text-white hover:bg-slate-700">
                             <FileText className="mr-2 h-4 w-4" />
                             Ver Detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setSelectedTicket(ticket); setIsResponseDialogOpen(true); }}>
+                          <DropdownMenuItem onClick={() => { setSelectedTicket(ticket); setIsResponseDialogOpen(true); }} className="text-white hover:bg-slate-700">
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Responder
                           </DropdownMenuItem>
@@ -385,7 +533,7 @@ export const SupportCenter: React.FC = () => {
                               });
                               setSupportTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: t.status === 'open' ? 'in_progress' : 'open' } : t));
                             } catch (e) { console.error(e); }
-                          }}>
+                          }} className="text-white hover:bg-slate-700">
                             <Clock className="mr-2 h-4 w-4" />
                             Marcar En Proceso
                           </DropdownMenuItem>
@@ -400,7 +548,7 @@ export const SupportCenter: React.FC = () => {
                               });
                               setSupportTickets(prev => prev.map(t => t.id === ticket.id ? { ...t, status: 'resolved' } : t));
                             } catch (e) { console.error(e); }
-                          }}>
+                          }} className="text-white hover:bg-slate-700">
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Marcar Resuelto
                           </DropdownMenuItem>
@@ -415,42 +563,105 @@ export const SupportCenter: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog para Responder Ticket */}
+      {/* Dialog Tecnológico para Responder Ticket */}
       <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Responder Ticket</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700/50">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="text-2xl font-bold text-white flex items-center space-x-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <MessageSquare className="h-6 w-6 text-blue-400" />
+              </div>
+              <span>Centro de Respuesta - Ticket #{selectedTicket?.id}</span>
+            </DialogTitle>
+            <DialogDescription className="text-slate-300 text-lg mt-2">
               {selectedTicket && `Respondiendo a: ${selectedTicket.subject}`}
             </DialogDescription>
           </DialogHeader>
           
           {selectedTicket && (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium">Restaurante: {selectedTicket.restaurantName}</p>
-                <p className="text-sm">Contacto: {selectedTicket.contact}</p>
-                <p className="text-sm">Email: {selectedTicket.email}</p>
+            <div className="space-y-6">
+              {/* Información del Ticket */}
+              <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-500/30 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <FileText className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Información del Ticket</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Restaurante</p>
+                    <p className="text-white font-medium">{selectedTicket.restaurantName}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Contacto</p>
+                    <p className="text-white font-medium">{selectedTicket.contact}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Prioridad</p>
+                    <div className="flex items-center space-x-2">
+                      {getPriorityBadge(selectedTicket.priority)}
+                      <div className={`w-2 h-2 rounded-full ${
+                        selectedTicket.priority === 'urgent' ? 'bg-red-400 animate-pulse' : 
+                        selectedTicket.priority === 'high' ? 'bg-orange-400' : 
+                        selectedTicket.priority === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                      }`}></div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-400">Estado</p>
+                    <div className="flex items-center space-x-2">
+                      {getStatusBadge(selectedTicket.status)}
+                      <div className={`w-2 h-2 rounded-full ${
+                        selectedTicket.status === 'open' ? 'bg-blue-400 animate-pulse' : 
+                        selectedTicket.status === 'in_progress' ? 'bg-amber-400' : 
+                        selectedTicket.status === 'resolved' ? 'bg-green-400' : 'bg-gray-400'
+                      }`}></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div>
-                <label className="text-sm font-medium">Tu Respuesta</label>
+              {/* Área de Respuesta */}
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border border-slate-600/50 rounded-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="p-2 bg-green-500/20 rounded-lg">
+                    <Send className="h-5 w-5 text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Tu Respuesta</h3>
+                </div>
                 <Textarea
-                  placeholder="Escribe tu respuesta aquí..."
+                  placeholder="Escribe tu respuesta profesional aquí..."
                   value={responseText}
                   onChange={(e) => setResponseText(e.target.value)}
-                  rows={6}
-                  className="mt-1"
+                  rows={8}
+                  className="w-full bg-slate-700/50 border-slate-600/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-white placeholder-slate-400 rounded-xl resize-none"
                 />
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-sm text-slate-400">
+                    {responseText.length} caracteres
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-slate-400">Respuesta en tiempo real</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsResponseDialogOpen(false)}>
+          <DialogFooter className="pt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsResponseDialogOpen(false)}
+              className="bg-slate-700/50 hover:bg-slate-600 text-white border-slate-600/50"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleResponseSubmit}>
+            <Button 
+              onClick={handleResponseSubmit}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0 shadow-lg hover:shadow-green-500/25"
+            >
               <Send className="h-4 w-4 mr-2" />
               Enviar Respuesta
             </Button>

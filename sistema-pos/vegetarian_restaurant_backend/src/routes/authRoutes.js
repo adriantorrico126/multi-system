@@ -17,6 +17,9 @@ router.post('/refresh', authenticateToken, authController.refreshToken);
 // Verificar el estado de la sesión actual del token
 router.get('/status', authenticateToken, authController.getSessionStatus);
 
+// Validar token (endpoint simple para verificar si el token es válido)
+router.get('/validate', authenticateToken, authController.validateToken);
+
 // Obtener usuarios (solo admin)
 router.get('/users', authenticateToken, authorizeRoles('admin'), authController.getUsers);
 

@@ -24,7 +24,8 @@ import {
   CreditCard,
   AlertTriangle,
   BarChart3,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  RefreshCw
 } from "lucide-react";
 
 export const AnalyticsSection: React.FC = () => {
@@ -307,132 +308,281 @@ export const AnalyticsSection: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Filtros Avanzados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
-            <span>Filtros Avanzados</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      {/* Header del Sistema de Análisis */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              Centro de Análisis Avanzado
+            </h1>
+            <p className="text-slate-300 text-lg">
+              Sistema de Business Intelligence y análisis de datos en tiempo real
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-slate-400">Última actualización</p>
+              <p className="text-white font-semibold">{new Date().toLocaleTimeString()}</p>
+            </div>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Panel de Control de Filtros Avanzados */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/50 backdrop-blur-md mb-8">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16"></div>
+        <CardHeader className="relative z-10 pb-4">
+          <CardTitle className="text-2xl font-bold text-white flex items-center space-x-3">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Filter className="h-6 w-6 text-blue-400" />
+            </div>
+            <span>Panel de Control de Filtros Avanzados</span>
           </CardTitle>
+          <CardDescription className="text-slate-300 text-lg mt-2">
+            Configuración inteligente de parámetros de análisis
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Sucursal</label>
+        <CardContent className="relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-slate-300 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span>Sucursal</span>
+              </label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar sucursal" />
+                <SelectTrigger className="bg-slate-700/50 border-slate-600/50 focus:border-blue-500 text-white rounded-xl">
+                  <SelectValue placeholder="🏢 Seleccionar sucursal" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las sucursales</SelectItem>
-                  <SelectItem value="centro">Centro</SelectItem>
-                  <SelectItem value="norte">Norte</SelectItem>
-                  <SelectItem value="sur">Sur</SelectItem>
-                  <SelectItem value="este">Este</SelectItem>
-                  <SelectItem value="oeste">Oeste</SelectItem>
+                <SelectContent className="bg-slate-800 border-slate-700 rounded-xl">
+                  <SelectItem value="all" className="text-white hover:bg-slate-700">🌐 Todas las sucursales</SelectItem>
+                  <SelectItem value="centro" className="text-white hover:bg-slate-700">🏢 Centro</SelectItem>
+                  <SelectItem value="norte" className="text-white hover:bg-slate-700">🏢 Norte</SelectItem>
+                  <SelectItem value="sur" className="text-white hover:bg-slate-700">🏢 Sur</SelectItem>
+                  <SelectItem value="este" className="text-white hover:bg-slate-700">🏢 Este</SelectItem>
+                  <SelectItem value="oeste" className="text-white hover:bg-slate-700">🏢 Oeste</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-2 block">Período</label>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-slate-300 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>Período</span>
+              </label>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar período" />
+                <SelectTrigger className="bg-slate-700/50 border-slate-600/50 focus:border-green-500 text-white rounded-xl">
+                  <SelectValue placeholder="📅 Seleccionar período" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Hoy</SelectItem>
-                  <SelectItem value="week">Esta semana</SelectItem>
-                  <SelectItem value="month">Este mes</SelectItem>
-                  <SelectItem value="quarter">Este trimestre</SelectItem>
-                  <SelectItem value="year">Este año</SelectItem>
+                <SelectContent className="bg-slate-800 border-slate-700 rounded-xl">
+                  <SelectItem value="today" className="text-white hover:bg-slate-700">📅 Hoy</SelectItem>
+                  <SelectItem value="week" className="text-white hover:bg-slate-700">📅 Esta semana</SelectItem>
+                  <SelectItem value="month" className="text-white hover:bg-slate-700">📅 Este mes</SelectItem>
+                  <SelectItem value="quarter" className="text-white hover:bg-slate-700">📅 Este trimestre</SelectItem>
+                  <SelectItem value="year" className="text-white hover:bg-slate-700">📅 Este año</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-2 block">Rango de Fechas</label>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-slate-300 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                <span>Rango de Fechas</span>
+              </label>
               <DatePickerWithRange />
             </div>
             
-            <div className="flex items-end space-x-2">
-              <Button onClick={() => exportData('pdf')} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-              <Button onClick={() => exportData('csv')} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                CSV
-              </Button>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-slate-300 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                <span>Exportar Datos</span>
+              </label>
+              <div className="flex items-end space-x-2">
+                <Button 
+                  onClick={() => exportData('pdf')} 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-700/50 hover:bg-slate-600 text-white border-slate-600/50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+                <Button 
+                  onClick={() => exportData('csv')} 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-slate-700/50 hover:bg-slate-600 text-white border-slate-600/50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  CSV
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Navegación de Gráficos */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-        {charts.map((chart) => (
-          <Button
-            key={chart.id}
-            variant={activeChart === chart.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveChart(chart.id)}
-            className="flex flex-col items-center space-y-1 h-auto py-3"
-          >
-            <chart.icon className="h-4 w-4" />
-            <span className="text-xs text-center">{chart.title}</span>
-          </Button>
-        ))}
-      </div>
-
-      {/* Gráfico Activo */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>{charts.find(c => c.id === activeChart)?.title}</CardTitle>
-              <CardDescription>{charts.find(c => c.id === activeChart)?.description}</CardDescription>
+      {/* Navegación Tecnológica de Gráficos */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/50 backdrop-blur-md mb-8">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -translate-y-16 translate-x-16"></div>
+        <CardHeader className="relative z-10 pb-4">
+          <CardTitle className="text-xl font-bold text-white flex items-center space-x-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-purple-400" />
             </div>
-            <Badge variant="secondary">
-              {charts.find(c => c.id === activeChart)?.category}
-            </Badge>
+            <span>Centro de Visualización de Datos</span>
+          </CardTitle>
+          <CardDescription className="text-slate-300 text-base mt-2">
+            Selecciona el tipo de análisis que deseas visualizar
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            {charts.map((chart) => (
+              <Button
+                key={chart.id}
+                variant={activeChart === chart.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveChart(chart.id)}
+                className={`flex flex-col items-center space-y-2 h-auto py-4 rounded-xl transition-all duration-300 ${
+                  activeChart === chart.id 
+                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/25' 
+                    : 'bg-slate-700/50 hover:bg-slate-600 text-slate-300 hover:text-white border-slate-600/50'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  activeChart === chart.id 
+                    ? 'bg-white/20' 
+                    : 'bg-slate-600/50'
+                }`}>
+                  <chart.icon className="h-5 w-5" />
+                </div>
+                <span className="text-xs text-center font-medium leading-tight">{chart.title}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dashboard Principal de Análisis */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-600/50 backdrop-blur-md mb-8">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16"></div>
+        <CardHeader className="relative z-10 pb-4">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl">
+                {React.createElement(charts.find(c => c.id === activeChart)?.icon || BarChart3, { 
+                  className: "h-8 w-8 text-blue-400" 
+                })}
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-white">
+                  {charts.find(c => c.id === activeChart)?.title}
+                </CardTitle>
+                <CardDescription className="text-slate-300 text-lg mt-2">
+                  {charts.find(c => c.id === activeChart)?.description}
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-500/30 px-4 py-2">
+                📊 {charts.find(c => c.id === activeChart)?.category}
+              </Badge>
+              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {renderChart(activeChart)}
+        <CardContent className="relative z-10">
+          <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
+            {renderChart(activeChart)}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Métricas Adicionales */}
+      {/* KPIs del Sistema de Análisis */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Ticket Promedio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$28.50</div>
-            <p className="text-xs text-slate-500">+5.2% vs mes anterior</p>
+        {/* KPI Ticket Promedio */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-500/30 hover:border-green-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-500/20 rounded-xl group-hover:bg-green-500/30 transition-colors duration-300">
+                <DollarSign className="h-8 w-8 text-green-400" />
+              </div>
+              <div className="text-right">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Ticket Promedio</p>
+              <p className="text-3xl font-bold text-white">$28.50</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                </div>
+                <span className="text-xs text-slate-400">85%</span>
+              </div>
+              <p className="text-xs text-green-400">+5.2% vs mes anterior</p>
+            </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Tiempo Promedio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12 min</div>
-            <p className="text-xs text-slate-500">-2.1% vs mes anterior</p>
+
+        {/* KPI Tiempo Promedio */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-900/20 to-blue-800/10 border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-500/20 rounded-xl group-hover:bg-blue-500/30 transition-colors duration-300">
+                <Clock className="h-8 w-8 text-blue-400" />
+              </div>
+              <div className="text-right">
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Tiempo Promedio</p>
+              <p className="text-3xl font-bold text-white">12 min</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full" style={{width: '78%'}}></div>
+                </div>
+                <span className="text-xs text-slate-400">78%</span>
+              </div>
+              <p className="text-xs text-blue-400">-2.1% vs mes anterior</p>
+            </div>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Satisfacción</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4.7/5</div>
-            <p className="text-xs text-slate-500">+0.3 vs mes anterior</p>
+
+        {/* KPI Satisfacción */}
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-purple-800/10 border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full -translate-y-12 translate-x-12"></div>
+          <CardContent className="relative z-10 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors duration-300">
+                <TrendingUp className="h-8 w-8 text-purple-400" />
+              </div>
+              <div className="text-right">
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">Satisfacción</p>
+              <p className="text-3xl font-bold text-white">4.7/5</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-purple-500 h-2 rounded-full" style={{width: '94%'}}></div>
+                </div>
+                <span className="text-xs text-slate-400">94%</span>
+              </div>
+              <p className="text-xs text-purple-400">+0.3 vs mes anterior</p>
+            </div>
           </CardContent>
         </Card>
       </div>

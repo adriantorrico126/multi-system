@@ -4,32 +4,39 @@
 
 /* Restaurant POS Multi-Sucursal Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import './styles/animations.css';
+@import './styles/advanced-animations.css';
 
 @layer base {
   :root {
-    /* Primary Brand Colors (Blues) */
-    --primary: 227 96% 50%; /* #0C2FF2 */
-    --primary-medium: 230 96% 48%; /* #0540F2 */  
-    --primary-light: 218 96% 48%; /* #056CF2 */
+    /* Primary Brand Colors - Original Blue Tones */
+    --primary: 227 96% 50%; /* #0C2FF2 - Original Blue */
+    --primary-medium: 230 96% 48%; /* #0540F2 - Deep Blue */  
+    --primary-light: 218 96% 48%; /* #056CF2 - Light Blue */
     --primary-foreground: 0 0% 100%;
+
+    /* Accent Colors - Original Blue Variations */
+    --accent: 227 96% 50%; /* #0C2FF2 - Same as primary */
+    --accent-secondary: 230 96% 48%; /* #0540F2 - Medium Blue */
+    --accent-tertiary: 218 96% 48%; /* #056CF2 - Light Blue */
+    --accent-quaternary: 227 96% 45%; /* #0A2BD9 - Darker Blue */
 
     /* Neutral Colors */
     --background: 0 0% 100%;
-    --foreground: 0 0% 5%; /* #0D0D0D */
-    --surface: 0 0% 95%; /* #F2F2F2 */
+    --foreground: 0 0% 9%; /* #171717 - Darker for contrast */
+    --surface: 0 0% 98%; /* #FAFAFA - Cleaner surface */
     
     /* Semantic Colors */
-    --muted: 0 0% 95%;
+    --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
-    --accent: 227 96% 50%;
     --accent-foreground: 0 0% 100%;
     
     /* Component Colors */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
-    --border: 0 0% 90%;
-    --input: 0 0% 95%;
-    --ring: 227 96% 50%;
+    --card-foreground: 0 0% 9%;
+    --border: 0 0% 89%;
+    --input: 0 0% 96%;
+    --ring: 217 91% 60%;
     
     /* Restaurant Specific Colors */
     --success: 142 76% 36%;
@@ -39,16 +46,19 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(227 96% 50%), hsl(218 96% 48%));
+    /* Original Blue Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(227 96% 50%), hsl(230 96% 48%));
+    --gradient-secondary: linear-gradient(135deg, hsl(218 96% 48%), hsl(227 96% 50%));
+    --gradient-tertiary: linear-gradient(135deg, hsl(227 96% 45%), hsl(230 96% 48%));
     --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
-    --gradient-hero: linear-gradient(135deg, hsl(227 96% 50% / 0.9), hsl(218 96% 48% / 0.8));
+    --gradient-hero: linear-gradient(135deg, hsl(227 96% 50% / 0.95), hsl(230 96% 48% / 0.9));
     
-    /* Shadows */
-    --shadow-sm: 0 2px 4px hsl(227 96% 50% / 0.1);
-    --shadow-md: 0 8px 25px hsl(227 96% 50% / 0.15);
-    --shadow-lg: 0 25px 50px hsl(227 96% 50% / 0.25);
-    --shadow-glow: 0 0 40px hsl(227 96% 50% / 0.3);
+    /* Enhanced Shadows with Original Blue */
+    --shadow-sm: 0 2px 8px hsl(227 96% 50% / 0.1);
+    --shadow-md: 0 8px 32px hsl(227 96% 50% / 0.15);
+    --shadow-lg: 0 25px 64px hsl(227 96% 50% / 0.25);
+    --shadow-glow: 0 0 48px hsl(227 96% 50% / 0.4);
+    --shadow-impact: 0 16px 48px hsl(227 96% 50% / 0.3);
     
     /* Typography */
     --font-heading: 'Inter', sans-serif;
@@ -60,7 +70,7 @@
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
     
-    /* Animations */
+    /* Advanced Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }

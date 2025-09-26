@@ -10,7 +10,7 @@ const Venta = require('../models/ventaModel'); // Moved from inside agregarProdu
 // Función helper para obtener estados válidos de ventas para prefacturas
 function getEstadosValidosVentas() {
   return [
-    'recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado',
+    'recibido', 'en_preparacion', 'entregado', 'cancelado',
     'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado'
   ];
 }
@@ -204,8 +204,28 @@ exports.liberarMesa = async (req, res, next) => {
     try {
       await client.query('BEGIN');
       
+      // Calcular el total real de la sesión actual (no acumulado histórico)
+      const totalSesionQuery = `
+        SELECT COALESCE(SUM(dv.subtotal), 0) as total_sesion
+        FROM ventas v
+        JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
+        WHERE v.mesa_numero = $1 
+          AND v.id_restaurante = $2 
+          AND v.estado IN ('completada', 'pendiente', 'abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'recibido', 'en_preparacion')
+          AND v.fecha >= (
+            SELECT COALESCE(hora_apertura, NOW() - INTERVAL '1 hour') 
+            FROM mesas 
+            WHERE id_mesa = $3 AND id_restaurante = $2
+          )
+      `;
+      const totalSesionResult = await client.query(totalSesionQuery, [mesaCompleta.numero, id_restaurante, id_mesa]);
+      const totalAnterior = parseFloat(totalSesionResult.rows[0].total_sesion) || 0;
+      
       // Liberar la mesa (marcar como libre sin facturar)
       const mesaLiberada = await Mesa.liberarMesa(id_mesa, id_restaurante, client);
+      
+      // Limpieza automática adicional para asegurar consistencia
+      await Mesa.limpiarMesasLibresConTotales(mesaCompleta.id_sucursal, id_restaurante);
       
       // Cerrar TODAS las prefacturas abiertas de esta mesa (sin facturar)
       const prefacturasAbiertasQuery = `
@@ -224,17 +244,25 @@ exports.liberarMesa = async (req, res, next) => {
         }
       }
       
-      // Crear nueva prefactura limpia para la siguiente sesión
-      const nuevaPrefactura = await Mesa.crearPrefactura(id_mesa, null, id_restaurante, client);
-      logger.info(`Nueva prefactura creada para mesa ${id_mesa}`);
+      // FORZAR LIMPIEZA COMPLETA: Resetear total_acumulado a 0 para nueva sesión
+      await client.query(`
+        UPDATE mesas 
+        SET total_acumulado = 0, 
+            hora_apertura = NULL,
+            id_venta_actual = NULL
+        WHERE id_mesa = $1 AND id_restaurante = $2
+      `, [id_mesa, id_restaurante]);
+      
+      logger.info(`Mesa ${id_mesa} liberada - Total anterior: $${totalAnterior}, ahora reseteado a $0`);
       
       await client.query('COMMIT');
       logger.info(`Mesa con ID ${id_mesa} liberada exitosamente para el restaurante ${id_restaurante}.`);
       res.status(200).json({
         message: `Mesa liberada exitosamente.`,
         data: {
-          mesa: mesaLiberada,
-          nueva_prefactura: nuevaPrefactura
+          mesa: { ...mesaLiberada, total_acumulado: 0 },
+          total_final: totalAnterior,
+          total_reseteado: 0
         }
       });
     } catch (error) {
@@ -262,37 +290,108 @@ exports.agregarProductosAMesa = async (req, res, next) => {
       logger.warn(`Mesa con ID ${id_mesa} no encontrada para agregar productos en el restaurante ${id_restaurante}.`);
       return res.status(404).json({ message: 'Mesa no encontrada.' });
     }
-    if (mesa.estado !== 'en_uso') {
-      logger.warn(`Intento de agregar productos a mesa con ID ${id_mesa} que no está en uso. Estado actual: ${mesa.estado}`);
+    // Permitir agregar productos a mesas en uso o pendientes de cobro
+    // Solo bloquear si la mesa está libre, reservada o en mantenimiento
+    if (mesa.estado === 'libre' || mesa.estado === 'reservada' || mesa.estado === 'mantenimiento') {
+      logger.warn(`Intento de agregar productos a mesa con ID ${id_mesa} que no está disponible. Estado actual: ${mesa.estado}`);
       return res.status(400).json({ 
-        message: `La mesa con ID ${id_mesa} no está en uso. Estado actual: ${mesa.estado}` 
+        message: `La mesa con ID ${id_mesa} no está disponible para agregar productos. Estado actual: ${mesa.estado}`,
+        mesa_ocupada: false
       });
+    }
+    
+    // Si la mesa está ocupada (en_uso o pendiente_cobro), permitir pero marcar como ocupada
+    const mesaOcupada = mesa.estado === 'en_uso' || mesa.estado === 'pendiente_cobro';
+    if (mesaOcupada) {
+      logger.info(`Agregando productos a mesa ocupada ${id_mesa}. Estado: ${mesa.estado}`);
     }
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      // Crear nueva venta para los productos adicionales
-      const venta = await Venta.createVenta({
-        id_vendedor: id_vendedor,
-        id_pago: null, // Se pagará al final
-        id_sucursal: mesa.id_sucursal, // Usar id_sucursal de la mesa
-        tipo_servicio: 'Mesa',
-        total: total,
-        mesa_numero: mesa.numero, // Usar numero de la mesa
-        id_restaurante: id_restaurante // Pasar id_restaurante a createVenta
-      }, client);
-      // Crear detalles de venta
-      const detalles = await Venta.createDetalleVenta(
-        venta.id_venta,
-        items.map(item => ({
-          id_producto: item.id_producto,
-          cantidad: item.cantidad,
-          precio_unitario: item.precio_unitario,
-          observaciones: item.observaciones || null
-        })),
-        id_restaurante, // Pasar id_restaurante a createDetalleVenta
-        client
-      );
+      
+      // Log para debugging
+      logger.info(`🔍 [DEBUG] Datos recibidos:`, {
+        id_mesa,
+        items: items,
+        total,
+        mesa: mesa,
+        id_vendedor,
+        id_restaurante
+      });
+      
+      // Buscar la venta activa de la mesa para agregar productos
+      logger.info(`🔍 [DEBUG] Buscando venta existente para mesa ${id_mesa}`);
+      const ventaExistente = await client.query(`
+        SELECT * FROM ventas 
+        WHERE id_mesa = $1 
+        AND id_restaurante = $2 
+        AND estado IN ('recibido', 'en_preparacion')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [id_mesa, id_restaurante]);
+
+      let venta;
+      let detalles;
+
+      if (ventaExistente.rows.length > 0) {
+        // Usar la venta existente - AGREGAR productos a la venta actual
+        venta = ventaExistente.rows[0];
+        logger.info(`🔍 [DEBUG] Venta existente encontrada ID: ${venta.id_venta}, Total actual: ${venta.total}`);
+        
+        // Agregar nuevos productos a la venta existente
+        detalles = await Venta.createDetalleVenta(
+          venta.id_venta,
+          items.map(item => ({
+            id_producto: item.id_producto,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario,
+            observaciones: item.observaciones || null
+          })),
+          id_restaurante,
+          client
+        );
+
+        // Actualizar el total de la venta existente (SUMAR, no reemplazar)
+        const nuevoTotalVenta = parseFloat(venta.total) + parseFloat(total);
+        await client.query(`
+          UPDATE ventas 
+          SET total = $1, updated_at = NOW()
+          WHERE id_venta = $2 AND id_restaurante = $3
+        `, [nuevoTotalVenta, venta.id_venta, id_restaurante]);
+
+        // Actualizar el objeto venta para la respuesta
+        venta.total = nuevoTotalVenta;
+        logger.info(`🔍 [DEBUG] Venta actualizada - Total anterior: ${ventaExistente.rows[0].total}, Total nuevo: ${nuevoTotalVenta}`);
+        
+      } else {
+        // Crear nueva venta si no existe una activa
+        logger.info(`🔍 [DEBUG] No hay venta activa, creando nueva venta`);
+        venta = await Venta.createVenta({
+          id_vendedor: id_vendedor,
+          id_pago: null, // Se pagará al final
+          id_sucursal: mesa.id_sucursal, // Usar id_sucursal de la mesa
+          tipo_servicio: 'Mesa',
+          total: total,
+          id_mesa: id_mesa, // Pasar id_mesa
+          mesa_numero: mesa.numero, // Usar numero de la mesa
+          id_restaurante: id_restaurante // Pasar id_restaurante a createVenta
+        }, client);
+        
+        // Crear detalles de venta
+        detalles = await Venta.createDetalleVenta(
+          venta.id_venta,
+          items.map(item => ({
+            id_producto: item.id_producto,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario,
+            observaciones: item.observaciones || null
+          })),
+          id_restaurante, // Pasar id_restaurante a createDetalleVenta
+          client
+        );
+        logger.info(`🔍 [DEBUG] Nueva venta creada ID: ${venta.id_venta}`);
+      }
+
       // Actualizar total acumulado de la mesa
       const nuevoTotal = mesa.total_acumulado + total;
       await Mesa.actualizarTotalAcumulado(id_mesa, nuevoTotal, id_restaurante, client);
@@ -303,7 +402,9 @@ exports.agregarProductosAMesa = async (req, res, next) => {
         data: {
           venta: venta,
           detalles: detalles,
-          total_acumulado: nuevoTotal
+          total_acumulado: nuevoTotal,
+          mesa_estado_anterior: mesa.estado,
+          mesa_estaba_ocupada: mesaOcupada
         }
       });
     } catch (error) {
@@ -992,7 +1093,7 @@ exports.eliminarMesa = async (req, res, next) => {
 // Marcar mesa como pagada (nuevo flujo)
 exports.marcarMesaComoPagada = async (req, res, next) => {
   try {
-    const { id_mesa } = req.body;
+    const { id_mesa, metodo_pago } = req.body;
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
     // Buscar la mesa solo por id_mesa e id_restaurante para obtener id_sucursal
     let mesa = await Mesa.getMesaById(id_mesa, null, id_restaurante);
@@ -1013,20 +1114,54 @@ exports.marcarMesaComoPagada = async (req, res, next) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      
+      // Calcular el total real de la sesión actual (no acumulado histórico)
+      const totalSesionQuery = `
+        SELECT COALESCE(SUM(dv.subtotal), 0) as total_sesion
+        FROM ventas v
+        JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
+        WHERE v.mesa_numero = $1 
+          AND v.id_restaurante = $2 
+          AND v.estado IN ('completada', 'pendiente', 'abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'recibido', 'en_preparacion')
+          AND v.fecha >= (
+            SELECT COALESCE(hora_apertura, NOW() - INTERVAL '1 hour') 
+            FROM mesas 
+            WHERE id_mesa = $3 AND id_restaurante = $2
+          )
+      `;
+      const totalSesionResult = await client.query(totalSesionQuery, [mesa.numero, id_restaurante, id_mesa]);
+      const totalAnterior = parseFloat(totalSesionResult.rows[0].total_sesion) || 0;
+      
       // Marcar mesa como pagada
       const mesaPagada = await Mesa.marcarMesaComoPagada(id_mesa, id_restaurante, client);
+      
+      // Limpieza automática adicional para asegurar consistencia
+      await Mesa.limpiarMesasLibresConTotales(mesa.id_sucursal, id_restaurante);
+      
       // Cerrar prefactura si existe
       const prefactura = await Mesa.getPrefacturaByMesa(id_mesa, id_restaurante);
       if (prefactura) {
-        await Mesa.cerrarPrefactura(prefactura.id_prefactura, mesaPagada.total_acumulado, id_restaurante, client);
+        await Mesa.cerrarPrefactura(prefactura.id_prefactura, totalAnterior, id_restaurante, client);
       }
+      
+      // FORZAR LIMPIEZA COMPLETA: Resetear total_acumulado a 0 para nueva sesión
+      await client.query(`
+        UPDATE mesas 
+        SET total_acumulado = 0, 
+            hora_apertura = NULL,
+            id_venta_actual = NULL
+        WHERE id_mesa = $1 AND id_restaurante = $2
+      `, [id_mesa, id_restaurante]);
+      
       await client.query('COMMIT');
-      logger.info(`Mesa con ID ${id_mesa} marcada como pagada y liberada exitosamente para el restaurante ${id_restaurante}. Total: ${mesaPagada.total_acumulado}`);
+      logger.info(`Mesa ${id_mesa} marcada como pagada con método ${metodo_pago || 'efectivo'} - Total cobrado: $${totalAnterior}, ahora reseteado a $0`);
       res.status(200).json({
-        message: `Mesa con ID ${id_mesa} marcada como pagada y liberada exitosamente.`,
+        message: `Mesa con ID ${id_mesa} marcada como pagada y liberada exitosamente con método: ${metodo_pago || 'efectivo'}.`,
         data: {
-          mesa: mesaPagada,
-          total_final: mesaPagada.total_acumulado
+          mesa: { ...mesaPagada, total_acumulado: 0 },
+          total_final: totalAnterior,
+          total_reseteado: 0,
+          metodo_pago: metodo_pago || 'efectivo'
         }
       });
     } catch (error) {
@@ -1137,7 +1272,7 @@ exports.splitBill = async (req, res, next) => {
       SELECT dv.*, v.id_prefactura, v.id_venta
       FROM detalle_ventas dv
       JOIN ventas v ON dv.id_venta = v.id_venta
-      WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado')
+      WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', , 'entregado', 'cancelado')
     `;
     const { rows: detalles } = await pool.query(detallesQuery, [id_mesa, id_restaurante]);
     if (detalles.length === 0) {
@@ -1303,7 +1438,7 @@ exports.transferirItem = async (req, res, next) => {
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2 
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado')
+          AND v.estado IN ('recibido', 'en_preparacion', , 'entregado')
           AND ($3::timestamp IS NULL OR v.fecha >= $3);
     `;
     const { rows: totalOrigenRows } = await client.query(totalAcumuladoOrigenQuery, [id_mesa_origen, id_restaurante, aperturaOrigen]);
@@ -1321,7 +1456,7 @@ exports.transferirItem = async (req, res, next) => {
         FROM ventas v
         LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
+          AND v.estado IN ('recibido', 'en_preparacion', , 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
       `, [id_mesa_origen, id_restaurante]);
       const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
       if (itemsActivosRestantes === 0) {
@@ -1335,7 +1470,7 @@ exports.transferirItem = async (req, res, next) => {
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2 
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
+          AND v.estado IN ('recibido', 'en_preparacion', , 'entregado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
           AND ($3::timestamp IS NULL OR v.fecha >= $3);
     `;
     const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante, aperturaDestino]);
@@ -1474,7 +1609,7 @@ exports.transferirOrden = async (req, res, next) => {
     const totalAcumuladoOrigenQuery = `
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
-        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado');
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', , 'entregado', 'cancelado');
     `;
     const { rows: totalOrigenRows } = await client.query(totalAcumuladoOrigenQuery, [id_mesa_origen, id_restaurante]);
     const nuevoTotalOrigen = parseFloat(totalOrigenRows[0].coalesce) || 0;
@@ -1490,7 +1625,7 @@ exports.transferirOrden = async (req, res, next) => {
         FROM ventas v
         LEFT JOIN detalle_ventas dv ON dv.id_venta = v.id_venta
         WHERE v.id_mesa = $1 AND v.id_restaurante = $2
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
+          AND v.estado IN ('recibido', 'en_preparacion', , 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado')
       `, [id_mesa_origen, id_restaurante]);
       const itemsActivosRestantes = parseInt(restantesRows[0].cnt, 10) || 0;
       if (itemsActivosRestantes === 0) {
@@ -1503,7 +1638,7 @@ exports.transferirOrden = async (req, res, next) => {
     const totalAcumuladoDestinoQuery = `
         SELECT COALESCE(SUM(v.total), 0)
         FROM ventas v
-        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado');
+        WHERE v.id_mesa = $1 AND v.id_restaurante = $2 AND v.estado IN ('recibido', 'en_preparacion', , 'entregado', 'cancelado', 'abierta', 'en_uso', 'pendiente_cobro', 'completada', 'pendiente', 'pagado');
     `;
     const { rows: totalDestinoRows } = await client.query(totalAcumuladoDestinoQuery, [id_mesa_destino, id_restaurante]);
     const nuevoTotalDestino = parseFloat(totalDestinoRows[0].coalesce) || 0;

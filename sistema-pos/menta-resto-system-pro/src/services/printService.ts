@@ -54,7 +54,7 @@ class PrintService {
       }
 
       const userData = JSON.parse(user);
-      const printServerUrl = import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001';
+      const printServerUrl = import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3000';
 
       // Verificar que el token sea válido antes de conectar
       if (!this.isValidToken(token)) {

@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CartItem, InvoiceData } from '@/types/restaurant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { paymentMethods } from '@/data/products';
 import { CheckCircle, CreditCard, Printer } from 'lucide-react';
 import { printService, PrintData } from '@/services/printService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { getMetodosPago } from '@/services/api';
 
 interface CheckoutModalProps {
   items: CartItem[];
@@ -19,7 +20,7 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: CheckoutModalProps) {
-  const [selectedPayment, setSelectedPayment] = useState<string>('Efectivo');
+  const [selectedPayment, setSelectedPayment] = useState<string>('');
   const [needsInvoice, setNeedsInvoice] = useState(false);
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     nit: '',
@@ -43,16 +44,46 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Obtener métodos de pago desde la base de datos
+  const { data: metodosPagoDB = [], isLoading: loadingMetodos } = useQuery({
+    queryKey: ['metodos-pago'],
+    queryFn: getMetodosPago,
+  });
+
+  // Filtrar solo métodos activos
+  const metodosPagoActivos = metodosPagoDB.filter((metodo: any) => 
+    metodo.activo
+  );
+
+  // Seleccionar automáticamente el primer método de pago cuando se carguen
+  useEffect(() => {
+    if (metodosPagoActivos.length > 0 && !selectedPayment) {
+      setSelectedPayment(metodosPagoActivos[0].descripcion);
+    }
+  }, [metodosPagoActivos, selectedPayment]);
+
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleConfirm = () => {
+    console.log('🔍 [CheckoutModal] handleConfirm INICIADO');
+    console.log('🔍 [CheckoutModal] selectedPayment:', selectedPayment);
+    console.log('🔍 [CheckoutModal] needsInvoice:', needsInvoice);
+    console.log('🔍 [CheckoutModal] items:', items);
+    
     // Preparar datos adicionales para pago diferido
     const additionalData = {
       tipo_pago: tipoPago,
       observaciones_pago: tipoPago === 'diferido' ? observacionesPago : null
     };
     
+    console.log('🔍 [CheckoutModal] Llamando a onConfirmSale con:', {
+      selectedPayment,
+      invoiceData: needsInvoice ? invoiceData : undefined,
+      additionalData
+    });
+    
     onConfirmSale(selectedPayment, needsInvoice ? invoiceData : undefined, additionalData);
+    console.log('🔍 [CheckoutModal] onConfirmSale llamado exitosamente');
   };
 
   // Función para imprimir comanda
@@ -265,18 +296,29 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
           {tipoPago === 'anticipado' && (
             <div>
               <Label className="text-sm sm:text-base font-semibold">Método de Pago</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {paymentMethods.map((method) => (
-                  <Button
-                    key={method}
-                    variant={selectedPayment === method ? "default" : "outline"}
-                    onClick={() => setSelectedPayment(method)}
-                    className="text-xs sm:text-sm h-10 sm:h-auto"
-                  >
-                    {method}
-                  </Button>
-                ))}
-              </div>
+              {loadingMetodos ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-gray-600">Cargando métodos...</span>
+                </div>
+              ) : metodosPagoActivos.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">
+                  <p className="text-sm">No hay métodos de pago disponibles</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {metodosPagoActivos.map((metodo: any) => (
+                    <Button
+                      key={metodo.id_pago}
+                      variant={selectedPayment === metodo.descripcion ? "default" : "outline"}
+                      onClick={() => setSelectedPayment(metodo.descripcion)}
+                      className="text-xs sm:text-sm h-10 sm:h-auto"
+                    >
+                      {metodo.descripcion}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -33,8 +33,8 @@ async function getIdByField(table, field, value, id_restaurante) {
       query = 'SELECT * FROM sucursales WHERE nombre = $1 AND id_restaurante = $2 LIMIT 1';
       params.push(id_restaurante);
     } else if (table === 'metodos_pago') {
-      query = 'SELECT * FROM metodos_pago WHERE descripcion = $1 AND id_restaurante = $2 LIMIT 1';
-      params.push(id_restaurante);
+      query = 'SELECT * FROM metodos_pago WHERE descripcion = $1 LIMIT 1';
+      // No agregar id_restaurante para métodos de pago globales
     } else {
       // Para otras tablas, asumimos que 'field' es el nombre de la columna y que id_restaurante es el segundo parámetro
       query = `SELECT * FROM ${table} WHERE ${field} = $1 AND id_restaurante = $2 LIMIT 1`;
@@ -88,8 +88,7 @@ exports.createVenta = async (req, res, next) => {
       id_mesa = null,
       mesa_numero = null, // <-- Aceptar mesa_numero
       invoiceData,
-      tipo_pago = 'anticipado', // Nuevo: tipo de pago (anticipado o diferido)
-      observaciones_pago = null // Nuevo: observaciones para pagos diferidos
+      tipo_pago = 'anticipado' // Nuevo: tipo de pago (anticipado o diferido)
     } = req.body;
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
 
@@ -200,33 +199,29 @@ exports.createVenta = async (req, res, next) => {
           id_pago SERIAL PRIMARY KEY,
           descripcion TEXT NOT NULL,
           activo BOOLEAN DEFAULT TRUE,
-          id_restaurante INTEGER NOT NULL,
-          CONSTRAINT metodos_pago_unique UNIQUE(descripcion, id_restaurante)
+          CONSTRAINT metodos_pago_unique UNIQUE(descripcion)
         );
       `);
       // Migración suave: eliminar antiguo índice único por solo descripcion si existe
       // Intentar eliminar constraint antigua (si existe)
       await pool.query(`ALTER TABLE metodos_pago DROP CONSTRAINT IF EXISTS metodos_pago_descripcion_key;`);
       // Asegurar el índice único compuesto
-      await pool.query(`ALTER TABLE metodos_pago ADD CONSTRAINT IF NOT EXISTS metodos_pago_unique UNIQUE(descripcion, id_restaurante);`);
+      await pool.query(`ALTER TABLE metodos_pago ADD CONSTRAINT IF NOT EXISTS metodos_pago_unique UNIQUE(descripcion);`);
       // Sembrado idempotente por descripcion (única a nivel tabla)
       await pool.query(
-        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
-         VALUES ('Efectivo', true, $1)
-         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
-        [id_restaurante]
+        `INSERT INTO metodos_pago (descripcion, activo)
+         VALUES ('Efectivo', true)
+         ON CONFLICT (descripcion) DO NOTHING`,
       );
       await pool.query(
-        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
-         VALUES ('Tarjeta', true, $1)
-         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
-        [id_restaurante]
+        `INSERT INTO metodos_pago (descripcion, activo)
+         VALUES ('Tarjeta', true)
+         ON CONFLICT (descripcion) DO NOTHING`
       );
       await pool.query(
-        `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
-         VALUES ('Transferencia', true, $1)
-         ON CONFLICT (descripcion, id_restaurante) DO NOTHING`,
-        [id_restaurante]
+        `INSERT INTO metodos_pago (descripcion, activo)
+         VALUES ('Transferencia', true)
+         ON CONFLICT (descripcion) DO NOTHING`
       );
     } catch (e) {
       logger.warn('No se pudo asegurar/sembrar metodos_pago:', e.message);
@@ -260,33 +255,24 @@ exports.createVenta = async (req, res, next) => {
       logger.info('Backend: Procesando pago diferido');
       estado_pago = 'pendiente';
       
-      // Buscar o crear método de pago diferido
-      let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['Pago Diferido', id_restaurante]);
-      if (pagoResult.rows.length === 0) {
-        const insertResult = await pool.query(
-          'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) RETURNING *',
-          ['Pago Diferido', true, id_restaurante]
-        );
-        pago = insertResult.rows[0];
-        logger.info('Backend: Método de pago diferido creado:', pago);
-      } else {
-        pago = pagoResult.rows[0];
-        logger.info('Backend: Método de pago diferido encontrado:', pago);
-      }
+      // Para pago diferido, usar un método temporal o null
+      // El método real se asignará cuando se procese el cobro
+      pago = { id_pago: null, descripcion: 'Pago Diferido' };
+      logger.info('Backend: Pago diferido configurado - método se asignará al cobrar');
     } else {
       // Pago anticipado - lógica original
       const paymentMethodNorm = (paymentMethod || '').trim();
       if (paymentMethodNorm.toLowerCase() === 'pendiente_caja') {
         // Buscar el id_pago real de 'pendiente_caja' en la base de datos
-        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', ['pendiente_caja', id_restaurante]);
+        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) LIMIT 1', ['pendiente_caja']);
         if (pagoResult.rows.length === 0) {
-          // Inserción idempotente por constraint compuesta
+          // Inserción idempotente por constraint única
           const insertResult = await pool.query(
-            `INSERT INTO metodos_pago (descripcion, activo, id_restaurante)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo
+            `INSERT INTO metodos_pago (descripcion, activo)
+             VALUES ($1, $2)
+             ON CONFLICT (descripcion) DO UPDATE SET activo = EXCLUDED.activo
              RETURNING *`,
-            ['pendiente_caja', true, id_restaurante]
+            ['pendiente_caja', true]
           );
           pago = insertResult.rows[0];
           logger.info('Backend: Método de pago pendiente_caja creado automáticamente:', pago);
@@ -295,26 +281,42 @@ exports.createVenta = async (req, res, next) => {
           logger.info('Backend: Método de pago pendiente_caja encontrado:', pago);
         }
       } else {
-        logger.info('Backend: Searching for payment method:', paymentMethodNorm, 'in restaurant:', id_restaurante);
-        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
+        logger.info('Backend: Searching for payment method:', paymentMethodNorm);
+        let pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) LIMIT 1', [paymentMethodNorm]);
         pago = pagoResult.rows[0];
-        logger.info('Backend: Pago found (scoped):', pago);
+        logger.info('Backend: Pago found (global):', pago);
+        
         if (!pago) {
-          // Intentar insertar para el restaurante actual, y ante conflicto por descripción global, recuperar existente
+          logger.info('Backend: Método de pago no encontrado, intentando crear:', paymentMethodNorm);
+          // Intentar insertar método global
           try {
             const insertResult = await pool.query(
-              'INSERT INTO metodos_pago (descripcion, activo, id_restaurante) VALUES ($1, $2, $3) ON CONFLICT (descripcion, id_restaurante) DO UPDATE SET activo = EXCLUDED.activo RETURNING *',
-              [paymentMethodNorm, true, id_restaurante]
+              'INSERT INTO metodos_pago (descripcion, activo) VALUES ($1, $2) ON CONFLICT (descripcion) DO UPDATE SET activo = EXCLUDED.activo RETURNING *',
+              [paymentMethodNorm, true]
             );
             pago = insertResult.rows[0];
+            logger.info('Backend: Método de pago creado exitosamente:', pago);
           } catch (dupErr) {
-            // En caso de que la tabla aún no tenga el índice único correcto en algunas instalaciones
-            const fallback = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) AND id_restaurante = $2 LIMIT 1', [paymentMethodNorm, id_restaurante]);
+            logger.error('Backend: Error al crear método de pago:', dupErr.message);
+            // En caso de error, intentar obtener el existente
+            const fallback = await pool.query('SELECT * FROM metodos_pago WHERE LOWER(descripcion) = LOWER($1) LIMIT 1', [paymentMethodNorm]);
             pago = fallback.rows[0];
+            logger.info('Backend: Método de pago recuperado en fallback:', pago);
           }
-          logger.info('Backend: Método de pago creado/recuperado:', pago);
+        } else {
+          logger.info('Backend: Método de pago encontrado correctamente:', pago);
         }
       }
+    }
+
+    // Validar que se encontró un método de pago (excepto para pago diferido)
+    if (tipo_pago !== 'diferido' && (!pago || !pago.id_pago)) {
+      logger.error('Backend: No se pudo obtener método de pago válido');
+      return res.status(400).json({
+        success: false,
+        message: 'Método de pago no válido o no encontrado',
+        error: 'INVALID_PAYMENT_METHOD'
+      });
     }
 
     // Crear venta y detalles en una transacción
@@ -361,7 +363,9 @@ exports.createVenta = async (req, res, next) => {
           sucursal: sucursal.nombre
         });
       }
-      if (mesa.estado !== 'libre' && mesa.estado !== 'en_uso') {
+      // Permitir crear ventas en mesas libres, en uso o pendientes de cobro
+      // Solo bloquear mesas reservadas o en mantenimiento
+      if (mesa.estado === 'reservada' || mesa.estado === 'mantenimiento') {
         const estadoDescripcion = {
           'libre': 'disponible',
           'en_uso': 'ocupada',
@@ -457,7 +461,7 @@ exports.createVenta = async (req, res, next) => {
       try {
         venta = await Venta.createVenta({
           id_vendedor: vendedor.id_vendedor,
-          id_pago: pago.id_pago,
+          id_pago: tipo_pago === 'diferido' ? null : pago.id_pago, // null para pago diferido
           id_sucursal: sucursal.id_sucursal,
           tipo_servicio,
           total,
@@ -466,8 +470,7 @@ exports.createVenta = async (req, res, next) => {
           id_restaurante, // Pasar id_restaurante a createVenta
           rol_usuario: req.user.rol, // Pasar el rol del usuario
           tipo_pago, // Nuevo: tipo de pago
-          estado_pago, // Nuevo: estado del pago
-          observaciones_pago // Nuevo: observaciones del pago
+          estado_pago // Nuevo: estado del pago
         }, client);
       } catch (modelError) {
         await client.query('ROLLBACK');
@@ -545,11 +548,23 @@ exports.createVenta = async (req, res, next) => {
             total,
             fechaVencimiento,
             'pendiente',
-            observaciones_pago,
+            null, // observaciones_pago eliminado
             id_restaurante
           ]);
           
           logger.info('Backend: Pago diferido creado:', pagoDiferidoResult.rows[0]);
+          
+          // Cambiar estado de la mesa a pendiente_cobro si es venta de mesa
+          if (tipoServicio === 'Mesa' && idMesaFinal) {
+            const actualizarMesaQuery = `
+              UPDATE mesas 
+              SET estado = 'pendiente_cobro', id_venta_actual = $1
+              WHERE id_mesa = $2 AND id_restaurante = $3
+              RETURNING *
+            `;
+            const mesaActualizada = await client.query(actualizarMesaQuery, [venta.id_venta, idMesaFinal, id_restaurante]);
+            logger.info('Backend: Mesa actualizada a pendiente_cobro:', mesaActualizada.rows[0]);
+          }
         } catch (pagoDiferidoError) {
           logger.error('Backend: Error al crear pago diferido:', pagoDiferidoError.message);
           // No fallar la transacción por error en pago diferido
@@ -722,7 +737,7 @@ exports.getPedidosParaCocina = async (req, res, next) => {
           productos p ON dv.id_producto = p.id_producto
       WHERE
           v.id_restaurante = $1
-          AND v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+          AND v.estado IN ('recibido', 'en_preparacion')
       GROUP BY
           v.id_venta, v.fecha, v.id_mesa, v.mesa_numero, v.tipo_servicio, v.estado, v.total, v.id_sucursal
       ORDER BY
@@ -750,7 +765,7 @@ exports.actualizarEstadoPedido = async (req, res, next) => {
     logger.info('Backend: Updating order status:', { id, estado, user: req.user, id_restaurante });
 
     // Validar que el estado sea uno de los permitidos
-    const estadosPermitidos = ['recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado'];
+    const estadosPermitidos = ['recibido', 'en_preparacion', 'entregado', 'cancelado'];
     if (!estadosPermitidos.includes(estado)) {
       logger.warn('Backend: Invalid status:', estado);
       return res.status(400).json({ message: 'Estado de pedido no válido.' });
@@ -1032,7 +1047,7 @@ exports.cerrarMesaConFactura = async (req, res, next) => {
       return res.status(400).json({ message: 'Sucursal no encontrada' });
     }
     
-    const pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE descripcion = $1 AND id_restaurante = $2 LIMIT 1', [paymentMethod, id_restaurante]);
+    const pagoResult = await pool.query('SELECT * FROM metodos_pago WHERE descripcion = $1 LIMIT 1', [paymentMethod]);
     const pago = pagoResult.rows[0];
     if (!pago) {
       logger.warn('Método de pago no encontrado para cerrar mesa con factura.');
@@ -1520,6 +1535,39 @@ exports.marcarVentaDiferidaComoPagada = async (req, res, next) => {
     });
   } catch (error) {
     logger.error('Error al marcar venta diferida como pagada:', error.message);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+};
+
+// Obtener una venta con sus detalles
+exports.getVentaConDetalles = async (req, res) => {
+  try {
+    const { id_venta } = req.params;
+    const id_restaurante = req.user.id_restaurante;
+
+    console.log('🔍 [DEBUG] getVentaConDetalles - ID Venta:', id_venta, 'ID Restaurante:', id_restaurante);
+
+    if (!id_venta) {
+      return res.status(400).json({ message: 'ID de venta es requerido.' });
+    }
+
+    const venta = await Venta.getVentaConDetalles(id_venta, id_restaurante);
+
+    console.log('🔍 [DEBUG] getVentaConDetalles - Venta encontrada:', venta ? 'SÍ' : 'NO');
+
+    if (!venta) {
+      return res.status(404).json({ message: 'Venta no encontrada.' });
+    }
+
+    console.log('🔍 [DEBUG] getVentaConDetalles - Detalles:', venta.detalles ? venta.detalles.length : 0, 'productos');
+
+    res.status(200).json({
+      success: true,
+      data: venta
+    });
+  } catch (error) {
+    logger.error('Error al obtener venta con detalles:', error.message);
+    console.error('❌ [ERROR] getVentaConDetalles:', error);
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
 };

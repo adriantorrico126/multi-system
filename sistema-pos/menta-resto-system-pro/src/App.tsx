@@ -1,69 +1,92 @@
-import React, { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toaster";
-import { OrientationBanner } from "./components/OrientationBanner";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
-import { RestaurantChangeHandler } from "./components/RestaurantChangeHandler";
-import "./styles/mobile-responsive.css";
-// import { useMobile } from "./hooks/use-mobile";
+// src/App.tsx
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 
-const Index = lazy(() => import("./pages/Index"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const KitchenView = lazy(() => import("./pages/KitchenView"));
-const ArqueoPage = lazy(() => import("./pages/ArqueoPage"));
-const InventoryPage = lazy(() => import("./pages/InventoryPage"));
-const EgresosPage = lazy(() => import("./pages/EgresosPage"));
-const CajaEgresoPage = lazy(() => import("./pages/CajaEgresoPage"));
-const InfoCajaPage = lazy(() => import("./pages/InfoCajaPage"));
-const Login = lazy(() => import("./pages/Login"));
-const SupportPage = lazy(() => import("./pages/SupportPage"));
+// Rutas protegidas
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
-const queryClient = new QueryClient();
+// UI global
+import { Toaster } from '@/components/ui/toaster';
 
-function AppContent() {
-  // Aplicar detección móvil globalmente
-  // useMobile();
-  
+// Páginas
+import Index from '@/pages/Index';
+import EgresosPage from '@/pages/EgresosPage';
+import ArqueoPage from '@/pages/ArqueoPage';
+import InventoryPage from '@/pages/InventoryPage';
+import CajaEgresoPage from '@/pages/CajaEgresoPage';
+import InfoCajaPage from '@/pages/InfoCajaPage';
+import SupportPage from '@/pages/SupportPage';
+
+const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <ErrorBoundary>
-            <OrientationBanner>
-              <Suspense fallback={<div className="text-center p-8 text-gray-600">Cargando...</div>}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/cocina" element={<KitchenView />} />
-                  <Route path="/arqueo" element={<ArqueoPage />} />
-                  <Route path="/inventario" element={<InventoryPage />} />
-                  <Route path="/egresos" element={<EgresosPage />} />
-                  <Route path="/egresos-caja" element={<CajaEgresoPage />} />
-                  <Route path="/info-caja" element={<InfoCajaPage />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/soporte" element={<SupportPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-              <RestaurantChangeHandler />
-              <Toaster />
-            </OrientationBanner>
-          </ErrorBoundary>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  );
-}
+    <>
+      <Routes>
+        {/* Página principal / login */}
+        <Route path="/" element={<Index />} />
 
-const App = () => (
-  <ThemeProvider>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  </ThemeProvider>
-);
+        {/* Rutas protegidas por roles */}
+        <Route
+          path="/egresos"
+          element={
+            <ProtectedRoute requiredRole={['cajero', 'admin', 'super_admin']}>
+              <EgresosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/egresos-caja"
+          element={
+            <ProtectedRoute requiredRole={['cajero', 'admin', 'super_admin']}>
+              <CajaEgresoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/arqueo"
+          element={
+            <ProtectedRoute requiredRole={['cajero', 'admin', 'super_admin']}>
+              <ArqueoPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/inventario"
+          element={
+            <ProtectedRoute requiredRole={['admin', 'super_admin']}>
+              <InventoryPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/info-caja"
+          element={
+            <ProtectedRoute requiredRole={['cajero', 'admin', 'super_admin']}>
+              <InfoCajaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/soporte"
+          element={
+            <ProtectedRoute>
+              <SupportPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fallback: redirige a inicio */}
+        <Route path="*" element={<Index />} />
+      </Routes>
+
+      {/* Toaster para notificaciones */}
+      <Toaster />
+    </>
+  );
+};
 
 export default App;

@@ -3,24 +3,40 @@ const { pool } = require('../config/database');
 const Mesa = {
   // Obtener todas las mesas de una sucursal
   async getMesasBySucursal(id_sucursal, id_restaurante) {
+    // Primero limpiar automáticamente mesas libres con totales residuales
+    await this.limpiarMesasLibresConTotales(id_sucursal, id_restaurante);
+    
     const query = `
       SELECT 
         m.id_mesa,
         m.numero,
         m.capacidad,
         m.estado,
-        m.total_acumulado,
+        CASE 
+          WHEN m.estado = 'libre' THEN 0
+          WHEN m.estado = 'en_uso' OR m.estado = 'pendiente_cobro' THEN COALESCE(v_activa.total, 0)
+          ELSE 0
+        END as total_acumulado,
         m.hora_apertura,
         m.hora_cierre,
         m.id_restaurante,
         m.id_grupo_mesa,
-        v.id_venta as id_venta_actual,
-        v.total as total_venta_actual,
-        v.fecha as fecha_venta_actual,
+        v_activa.id_venta as id_venta_actual,
+        v_activa.total as total_venta_actual,
+        v_activa.fecha as fecha_venta_actual,
         g.estado as estado_grupo,
         vd.nombre as nombre_mesero_grupo
       FROM mesas m
-      LEFT JOIN ventas v ON m.id_venta_actual = v.id_venta
+      LEFT JOIN (
+        SELECT DISTINCT ON (mesa_numero) 
+          id_venta, mesa_numero, total, fecha, estado
+        FROM ventas 
+        WHERE id_sucursal = $1 
+          AND id_restaurante = $2 
+          AND estado IN ('abierta', 'en_uso', 'pendiente_cobro', 'entregado', 'recibido')
+          AND mesa_numero IS NOT NULL
+        ORDER BY mesa_numero, fecha DESC
+      ) v_activa ON m.numero = v_activa.mesa_numero
       LEFT JOIN grupos_mesas g ON m.id_grupo_mesa = g.id_grupo_mesa
       LEFT JOIN vendedores vd ON g.id_mesero = vd.id_vendedor
       WHERE m.id_sucursal = $1 AND m.id_restaurante = $2
@@ -28,6 +44,30 @@ const Mesa = {
     `;
     const { rows } = await pool.query(query, [id_sucursal, id_restaurante]);
     return rows;
+  },
+
+  // Función para limpiar automáticamente mesas libres con totales residuales
+  async limpiarMesasLibresConTotales(id_sucursal, id_restaurante) {
+    try {
+      const limpiarQuery = `
+        UPDATE mesas 
+        SET 
+          total_acumulado = 0,
+          id_venta_actual = NULL,
+          hora_apertura = NULL
+        WHERE id_sucursal = $1 
+          AND id_restaurante = $2 
+          AND estado = 'libre' 
+          AND (total_acumulado > 0 OR id_venta_actual IS NOT NULL)
+      `;
+      const result = await pool.query(limpiarQuery, [id_sucursal, id_restaurante]);
+      
+      if (result.rowCount > 0) {
+        console.log(`🧹 [AUTO-CLEAN] Limpiadas ${result.rowCount} mesas libres con totales residuales`);
+      }
+    } catch (error) {
+      console.error('❌ [AUTO-CLEAN] Error limpiando mesas libres:', error.message);
+    }
   },
 
   // Obtener una mesa específica
@@ -89,17 +129,39 @@ const Mesa = {
 
   // Liberar mesa (marcar como libre sin facturar)
   async liberarMesa(id_mesa, id_restaurante, client = pool) {
+    // Primero obtener el total acumulado actual
+    const mesaQuery = `
+      SELECT total_acumulado, numero
+      FROM mesas 
+      WHERE id_mesa = $1 AND id_restaurante = $2
+    `;
+    const mesaResult = await client.query(mesaQuery, [id_mesa, id_restaurante]);
+    
+    if (mesaResult.rows.length === 0) {
+      throw new Error('Mesa no encontrada');
+    }
+    
+    const totalAcumulado = mesaResult.rows[0].total_acumulado || 0;
+    
+    // Liberar mesa y resetear total acumulado para nuevos clientes
     const query = `
       UPDATE mesas 
       SET estado = 'libre', 
           hora_cierre = NOW(),
           id_venta_actual = NULL,
-          total_acumulado = 0
+          total_acumulado = 0,
+          hora_apertura = NULL
       WHERE id_mesa = $1 AND id_restaurante = $2
       RETURNING *
     `;
     const { rows } = await client.query(query, [id_mesa, id_restaurante]);
-    return rows[0];
+    
+    // Retornar la mesa con el total acumulado anterior (para referencia)
+    return {
+      ...rows[0],
+      total_anterior: totalAcumulado,
+      total_reseteado: 0
+    };
   },
 
   // Obtener mesa por ID

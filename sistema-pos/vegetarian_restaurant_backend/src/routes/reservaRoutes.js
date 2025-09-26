@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const reservaController = require('../controllers/reservaController');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { planMiddleware } = require('../middlewares/planMiddleware');
 
 console.log('🔍 [reservaRoutes] Inicializando rutas de reservas');
 
@@ -11,8 +12,8 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Rutas de reservas funcionando correctamente' });
 });
 
-// Aplicar autenticación a todas las rutas EXCEPTO /test
-router.use(authenticateToken);
+// Aplicar autenticación y plan avanzado+ a todas las rutas EXCEPTO /test
+router.use(authenticateToken, planMiddleware('reservas', 'avanzado'));
 
 // Rutas más específicas primero
 // Obtener disponibilidad de mesas

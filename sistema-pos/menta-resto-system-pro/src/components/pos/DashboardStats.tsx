@@ -196,15 +196,17 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
       {/* Métricas Principales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Ventas (periodo seleccionado / hoy por defecto) */}
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all duration-300 group hover:scale-105">
+          <CardContent className="p-4 sm:p-6 relative overflow-hidden">
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div>
                 <p className="text-sm font-medium text-green-700 mb-1">Ventas (período)</p>
                 <p className="text-2xl sm:text-3xl font-bold text-green-800">{totalVentas}</p>
                 <p className="text-xs text-green-600 mt-1">Transacciones realizadas</p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
@@ -212,15 +214,17 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
         </Card>
 
         {/* Pedidos Activos */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-300 group hover:scale-105">
+          <CardContent className="p-4 sm:p-6 relative overflow-hidden">
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div>
                 <p className="text-sm font-medium text-blue-700 mb-1">Pedidos Activos</p>
                 <p className="text-2xl sm:text-3xl font-bold text-blue-800">{orders.length}</p>
                 <p className="text-xs text-blue-600 mt-1">En preparación</p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
@@ -228,15 +232,17 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
         </Card>
 
         {/* Productos Vendidos */}
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200 hover:shadow-lg transition-all duration-300 group hover:scale-105">
+          <CardContent className="p-4 sm:p-6 relative overflow-hidden">
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div>
                 <p className="text-sm font-medium text-purple-700 mb-1">Productos vendidos</p>
                 <p className="text-2xl sm:text-3xl font-bold text-purple-800">{totalItemsVendidos}</p>
                 <p className="text-xs text-purple-600 mt-1">Unidades en el período</p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
@@ -244,15 +250,17 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
         </Card>
 
         {/* Ticket promedio (rendimiento de venta) */}
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 hover:shadow-lg transition-all duration-300">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 hover:shadow-lg transition-all duration-300 group hover:scale-105">
+          <CardContent className="p-4 sm:p-6 relative overflow-hidden">
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div>
                 <p className="text-sm font-medium text-orange-700 mb-1">Ticket promedio</p>
                 <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-800">{promedioVenta.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
                 <p className="text-xs text-orange-600 mt-1">Promedio por transacción</p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
@@ -263,30 +271,40 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
       {/* Análisis Detallado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Gráfico de Ventas */}
-        <Card className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
+        <Card className="bg-gradient-to-br from-white to-blue-50 border-blue-200 hover:shadow-xl transition-all duration-300 group">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Tendencia de Ventas</h3>
-              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                +12.5%
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                Tendencia de Ventas
+              </h3>
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white animate-pulse">
+                +{crecimientoVentas.toFixed(1)}%
               </Badge>
             </div>
-            <div className="h-64 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">Gráfico de tendencias</p>
-                <p className="text-gray-400 text-xs">Datos de ventas por día</p>
+            <div className="h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 flex items-center justify-center relative overflow-hidden">
+              {/* Efecto de ondas animadas */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-transparent to-indigo-400/20 animate-pulse"></div>
+              <div className="text-center relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                  <BarChart3 className="h-8 w-8 text-white" />
+                </div>
+                <p className="text-gray-700 text-sm font-medium">Análisis de Rendimiento</p>
+                <p className="text-gray-500 text-xs">Ventas: {totalVentas} | Ingresos: {totalIngresos.toLocaleString('es-BO', { style: 'currency', currency: 'BOB' })}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Productos Más Vendidos */}
-        <Card className="bg-white border-gray-200 hover:shadow-lg transition-all duration-300">
+        <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 hover:shadow-xl transition-all duration-300 group">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Productos Populares</h3>
-              <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Target className="h-5 w-5 text-purple-600" />
+                Productos Populares
+              </h3>
+              <Badge className="bg-gradient-to-r from-purple-500 to-violet-500 text-white">
                 Top 5
               </Badge>
             </div>
@@ -303,9 +321,9 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
                 const top = Object.values(mapa).sort((a:any,b:any)=>b.units-a.units).slice(0,5) as any[];
                 const maxUnits = Math.max(1, ...top.map(t=>t.units));
                 return top.map((product:any, index:number) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-100 hover:shadow-md transition-all duration-200 group">
                     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-lg transition-shadow duration-200">
                         <span className="text-white text-xs font-bold">{index + 1}</span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -315,12 +333,20 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
                             size="sm"
                             variant="ghost"
                             onClick={() => openProductInfoDialog(product.name, product.units, Math.round((product.units/maxUnits)*100))}
-                            className="p-1 h-5 w-5 hover:bg-blue-100 text-blue-600 hover:text-blue-700 flex-shrink-0"
+                            className="p-1 h-5 w-5 hover:bg-purple-100 text-purple-600 hover:text-purple-700 flex-shrink-0 transition-colors duration-200"
                           >
                             <Info className="h-3 w-3" />
                           </Button>
                         </div>
-                        <p className="text-xs text-gray-500">{product.units} unidades</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-purple-500 to-violet-500 h-full rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${Math.min(100, (product.units/maxUnits)*100)}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-600 font-medium">{product.units} unidades</span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -32,7 +32,7 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/src/swagger.json ./dist/swagger.json
 
 # Exponer el puerto de la aplicación
-EXPOSE 4000
+EXPOSE 5001
 
 # Iniciar la aplicación en producción
 CMD ["node", "dist/index.js"]

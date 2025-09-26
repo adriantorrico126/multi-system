@@ -73,9 +73,32 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showProveedorSection, setShowProveedorSection] = useState(false);
+  const [showDocumentosSection, setShowDocumentosSection] = useState(false);
 
   useEffect(() => {
     if (egreso && (mode === 'edit' || mode === 'view')) {
+      console.log('EgresoModal - Datos del egreso recibidos:', egreso);
+      console.log('EgresoModal - Campos específicos:', {
+        concepto: egreso.concepto,
+        descripcion: egreso.descripcion,
+        monto: egreso.monto,
+        categoria: egreso.categoria_nombre,
+        proveedor_nombre: egreso.proveedor_nombre,
+        numero_factura: egreso.numero_factura,
+        numero_recibo: egreso.numero_recibo,
+        numero_comprobante: egreso.numero_comprobante,
+        numero_autorizacion_fiscal: egreso.numero_autorizacion_fiscal,
+        codigo_control: egreso.codigo_control
+      });
+      
+      // Determinar si mostrar las secciones basándose en datos existentes
+      const hasProveedorData = !!(egreso.proveedor_nombre || egreso.proveedor_documento || egreso.proveedor_telefono || egreso.proveedor_email);
+      const hasDocumentosData = !!(egreso.numero_factura || egreso.numero_recibo || egreso.numero_comprobante || egreso.numero_autorizacion_fiscal || egreso.codigo_control);
+      
+      setShowProveedorSection(hasProveedorData);
+      setShowDocumentosSection(hasDocumentosData);
+      
       setFormData({
         concepto: egreso.concepto,
         descripcion: egreso.descripcion || '',
@@ -98,6 +121,8 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
       });
     } else {
       // Reset form for create mode
+      setShowProveedorSection(false);
+      setShowDocumentosSection(false);
       setFormData({
         concepto: '',
         descripcion: '',
@@ -324,138 +349,185 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
             </Card>
           </div>
 
-          {/* Columna derecha - Información del proveedor y documentos */}
+          {/* Columna derecha - Secciones opcionales */}
           <div className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4 flex items-center">
-                  <Building className="h-4 w-4 mr-2" />
-                  Información del Proveedor
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="proveedor-nombre">Nombre del Proveedor</Label>
-                    <Input
-                      id="proveedor-nombre"
-                      value={formData.proveedor_nombre}
-                      onChange={(e) => handleInputChange('proveedor_nombre', e.target.value)}
-                      disabled={isViewMode}
-                      placeholder="Nombre o razón social"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+            {/* Botones para activar secciones opcionales */}
+            {!isViewMode && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Building className="h-5 w-5 text-gray-500" />
                     <div>
-                      <Label htmlFor="proveedor-documento">Documento/NIT</Label>
-                      <Input
-                        id="proveedor-documento"
-                        value={formData.proveedor_documento}
-                        onChange={(e) => handleInputChange('proveedor_documento', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="CI/NIT"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="proveedor-telefono">Teléfono</Label>
-                      <Input
-                        id="proveedor-telefono"
-                        value={formData.proveedor_telefono}
-                        onChange={(e) => handleInputChange('proveedor_telefono', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="Número de contacto"
-                      />
+                      <h4 className="font-medium">Información del Proveedor</h4>
+                      <p className="text-sm text-gray-500">Agregar datos del proveedor</p>
                     </div>
                   </div>
-
-                  <div>
-                    <Label htmlFor="proveedor-email">Email</Label>
-                    <Input
-                      id="proveedor-email"
-                      type="email"
-                      value={formData.proveedor_email}
-                      onChange={(e) => handleInputChange('proveedor_email', e.target.value)}
-                      disabled={isViewMode}
-                      placeholder="correo@ejemplo.com"
-                    />
-                    {errors.proveedor_email && (
-                      <p className="text-sm text-red-500 mt-1">{errors.proveedor_email}</p>
-                    )}
-                  </div>
+                  <Button
+                    type="button"
+                    variant={showProveedorSection ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowProveedorSection(!showProveedorSection)}
+                  >
+                    {showProveedorSection ? "Ocultar" : "Agregar"}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4 flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Documentos de Respaldo
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="numero-factura">Número de Factura</Label>
-                    <Input
-                      id="numero-factura"
-                      value={formData.numero_factura}
-                      onChange={(e) => handleInputChange('numero_factura', e.target.value)}
-                      disabled={isViewMode}
-                      placeholder="Número de factura"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-gray-500" />
                     <div>
-                      <Label htmlFor="numero-recibo">Número de Recibo</Label>
-                      <Input
-                        id="numero-recibo"
-                        value={formData.numero_recibo}
-                        onChange={(e) => handleInputChange('numero_recibo', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="Número de recibo"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="numero-comprobante">Comprobante</Label>
-                      <Input
-                        id="numero-comprobante"
-                        value={formData.numero_comprobante}
-                        onChange={(e) => handleInputChange('numero_comprobante', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="Número de comprobante"
-                      />
+                      <h4 className="font-medium">Documentos de Respaldo</h4>
+                      <p className="text-sm text-gray-500">Agregar números de documentos</p>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="autorizacion-fiscal">Autorización Fiscal</Label>
-                      <Input
-                        id="autorizacion-fiscal"
-                        value={formData.numero_autorizacion_fiscal}
-                        onChange={(e) => handleInputChange('numero_autorizacion_fiscal', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="Número de autorización"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="codigo-control">Código de Control</Label>
-                      <Input
-                        id="codigo-control"
-                        value={formData.codigo_control}
-                        onChange={(e) => handleInputChange('codigo_control', e.target.value)}
-                        disabled={isViewMode}
-                        placeholder="Código de control"
-                      />
-                    </div>
-                  </div>
+                  <Button
+                    type="button"
+                    variant={showDocumentosSection ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowDocumentosSection(!showDocumentosSection)}
+                  >
+                    {showDocumentosSection ? "Ocultar" : "Agregar"}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+
+            {/* Información del Proveedor */}
+            {showProveedorSection && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-4 flex items-center">
+                    <Building className="h-4 w-4 mr-2" />
+                    Información del Proveedor
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="proveedor-nombre">Nombre del Proveedor</Label>
+                      <Input
+                        id="proveedor-nombre"
+                        value={formData.proveedor_nombre}
+                        onChange={(e) => handleInputChange('proveedor_nombre', e.target.value)}
+                        disabled={isViewMode}
+                        placeholder="Nombre o razón social"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="proveedor-documento">Documento/NIT</Label>
+                        <Input
+                          id="proveedor-documento"
+                          value={formData.proveedor_documento}
+                          onChange={(e) => handleInputChange('proveedor_documento', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="CI/NIT"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="proveedor-telefono">Teléfono</Label>
+                        <Input
+                          id="proveedor-telefono"
+                          value={formData.proveedor_telefono}
+                          onChange={(e) => handleInputChange('proveedor_telefono', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="Número de contacto"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="proveedor-email">Email</Label>
+                      <Input
+                        id="proveedor-email"
+                        type="email"
+                        value={formData.proveedor_email}
+                        onChange={(e) => handleInputChange('proveedor_email', e.target.value)}
+                        disabled={isViewMode}
+                        placeholder="correo@ejemplo.com"
+                      />
+                      {errors.proveedor_email && (
+                        <p className="text-sm text-red-500 mt-1">{errors.proveedor_email}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Documentos de Respaldo */}
+            {showDocumentosSection && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-4 flex items-center">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Documentos de Respaldo
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="numero-factura">Número de Factura</Label>
+                      <Input
+                        id="numero-factura"
+                        value={formData.numero_factura}
+                        onChange={(e) => handleInputChange('numero_factura', e.target.value)}
+                        disabled={isViewMode}
+                        placeholder="Número de factura"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="numero-recibo">Número de Recibo</Label>
+                        <Input
+                          id="numero-recibo"
+                          value={formData.numero_recibo}
+                          onChange={(e) => handleInputChange('numero_recibo', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="Número de recibo"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="numero-comprobante">Comprobante</Label>
+                        <Input
+                          id="numero-comprobante"
+                          value={formData.numero_comprobante}
+                          onChange={(e) => handleInputChange('numero_comprobante', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="Número de comprobante"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="autorizacion-fiscal">Autorización Fiscal</Label>
+                        <Input
+                          id="autorizacion-fiscal"
+                          value={formData.numero_autorizacion_fiscal}
+                          onChange={(e) => handleInputChange('numero_autorizacion_fiscal', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="Número de autorización"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="codigo-control">Código de Control</Label>
+                        <Input
+                          id="codigo-control"
+                          value={formData.codigo_control}
+                          onChange={(e) => handleInputChange('codigo_control', e.target.value)}
+                          disabled={isViewMode}
+                          placeholder="Código de control"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent className="pt-6">
@@ -514,13 +586,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
             <Separator />
             <div className="space-y-4">
               <h3 className="font-semibold">Información del Sistema</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Estado:</span>
-                  <Badge className="ml-2" style={{ backgroundColor: egresosUtils.getEstadoColor(egreso.estado) }}>
-                    {egreso.estado.toUpperCase()}
-                  </Badge>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500">Registrado por:</span>
                   <span className="ml-2">{egreso.registrado_por_nombre}</span>
@@ -534,27 +600,6 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
                   <span className="ml-2">{egreso.sucursal_nombre}</span>
                 </div>
               </div>
-
-              {egreso.aprobado_por_nombre && (
-                <div className="text-sm">
-                  <span className="text-gray-500">Aprobado por:</span>
-                  <span className="ml-2">{egreso.aprobado_por_nombre}</span>
-                  {egreso.fecha_aprobacion && (
-                    <span className="ml-2 text-gray-400">
-                      ({egresosUtils.formatDate(egreso.fecha_aprobacion)})
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {egreso.comentario_aprobacion && (
-                <div className="text-sm">
-                  <span className="text-gray-500">Comentario:</span>
-                  <p className="mt-1 text-gray-700 bg-gray-50 p-2 rounded">
-                    {egreso.comentario_aprobacion}
-                  </p>
-                </div>
-              )}
             </div>
           </>
         )}

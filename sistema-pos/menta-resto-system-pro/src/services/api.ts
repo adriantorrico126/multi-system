@@ -1,7 +1,34 @@
 import axios from 'axios';
 
 // Crear una instancia global de Axios
-const api = axios.create();
+const api = axios.create({
+  baseURL: (window as any).ENV_OVERRIDE?.VITE_BACKEND_URL || 
+           import.meta.env.VITE_BACKEND_URL || 
+           'http://localhost:3000/api/v1'
+});
+
+// DEBUG: Log de configuración de Axios
+console.log('🔍 [AXIOS DEBUG] baseURL configurada:', api.defaults.baseURL);
+console.log('🔍 [AXIOS DEBUG] ENV_OVERRIDE:', (window as any).ENV_OVERRIDE);
+console.log('🔍 [AXIOS DEBUG] import.meta.env.VITE_BACKEND_URL:', import.meta.env.VITE_BACKEND_URL);
+
+// Interceptor de request para agregar token JWT automáticamente
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔍 [AXIOS REQUEST] Token agregado a la petición:', config.url);
+    } else {
+      console.log('🔍 [AXIOS REQUEST] No hay token disponible para:', config.url);
+    }
+    return config;
+  },
+  (error) => {
+    console.error('🔍 [AXIOS REQUEST] Error en interceptor de request:', error);
+    return Promise.reject(error);
+  }
+);
 
 // Interceptor global para manejar expiración de JWT y errores de conexión
 api.interceptors.response.use(
@@ -36,17 +63,23 @@ api.interceptors.response.use(
     }
 
     // Manejar tokens expirados o inválidos
-    const isAuthFailure = status === 401 && (
+    // IMPORTANTE: Solo actuar si HAY un token almacenado (sesión existente)
+    const hasStoredToken = !!localStorage.getItem('jwtToken');
+    const isAuthFailure = status === 401 && hasStoredToken && (
       message.includes('jwt expired') ||
       message.includes('token expirado') ||
       message.includes('invalid token') ||
       message.includes('token invalid') ||
-      message.includes('no token provided') ||
-      message.includes('token requerido') ||
       code === 'TOKEN_EXPIRED' ||
       code === 'TOKEN_INVALID' ||
       code === 'TOKEN_ERROR'
     );
+
+    // Para 401 sin token almacenado (usuario no logueado), no hacer nada
+    if (status === 401 && !hasStoredToken) {
+      console.log('🔍 [API Interceptor] 401 sin token almacenado - usuario no logueado, pasando el error');
+      return Promise.reject(error);
+    }
 
     if (isAuthFailure) {
       console.log('🔍 [API Interceptor] Token inválido/expirado. Intentando renovar...');
@@ -70,7 +103,8 @@ api.interceptors.response.use(
         console.log('🔍 [API Interceptor] Falló la renovación del token. Cerrando sesión...');
       }
       
-      // Si la renovación falló, limpiar sesión
+      // Si la renovación falló, limpiar sesión SOLO si había sesión activa
+      console.log('🔍 [API Interceptor] Limpiando sesión expirada...');
       localStorage.removeItem('jwtToken');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('selectedSucursalId');
@@ -329,15 +363,30 @@ export const deleteSucursal = async (id_sucursal: number) => {
 export const login = async (username: string, password: string) => {
   try {
     console.log('API: Login attempt for username:', username);
-    const response = await api.post(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/auth/login`, {
-      username,
+    
+    // Limpiar cualquier configuración anterior DESHABILITADO para preservar login
+    // localStorage.removeItem('VITE_BACKEND_URL');
+    // localStorage.removeItem('VITE_POS_API_URL');
+    // sessionStorage.clear();
+    
+    // Usar configuración forzada si está disponible
+    const backendUrl = (window as any).ENV_OVERRIDE?.VITE_BACKEND_URL || 
+                      import.meta.env.VITE_BACKEND_URL || 
+                      'http://localhost:3000/api/v1';
+    
+    console.log('🔍 DEBUG - Backend URL:', backendUrl);
+    console.log('🔍 DEBUG - Login URL:', `${backendUrl}/auth/login`);
+    console.log('🔍 DEBUG - ENV_OVERRIDE:', (window as any).ENV_OVERRIDE);
+    
+    const response = await api.post('/auth/login', {
+      username: username, // Ahora el backend acepta 'username'
       password
     });
     console.log('API: Login response:', response.data);
     const { token, data: userData } = response.data; // Obtener token y datos de usuario
     console.log('API: userData:', userData);
     setAuthToken(token); // Establecer el token en Axios y localStorage
-    return userData; // Devolver solo los datos del usuario
+    return { token, user: userData }; // Devolver tanto token como datos del usuario
   } catch (error) {
     console.error('Error en login:', error);
     throw error;
@@ -693,7 +742,7 @@ export const getConfiguracion = async () => {
 export const printComanda = async (pedido: any) => {
   try {
     const restauranteId = getRestauranteId();
-    const printServerUrl = (import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3001');
+    const printServerUrl = (import.meta.env.VITE_PRINT_SERVER_URL || 'http://localhost:3000');
     const res = await fetch(`${printServerUrl}/api/pedidos/imprimir`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -722,7 +771,7 @@ export const updateOrderStatus = async (saleId: string, status: string) => {
     if (!restauranteId) throw new Error('Restaurante ID not found.');
     
     // Asegurar que el status sea válido
-    const validStatuses = ['recibido', 'en_preparacion', 'listo_para_servir', 'entregado', 'cancelado'];
+    const validStatuses = ['recibido', 'en_preparacion', 'entregado', 'cancelado'];
     if (!validStatuses.includes(status)) {
       throw new Error(`Estado inválido: ${status}. Estados válidos: ${validStatuses.join(', ')}`);
     }
@@ -916,8 +965,7 @@ export const liberarMesa = async (id_mesa: number) => {
 
 // Agregar productos a mesa existente
 export const agregarProductosAMesa = async (data: {
-  numero: number;
-  id_sucursal: number;
+  id_mesa: number;
   items: Array<{ id_producto: number; cantidad: number; precio_unitario: number; observaciones?: string }>;
   total: number;
 }) => {
@@ -1021,6 +1069,7 @@ export const marcarVentaDiferidaComoPagada = async (data: {
 // Marcar mesa como pagada (nuevo flujo)
 export const marcarMesaComoPagada = async (data: {
   id_mesa: number;
+  metodo_pago?: string;
 }) => {
   try {
     const restauranteId = getRestauranteId();
@@ -1036,11 +1085,8 @@ export const marcarMesaComoPagada = async (data: {
 // Obtener métodos de pago disponibles
 export const getMetodosPago = async () => {
   try {
-    const restauranteId = getRestauranteId();
-    if (!restauranteId) throw new Error('Restaurante ID not found.');
-    
     const response = await api.get(
-      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos-pago?id_restaurante=${restauranteId}`
+      `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/metodos-pago`
     );
     return response.data.data;
   } catch (error) {
@@ -1987,5 +2033,37 @@ export const eliminarLote = async (idLote: number) => {
   } catch (error) {
     console.error('Error eliminando lote:', error);
     throw error;
+  }
+};
+
+// Obtener una venta con sus detalles
+export const getVentaConDetalles = async (id_venta: number) => {
+  try {
+    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}/detalles`);
+    return response.data;
+  } catch (error) {
+    console.error('Error en getVentaConDetalles:', error);
+    // Fallback: obtener venta y detalles por separado
+    try {
+      const restauranteId = getRestauranteId();
+      if (!restauranteId) throw new Error('Restaurante ID not found.');
+      
+      // Obtener venta
+      const ventaResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}?id_restaurante=${restauranteId}`);
+      
+      // Obtener detalles
+      const detallesResponse = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/${id_venta}/productos?id_restaurante=${restauranteId}`);
+      
+      return {
+        success: true,
+        data: {
+          ...ventaResponse.data.data,
+          detalles: detallesResponse.data.data || []
+        }
+      };
+    } catch (fallbackError) {
+      console.error('Error en fallback:', fallbackError);
+      throw error;
+    }
   }
 };

@@ -17,7 +17,7 @@ Este es el backend de la consola de administración central para el sistema POS 
 2. Crea un archivo `.env` basado en el ejemplo:
    ```env
    ADMIN_JWT_SECRET=supersecreto_admin
-   ADMIN_PORT=4000
+   ADMIN_PORT=5001
    POS_DB_HOST=localhost
    POS_DB_PORT=5432
    POS_DB_USER=postgres

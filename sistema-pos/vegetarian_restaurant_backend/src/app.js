@@ -25,6 +25,11 @@ startupLogger.logStep('Logger', 'success');
 const printServer = require('./server-impresion');
 startupLogger.logStep('Servidor de Impresión', 'success');
 
+// Cliente de notificaciones - DESACTIVADO
+// NOTA: El POS debe ser independiente del admin backend
+// const notificationClient = require('./services/notificationClient');
+// startupLogger.logStep('Cliente de Notificaciones', 'success');
+
 // Express y CORS ya están inicializados arriba
 // const rateLimit = require('express-rate-limit');
 
@@ -48,6 +53,8 @@ const userRoutes = require('./routes/userRoutes');
 startupLogger.logStep('userRoutes', 'success');
 const soporteRoutes = require('./routes/soporteRoutes');
 startupLogger.logStep('soporteRoutes', 'success');
+const planRoutes = require('./routes/planRoutes');
+startupLogger.logStep('planRoutes', 'success');
 const modificadorRoutes = require('./routes/modificadorRoutes');
 startupLogger.logStep('modificadorRoutes', 'success');
 const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
@@ -73,7 +80,7 @@ startupLogger.logStep('categoriaEgresoRoutes', 'success');
 const presupuestoEgresoRoutes = require('./routes/presupuestoEgresoRoutes');
 startupLogger.logStep('presupuestoEgresoRoutes', 'success');
 
-// const metodoPagoRoutes = require('./routes/metodoPagoRoutes');
+const metodosPagoRoutes = require('./routes/metodosPagoRoutes');
 // const pagoSuscripcionRoutes = require('./routes/pagoSuscripcionRoutes');
 
 const app = express();
@@ -170,6 +177,8 @@ app.use('/api/v1/users', userRoutes);
 startupLogger.logStep('Ruta /api/v1/users', 'success');
 app.use('/api/v1/soporte', soporteRoutes);
 startupLogger.logStep('Ruta /api/v1/soporte', 'success');
+app.use('/api/v1/plans', planRoutes);
+startupLogger.logStep('Ruta /api/v1/plans', 'success');
 app.use('/api/v1/modificadores', modificadorRoutes);
 startupLogger.logStep('Ruta /api/v1/modificadores', 'success');
 app.use('/api/v1/grupos-mesas', grupoMesaRoutes);
@@ -243,7 +252,12 @@ startupLogger.logStep('Ruta /api/v1/categorias-egresos', 'success');
 app.use('/api/v1/presupuestos-egresos', presupuestoEgresoRoutes);
 startupLogger.logStep('Ruta /api/v1/presupuestos-egresos', 'success');
 
-// app.use('/api/v1/metodos_pago', metodoPagoRoutes);
+// Rutas de Analytics Avanzados
+const analyticsRoutes = require('./routes/analyticsRoutes');
+app.use('/api/v1/analytics', analyticsRoutes);
+startupLogger.logStep('Ruta /api/v1/analytics', 'success');
+
+app.use('/api/v1/metodos-pago', metodosPagoRoutes);
 // app.use('/api/v1/pagos_suscripcion', pagoSuscripcionRoutes);
 
 // Middleware de logging de solicitudes

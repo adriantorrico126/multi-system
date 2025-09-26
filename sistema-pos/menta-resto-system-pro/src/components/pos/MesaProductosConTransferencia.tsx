@@ -27,7 +27,7 @@ export function MesaProductosConTransferencia({ mesaId, idRestaurante, onEditarP
   });
 
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
+    const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001');
     const roomName = `restaurante_${idRestaurante}_mesa_${mesaId}`;
 
     socket.on('connect', () => {

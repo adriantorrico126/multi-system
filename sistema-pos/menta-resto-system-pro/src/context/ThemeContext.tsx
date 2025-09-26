@@ -18,6 +18,7 @@ interface ThemeContextProps {
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('theme') as Theme) || 'light';
@@ -46,14 +47,14 @@ export const useTheme = () => {
   const context = useContext(ThemeContext);
   
   // Solo mostrar el log una vez para evitar spam infinito
-  if (!window.__themeDebugShown) {
+  if (typeof window !== 'undefined' && !window.__themeDebugShown) {
     console.log('🔍 useTheme llamado, contexto disponible:', !!context);
     window.__themeDebugShown = true;
   }
   
   if (!context) {
     // Solo mostrar el warning una vez para evitar spam infinito
-    if (!window.__themeWarningShown) {
+    if (typeof window !== 'undefined' && !window.__themeWarningShown) {
       console.warn('useTheme called outside ThemeProvider, returning default values');
       window.__themeWarningShown = true;
     }

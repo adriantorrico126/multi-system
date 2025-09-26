@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const egresoController = require('../controllers/egresoController');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { planMiddleware } = require('../middlewares/planMiddleware');
 const { 
   validateEgresosPermissions, 
   validateSucursalAccess, 
@@ -198,12 +199,18 @@ const reporteQueryValidation = [
 ];
 
 // =====================================================
+// MIDDLEWARE DE PLANES
+// =====================================================
+
+// Aplicar middleware de planes para funcionalidades básicas de egresos (plan profesional+)
+router.use(authenticateToken, planMiddleware('egresos.basico', 'profesional'));
+
+// =====================================================
 // RUTAS CRUD BÁSICAS
 // =====================================================
 
 // Obtener todos los egresos
 router.get('/', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'cajero'),
   validateEgresosPermissions('read'),
   validateSucursalAccess,
@@ -215,14 +222,12 @@ router.get('/',
 // NOTA: Debe declararse ANTES de "/:id" para evitar colisiones
 // Obtener egresos pendientes de aprobación
 router.get('/pendientes-aprobacion', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'contador'),
   egresoController.getEgresosPendientesAprobacion
 );
 
 // Obtener un egreso por ID
 router.get('/:id', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'cajero'),
   paramIdValidation,
   egresoController.getEgresoById
@@ -230,7 +235,6 @@ router.get('/:id',
 
 // Crear un nuevo egreso
 router.post('/', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'cajero'),
   validateEgresosPermissions('create'),
   validateSucursalAccess,
@@ -242,7 +246,6 @@ router.post('/',
 
 // Actualizar un egreso
 router.put('/:id', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'cajero'),
   validateEgresosPermissions('update'),
   validateSucursalAccess,
@@ -256,7 +259,6 @@ router.put('/:id',
 
 // Eliminar (cancelar) un egreso
 router.delete('/:id', 
-  authenticateToken, 
   authorizeRoles('admin', 'gerente', 'contador'),
   paramIdValidation,
   egresoController.deleteEgreso

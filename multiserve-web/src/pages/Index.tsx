@@ -2,19 +2,21 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AboutSection from "@/components/AboutSection";
 import FeaturedDishes from "@/components/FeaturedDishes";
-import TestimonialsSection from "@/components/TestimonialsSection";
+import AboutUsSection from "@/components/AboutUsSection";
 import ReservationSection from "@/components/ReservationSection";
 import LocationsSection from "@/components/LocationsSection";
 import Footer from "@/components/Footer";
+import VisualEffects from "@/components/VisualEffects";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background font-body">
+    <div className="min-h-screen bg-background font-body relative overflow-hidden">
+      <VisualEffects />
       <Navbar />
       <HeroSection />
       <AboutSection />
       <FeaturedDishes />
-      <TestimonialsSection />
+      <AboutUsSection />
       <ReservationSection />
       <LocationsSection />
       <Footer />

@@ -1,21 +1,21 @@
 const { pool } = require('../config/database');
 
 const Venta = {
-  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante, rol_usuario, tipo_pago = 'anticipado', estado_pago = 'pagado', observaciones_pago = null }, client = pool) {
-    // Validación extra: si es venta por mesa, id_mesa y mesa_numero deben ser válidos
-    if (tipo_servicio === 'Mesa' && (id_mesa == null || mesa_numero == null)) {
-      throw new Error(`[VENTA MODEL] No se puede crear venta: id_mesa o mesa_numero es null o undefined. id_mesa: ${id_mesa}, mesa_numero: ${mesa_numero}`);
+  async createVenta({ id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, id_restaurante, rol_usuario, tipo_pago = 'anticipado', estado_pago = 'pagado' }, client = pool) {
+    // Validación corregida: solo requerir mesa cuando el tipo de servicio sea 'Mesa' y se haya especificado una mesa
+    if (tipo_servicio === 'Mesa' && id_mesa != null && mesa_numero == null) {
+      throw new Error(`[VENTA MODEL] No se puede crear venta de mesa: mesa_numero es null cuando id_mesa es ${id_mesa}`);
     }
     
     // Estado inicial unificado: permitir a mesero enviar pedidos directamente a cocina
     let estadoInicial = 'recibido';
     
     const query = `
-      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante, tipo_pago, estado_pago, observaciones_pago)
-      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7::int, $8, $9, $10, $11, $12)
-      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante, tipo_pago, estado_pago, observaciones_pago;
+      INSERT INTO ventas (fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, id_restaurante, tipo_pago, estado_pago)
+      VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7::int, $8, $9, $10, $11)
+      RETURNING id_venta, fecha, id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estado, created_at, id_restaurante, tipo_pago, estado_pago;
     `;
-    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante, tipo_pago, estado_pago, observaciones_pago];
+    const values = [id_vendedor, id_pago, id_sucursal, tipo_servicio, total, id_mesa, mesa_numero, estadoInicial, id_restaurante, tipo_pago, estado_pago];
     
     const { rows } = await client.query(query, values);
     return rows[0];
@@ -353,13 +353,18 @@ const Venta = {
       
       // Filtros opcionales
       if (filtros.fecha_inicio) {
-        query += ` AND v.fecha >= $${paramIndex}`;
+        query += ` AND v.fecha >= $${paramIndex}::timestamp`;
         params.push(filtros.fecha_inicio);
         paramIndex++;
       }
       
       if (filtros.fecha_fin) {
-        query += ` AND v.fecha <= $${paramIndex}`;
+        // Si fecha_inicio y fecha_fin son iguales, usar rango completo del día
+        if (filtros.fecha_inicio === filtros.fecha_fin) {
+          query += ` AND v.fecha < ($${paramIndex}::date + interval '1 day')`;
+        } else {
+          query += ` AND v.fecha <= $${paramIndex}::timestamp`;
+        }
         params.push(filtros.fecha_fin);
         paramIndex++;
       }
@@ -405,6 +410,55 @@ const Venta = {
       return rows;
     } catch (error) {
       console.error('Error en getVentasFiltradas:', error);
+      throw error;
+    }
+  },
+
+  // Obtener una venta específica con sus detalles
+  async getVentaConDetalles(id_venta, id_restaurante) {
+    try {
+      console.log('🔍 [MODEL] getVentaConDetalles - Buscando venta:', id_venta, 'en restaurante:', id_restaurante);
+      
+      // Obtener la venta
+      const ventaQuery = `
+        SELECT v.*, u.nombre as vendedor_nombre
+        FROM ventas v
+        LEFT JOIN usuarios u ON v.id_vendedor = u.id_usuario
+        WHERE v.id_venta = $1 AND v.id_restaurante = $2
+      `;
+      const ventaResult = await pool.query(ventaQuery, [id_venta, id_restaurante]);
+      
+      console.log('🔍 [MODEL] getVentaConDetalles - Resultado venta:', ventaResult.rows.length, 'filas');
+      
+      if (ventaResult.rows.length === 0) {
+        console.log('❌ [MODEL] getVentaConDetalles - Venta no encontrada');
+        return null;
+      }
+
+      const venta = ventaResult.rows[0];
+      console.log('✅ [MODEL] getVentaConDetalles - Venta encontrada:', venta.id_venta);
+
+      // Obtener los detalles de la venta
+      const detallesQuery = `
+        SELECT dv.*, p.nombre as producto_nombre, p.precio as producto_precio
+        FROM detalle_ventas dv
+        LEFT JOIN productos p ON dv.id_producto = p.id_producto
+        WHERE dv.id_venta = $1 AND dv.id_restaurante = $2
+        ORDER BY dv.created_at ASC
+      `;
+      const detallesResult = await pool.query(detallesQuery, [id_venta, id_restaurante]);
+
+      console.log('🔍 [MODEL] getVentaConDetalles - Detalles encontrados:', detallesResult.rows.length, 'productos');
+
+      const resultado = {
+        ...venta,
+        detalles: detallesResult.rows
+      };
+
+      console.log('✅ [MODEL] getVentaConDetalles - Retornando resultado con', resultado.detalles.length, 'detalles');
+      return resultado;
+    } catch (error) {
+      console.error('❌ [MODEL] Error en getVentaConDetalles:', error);
       throw error;
     }
   }

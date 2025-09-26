@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { PlanGate } from '../components/plan/PlanGate';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -36,6 +37,35 @@ interface DailyCashFlow {
   ingresos_otros: number;
   total_ingresos: number;
 }
+
+// Componente de restricción para Arqueo
+const ArqueoRestricted = () => (
+  <div className="container mx-auto p-6">
+    <Card className="border-amber-200 bg-amber-50">
+      <CardHeader>
+        <CardTitle className="text-center text-amber-800">
+          🔒 Arqueo de Caja - Plan Profesional Requerido
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-center space-y-4">
+        <p className="text-amber-700">
+          La funcionalidad de <strong>Arqueo de Caja</strong> está disponible únicamente en el plan <strong>Profesional</strong> o superior.
+        </p>
+        <p className="text-sm text-amber-600">
+          Esta funcionalidad incluye gestión completa de caja diaria, apertura y cierre de caja, y control de efectivo.
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Button variant="outline" className="border-amber-300 text-amber-700">
+            📞 Contactar Soporte
+          </Button>
+          <Button className="bg-amber-600 hover:bg-amber-700">
+            👑 Actualizar Plan
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 const ArqueoPage: React.FC = () => {
   const { user } = useAuth();
@@ -173,7 +203,8 @@ const ArqueoPage: React.FC = () => {
   }
 
   return (
-    <div className="p-3 sm:p-6">
+    <PlanGate feature="arqueo" fallback={<ArqueoRestricted />} requiredPlan="profesional">
+      <div className="p-3 sm:p-6">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-6">Arqueo de Caja Avanzado</h1>
 
       <Card className="mb-4 sm:mb-6">
@@ -677,6 +708,7 @@ const ArqueoPage: React.FC = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </PlanGate>
   );
 };
 

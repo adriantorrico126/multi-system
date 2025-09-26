@@ -41,13 +41,13 @@ exports.getPedidosPendientes = async (req, res, next) => {
   }
 };
 
-// Actualizar el estado de un pedido (ej. de 'pendiente' a 'en_preparacion' o 'listo')
+// Actualizar el estado de un pedido (ej. de 'pendiente' a 'en_preparacion' o 'entregado')
 exports.actualizarEstadoPedido = async (req, res, next) => {
   try {
     const { id_detalle } = req.params;
-    const { nuevo_estado } = req.body; // 'en_preparacion', 'listo'
+    const { nuevo_estado } = req.body; // 'en_preparacion', 'entregado'
 
-    if (!['en_preparacion', 'listo'].includes(nuevo_estado)) {
+    if (!['en_preparacion', 'entregado'].includes(nuevo_estado)) {
       return res.status(400).json({ message: 'Estado no válido.' });
     }
 

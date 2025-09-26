@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-09-10T13:42:32.322898",
+  "test_type": "local_migration_test",
+  "migration_version": "1.0",
+  "status": "completed",
+  "initial_data": {
+    "restaurants": 6,
+    "users": 11,
+    "products": 110,
+    "branches": 9
+  },
+  "tables_created": [
+    "alertas_limites",
+    "auditoria_planes",
+    "planes",
+    "suscripciones",
+    "uso_recursos"
+  ],
+  "plans_created": [
+    {
+      "nombre": "basico",
+      "precio": 19.0
+    },
+    {
+      "nombre": "profesional",
+      "precio": 49.0
+    },
+    {
+      "nombre": "avanzado",
+      "precio": 99.0
+    },
+    {
+      "nombre": "enterprise",
+      "precio": 119.0
+    }
+  ],
+  "subscriptions_created": 6,
+  "usage_records_created": 6,
+  "functions_created": [
+    "obtener_plan_actual",
+    "verificar_limites_plan"
+  ]
+}

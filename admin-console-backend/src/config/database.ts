@@ -109,3 +109,45 @@ export async function initServiciosRestauranteTable() {
     CREATE INDEX IF NOT EXISTS idx_servicios_restaurante_estado ON servicios_restaurante(estado_suscripcion);
   `);
 }
+
+// Inicializar tabla de planes
+export async function initPlanesTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS planes (
+      id_plan SERIAL PRIMARY KEY,
+      nombre VARCHAR(100) NOT NULL,
+      descripcion TEXT,
+      precio_mensual NUMERIC(10,2) NOT NULL,
+      precio_anual NUMERIC(10,2),
+      max_sucursales INTEGER DEFAULT 1,
+      max_usuarios INTEGER DEFAULT 5,
+      max_productos INTEGER DEFAULT 100,
+      max_transacciones_mes INTEGER DEFAULT 500,
+      funcionalidades JSONB NOT NULL DEFAULT '{}'::jsonb,
+      activo BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_planes_activo ON planes(activo);
+  `);
+}
+
+// Inicializar tabla de suscripciones
+export async function initSuscripcionesTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS suscripciones (
+      id_suscripcion SERIAL PRIMARY KEY,
+      id_restaurante INTEGER NOT NULL REFERENCES restaurantes(id_restaurante) ON DELETE CASCADE,
+      id_plan INTEGER NOT NULL REFERENCES planes(id_plan),
+      fecha_inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      fecha_fin TIMESTAMP WITH TIME ZONE,
+      estado VARCHAR(50) NOT NULL DEFAULT 'activa',
+      motivo_cancelacion TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_suscripciones_restaurante ON suscripciones(id_restaurante);
+    CREATE INDEX IF NOT EXISTS idx_suscripciones_plan ON suscripciones(id_plan);
+    CREATE INDEX IF NOT EXISTS idx_suscripciones_estado ON suscripciones(estado);
+  `);
+}

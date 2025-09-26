@@ -28,12 +28,31 @@ try {
   serverLogger.logStep('Socket.io initialization', 'success');
   console.log('Socket.io inicializado');
 
+  // Cliente de notificaciones para cambios de planes - DESACTIVADO
+  // NOTA: El POS debe ser independiente del admin backend
+  // const notificationClient = require('./services/notificationClient');
+  // serverLogger.logStep('Notification client import', 'success');
+
   // Iniciar servidor
-  const PORT = process.env.PORT || 8080;
+  const PORT = envConfig.PORT;
   console.log('Antes de server.listen');
   server.listen(PORT, '0.0.0.0', () => {
     serverLogger.logSection('Servidor iniciado');
     serverLogger.logStep(`Servidor HTTP en puerto ${PORT}`, 'success');
+    
+    // DESACTIVADO: Conectar cliente de notificaciones
+    // El POS debe funcionar independientemente del admin backend
+    /*
+    try {
+      // Obtener el ID del restaurante desde las variables de entorno o usar 1 por defecto
+      const restaurantId = process.env.RESTAURANT_ID || 1;
+      notificationClient.connect(restaurantId);
+      serverLogger.logStep(`Cliente de notificaciones conectado para restaurante ${restaurantId}`, 'success');
+    } catch (error) {
+      serverLogger.logStep(`Error conectando cliente de notificaciones: ${error.message}`, 'error');
+    }
+    */
+    
     serverLogger.getSummary();
     console.log(`🚀 Servidor corriendo en http://0.0.0.0:${PORT}`);
   });

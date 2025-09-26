@@ -68,8 +68,16 @@ export function UserManagement() {
   const queryClient = useQueryClient();
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({ queryKey: ['users'], queryFn: getUsers });
-  const { data: branches = [], isLoading: isLoadingBranches } = useQuery<any[]>({ queryKey: ['branches'], queryFn: getBranches });
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({ 
+    queryKey: ['users'], 
+    queryFn: getUsers,
+    enabled: !!user // Solo ejecutar si hay usuario autenticado
+  });
+  const { data: branches = [], isLoading: isLoadingBranches } = useQuery<any[]>({ 
+    queryKey: ['branches'], 
+    queryFn: getBranches,
+    enabled: !!user // Solo ejecutar si hay usuario autenticado
+  });
 
   const [formData, setFormData] = useState({
     nombre: '',

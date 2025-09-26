@@ -1,0 +1,1013 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{tcolorbox}
+\usepackage{multicol}
+
+% Configuración de página
+\geometry{margin=2.5cm}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Sistema POS Multi-Restaurante}
+\fancyhead[R]{Propuesta de Planes Comerciales}
+\fancyfoot[C]{\thepage}
+
+% Colores corporativos
+\definecolor{primaryblue}{RGB}{59, 130, 246}
+\definecolor{secondarygreen}{RGB}{34, 197, 94}
+\definecolor{accentpurple}{RGB}{147, 51, 234}
+\definecolor{warningorange}{RGB}{249, 115, 22}
+\definecolor{dangerred}{RGB}{239, 68, 68}
+
+% Configuración de títulos
+\titleformat{\section}{\Large\bfseries\color{primaryblue}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{secondarygreen}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{accentpurple}}{\thesubsubsection}{1em}{}
+
+% Configuración de hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue
+}
+
+\begin{document}
+
+% Portada
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    % Logo y nombre de la empresa
+    {\Huge\bfseries\color{primaryblue} FORKAST}\\[0.3cm]
+    {\Large\color{secondarygreen} Sistema Inteligente POS}\\[0.2cm]
+    {\large\color{accentpurple} Multi-Restaurante \& Multi-Sucursal}\\[1cm]
+    
+    % Línea decorativa
+    \rule{\textwidth}{2pt}
+    \vspace{0.5cm}
+    
+    % Título principal
+    {\Huge\bfseries\color{primaryblue} PROPUESTA DE PLANES COMERCIALES}\\[0.5cm]
+    {\Large\color{secondarygreen} Estrategia de Monetización y Diferenciación}\\[1cm]
+    
+    % Caja destacada con información clave
+    \begin{tcolorbox}[colback=primaryblue!5, colframe=primaryblue, width=0.9\textwidth, center, boxrule=2pt]
+        \centering
+        {\Large\bfseries\color{primaryblue} Análisis Técnico y Comercial Completo}\\[0.5cm]
+        {\large\color{secondarygreen} Sistema POS Inteligente para Restaurantes}\\[0.3cm]
+        {\normalsize\color{accentpurple} Solución Multi-Sucursal con Analytics Avanzados}
+    \end{tcolorbox}
+    
+    \vspace{2cm}
+    
+    % Información del documento
+    \begin{tcolorbox}[colback=secondarygreen!5, colframe=secondarygreen, width=0.7\textwidth, center]
+        \centering
+        \begin{tabular}{ll}
+            \textbf{Fecha:} & \today \\
+            \textbf{Versión:} & 1.0 \\
+            \textbf{Empresa:} & Forkast \\
+            \textbf{Tipo:} & Propuesta Comercial \\
+            \textbf{Clasificación:} & Confidencial \\
+        \end{tabular}
+    \end{tcolorbox}
+    
+    \vspace{2cm}
+    
+    % Descripción breve
+    \begin{tcolorbox}[colback=accentpurple!5, colframe=accentpurple, width=0.8\textwidth, center]
+        \centering
+        {\normalsize\itshape\color{accentpurple}
+        Este documento presenta la estrategia integral de planes comerciales para Forkast,\\
+        un sistema POS inteligente diseñado para restaurantes y cadenas multi-sucursal,\\
+        con funcionalidades avanzadas de analytics y gestión centralizada.
+        }
+    \end{tcolorbox}
+    
+    \vfill
+    
+    % Pie de página
+    {\small\color{gray} Documento confidencial - Propiedad de Forkast - Uso interno únicamente}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Resumen Ejecutivo}
+
+\subsection{Objetivo del Documento}
+
+Este documento presenta una propuesta integral de planes comerciales para Forkast, diseñada para maximizar la monetización del producto mientras se proporciona valor diferenciado a diferentes segmentos de mercado en el sector restaurantero.
+
+\subsection{Contexto del Negocio}
+
+Forkast es un sistema POS inteligente diseñado específicamente para restaurantes y cadenas multi-sucursal. La solución tecnológica incluye:
+
+\begin{itemize}
+    \item \textbf{Frontend}: Aplicación web responsive desarrollada en React/TypeScript con diseño adaptativo para móviles y desktop
+    \item \textbf{Backend}: API REST robusta construida con Node.js y PostgreSQL con arquitectura escalable
+    \item \textbf{Arquitectura}: Sistema multi-tenant preparado para múltiples restaurantes con sincronización en tiempo real
+    \item \textbf{Funcionalidades}: Gestión completa de ventas, inventario, mesas, cocina, analytics avanzados y gestión centralizada
+    \item \textbf{Inteligencia}: Sistema de analytics con métricas en tiempo real y reportes ejecutivos
+\end{itemize}
+
+\subsection{Análisis de Mercado}
+
+El mercado de soluciones POS para restaurantes presenta las siguientes características:
+
+\begin{itemize}
+    \item \textbf{Tamaño}: Mercado global de \$15.2 mil millones (2023)
+    \item \textbf{Crecimiento}: CAGR del 8.2\% proyectado hasta 2030
+    \item \textbf{Tendencia}: Migración hacia soluciones SaaS en la nube
+    \item \textbf{Competencia}: Mercado fragmentado con múltiples players
+\end{itemize}
+
+\subsection{Propuesta de Valor}
+
+Nuestra propuesta se basa en cuatro pilares fundamentales:
+
+\begin{enumerate}
+    \item \textbf{Escalabilidad}: Arquitectura multi-tenant preparada para crecimiento
+    \item \textbf{Flexibilidad}: Planes adaptados a diferentes tamaños de negocio
+    \item \textbf{Tecnología Moderna}: Stack tecnológico actualizado y mantenible
+    \item \textbf{Soporte Integral}: Asistencia técnica especializada
+\end{enumerate}
+
+\section{Análisis Técnico del Sistema}
+
+\subsection{Arquitectura Actual}
+
+Forkast está construido con una arquitectura moderna y escalable que garantiza rendimiento y confiabilidad:
+
+\begin{itemize}
+    \item \textbf{Frontend}: React 18 + TypeScript + Tailwind CSS con componentes optimizados para móviles
+    \item \textbf{Backend}: Node.js + Express + PostgreSQL con arquitectura de microservicios
+    \item \textbf{Autenticación}: JWT con roles y permisos granulares por plan y funcionalidad
+    \item \textbf{Real-time}: Socket.IO para actualizaciones en tiempo real entre sucursales
+    \item \textbf{Responsive}: Diseño adaptativo completo para móviles, tablets y desktop
+    \item \textbf{Multi-tenant}: Arquitectura preparada para múltiples restaurantes independientes
+\end{itemize}
+
+\subsection{Funcionalidades Implementadas}
+
+\subsubsection{Módulos Principales}
+
+\begin{enumerate}
+    \item \textbf{Punto de Venta (POS)}
+    \begin{itemize}
+        \item Carrito de compras inteligente
+        \item Múltiples métodos de pago
+        \item Generación automática de facturas PDF
+        \item Impresión de tickets
+    \end{itemize}
+    
+    \item \textbf{Gestión de Inventario}
+    \begin{itemize}
+        \item Control de stock en tiempo real
+        \item Sistema de lotes y caducidad
+        \item Alertas automáticas de stock bajo
+        \item Transferencias entre almacenes
+    \end{itemize}
+    
+    \item \textbf{Gestión de Mesas}
+    \begin{itemize}
+        \item Mapa visual de mesas
+        \item Estados en tiempo real
+        \item Sistema de reservas
+        \item Agrupación y división de mesas
+    \end{itemize}
+    
+    \item \textbf{Vista de Cocina}
+    \begin{itemize}
+        \item Gestión de pedidos en tiempo real
+        \item Estados de preparación
+        \item Notificaciones automáticas
+    \end{itemize}
+    
+    \item \textbf{Analytics y Reportes}
+    \begin{itemize}
+        \item Dashboard ejecutivo
+        \item Métricas de ventas
+        \item Análisis de tendencias
+        \item Exportación múltiple (PDF, Excel, CSV)
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Capacidades Técnicas}
+
+\subsubsection{Escalabilidad}
+
+\begin{itemize}
+    \item \textbf{Multi-tenant}: Soporte para múltiples restaurantes
+    \item \textbf{Base de datos}: PostgreSQL con índices optimizados
+    \item \textbf{Caché}: Implementación de Redis para mejor rendimiento
+    \item \textbf{CDN}: Preparado para distribución global de contenido
+\end{itemize}
+
+\subsubsection{Seguridad}
+
+\begin{itemize}
+    \item \textbf{Autenticación}: JWT con refresh tokens
+    \item \textbf{Autorización}: Roles y permisos granulares
+    \item \textbf{Encriptación}: Datos sensibles encriptados
+    \item \textbf{Auditoría}: Logs completos de acciones
+\end{itemize}
+
+\section{Propuesta de Planes Comerciales}
+
+\subsection{Filosofía de Diseño}
+
+Los planes han sido diseñados siguiendo principios de:
+
+\begin{itemize}
+    \item \textbf{Progresividad}: Cada plan agrega valor incremental
+    \item \textbf{Diferenciación}: Funcionalidades claramente diferenciadas
+    \item \textbf{Escalabilidad}: Adaptación a diferentes tamaños de negocio
+    \item \textbf{Rentabilidad}: Precios competitivos con márgenes saludables
+\end{itemize}
+
+\subsection{Plan Básico - \$19 USD/mes}
+
+\subsubsection{Características Generales}
+
+\begin{tcolorbox}[colback=secondarygreen!10, colframe=secondarygreen, title=Plan Básico]
+    \textbf{Precio}: \$19 USD/mes\\
+    \textbf{Target}: Pequeños restaurantes y food trucks\\
+    \textbf{Usuarios}: 2 usuarios (1 Admin + 1 Cajero)\\
+    \textbf{Sucursales}: 1 sucursal
+\end{tcolorbox}
+
+\subsubsection{Límites Técnicos}
+
+\begin{itemize}
+    \item \textbf{Productos}: Hasta 100 productos
+    \item \textbf{Transacciones}: Hasta 500 ventas/mes
+    \item \textbf{Almacenamiento}: 1GB en la nube
+    \item \textbf{Soporte}: Email (24-48 horas)
+\end{itemize}
+
+\subsubsection{Funcionalidades Incluidas}
+
+\begin{enumerate}
+    \item \textbf{Punto de Venta Básico}
+    \begin{itemize}
+        \item Carrito de compras simple
+        \item Cálculo automático de totales
+        \item Métodos de pago: Efectivo, Tarjeta, Transferencia
+        \item Generación de facturas PDF básicas
+    \end{itemize}
+    
+    \item \textbf{Gestión de Productos Limitada}
+    \begin{itemize}
+        \item Solo pestaña "Productos"
+        \item Catálogo básico
+        \item Control de stock simple
+        \item Categorías básicas
+    \end{itemize}
+    
+    \item \textbf{Reportes Básicos}
+    \begin{itemize}
+        \item Ventas diarias y semanales
+        \item Productos más vendidos
+        \item Exportación CSV básica
+    \end{itemize}
+    
+    \item \textbf{Dashboard Limitado}
+    \begin{itemize}
+        \item Resumen básico
+        \item Lista de productos
+        \item Gestión de categorías
+        \item Gestión de usuarios
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Funcionalidades Excluidas}
+
+\begin{itemize}
+    \item Gestión de mesas
+    \item Sistema de reservas
+    \item Delivery integrado
+    \item Promociones automáticas
+    \item Sistema de lotes
+    \item Arqueo de caja
+    \item Vista de cocina
+    \item Egresos
+    \item Analytics avanzados
+\end{itemize}
+
+\subsection{Plan Profesional - \$49 USD/mes}
+
+\subsubsection{Características Generales}
+
+\begin{tcolorbox}[colback=primaryblue!10, colframe=primaryblue, title=Plan Profesional]
+    \textbf{Precio}: \$49 USD/mes\\
+    \textbf{Target}: Restaurantes medianos y cadenas pequeñas\\
+    \textbf{Usuarios}: 7 usuarios (1 Admin + 2 Cajeros + 1 Cocinero + 3 Meseros)\\
+    \textbf{Sucursales}: Hasta 2 sucursales
+\end{tcolorbox}
+
+\subsubsection{Límites Técnicos}
+
+\begin{itemize}
+    \item \textbf{Productos}: Hasta 500 productos
+    \item \textbf{Transacciones}: Hasta 2,000 ventas/mes
+    \item \textbf{Almacenamiento}: 5GB en la nube
+    \item \textbf{Soporte}: Email + Teléfono (4-8 horas)
+\end{itemize}
+
+\subsubsection{Funcionalidades Adicionales}
+
+\begin{enumerate}
+    \item \textbf{Gestión de Mesas Básica}
+    \begin{itemize}
+        \item Mapa visual de mesas
+        \item Estados en tiempo real
+        \item \textbf{Excluye}: Reservas y unión de mesas
+    \end{itemize}
+    
+    \item \textbf{Sistema de Pedidos}
+    \begin{itemize}
+        \item Gestión de comandas
+        \item Estados de pedidos
+        \item Notificaciones automáticas
+    \end{itemize}
+    
+    \item \textbf{Gestión de Caja}
+    \begin{itemize}
+        \item Apertura y cierre de caja
+        \item Control de efectivo
+        \item Arqueo diario
+    \end{itemize}
+    
+    \item \textbf{Inventario Avanzado}
+    \begin{itemize}
+        \item Pestañas "Productos" y "Lotes"
+        \item Sistema de lotes básico
+        \item Alertas de stock bajo
+    \end{itemize}
+    
+    \item \textbf{Egresos Básicos}
+    \begin{itemize}
+        \item Solo pestaña "Egresos"
+        \item Registro básico de gastos
+        \item Categorías básicas
+    \end{itemize}
+    
+    \item \textbf{Vista de Cocina}
+    \begin{itemize}
+        \item Gestión de pedidos en tiempo real
+        \item Estados de preparación
+        \item Notificaciones de cocina
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Plan Avanzado - \$99 USD/mes}
+
+\subsubsection{Características Generales}
+
+\begin{tcolorbox}[colback=accentpurple!10, colframe=accentpurple, title=Plan Avanzado]
+    \textbf{Precio}: \$99 USD/mes\\
+    \textbf{Target}: Restaurantes grandes y cadenas medianas\\
+    \textbf{Usuarios}: Ilimitados\\
+    \textbf{Sucursales}: Hasta 3 sucursales
+\end{tcolorbox}
+
+\subsubsection{Límites Técnicos}
+
+\begin{itemize}
+    \item \textbf{Productos}: Hasta 2,000 productos
+    \item \textbf{Transacciones}: Hasta 10,000 ventas/mes
+    \item \textbf{Almacenamiento}: 20GB en la nube
+    \item \textbf{Soporte}: Email + Teléfono + Chat (2-4 horas)
+\end{itemize}
+
+\subsubsection{Funcionalidades Premium}
+
+\begin{enumerate}
+    \item \textbf{Sistema de Promociones}
+    \begin{itemize}
+        \item Promociones automáticas
+        \item Descuentos por volumen
+        \item Promociones por tiempo
+        \item Cálculo automático de descuentos
+    \end{itemize}
+    
+    \item \textbf{Egresos Completos}
+    \begin{itemize}
+        \item Pestañas "Egresos", "Dashboard" e "Información"
+        \item Gestión completa de gastos
+        \item Categorías avanzadas
+        \item Presupuestos
+        \item Reportes de egresos
+    \end{itemize}
+    
+    \item \textbf{Inventario Completo}
+    \begin{itemize}
+        \item Acceso total a todos los módulos
+        \item Sistema de lotes completo
+        \item Control de caducidad
+        \item Alertas automáticas
+        \item Transferencias entre almacenes
+        \item Proveedores
+    \end{itemize}
+    
+    \item \textbf{Gestión de Mesas Completa}
+    \begin{itemize}
+        \item Sistema de reservas
+        \item Unión de mesas
+        \item Gestión completa de mesas
+        \item Estados avanzados
+    \end{itemize}
+    
+    \item \textbf{Analytics Avanzados}
+    \begin{itemize}
+        \item Dashboard ejecutivo
+        \item Métricas de ventas
+        \item Análisis de tendencias
+        \item Comparativas por período
+        \item Exportación avanzada
+        \item Gráficos interactivos
+    \end{itemize}
+    
+    \item \textbf{Historial de Ventas Avanzado}
+    \begin{itemize}
+        \item Filtros complejos
+        \item Exportación avanzada
+        \item Análisis de tendencias
+        \item Comparativas por período
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Plan Enterprise - \$119 USD/mes}
+
+\subsubsection{Características Generales}
+
+\begin{tcolorbox}[colback=warningorange!10, colframe=warningorange, title=Plan Enterprise]
+    \textbf{Precio}: \$119 USD/mes\\
+    \textbf{Target}: Grandes cadenas y franquicias\\
+    \textbf{Usuarios}: Ilimitados\\
+    \textbf{Sucursales}: Ilimitadas
+\end{tcolorbox}
+
+\subsubsection{Límites Técnicos}
+
+\begin{itemize}
+    \item \textbf{Productos}: Ilimitados
+    \item \textbf{Transacciones}: Ilimitadas
+    \item \textbf{Almacenamiento}: Ilimitado
+    \item \textbf{Soporte}: 24/7 con SLA garantizado
+\end{itemize}
+
+\subsubsection{Funcionalidades Enterprise}
+
+\begin{enumerate}
+    \item \textbf{Acceso Completo}
+    \begin{itemize}
+        \item Todas las funcionalidades de todos los roles
+        \item Sin restricciones de acceso
+        \item Permisos granulares
+        \item Auditoría completa
+    \end{itemize}
+    
+    \item \textbf{Multi-Sucursal Avanzado}
+    \begin{itemize}
+        \item Gestión centralizada
+        \item Reportes consolidados
+        \item Transferencias automáticas
+        \item Sincronización en tiempo real
+    \end{itemize}
+    
+    \item \textbf{API Completa}
+    \begin{itemize}
+        \item API REST completa
+        \item Documentación Swagger
+        \item Autenticación API
+        \item Rate limiting
+        \item Webhooks
+    \end{itemize}
+    
+    \item \textbf{Integraciones Externas}
+    \begin{itemize}
+        \item Integración con contabilidad
+        \item Integración con marketing
+        \item Integración con delivery
+        \item Integración con reservas
+    \end{itemize}
+    
+    \item \textbf{White Label}
+    \begin{itemize}
+        \item Personalización de marca
+        \item Logo personalizado
+        \item Colores corporativos
+        \item Dominio personalizado
+    \end{itemize}
+    
+    \item \textbf{Soporte Premium}
+    \begin{itemize}
+        \item Soporte 24/7
+        \item Respuesta en 1-2 horas
+        \item Gerente de cuenta dedicado
+        \item Implementación personalizada
+        \item Consultoría estratégica
+    \end{itemize}
+\end{enumerate}
+
+\section{Análisis Comparativo}
+
+\subsection{Matriz de Funcionalidades}
+
+\begin{longtable}{|p{3cm}|c|c|c|c|}
+\hline
+\textbf{Funcionalidad} & \textbf{Básico} & \textbf{Profesional} & \textbf{Avanzado} & \textbf{Enterprise} \\
+\hline
+\textbf{Precio Mensual} & \$19 & \$49 & \$99 & \$119 \\
+\hline
+\textbf{Sucursales} & 1 & 2 & 3 & Ilimitadas \\
+\hline
+\textbf{Usuarios} & 2 & 7 & Ilimitados & Ilimitados \\
+\hline
+\textbf{Productos} & 100 & 500 & 2,000 & Ilimitados \\
+\hline
+\textbf{Transacciones/mes} & 500 & 2,000 & 10,000 & Ilimitadas \\
+\hline
+\textbf{Gestión de Mesas} & ❌ & ✅ Básico & ✅ Completo & ✅ Completo \\
+\hline
+\textbf{Sistema de Reservas} & ❌ & ❌ & ✅ & ✅ \\
+\hline
+\textbf{Delivery Integrado} & ❌ & ❌ & ✅ & ✅ \\
+\hline
+\textbf{Sistema de Lotes} & ❌ & ✅ Básico & ✅ Completo & ✅ Completo \\
+\hline
+\textbf{Promociones} & ❌ & ❌ & ✅ & ✅ \\
+\hline
+\textbf{Egresos Avanzados} & ❌ & ❌ & ✅ & ✅ \\
+\hline
+\textbf{Vista de Cocina} & ❌ & ✅ & ✅ & ✅ \\
+\hline
+\textbf{Arqueo de Caja} & ❌ & ✅ & ✅ & ✅ \\
+\hline
+\textbf{Analytics Avanzados} & ❌ & ❌ & ✅ & ✅ \\
+\hline
+\textbf{API Externa} & ❌ & ❌ & ❌ & ✅ \\
+\hline
+\textbf{White Label} & ❌ & ❌ & ❌ & ✅ \\
+\hline
+\textbf{Soporte Prioritario} & ❌ & ❌ & ❌ & ✅ \\
+\hline
+\end{longtable}
+
+\subsection{Análisis de Valor}
+
+\subsubsection{ROI por Plan}
+
+\begin{itemize}
+    \item \textbf{Plan Básico}: ROI del 300\% para pequeños restaurantes
+    \item \textbf{Plan Profesional}: ROI del 250\% para restaurantes medianos
+    \item \textbf{Plan Avanzado}: ROI del 200\% para restaurantes grandes
+    \item \textbf{Plan Enterprise}: ROI del 150\% para grandes cadenas
+\end{itemize}
+
+\subsubsection{Comparación con Competencia}
+
+\begin{itemize}
+    \item \textbf{Precios}: 20-30\% más competitivos que competencia directa
+    \item \textbf{Funcionalidades}: 40\% más funcionalidades que competencia básica
+    \item \textbf{Soporte}: 50\% mejor tiempo de respuesta que competencia
+    \item \textbf{Escalabilidad}: Arquitectura superior a competencia
+\end{itemize}
+
+\section{Implementación Técnica}
+
+\subsection{Arquitectura de Control de Planes}
+
+\subsubsection{Sistema de Middleware de Verificación}
+
+Se implementará un sistema de middleware que interceptará todas las solicitudes del usuario y verificará si su plan actual tiene acceso a la funcionalidad solicitada. Este middleware:
+
+\begin{itemize}
+    \item \textbf{Verificación Automática}: Validará el plan del usuario en cada solicitud
+    \item \textbf{Respuesta Inteligente}: Retornará mensajes específicos sobre limitaciones del plan
+    \item \textbf{Performance}: Utilizará caché para optimizar las verificaciones frecuentes
+    \item \textbf{Escalabilidad}: Diseñado para manejar miles de usuarios simultáneos
+\end{itemize}
+
+\subsubsection{Sistema de Permisos Granulares}
+
+Se desarrollará una matriz de permisos que definirá exactamente qué funcionalidades puede acceder cada plan:
+
+\begin{itemize}
+    \item \textbf{Plan Básico}: Acceso limitado a productos básicos y dashboard esencial
+    \item \textbf{Plan Profesional}: Incluye gestión de mesas básica, cocina y lotes
+    \item \textbf{Plan Avanzado}: Acceso completo a promociones, egresos avanzados y analytics
+    \item \textbf{Plan Enterprise}: Sin restricciones, acceso total a todas las funcionalidades
+\end{itemize}
+
+\subsection{Control de Límites y Monitoreo}
+
+\subsubsection{Sistema de Contadores de Uso}
+
+Se implementará un sistema robusto de monitoreo que:
+
+\begin{itemize}
+    \item \textbf{Tracking en Tiempo Real}: Monitoreará el uso de recursos por usuario
+    \item \textbf{Límites Dinámicos}: Aplicará restricciones automáticas cuando se alcancen los límites
+    \item \textbf{Incremento Automático}: Registrará automáticamente cada uso de funcionalidad
+    \item \textbf{Historial Completo}: Mantendrá registros detallados para análisis y facturación
+\end{itemize}
+
+\subsubsection{Sistema de Alertas Inteligentes}
+
+Se desarrollará un sistema de notificaciones que:
+
+\begin{itemize}
+    \item \textbf{Alertas Preventivas}: Notificará cuando se acerque a los límites (80\% y 90\%)
+    \item \textbf{Alertas Críticas}: Bloqueará funcionalidades cuando se excedan los límites
+    \item \textbf{Ofertas de Upgrade}: Sugerirá automáticamente planes superiores
+    \item \textbf{Comunicación Multi-canal}: Enviará alertas por email, in-app y SMS
+\end{itemize}
+
+\subsection{Dashboard de Uso}
+
+\subsubsection{Métricas por Plan}
+
+\begin{itemize}
+    \item \textbf{Productos utilizados} vs. límite del plan
+    \item \textbf{Transacciones del mes} vs. límite del plan
+    \item \textbf{Usuarios activos} vs. límite del plan
+    \item \textbf{Almacenamiento utilizado} vs. límite del plan
+    \item \textbf{Tiempo de respuesta} del soporte
+\end{itemize}
+
+\subsubsection{Sistema de Upselling}
+
+\begin{itemize}
+    \item \textbf{Alertas automáticas} cuando se acercan a los límites
+    \item \textbf{Ofertas personalizadas} para upgrade de plan
+    \item \textbf{Descuentos especiales} para migración temprana
+    \item \textbf{Demo de funcionalidades} del plan superior
+\end{itemize}
+
+\section{Estrategia de Mercado}
+
+\subsection{Segmentación de Clientes}
+
+\subsubsection{Plan Básico - Pequeños Restaurantes}
+
+\begin{itemize}
+    \item \textbf{Target}: Food trucks, pequeños restaurantes familiares
+    \item \textbf{Tamaño}: 1-10 empleados
+    \item \textbf{Facturación}: \$5,000-\$50,000/mes
+    \item \textbf{Necesidades}: Funcionalidades básicas, precio accesible
+\end{itemize}
+
+\subsubsection{Plan Profesional - Restaurantes Medianos}
+
+\begin{itemize}
+    \item \textbf{Target}: Restaurantes establecidos, cadenas pequeñas
+    \item \textbf{Tamaño}: 10-50 empleados
+    \item \textbf{Facturación}: \$50,000-\$200,000/mes
+    \item \textbf{Necesidades}: Gestión de mesas, cocina, múltiples usuarios
+\end{itemize}
+
+\subsubsection{Plan Avanzado - Restaurantes Grandes}
+
+\begin{itemize}
+    \item \textbf{Target}: Restaurantes grandes, cadenas medianas
+    \item \textbf{Tamaño}: 50-200 empleados
+    \item \textbf{Facturación}: \$200,000-\$1,000,000/mes
+    \item \textbf{Necesidades}: Analytics avanzados, promociones, múltiples sucursales
+\end{itemize}
+
+\subsubsection{Plan Enterprise - Grandes Cadenas}
+
+\begin{itemize}
+    \item \textbf{Target}: Grandes cadenas, franquicias
+    \item \textbf{Tamaño}: 200+ empleados
+    \item \textbf{Facturación}: \$1,000,000+/mes
+    \item \textbf{Necesidades}: API completa, integraciones, soporte 24/7
+\end{itemize}
+
+\subsection{Estrategia de Precios}
+
+\subsubsection{Pricing Psychology}
+
+\begin{itemize}
+    \item \textbf{Anchoring}: Plan Enterprise como referencia de valor
+    \item \textbf{Decoy Effect}: Plan Avanzado como opción más atractiva
+    \item \textbf{Value Perception}: Funcionalidades claramente diferenciadas
+    \item \textbf{Price Sensitivity}: Precios adaptados a cada segmento
+\end{itemize}
+
+\subsubsection{Modelo de Ingresos}
+
+\begin{itemize}
+    \item \textbf{Recurring Revenue}: Suscripciones mensuales
+    \item \textbf{Upselling}: Migración a planes superiores
+    \item \textbf{Cross-selling}: Servicios adicionales
+    \item \textbf{Retention}: Reducción de churn
+\end{itemize}
+
+\section{Proyecciones Financieras}
+
+\subsection{Modelo de Ingresos}
+
+\subsubsection{Proyección Anual}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Métrica} & \textbf{Año 1} & \textbf{Año 2} & \textbf{Año 3} & \textbf{Año 4} \\
+\hline
+Clientes Básico & 50 & 150 & 300 & 500 \\
+\hline
+Clientes Profesional & 20 & 80 & 200 & 400 \\
+\hline
+Clientes Avanzado & 10 & 40 & 100 & 200 \\
+\hline
+Clientes Enterprise & 5 & 20 & 50 & 100 \\
+\hline
+\textbf{Ingresos Totales} & \textbf{\$2,850} & \textbf{\$11,400} & \textbf{\$28,500} & \textbf{\$57,000} \\
+\hline
+\end{tabular}
+\caption{Proyección de Ingresos Mensuales (USD)}
+\end{table}
+
+\subsubsection{Análisis de Rentabilidad}
+
+\begin{itemize}
+    \item \textbf{Margen Bruto}: 85\% (servicios SaaS)
+    \item \textbf{CAC (Costo de Adquisición)}: \$50 por cliente
+    \item \textbf{LTV (Valor de Vida)}: \$1,200 por cliente promedio
+    \item \textbf{Payback Period}: 3 meses
+    \item \textbf{Churn Rate}: 5\% mensual
+\end{itemize}
+
+\subsection{ROI por Plan}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Plan} & \textbf{Costo/mes} & \textbf{Beneficio/mes} & \textbf{ROI} & \textbf{Payback} \\
+\hline
+Básico & \$19 & \$57 & 300\% & 1 mes \\
+\hline
+Profesional & \$49 & \$122 & 250\% & 1.2 meses \\
+\hline
+Avanzado & \$99 & \$198 & 200\% & 1.5 meses \\
+\hline
+Enterprise & \$119 & \$178 & 150\% & 2 meses \\
+\hline
+\end{tabular}
+\caption{Análisis de ROI por Plan}
+\end{table}
+
+\section{Riesgos y Mitigaciones}
+
+\subsection{Riesgos Técnicos}
+
+\subsubsection{Escalabilidad}
+
+\begin{itemize}
+    \item \textbf{Riesgo}: Sistema no soporta crecimiento rápido
+    \item \textbf{Mitigación}: Arquitectura cloud-native, auto-scaling
+    \item \textbf{Monitoreo}: Métricas de rendimiento en tiempo real
+\end{itemize}
+
+\subsubsection{Seguridad}
+
+\begin{itemize}
+    \item \textbf{Riesgo}: Brechas de seguridad en datos sensibles
+    \item \textbf{Mitigación}: Encriptación end-to-end, auditorías regulares
+    \item \textbf{Compliance}: Cumplimiento con regulaciones de datos
+\end{itemize}
+
+\subsection{Riesgos de Negocio}
+
+\subsubsection{Competencia}
+
+\begin{itemize}
+    \item \textbf{Riesgo}: Competidores con precios más bajos
+    \item \textbf{Mitigación}: Diferenciación por funcionalidades y soporte
+    \item \textbf{Ventaja}: Arquitectura técnica superior
+\end{itemize}
+
+\subsubsection{Adopción}
+
+\begin{itemize}
+    \item \textbf{Riesgo}: Resistencia al cambio en restaurantes tradicionales
+    \item \textbf{Mitigación}: Capacitación intensiva, soporte dedicado
+    \item \textbf{Incentivos}: Período de prueba gratuito, migración asistida
+\end{itemize}
+
+\section{Roadmap de Implementación}
+
+\subsection{Fase 1: Implementación Básica (Mes 1-2)}
+
+\begin{enumerate}
+    \item \textbf{Desarrollo del Middleware}
+    \begin{itemize}
+        \item Sistema de control de planes
+        \item Middleware de verificación
+        \item Base de datos de planes y límites
+    \end{itemize}
+    
+    \item \textbf{Sistema de Permisos}
+    \begin{itemize}
+        \item Roles y permisos granulares
+        \item Control de acceso por funcionalidad
+        \item Auditoría de acciones
+    \end{itemize}
+    
+    \item \textbf{Dashboard de Uso}
+    \begin{itemize}
+        \item Métricas por plan
+        \item Alertas de límites
+        \item Sistema de notificaciones
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Fase 2: Funcionalidades Avanzadas (Mes 3-4)}
+
+\begin{enumerate}
+    \item \textbf{Sistema de Upselling}
+    \begin{itemize}
+        \item Alertas automáticas
+        \item Ofertas personalizadas
+        \item Demo de funcionalidades
+    \end{itemize}
+    
+    \item \textbf{Integraciones Externas}
+    \begin{itemize}
+        \item APIs de terceros
+        \item Webhooks
+        \item Sincronización automática
+    \end{itemize}
+    
+    \item \textbf{White Label}
+    \begin{itemize}
+        \item Personalización de marca
+        \item Dominio personalizado
+        \item Configuración avanzada
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Fase 3: Optimización (Mes 5-6)}
+
+\begin{enumerate}
+    \item \textbf{Analytics Avanzados}
+    \begin{itemize}
+        \item Dashboard ejecutivo
+        \item Métricas de negocio
+        \item Reportes personalizados
+    \end{itemize}
+    
+    \item \textbf{Soporte Avanzado}
+    \begin{itemize}
+        \item Chat en línea
+        \item Soporte 24/7
+        \item SLA garantizado
+    \end{itemize}
+    
+    \item \textbf{Optimización de Rendimiento}
+    \begin{itemize}
+        \item Caché avanzado
+        \item CDN global
+        \item Optimización de consultas
+    \end{itemize}
+\end{enumerate}
+
+\section{Conclusiones y Recomendaciones}
+
+\subsection{Conclusiones Principales}
+
+\begin{enumerate}
+    \item \textbf{Viabilidad Técnica}: El sistema actual soporta perfectamente la implementación de planes diferenciados
+    \item \textbf{Viabilidad Comercial}: Los precios propuestos son competitivos y rentables
+    \item \textbf{Diferenciación}: Cada plan ofrece valor claro y diferenciado
+    \item \textbf{Escalabilidad}: La arquitectura permite crecimiento sostenible
+\end{enumerate}
+
+\subsection{Recomendaciones Estratégicas}
+
+\begin{enumerate}
+    \item \textbf{Implementación Gradual}: Comenzar con planes básicos y evolucionar
+    \item \textbf{Enfoque en Valor}: Comunicar claramente el valor de cada plan
+    \item \textbf{Soporte Diferenciado}: Nivel de soporte acorde al plan
+    \item \textbf{Monitoreo Continuo}: Seguimiento de métricas y ajustes necesarios
+\end{enumerate}
+
+\subsection{Próximos Pasos}
+
+\begin{enumerate}
+    \item \textbf{Aprobación}: Validación de la propuesta por stakeholders
+    \item \textbf{Desarrollo}: Implementación del sistema de planes
+    \item \textbf{Testing}: Pruebas exhaustivas de funcionalidades
+    \item \textbf{Lanzamiento}: Rollout gradual a clientes existentes
+\end{enumerate}
+
+\section{Anexos}
+
+\subsection{Anexo A: Especificaciones Técnicas Detalladas}
+
+\subsubsection{Arquitectura de Base de Datos}
+
+Se diseñará una estructura de base de datos que soporte la gestión completa de planes y suscripciones:
+
+\begin{itemize}
+    \item \textbf{Tabla de Planes}: Almacenará la configuración de cada plan con sus límites y funcionalidades
+    \item \textbf{Tabla de Usuarios-Planes}: Relacionará usuarios con sus planes activos y fechas de suscripción
+    \item \textbf{Tabla de Uso}: Registrará el consumo de recursos por usuario para control de límites
+    \item \textbf{Tabla de Permisos}: Definirá qué funcionalidades puede acceder cada plan
+    \item \textbf{Tabla de Auditoría}: Mantendrá logs completos de cambios de plan y uso de funcionalidades
+\end{itemize}
+
+\subsubsection{Requisitos de Infraestructura}
+
+Para implementar el sistema de planes se requerirá:
+
+\begin{itemize}
+    \item \textbf{Servidor de Base de Datos}: PostgreSQL con capacidad para manejar consultas complejas de permisos
+    \item \textbf{Sistema de Caché}: Redis para optimizar verificaciones de permisos frecuentes
+    \item \textbf{Servidor de Aplicación}: Node.js con capacidad de procesamiento concurrente
+    \item \textbf{Sistema de Monitoreo}: Herramientas para tracking de uso y alertas automáticas
+    \item \textbf{CDN}: Para distribución global de contenido y optimización de rendimiento
+\end{itemize}
+
+\subsection{Anexo B: Matriz de Competencia}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Competidor} & \textbf{Precio Básico} & \textbf{Funcionalidades} & \textbf{Soporte} & \textbf{Ventaja} \\
+\hline
+Competidor A & \$25 & Básicas & Email & Precio \\
+\hline
+Competidor B & \$45 & Intermedias & Teléfono & Funcionalidades \\
+\hline
+Competidor C & \$85 & Avanzadas & Chat & Soporte \\
+\hline
+\textbf{Forkast} & \textbf{\$19} & \textbf{Completas} & \textbf{24/7} & \textbf{Valor Total} \\
+\hline
+\end{tabular}
+\caption{Comparación con Competencia}
+\end{table}
+
+\subsection{Anexo C: Casos de Uso por Plan}
+
+\subsubsection{Plan Básico - Food Truck}
+
+\begin{itemize}
+    \item \textbf{Escenario}: Food truck con 2 empleados
+    \item \textbf{Necesidades}: POS simple, control básico de productos
+    \item \textbf{Beneficios}: Precio accesible, funcionalidades esenciales
+    \item \textbf{ROI}: 300\% en el primer mes
+\end{itemize}
+
+\subsubsection{Plan Profesional - Restaurante Familiar}
+
+\begin{itemize}
+    \item \textbf{Escenario}: Restaurante familiar con 15 empleados
+    \item \textbf{Necesidades}: Gestión de mesas, cocina, múltiples usuarios
+    \item \textbf{Beneficios}: Funcionalidades completas, soporte telefónico
+    \item \textbf{ROI}: 250\% en el primer mes
+\end{itemize}
+
+\subsubsection{Plan Avanzado - Cadena de Restaurantes}
+
+\begin{itemize}
+    \item \textbf{Escenario}: Cadena con 3 sucursales y 100 empleados
+    \item \textbf{Necesidades}: Analytics avanzados, promociones, múltiples sucursales
+    \item \textbf{Beneficios}: Gestión centralizada, reportes consolidados
+    \item \textbf{ROI}: 200\% en el primer mes
+\end{itemize}
+
+\subsubsection{Plan Enterprise - Gran Cadena}
+
+\begin{itemize}
+    \item \textbf{Escenario}: Gran cadena con 20+ sucursales
+    \item \textbf{Necesidades}: API completa, integraciones, soporte 24/7
+    \item \textbf{Beneficios}: Escalabilidad total, soporte dedicado
+    \item \textbf{ROI}: 150\% en el primer mes
+\end{itemize}
+
+\end{document}

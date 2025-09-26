@@ -1,16 +1,24 @@
-
+import React from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { POSSystem } from '@/components/pos/POSSystem';
-import { useAuth } from '../context/AuthContext';
-import { LoginModal } from '@/components/auth/LoginModal'; // Import named export
+import LoginPage from '@/pages/Login';
+import { AuthLoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const Index = () => {
-  const { isAuthenticated, user, login } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isAuthenticated) {
-    return <LoginModal onLoginSuccess={() => {}} />;
+  // Mostrar loader mientras se verifica la autenticación
+  if (isLoading) {
+    return <AuthLoadingSpinner message="Verificando autenticación..." />;
   }
 
-  return <POSSystem currentUserRole={user?.rol} />;
+  // Si no está autenticado, mostrar página de login
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Si está autenticado, mostrar el sistema POS
+  return <POSSystem />;
 };
 
 export default Index;

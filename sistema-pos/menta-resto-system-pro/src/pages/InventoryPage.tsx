@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '@/services/api';
 import { useAuth } from '../context/AuthContext';
+import { usePlan } from '../context/PlanContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -27,7 +28,9 @@ import {
   Menu,
   Calendar,
   User,
-  DollarSign
+  DollarSign,
+  Crown,
+  ArrowUp
 } from 'lucide-react';
 import { 
   getLotesPorVencer,
@@ -75,10 +78,26 @@ interface Lote {
   estado_stock?: string;
 }
 
+// Componente para mostrar mensajes de upgrade
+const UpgradeMessage: React.FC<{ message: string; title: string }> = ({ message, title }) => (
+  <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-full p-6 mb-6">
+      <Crown className="h-12 w-12 text-blue-600" />
+    </div>
+    <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
+    <p className="text-gray-600 mb-6 max-w-md">{message}</p>
+    <div className="flex items-center gap-2 text-blue-600 font-medium">
+      <ArrowUp className="h-4 w-4" />
+      <span>Actualiza tu plan para desbloquear esta funcionalidad</span>
+    </div>
+  </div>
+);
+
 const InventoryPage: React.FC = () => {
   const { user } = useAuth();
+  const { currentPlan } = usePlan();
   const navigate = useNavigate();
-  const role = user?.rol || user?.role || '';
+  const role = user?.rol || '';
 
   const [inventory, setInventory] = useState<Product[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
@@ -98,6 +117,106 @@ const InventoryPage: React.FC = () => {
   const [isMovementInfoDialogOpen, setIsMovementInfoDialogOpen] = useState(false);
   const [showMobileTabsMenu, setShowMobileTabsMenu] = useState(false);
 
+  // Funciones para verificar restricciones de plan
+  const isTabAvailable = (tabName: string): boolean => {
+    console.log(`🔍 [INVENTARIO] Verificando acceso a pestaña "${tabName}"`);
+    console.log(`🔍 [INVENTARIO] Usuario:`, user);
+    console.log(`🔍 [INVENTARIO] CurrentPlan:`, currentPlan);
+    
+    // SOLUCIÓN TEMPORAL: Admin/Super_admin = Enterprise = Acceso completo
+    if (user?.rol === 'admin' || user?.rol === 'super_admin') {
+      console.log(`✅ [INVENTARIO] Usuario admin/super_admin detectado - acceso completo a "${tabName}": TRUE`);
+      return true;
+    }
+    
+    // Si hay información del plan, usarla
+    if (currentPlan) {
+      const planName = currentPlan.nombre.toLowerCase();
+      console.log(`🔍 [INVENTARIO] Plan detectado: "${planName}"`);
+      
+      // Plan Enterprise: Acceso completo
+      if (planName.includes('enterprise')) {
+        console.log(`✅ [INVENTARIO] Plan Enterprise detectado - acceso completo a "${tabName}": TRUE`);
+        return true;
+      }
+      
+      // Plan Profesional: Solo productos y lotes
+      if (planName === 'profesional') {
+        const access = tabName === 'productos' || tabName === 'lotes';
+        console.log(`🔍 [INVENTARIO] Plan Profesional - acceso a "${tabName}": ${access}`);
+        return access;
+      }
+      
+      // Plan Avanzado: Acceso completo
+      console.log(`✅ [INVENTARIO] Plan Avanzado - acceso completo a "${tabName}": TRUE`);
+      return true;
+    }
+    
+    // Si no hay información del plan, denegar por seguridad (excepto admin ya validado arriba)
+    console.log(`⚠️ [INVENTARIO] Sin información del plan - denegando acceso a "${tabName}": FALSE`);
+    return false;
+  };
+
+  const getTabInfo = (tabName: string) => {
+    const planName = currentPlan?.nombre.toLowerCase() || '';
+    
+    switch (tabName) {
+      case 'dashboard':
+        return {
+          icon: BarChart3,
+          text: 'Dashboard',
+          available: isTabAvailable('dashboard'),
+          description: 'Panel de control con estadísticas y métricas del inventario',
+          upgradeMessage: 'Accede a análisis avanzados y métricas en tiempo real con el plan Avanzado'
+        };
+      case 'productos':
+        return {
+          icon: Package,
+          text: 'Productos',
+          available: isTabAvailable('productos'),
+          description: 'Gestión completa de productos e inventario',
+          upgradeMessage: ''
+        };
+      case 'lotes':
+        return {
+          icon: FileText,
+          text: 'Lotes',
+          available: isTabAvailable('lotes'),
+          description: 'Control de lotes y fechas de vencimiento',
+          upgradeMessage: ''
+        };
+      case 'reportes':
+        return {
+          icon: TrendingUp,
+          text: 'Reportes',
+          available: isTabAvailable('reportes'),
+          description: 'Reportes detallados y análisis de inventario',
+          upgradeMessage: 'Obtén reportes avanzados y análisis predictivos con el plan Avanzado'
+        };
+      default:
+        return {
+          icon: Package,
+          text: tabName,
+          available: true,
+          description: '',
+          upgradeMessage: ''
+        };
+    }
+  };
+
+  // Establecer pestaña activa por defecto según el plan
+  useEffect(() => {
+    if (currentPlan) {
+      const planName = currentPlan.nombre.toLowerCase();
+      if (planName === 'profesional') {
+        // Para plan Profesional, establecer 'productos' como pestaña activa por defecto
+        if (activeTab === 'dashboard' || activeTab === 'reportes') {
+          setActiveTab('productos');
+        }
+      }
+    }
+  }, [currentPlan, activeTab]);
+
   const openProductInfoDialog = (product: Product) => {
     setSelectedProductForInfo(product);
     setIsProductInfoDialogOpen(true);
@@ -106,16 +225,6 @@ const InventoryPage: React.FC = () => {
   const openMovementInfoDialog = (movement: Movement) => {
     setSelectedMovementForInfo(movement);
     setIsMovementInfoDialogOpen(true);
-  };
-
-  const getTabInfo = (tab: string) => {
-    const tabs = {
-      dashboard: { icon: BarChart3, text: 'Dashboard' },
-      productos: { icon: Package, text: 'Productos' },
-      lotes: { icon: FileText, text: 'Lotes' },
-      reportes: { icon: TrendingUp, text: 'Reportes' }
-    };
-    return tabs[tab as keyof typeof tabs] || { icon: Package, text: 'Productos' };
   };
 
   const fetchInventoryData = async () => {
@@ -272,21 +381,41 @@ const InventoryPage: React.FC = () => {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
           {/* Vista desktop: TabsList normal */}
           <TabsList className="hidden md:grid w-full grid-cols-4">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="dashboard" 
+              className={`flex items-center gap-2 ${!isTabAvailable('dashboard') ? 'opacity-50' : ''}`}
+              disabled={!isTabAvailable('dashboard')}
+            >
               <BarChart3 className="h-4 w-4" />
               Dashboard
+              {!isTabAvailable('dashboard') && <Crown className="h-3 w-3 text-yellow-500" />}
             </TabsTrigger>
-            <TabsTrigger value="productos" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="productos" 
+              className={`flex items-center gap-2 ${!isTabAvailable('productos') ? 'opacity-50' : ''}`}
+              disabled={!isTabAvailable('productos')}
+            >
               <Package className="h-4 w-4" />
               Productos
+              {!isTabAvailable('productos') && <Crown className="h-3 w-3 text-yellow-500" />}
             </TabsTrigger>
-            <TabsTrigger value="lotes" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="lotes" 
+              className={`flex items-center gap-2 ${!isTabAvailable('lotes') ? 'opacity-50' : ''}`}
+              disabled={!isTabAvailable('lotes')}
+            >
               <FileText className="h-4 w-4" />
               Lotes
+              {!isTabAvailable('lotes') && <Crown className="h-3 w-3 text-yellow-500" />}
             </TabsTrigger>
-            <TabsTrigger value="reportes" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="reportes" 
+              className={`flex items-center gap-2 ${!isTabAvailable('reportes') ? 'opacity-50' : ''}`}
+              disabled={!isTabAvailable('reportes')}
+            >
               <TrendingUp className="h-4 w-4" />
               Reportes
+              {!isTabAvailable('reportes') && <Crown className="h-3 w-3 text-yellow-500" />}
             </TabsTrigger>
           </TabsList>
 
@@ -312,62 +441,86 @@ const InventoryPage: React.FC = () => {
                 <Button
                   variant={activeTab === 'dashboard' ? 'default' : 'outline'}
                   onClick={() => {
-                    setActiveTab('dashboard');
+                    if (isTabAvailable('dashboard')) {
+                      setActiveTab('dashboard');
+                    }
                     setShowMobileTabsMenu(false);
                   }}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('dashboard') ? 'opacity-50' : ''}`}
+                  disabled={!isTabAvailable('dashboard')}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Dashboard
+                  {!isTabAvailable('dashboard') && <Crown className="h-3 w-3 text-yellow-500 ml-auto" />}
                 </Button>
                 <Button
                   variant={activeTab === 'productos' ? 'default' : 'outline'}
                   onClick={() => {
-                    setActiveTab('productos');
+                    if (isTabAvailable('productos')) {
+                      setActiveTab('productos');
+                    }
                     setShowMobileTabsMenu(false);
                   }}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('productos') ? 'opacity-50' : ''}`}
+                  disabled={!isTabAvailable('productos')}
                 >
                   <Package className="h-4 w-4 mr-2" />
                   Productos
+                  {!isTabAvailable('productos') && <Crown className="h-3 w-3 text-yellow-500 ml-auto" />}
                 </Button>
                 <Button
                   variant={activeTab === 'lotes' ? 'default' : 'outline'}
                   onClick={() => {
-                    setActiveTab('lotes');
+                    if (isTabAvailable('lotes')) {
+                      setActiveTab('lotes');
+                    }
                     setShowMobileTabsMenu(false);
                   }}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('lotes') ? 'opacity-50' : ''}`}
+                  disabled={!isTabAvailable('lotes')}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Lotes
+                  {!isTabAvailable('lotes') && <Crown className="h-3 w-3 text-yellow-500 ml-auto" />}
                 </Button>
                 <Button
                   variant={activeTab === 'reportes' ? 'default' : 'outline'}
                   onClick={() => {
-                    setActiveTab('reportes');
+                    if (isTabAvailable('reportes')) {
+                      setActiveTab('reportes');
+                    }
                     setShowMobileTabsMenu(false);
                   }}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('reportes') ? 'opacity-50' : ''}`}
+                  disabled={!isTabAvailable('reportes')}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Reportes
+                  {!isTabAvailable('reportes') && <Crown className="h-3 w-3 text-yellow-500 ml-auto" />}
                 </Button>
               </div>
             )}
           </div>
 
           <TabsContent value="dashboard" className="mt-6">
-            <InventoryDashboard
-              inventory={inventory}
-              lotes={lotes}
-              onFilterChange={handleFilterChange}
-              onExportData={handleExportData}
-            />
+            {isTabAvailable('dashboard') ? (
+              <InventoryDashboard
+                inventory={inventory}
+                lotes={lotes}
+                onFilterChange={handleFilterChange}
+                onExportData={handleExportData}
+              />
+            ) : (
+              <UpgradeMessage 
+                title="Dashboard Avanzado"
+                message={getTabInfo('dashboard').upgradeMessage}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="productos" className="mt-4 sm:mt-6">
-            <div className="space-y-4 sm:space-y-6">
+            {isTabAvailable('productos') ? (
+              <div className="space-y-4 sm:space-y-6">
               {/* Resumen de inventario */}
               <Card>
                 <CardHeader className="p-3 sm:p-6">
@@ -690,25 +843,45 @@ const InventoryPage: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              </div>
+            ) : (
+              <UpgradeMessage 
+                title="Gestión de Productos"
+                message="Esta funcionalidad está disponible en tu plan actual"
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="lotes" className="mt-4 sm:mt-6">
-            <LotesManagement
-              lotes={lotes}
-              products={inventory}
-              onSave={handleSaveLote}
-              onDelete={handleDeleteLote}
-              loading={loading}
-            />
+            {isTabAvailable('lotes') ? (
+              <LotesManagement
+                lotes={lotes}
+                products={inventory}
+                onSave={handleSaveLote}
+                onDelete={handleDeleteLote}
+                loading={loading}
+              />
+            ) : (
+              <UpgradeMessage 
+                title="Gestión de Lotes"
+                message="Esta funcionalidad está disponible en tu plan actual"
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="reportes" className="mt-4 sm:mt-6">
-            <InventoryReports
-              inventory={inventory}
-              lotes={lotes}
-              movements={movements}
-            />
+            {isTabAvailable('reportes') ? (
+              <InventoryReports
+                inventory={inventory}
+                lotes={lotes}
+                movements={movements}
+              />
+            ) : (
+              <UpgradeMessage 
+                title="Reportes Avanzados"
+                message={getTabInfo('reportes').upgradeMessage}
+              />
+            )}
           </TabsContent>
         </Tabs>
       )}

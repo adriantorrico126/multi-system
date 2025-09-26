@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePlan } from '../context/PlanContext';
+import { PlanGate } from '../components/plan/PlanGate';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,7 +32,8 @@ import {
   Activity,
   Settings,
   RefreshCw,
-  Menu
+  Menu,
+  Crown
 } from 'lucide-react';
 
 // Importar APIs y tipos
@@ -57,10 +60,160 @@ import {
   EgresosDashboard
 } from '../components/egresos';
 
+// Componente de restricción para EgresosPage
+const EgresosRestricted = () => (
+  <div className="container mx-auto p-6">
+    <Card className="border-green-200 bg-green-50">
+      <CardHeader>
+        <CardTitle className="text-center text-green-800">
+          🔒 Sistema de Egresos - Plan Profesional Requerido
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-center space-y-4">
+        <p className="text-green-700">
+          La funcionalidad de <strong>Sistema de Egresos</strong> está disponible únicamente en el plan <strong>Profesional</strong> o superior.
+        </p>
+        <p className="text-sm text-green-600">
+          Esta funcionalidad incluye registro básico de gastos, categorías básicas de egresos y gestión de presupuestos.
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Button variant="outline" className="border-green-300 text-green-700">
+            📞 Contactar Soporte
+          </Button>
+          <Button className="bg-green-600 hover:bg-green-700">
+            👑 Actualizar Plan
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const EgresosPage: React.FC = () => {
   const { user } = useAuth();
+  const { currentPlan } = usePlan();
   const navigate = useNavigate();
   const userRole = user?.rol || '';
+
+  // Función para verificar si una pestaña está disponible según el plan
+  const isTabAvailable = (tabName: string): boolean => {
+    console.log(`🔍 [EGRESOS] Verificando acceso a pestaña "${tabName}"`);
+    console.log(`🔍 [EGRESOS] Usuario:`, user);
+    console.log(`🔍 [EGRESOS] CurrentPlan:`, currentPlan);
+    
+    // SOLUCIÓN TEMPORAL: Admin/Super_admin = Enterprise = Acceso completo
+    if (user?.rol === 'admin' || user?.rol === 'super_admin') {
+      console.log(`✅ [EGRESOS] Usuario admin/super_admin detectado - acceso completo a "${tabName}": TRUE`);
+      return true;
+    }
+    
+    // Si hay información del plan, usarla
+    if (currentPlan) {
+      const planName = currentPlan.nombre.toLowerCase();
+      console.log(`🔍 [EGRESOS] Plan detectado: "${planName}"`);
+      
+      // Plan Enterprise: Acceso completo
+      if (planName.includes('enterprise')) {
+        console.log(`✅ [EGRESOS] Plan Enterprise detectado - acceso completo a "${tabName}": TRUE`);
+        return true;
+      }
+      
+      // Plan Básico: Solo Dashboard
+      if (planName === 'basico') {
+        const access = tabName === 'dashboard';
+        console.log(`🔍 [EGRESOS] Plan Básico - acceso a "${tabName}": ${access}`);
+        return access;
+      }
+      
+      // Plan Profesional: Dashboard y Egresos
+      if (planName === 'profesional') {
+        const access = tabName === 'dashboard' || tabName === 'egresos';
+        console.log(`🔍 [EGRESOS] Plan Profesional - acceso a "${tabName}": ${access}`);
+        return access;
+      }
+      
+      // Plan Avanzado: Todas las pestañas
+      console.log(`✅ [EGRESOS] Plan Avanzado - acceso completo a "${tabName}": TRUE`);
+      return true;
+    }
+    
+    // Si no hay información del plan, denegar por seguridad (excepto admin ya validado arriba)
+    console.log(`⚠️ [EGRESOS] Sin información del plan - denegando acceso a "${tabName}": FALSE`);
+    return false;
+  };
+
+
+  // Componente de mensaje profesional para funcionalidades restringidas
+  const UpgradeMessage = ({ tabInfo }: { tabInfo: any }) => (
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+      <div className="max-w-2xl mx-auto text-center space-y-6">
+        {/* Icono y título */}
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-100 to-blue-100 rounded-full flex items-center justify-center">
+              <tabInfo.icon className="h-10 w-10 text-purple-600" />
+            </div>
+            <div className="absolute -top-2 -right-2">
+              <Crown className="h-6 w-6 text-yellow-500" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {tabInfo.text} - Plan Avanzado
+            </h2>
+            <p className="text-lg text-gray-600">
+              {tabInfo.description}
+            </p>
+          </div>
+        </div>
+
+        {/* Mensaje de upgrade */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+          <p className="text-gray-700 leading-relaxed">
+            {tabInfo.upgradeMessage}
+          </p>
+        </div>
+
+        {/* Beneficios */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span className="text-sm text-gray-700">Análisis avanzado</span>
+          </div>
+          <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span className="text-sm text-gray-700">Reportes profesionales</span>
+          </div>
+          <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span className="text-sm text-gray-700">Exportación múltiple</span>
+          </div>
+          <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span className="text-sm text-gray-700">Soporte prioritario</span>
+          </div>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            variant="outline" 
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+          >
+            📞 Contactar Soporte
+          </Button>
+          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            👑 Actualizar a Plan Avanzado
+          </Button>
+        </div>
+
+        {/* Información adicional */}
+        <div className="text-sm text-gray-500">
+          <p>💡 <strong>Tip:</strong> El plan Avanzado incluye todas las funcionalidades de egresos + análisis predictivo</p>
+        </div>
+      </div>
+    </div>
+  );
 
   // Estados principales
   const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes' | 'informacion'>('dashboard');
@@ -507,7 +660,8 @@ const EgresosPage: React.FC = () => {
   // =====================================================
 
   return (
-    <div className="p-6 space-y-6">
+    <PlanGate feature="egresos" fallback={<EgresosRestricted />} requiredPlan="profesional">
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -566,30 +720,60 @@ const EgresosPage: React.FC = () => {
             <BarChart3 className="h-4 w-4" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="egresos" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="egresos" 
+            className={`flex items-center gap-2 ${!isTabAvailable('egresos') ? 'opacity-60' : ''}`}
+          >
             <DollarSign className="h-4 w-4" />
             Egresos
-            {egresosPendientes.length > 0 && (
+            {egresosPendientes.length > 0 && isTabAvailable('egresos') && (
               <Badge variant="destructive" className="ml-1">
                 {egresosPendientes.length}
               </Badge>
             )}
+            {!isTabAvailable('egresos') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="categorias" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="categorias" 
+            className={`flex items-center gap-2 ${!isTabAvailable('categorias') ? 'opacity-60' : ''}`}
+          >
             <FileText className="h-4 w-4" />
             Categorías
+            {!isTabAvailable('categorias') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="presupuestos" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="presupuestos" 
+            className={`flex items-center gap-2 ${!isTabAvailable('presupuestos') ? 'opacity-60' : ''}`}
+          >
             <PieChart className="h-4 w-4" />
             Presupuestos
+            {!isTabAvailable('presupuestos') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="reportes" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="reportes" 
+            className={`flex items-center gap-2 ${!isTabAvailable('reportes') ? 'opacity-60' : ''}`}
+          >
             <Activity className="h-4 w-4" />
             Reportes
+            {!isTabAvailable('reportes') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
-          <TabsTrigger value="informacion" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="informacion" 
+            className={`flex items-center gap-2 ${!isTabAvailable('informacion') ? 'opacity-60' : ''}`}
+          >
             <FileText className="h-4 w-4" />
             Información
+            {!isTabAvailable('informacion') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -639,7 +823,7 @@ const EgresosPage: React.FC = () => {
                 </Button>
                 <Button
                   variant={activeTab === 'egresos' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('egresos') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     setActiveTab('egresos');
                     setShowMobileTabsMenu(false);
@@ -647,15 +831,18 @@ const EgresosPage: React.FC = () => {
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   Egresos
-                  {egresosPendientes.length > 0 && (
+                  {egresosPendientes.length > 0 && isTabAvailable('egresos') && (
                     <Badge variant="destructive" className="ml-2">
                       {egresosPendientes.length}
                     </Badge>
                   )}
+                  {!isTabAvailable('egresos') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-2" />
+                  )}
                 </Button>
                 <Button
                   variant={activeTab === 'categorias' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('categorias') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     setActiveTab('categorias');
                     setShowMobileTabsMenu(false);
@@ -663,10 +850,13 @@ const EgresosPage: React.FC = () => {
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Categorías
+                  {!isTabAvailable('categorias') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-2" />
+                  )}
                 </Button>
                 <Button
                   variant={activeTab === 'presupuestos' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('presupuestos') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     setActiveTab('presupuestos');
                     setShowMobileTabsMenu(false);
@@ -674,10 +864,13 @@ const EgresosPage: React.FC = () => {
                 >
                   <PieChart className="h-4 w-4 mr-2" />
                   Presupuestos
+                  {!isTabAvailable('presupuestos') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-2" />
+                  )}
                 </Button>
                 <Button
                   variant={activeTab === 'reportes' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('reportes') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     setActiveTab('reportes');
                     setShowMobileTabsMenu(false);
@@ -685,10 +878,13 @@ const EgresosPage: React.FC = () => {
                 >
                   <Activity className="h-4 w-4 mr-2" />
                   Reportes
+                  {!isTabAvailable('reportes') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-2" />
+                  )}
                 </Button>
                 <Button
                   variant={activeTab === 'informacion' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('informacion') ? 'opacity-60' : ''}`}
                   onClick={() => {
                     setActiveTab('informacion');
                     setShowMobileTabsMenu(false);
@@ -696,6 +892,9 @@ const EgresosPage: React.FC = () => {
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Información
+                  {!isTabAvailable('informacion') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-2" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -738,9 +937,6 @@ const EgresosPage: React.FC = () => {
               onEdit={handleEditEgreso}
               onView={handleViewEgreso}
               onDelete={handleDeleteEgreso}
-              onAprobar={handleAprobarEgreso}
-              onRechazar={handleRechazarEgreso}
-              onPagar={handlePagarEgreso}
               onFiltrosChange={setFiltros}
               onPageChange={(page) => setFiltros(prev => ({ ...prev, page }))}
             />
@@ -749,122 +945,138 @@ const EgresosPage: React.FC = () => {
 
         {/* Categorías Tab */}
         <TabsContent value="categorias" className="mt-6">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Categorías de Egresos</h2>
-              {egresosUtils.canEdit(userRole) && (
-                <Button onClick={handleCreateCategoria}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Categoría
-                </Button>
-              )}
-            </div>
+          {isTabAvailable('categorias') ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Categorías de Egresos</h2>
+                {egresosUtils.canEdit(userRole) && (
+                  <Button onClick={handleCreateCategoria}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nueva Categoría
+                  </Button>
+                )}
+              </div>
 
-            <CategoriasList
-              categorias={categorias}
-              loading={loading}
-              userRole={userRole}
-              onEdit={handleEditCategoria}
-              onDelete={async (id) => {
-                try {
-                  await categoriasEgresosApi.delete(id);
-                  toast.success('Categoría eliminada');
-                  loadCategorias();
-                } catch (err: any) {
-                  console.error('Error deleting categoria:', err);
-                  
-                  // Mostrar mensaje de error más específico
-                  if (err.response?.data?.message) {
-                    toast.error(`Error: ${err.response.data.message}`);
-                  } else if (err.message) {
-                    toast.error(`Error: ${err.message}`);
-                  } else {
-                    toast.error('Error al eliminar la categoría');
+              <CategoriasList
+                categorias={categorias}
+                loading={loading}
+                userRole={userRole}
+                onEdit={handleEditCategoria}
+                onDelete={async (id) => {
+                  try {
+                    await categoriasEgresosApi.delete(id);
+                    toast.success('Categoría eliminada');
+                    loadCategorias();
+                  } catch (err: any) {
+                    console.error('Error deleting categoria:', err);
+                    
+                    // Mostrar mensaje de error más específico
+                    if (err.response?.data?.message) {
+                      toast.error(`Error: ${err.response.data.message}`);
+                    } else if (err.message) {
+                      toast.error(`Error: ${err.message}`);
+                    } else {
+                      toast.error('Error al eliminar la categoría');
+                    }
                   }
-                }
-              }}
-            />
-          </div>
+                }}
+              />
+            </div>
+          ) : (
+            <UpgradeMessage tabInfo={getTabInfo('categorias')} />
+          )}
         </TabsContent>
 
         {/* Presupuestos Tab */}
         <TabsContent value="presupuestos" className="mt-6">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Presupuestos</h2>
-              {egresosUtils.canEdit(userRole) && (
-                <Button onClick={handleCreatePresupuesto}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Presupuesto
-                </Button>
-              )}
-            </div>
+          {isTabAvailable('presupuestos') ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Presupuestos</h2>
+                {egresosUtils.canEdit(userRole) && (
+                  <Button onClick={handleCreatePresupuesto}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Presupuesto
+                  </Button>
+                )}
+              </div>
 
-            <PresupuestosList
-              presupuestos={presupuestos}
-              categorias={categorias}
-              loading={loading}
-              userRole={userRole}
-              onEdit={handleEditPresupuesto}
-              onDelete={async (id) => {
-                try {
-                  await presupuestosApi.delete(id);
-                  toast.success('Presupuesto eliminado');
-                  loadPresupuestos();
-                } catch (err: any) {
-                  console.error('Error deleting presupuesto:', err);
-                  
-                  // Mostrar mensaje de error más específico
-                  if (err.response?.data?.message) {
-                    toast.error(`Error: ${err.response.data.message}`);
-                  } else if (err.message) {
-                    toast.error(`Error: ${err.message}`);
-                  } else {
-                    toast.error('Error al eliminar el presupuesto');
+              <PresupuestosList
+                presupuestos={presupuestos}
+                categorias={categorias}
+                loading={loading}
+                userRole={userRole}
+                onEdit={handleEditPresupuesto}
+                onDelete={async (id) => {
+                  try {
+                    await presupuestosApi.delete(id);
+                    toast.success('Presupuesto eliminado');
+                    loadPresupuestos();
+                  } catch (err: any) {
+                    console.error('Error deleting presupuesto:', err);
+                    
+                    // Mostrar mensaje de error más específico
+                    if (err.response?.data?.message) {
+                      toast.error(`Error: ${err.response.data.message}`);
+                    } else if (err.message) {
+                      toast.error(`Error: ${err.message}`);
+                    } else {
+                      toast.error('Error al eliminar el presupuesto');
+                    }
                   }
-                }
-              }}
-            />
-          </div>
+                }}
+              />
+            </div>
+          ) : (
+            <UpgradeMessage tabInfo={getTabInfo('presupuestos')} />
+          )}
         </TabsContent>
 
                  {/* Reportes Tab */}
          <TabsContent value="reportes" className="mt-6">
-           <Card>
-             <CardContent className="text-center py-8">
-               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                 Reportes en Desarrollo
-               </h3>
-               <p className="text-gray-600">
-                 Los reportes y análisis estarán disponibles próximamente.
-               </p>
-             </CardContent>
-           </Card>
+           {isTabAvailable('reportes') ? (
+             <Card>
+               <CardContent className="text-center py-8">
+                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                 <h3 className="text-lg font-medium text-gray-900 mb-2">
+                   Reportes en Desarrollo
+                 </h3>
+                 <p className="text-gray-600">
+                   Los reportes y análisis estarán disponibles próximamente.
+                 </p>
+               </CardContent>
+             </Card>
+           ) : (
+             <UpgradeMessage tabInfo={getTabInfo('reportes')} />
+           )}
          </TabsContent>
 
          {/* Información Tab */}
          <TabsContent value="informacion" className="mt-6">
-           <div className="space-y-4">
-             <div className="flex justify-between items-center">
-               <div>
-                 <h2 className="text-xl font-semibold">Información de Egresos</h2>
-                 <p className="text-sm text-gray-500">
-                   Resumen detallado de egresos por cajero y estadísticas generales
-                 </p>
+           {isTabAvailable('informacion') ? (
+             <div className="space-y-4">
+               <div className="flex justify-between items-center">
+                 <div>
+                   <h2 className="text-xl font-semibold">Información de Egresos</h2>
+                   <p className="text-sm text-gray-500">
+                     Resumen detallado de egresos por cajero y estadísticas generales
+                   </p>
+                 </div>
+                 <Button 
+                   onClick={loadEgresos} 
+                   variant="outline" 
+                   size="sm"
+                   disabled={loading}
+                 >
+                   <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                   {loading ? 'Actualizando...' : 'Actualizar'}
+                 </Button>
                </div>
-               <Button 
-                 onClick={loadEgresos} 
-                 variant="outline" 
-                 size="sm"
-                 disabled={loading}
-               >
-                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                 {loading ? 'Actualizando...' : 'Actualizar'}
-               </Button>
+               <EgresosInfo egresos={egresos} userRole={userRole} />
              </div>
-             <EgresosInfo egresos={egresos} userRole={userRole} />
-           </div>
+           ) : (
+             <UpgradeMessage tabInfo={getTabInfo('informacion')} />
+           )}
          </TabsContent>
        </Tabs>
 
@@ -965,6 +1177,7 @@ const EgresosPage: React.FC = () => {
         }}
       />
     </div>
+    </PlanGate>
   );
 };
 

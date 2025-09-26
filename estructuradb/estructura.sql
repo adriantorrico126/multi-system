@@ -15,6 +15,19 @@ alertas_inventario	resuelta	boolean
 alertas_inventario	fecha_creacion	timestamp without time zone
 alertas_inventario	fecha_resolucion	timestamp without time zone
 alertas_inventario	id_restaurante	integer
+alertas_limites	id_alerta	integer
+alertas_limites	id_restaurante	integer
+alertas_limites	id_plan	integer
+alertas_limites	tipo_alerta	character varying
+alertas_limites	recurso	character varying
+alertas_limites	valor_actual	integer
+alertas_limites	valor_limite	integer
+alertas_limites	porcentaje_uso	numeric
+alertas_limites	estado	character varying
+alertas_limites	fecha_alerta	timestamp without time zone
+alertas_limites	fecha_resolucion	timestamp without time zone
+alertas_limites	mensaje	text
+alertas_limites	datos_adicionales	jsonb
 archivos_egresos	id_archivo	integer
 archivos_egresos	id_egreso	integer
 archivos_egresos	nombre_archivo	character varying
@@ -42,6 +55,17 @@ auditoria_admin	id_registro	integer
 auditoria_admin	datos_anteriores	jsonb
 auditoria_admin	datos_nuevos	jsonb
 auditoria_admin	fecha_accion	timestamp without time zone
+auditoria_planes	id_auditoria	integer
+auditoria_planes	id_restaurante	integer
+auditoria_planes	id_plan_anterior	integer
+auditoria_planes	id_plan_nuevo	integer
+auditoria_planes	tipo_cambio	character varying
+auditoria_planes	motivo	text
+auditoria_planes	id_usuario_cambio	integer
+auditoria_planes	nombre_usuario	character varying
+auditoria_planes	fecha_cambio	timestamp without time zone
+auditoria_planes	fecha_efectiva	date
+auditoria_planes	datos_adicionales	jsonb
 auditoria_pos	id_auditoria	bigint
 auditoria_pos	id_vendedor	integer
 auditoria_pos	accion	character varying
@@ -56,6 +80,28 @@ auditoria_pos	user_agent	character varying
 auditoria_pos	descripcion	text
 auditoria_pos	exito	boolean
 auditoria_pos	error_msg	text
+casos_exito	id	integer
+casos_exito	nombre_restaurante	character varying
+casos_exito	logo_url	character varying
+casos_exito	tipo_restaurante	character varying
+casos_exito	ciudad	character varying
+casos_exito	sucursales	integer
+casos_exito	tiempo_uso_meses	integer
+casos_exito	testimonio	text
+casos_exito	nombre_contacto	character varying
+casos_exito	cargo_contacto	character varying
+casos_exito	foto_contacto	character varying
+casos_exito	video_testimonio	character varying
+casos_exito	metricas_antes	jsonb
+casos_exito	metricas_despues	jsonb
+casos_exito	mejoras_especificas	ARRAY
+casos_exito	plan_contratado	character varying
+casos_exito	fecha_implementacion	date
+casos_exito	activo	boolean
+casos_exito	destacado	boolean
+casos_exito	orden_display	integer
+casos_exito	created_at	timestamp without time zone
+casos_exito	updated_at	timestamp without time zone
 categorias	id_categoria	integer
 categorias	nombre	character varying
 categorias	activo	boolean
@@ -85,6 +131,14 @@ clientes	nombre	character varying
 clientes	telefono	character varying
 clientes	email	character varying
 clientes	fecha_registro	timestamp without time zone
+configuracion_web	id	integer
+configuracion_web	clave	character varying
+configuracion_web	valor	text
+configuracion_web	descripcion	text
+configuracion_web	tipo	character varying
+configuracion_web	seccion	character varying
+configuracion_web	created_at	timestamp without time zone
+configuracion_web	updated_at	timestamp without time zone
 configuraciones_restaurante	id_config	integer
 configuraciones_restaurante	id_restaurante	integer
 configuraciones_restaurante	clave_config	text
@@ -93,6 +147,46 @@ configuraciones_sistema	clave_config	character varying
 configuraciones_sistema	valor_config	jsonb
 configuraciones_sistema	creado_en	timestamp without time zone
 configuraciones_sistema	actualizado_en	timestamp without time zone
+contenido_web	id	integer
+contenido_web	titulo	character varying
+contenido_web	slug	character varying
+contenido_web	contenido	text
+contenido_web	resumen	text
+contenido_web	imagen_portada	character varying
+contenido_web	tipo_contenido	character varying
+contenido_web	autor	character varying
+contenido_web	tags	ARRAY
+contenido_web	estado	character varying
+contenido_web	fecha_publicacion	timestamp without time zone
+contenido_web	fecha_modificacion	timestamp without time zone
+contenido_web	meta_title	character varying
+contenido_web	meta_description	text
+contenido_web	created_at	timestamp without time zone
+contenido_web	updated_at	timestamp without time zone
+conversion_events	id	integer
+conversion_events	event_type	character varying
+conversion_events	timestamp	timestamp without time zone
+conversion_events	plan_name	character varying
+conversion_events	user_agent	text
+conversion_events	referrer	text
+conversion_events	session_id	character varying
+conversion_events	ip_address	inet
+conversion_events	metadata	jsonb
+conversion_events	created_at	timestamp without time zone
+demos_reuniones	id	integer
+demos_reuniones	lead_id	integer
+demos_reuniones	tipo_reunion	character varying
+demos_reuniones	fecha_programada	timestamp without time zone
+demos_reuniones	duracion_minutos	integer
+demos_reuniones	plataforma	character varying
+demos_reuniones	link_reunion	character varying
+demos_reuniones	estado	character varying
+demos_reuniones	notas_pre_reunion	text
+demos_reuniones	notas_post_reunion	text
+demos_reuniones	resultado	character varying
+demos_reuniones	proximo_seguimiento	timestamp without time zone
+demos_reuniones	created_at	timestamp without time zone
+demos_reuniones	updated_at	timestamp without time zone
 detalle_ventas	id_detalle	integer
 detalle_ventas	id_venta	integer
 detalle_ventas	id_producto	integer
@@ -167,6 +261,17 @@ grupos_mesas	estado	character varying
 grupos_mesas	created_at	timestamp without time zone
 grupos_mesas	updated_at	timestamp without time zone
 grupos_mesas	id_mesero	integer
+historial_pagos_diferidos	id_historial	integer
+historial_pagos_diferidos	id_pago_diferido	integer
+historial_pagos_diferidos	id_venta	integer
+historial_pagos_diferidos	id_pago_final	integer
+historial_pagos_diferidos	monto_pagado	numeric
+historial_pagos_diferidos	fecha_pago	timestamp without time zone
+historial_pagos_diferidos	id_vendedor	integer
+historial_pagos_diferidos	observaciones	text
+historial_pagos_diferidos	id_restaurante	integer
+historial_pagos_diferidos	created_at	timestamp without time zone
+historial_pagos_diferidos	procesado_por	integer
 integrity_logs	id	integer
 integrity_logs	check_name	character varying
 integrity_logs	status	character varying
@@ -190,6 +295,25 @@ inventario_lotes	id_categoria_almacen	integer
 inventario_lotes	ubicacion_especifica	character varying
 inventario_lotes	proveedor	character varying
 inventario_lotes	certificacion_organica	boolean
+leads_prospectos	id	integer
+leads_prospectos	nombre	character varying
+leads_prospectos	email	character varying
+leads_prospectos	telefono	character varying
+leads_prospectos	nombre_restaurante	character varying
+leads_prospectos	tipo_restaurante	character varying
+leads_prospectos	num_sucursales	integer
+leads_prospectos	num_empleados	integer
+leads_prospectos	ciudad	character varying
+leads_prospectos	pais	character varying
+leads_prospectos	fuente_lead	character varying
+leads_prospectos	estado	character varying
+leads_prospectos	interes_plan_id	integer
+leads_prospectos	notas	text
+leads_prospectos	fecha_contacto	timestamp without time zone
+leads_prospectos	fecha_demo	timestamp without time zone
+leads_prospectos	vendedor_asignado	character varying
+leads_prospectos	created_at	timestamp without time zone
+leads_prospectos	updated_at	timestamp without time zone
 mesas	id_mesa	integer
 mesas	numero	integer
 mesas	id_sucursal	integer
@@ -211,7 +335,24 @@ mesas_en_grupo	created_at	timestamp without time zone
 metodos_pago	id_pago	integer
 metodos_pago	descripcion	character varying
 metodos_pago	activo	boolean
-metodos_pago	id_restaurante	integer
+metodos_pago	created_at	timestamp without time zone
+metodos_pago	updated_at	timestamp without time zone
+metodos_pago_backup	id_pago	integer
+metodos_pago_backup	descripcion	character varying
+metodos_pago_backup	activo	boolean
+metodos_pago_backup	id_restaurante	integer
+metricas_web	id	integer
+metricas_web	fecha	date
+metricas_web	tipo_metrica	character varying
+metricas_web	valor	integer
+metricas_web	fuente	character varying
+metricas_web	pagina	character varying
+metricas_web	created_at	timestamp without time zone
+migrations	id	integer
+migrations	migration_name	character varying
+migrations	executed_at	timestamp without time zone
+migrations	description	text
+migrations	status	character varying
 movimientos_inventario	id_movimiento	integer
 movimientos_inventario	id_producto	integer
 movimientos_inventario	tipo_movimiento	character varying
@@ -224,6 +365,28 @@ movimientos_inventario	id_restaurante	integer
 movimientos_inventario	id_lote	integer
 movimientos_inventario	id_categoria_almacen	integer
 movimientos_inventario	motivo	text
+newsletter_suscriptores	id	integer
+newsletter_suscriptores	email	character varying
+newsletter_suscriptores	nombre	character varying
+newsletter_suscriptores	estado	character varying
+newsletter_suscriptores	fecha_suscripcion	timestamp without time zone
+newsletter_suscriptores	fecha_baja	timestamp without time zone
+newsletter_suscriptores	fuente	character varying
+newsletter_suscriptores	ip_address	inet
+newsletter_suscriptores	user_agent	text
+newsletter_suscriptores	created_at	timestamp without time zone
+newsletter_suscriptores	updated_at	timestamp without time zone
+pagos_diferidos	id_pago_diferido	integer
+pagos_diferidos	id_venta	integer
+pagos_diferidos	id_mesa	integer
+pagos_diferidos	total_pendiente	numeric
+pagos_diferidos	fecha_creacion	timestamp without time zone
+pagos_diferidos	fecha_vencimiento	timestamp without time zone
+pagos_diferidos	estado	character varying
+pagos_diferidos	observaciones	text
+pagos_diferidos	id_restaurante	integer
+pagos_diferidos	created_at	timestamp without time zone
+pagos_diferidos	updated_at	timestamp without time zone
 pagos_restaurantes	id	integer
 pagos_restaurantes	id_restaurante	integer
 pagos_restaurantes	monto	numeric
@@ -232,6 +395,38 @@ pagos_restaurantes	metodo_pago	character varying
 pagos_restaurantes	observaciones	text
 pagos_restaurantes	registrado_por	integer
 pagos_restaurantes	creado_en	timestamp without time zone
+planes	id_plan	integer
+planes	nombre	character varying
+planes	descripcion	text
+planes	precio_mensual	numeric
+planes	precio_anual	numeric
+planes	max_sucursales	integer
+planes	max_usuarios	integer
+planes	max_productos	integer
+planes	max_transacciones_mes	integer
+planes	almacenamiento_gb	integer
+planes	funcionalidades	jsonb
+planes	activo	boolean
+planes	orden_display	integer
+planes	created_at	timestamp without time zone
+planes	updated_at	timestamp without time zone
+planes_pos	id	integer
+planes_pos	nombre	character varying
+planes_pos	descripcion	text
+planes_pos	precio_mensual	numeric
+planes_pos	precio_anual	numeric
+planes_pos	caracteristicas	jsonb
+planes_pos	max_sucursales	integer
+planes_pos	max_usuarios	integer
+planes_pos	incluye_impresion	boolean
+planes_pos	incluye_delivery	boolean
+planes_pos	incluye_reservas	boolean
+planes_pos	incluye_analytics	boolean
+planes_pos	incluye_soporte_24h	boolean
+planes_pos	activo	boolean
+planes_pos	orden_display	integer
+planes_pos	created_at	timestamp without time zone
+planes_pos	updated_at	timestamp without time zone
 prefacturas	id_prefactura	integer
 prefacturas	id_mesa	integer
 prefacturas	id_venta_principal	integer
@@ -324,6 +519,24 @@ servicios_restaurante	ultimo_pago	date
 servicios_restaurante	funcionalidades_json	jsonb
 servicios_restaurante	creado_en	timestamp with time zone
 servicios_restaurante	actualizado_en	timestamp with time zone
+solicitudes_demo	id_solicitud	integer
+solicitudes_demo	nombre	character varying
+solicitudes_demo	email	character varying
+solicitudes_demo	telefono	character varying
+solicitudes_demo	restaurante	character varying
+solicitudes_demo	plan_interes	character varying
+solicitudes_demo	tipo_negocio	character varying
+solicitudes_demo	mensaje	text
+solicitudes_demo	horario_preferido	character varying
+solicitudes_demo	estado	character varying
+solicitudes_demo	fecha_solicitud	timestamp without time zone
+solicitudes_demo	ip_address	inet
+solicitudes_demo	user_agent	text
+solicitudes_demo	procesado_por	integer
+solicitudes_demo	fecha_procesamiento	timestamp without time zone
+solicitudes_demo	observaciones	text
+solicitudes_demo	created_at	timestamp without time zone
+solicitudes_demo	updated_at	timestamp without time zone
 soporte_tickets	id_ticket	integer
 soporte_tickets	id_vendedor	integer
 soporte_tickets	id_restaurante	integer
@@ -340,6 +553,20 @@ sucursales	direccion	text
 sucursales	activo	boolean
 sucursales	created_at	timestamp without time zone
 sucursales	id_restaurante	integer
+suscripciones	id_suscripcion	integer
+suscripciones	id_restaurante	integer
+suscripciones	id_plan	integer
+suscripciones	estado	character varying
+suscripciones	fecha_inicio	date
+suscripciones	fecha_fin	date
+suscripciones	fecha_renovacion	date
+suscripciones	metodo_pago	character varying
+suscripciones	ultimo_pago	timestamp without time zone
+suscripciones	proximo_pago	timestamp without time zone
+suscripciones	auto_renovacion	boolean
+suscripciones	notificaciones_email	boolean
+suscripciones	created_at	timestamp without time zone
+suscripciones	updated_at	timestamp without time zone
 system_tasks	id	integer
 system_tasks	task_name	character varying
 system_tasks	last_run	timestamp without time zone
@@ -347,6 +574,22 @@ system_tasks	next_run	timestamp without time zone
 system_tasks	interval_minutes	integer
 system_tasks	is_active	boolean
 system_tasks	created_at	timestamp without time zone
+testimonios_web	id	integer
+testimonios_web	nombre	character varying
+testimonios_web	cargo	character varying
+testimonios_web	empresa	character varying
+testimonios_web	foto_url	character varying
+testimonios_web	testimonio	text
+testimonios_web	calificacion	integer
+testimonios_web	ciudad	character varying
+testimonios_web	fecha_experiencia	date
+testimonios_web	plan_contratado	character varying
+testimonios_web	tiempo_uso_meses	integer
+testimonios_web	activo	boolean
+testimonios_web	destacado	boolean
+testimonios_web	orden_display	integer
+testimonios_web	created_at	timestamp without time zone
+testimonios_web	updated_at	timestamp without time zone
 transferencias_almacen	id_transferencia	integer
 transferencias_almacen	id_producto	integer
 transferencias_almacen	id_lote	integer
@@ -358,6 +601,42 @@ transferencias_almacen	id_responsable	integer
 transferencias_almacen	fecha_transferencia	timestamp without time zone
 transferencias_almacen	estado	character varying
 transferencias_almacen	id_restaurante	integer
+user_sessions	id	integer
+user_sessions	session_id	character varying
+user_sessions	ip_address	inet
+user_sessions	user_agent	text
+user_sessions	referrer	text
+user_sessions	landing_page	character varying
+user_sessions	utm_source	character varying
+user_sessions	utm_medium	character varying
+user_sessions	utm_campaign	character varying
+user_sessions	utm_term	character varying
+user_sessions	utm_content	character varying
+user_sessions	country	character varying
+user_sessions	city	character varying
+user_sessions	device_type	character varying
+user_sessions	browser	character varying
+user_sessions	os	character varying
+user_sessions	first_visit	timestamp without time zone
+user_sessions	last_visit	timestamp without time zone
+user_sessions	visit_count	integer
+user_sessions	is_converted	boolean
+user_sessions	conversion_event	character varying
+user_sessions	conversion_timestamp	timestamp without time zone
+user_sessions	created_at	timestamp without time zone
+user_sessions	updated_at	timestamp without time zone
+uso_recursos	id_uso	integer
+uso_recursos	id_restaurante	integer
+uso_recursos	id_plan	integer
+uso_recursos	productos_actuales	integer
+uso_recursos	usuarios_actuales	integer
+uso_recursos	sucursales_actuales	integer
+uso_recursos	transacciones_mes_actual	integer
+uso_recursos	almacenamiento_usado_mb	integer
+uso_recursos	mes_medicion	integer
+uso_recursos	año_medicion	integer
+uso_recursos	created_at	timestamp without time zone
+uso_recursos	updated_at	timestamp without time zone
 usuarios	id_usuario	integer
 usuarios	nombre	character varying
 usuarios	email	character varying
@@ -395,6 +674,10 @@ ventas	created_at	timestamp without time zone
 ventas	estado	character varying
 ventas	id_restaurante	integer
 ventas	id_mesa	integer
+ventas	tipo_pago	character varying
+ventas	id_pago_final	integer
+ventas	fecha_pago_final	timestamp without time zone
+ventas	estado_pago	character varying
 vista_lotes_criticos	id_lote	integer
 vista_lotes_criticos	numero_lote	character varying
 vista_lotes_criticos	producto_nombre	character varying
@@ -406,6 +689,18 @@ vista_lotes_criticos	estado_caducidad	text
 vista_lotes_criticos	estado_stock	text
 vista_lotes_criticos	dias_vencido	integer
 vista_lotes_criticos	dias_restantes	integer
+vista_pagos_diferidos	id_pago_diferido	integer
+vista_pagos_diferidos	id_venta	integer
+vista_pagos_diferidos	mesa_numero	integer
+vista_pagos_diferidos	total	numeric
+vista_pagos_diferidos	tipo_servicio	character varying
+vista_pagos_diferidos	fecha_creacion	timestamp without time zone
+vista_pagos_diferidos	fecha_vencimiento	timestamp without time zone
+vista_pagos_diferidos	estado	character varying
+vista_pagos_diferidos	observaciones	text
+vista_pagos_diferidos	id_restaurante	integer
+vista_pagos_diferidos	estado_real	character varying
+vista_pagos_diferidos	dias_pendiente	integer
 vista_resumen_inventario	id_producto	integer
 vista_resumen_inventario	producto_nombre	character varying
 vista_resumen_inventario	categoria_nombre	character varying
@@ -417,4 +712,3 @@ vista_resumen_inventario	lotes_vencidos	bigint
 vista_resumen_inventario	lotes_por_vencer	bigint
 vista_resumen_inventario	proxima_caducidad	date
 vista_resumen_inventario	estado_stock	text
-

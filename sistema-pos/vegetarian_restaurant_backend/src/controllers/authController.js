@@ -146,6 +146,32 @@ exports.getSessionStatus = async (req, res, next) => {
   }
 };
 
+exports.validateToken = async (req, res, next) => {
+  try {
+    // Si llegamos aquí, el token es válido (el middleware authenticateToken ya lo verificó)
+    const userInfo = req.user;
+
+    logger.info(`Token validado exitosamente para usuario: ${userInfo.username}`);
+
+    res.status(200).json({
+      message: 'Token válido.',
+      valid: true,
+      user: {
+        id: userInfo.id,
+        username: userInfo.username,
+        rol: userInfo.rol,
+        id_sucursal: userInfo.id_sucursal,
+        sucursal_nombre: userInfo.sucursal_nombre,
+        id_restaurante: userInfo.id_restaurante
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error al validar token:', error);
+    next(error);
+  }
+};
+
 exports.refreshToken = async (req, res, next) => {
   try {
     const { id_vendedor } = req.user;

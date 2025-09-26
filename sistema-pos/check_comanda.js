@@ -29,7 +29,7 @@ async function checkComanda() {
       JOIN
           productos p ON dv.id_producto = p.id_producto
       WHERE
-          v.estado IN ('recibido', 'en_preparacion', 'listo_para_servir')
+          v.estado IN ('recibido', 'en_preparacion')
       GROUP BY
           v.id_venta, v.fecha, v.mesa_numero, v.tipo_servicio, v.estado, v.total
       ORDER BY

@@ -54,10 +54,14 @@ export function useCart() {
 
   const addToCart = useCallback((product: Product, notes?: string) => {
     setCart((currentCart) => {
-      const existingItem = currentCart.find((item) => item.id === product.id && item.notes === notes);
+      const existingItem = currentCart.find((item) => 
+        (item.originalId === product.id || item.id === product.id) && item.notes === notes
+      );
       if (existingItem) {
         return currentCart.map((item) =>
-          item.id === product.id && item.notes === notes ? { ...item, quantity: item.quantity + 1 } : item
+          (item.originalId === product.id || item.id === product.id) && item.notes === notes 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
         );
       }
       

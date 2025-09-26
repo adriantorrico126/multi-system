@@ -67,4 +67,7 @@ router.patch('/:id/rechazar', authenticateToken, authorizeRoles('cajero', 'admin
 // Marcar venta diferida como pagada
 router.patch('/:id/marcar-pagada', authenticateToken, authorizeRoles('cajero', 'admin', 'super_admin'), ensureTenantContext, ventaController.marcarVentaDiferidaComoPagada);
 
+// Obtener una venta con sus detalles
+router.get('/:id_venta/detalles', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'mesero'), ensureTenantContext, ventaController.getVentaConDetalles);
+
 module.exports = router; 

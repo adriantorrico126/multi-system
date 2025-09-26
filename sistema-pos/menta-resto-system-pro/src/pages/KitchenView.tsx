@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getKitchenOrders, updateOrderStatus } from '@/services/api';
 import { api } from '@/services/api';
+import { PlanGate } from '@/components/plan/PlanGate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ interface KitchenOrder {
   mesa_numero: number | null;
   id_mesa: number | null;
   tipo_servicio: string;
-  estado: 'recibido' | 'en_preparacion' | 'listo_para_servir' | 'entregado' | 'cancelado';
+  estado: 'recibido' | 'en_preparacion' | 'entregado' | 'cancelado';
   total: number;
   productos: ProductDetail[];
   comensales?: number;
@@ -48,8 +49,6 @@ function getStatusInfo(status: string) {
       return { color: 'bg-cyan-500', icon: <FaUtensils className="inline mr-1" />, label: 'Recibido' };
     case 'en_preparacion':
       return { color: 'bg-yellow-400', icon: <FaFireAlt className="inline mr-1" />, label: 'En preparación' };
-    case 'listo_para_servir':
-      return { color: 'bg-green-500', icon: <FaCheckCircle className="inline mr-1" />, label: 'Listo para servir' };
     case 'entregado':
       return { color: 'bg-gray-400', icon: <FaCheckCircle className="inline mr-1" />, label: 'Entregado' };
     case 'cancelado':
@@ -75,6 +74,35 @@ function timeSince(date: string) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   return `${Math.floor(diff / 3600)}h`;
 }
+
+// Componente de restricción para KitchenView
+const KitchenRestricted = () => (
+  <div className="container mx-auto p-6">
+    <Card className="border-blue-200 bg-blue-50">
+      <CardHeader>
+        <CardTitle className="text-center text-blue-800">
+          🔒 Vista de Cocina - Plan Profesional Requerido
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-center space-y-4">
+        <p className="text-blue-700">
+          La funcionalidad de <strong>Vista de Cocina</strong> está disponible únicamente en el plan <strong>Profesional</strong> o superior.
+        </p>
+        <p className="text-sm text-blue-600">
+          Esta funcionalidad incluye gestión de pedidos en tiempo real, estados de preparación y notificaciones automáticas.
+        </p>
+        <div className="flex justify-center space-x-4">
+          <Button variant="outline" className="border-blue-300 text-blue-700">
+            📞 Contactar Soporte
+          </Button>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            👑 Actualizar Plan
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: KitchenViewProps = {}) {
   const queryClient = useQueryClient();
@@ -189,7 +217,8 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
   if (isError) return <div className="p-6 text-center text-red-500">Error al cargar los pedidos.</div>;
 
   return (
-    <div className="p-3 sm:p-6">
+    <PlanGate feature="cocina" fallback={<KitchenRestricted />} requiredPlan="profesional">
+      <div className="p-3 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1">Panel de Cocina</h1>
@@ -201,7 +230,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
           activeOrders.map((order) => {
             const statusInfo = getStatusInfo(order.estado);
             return (
-              <Card key={order.id_venta} className="shadow-lg sm:shadow-2xl rounded-xl sm:rounded-2xl border-0 bg-white/90 hover:scale-[1.005] sm:hover:scale-[1.01] transition-transform duration-200">
+              <Card key={`order-${order.id_venta}-${order.fecha}-${order.mesa_numero || 'no-mesa'}`} className="shadow-lg sm:shadow-2xl rounded-xl sm:rounded-2xl border-0 bg-white/90 hover:scale-[1.005] sm:hover:scale-[1.01] transition-transform duration-200">
                 <CardHeader className="pb-2 border-b flex flex-col gap-2 bg-gradient-to-r from-cyan-100 to-pink-100 rounded-t-xl sm:rounded-t-2xl p-3 sm:p-6">
                   {/* DATOS ESENCIALES DE LA COMANDA */}
                   <div className="mb-2">
@@ -245,10 +274,10 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
                 </CardHeader>
                 <CardContent className="pt-3 sm:pt-4 pb-2 p-3 sm:p-6">
                   <div className="space-y-2 sm:space-y-3">
-                    {order.productos.map((item: any) => {
+                    {order.productos.map((item: any, itemIndex: number) => {
                       const detalle = detalleUpdates[item.id_detalle] ? { ...item, ...detalleUpdates[item.id_detalle] } : item;
                       return (
-                        <div key={item.id_detalle || item.id_producto} className="rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200 p-2 sm:p-3 flex flex-col gap-2 shadow-sm">
+                        <div key={`product-${order.id_venta}-${item.id_detalle || item.id_producto}-${item.nombre_producto}-${itemIndex}`} className="rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200 p-2 sm:p-3 flex flex-col gap-2 shadow-sm">
                           <div className="flex-1 flex flex-col gap-1">
                             <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                               <span className="font-bold text-sm sm:text-base text-gray-800 truncate">{detalle.nombre_producto}</span>
@@ -273,12 +302,8 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
                         btnText = 'Preparar';
                         btnIcon = <FaFireAlt className="inline mr-1 sm:mr-2" />;
                       } else if (order.estado === 'en_preparacion') {
-                        nextStatus = 'listo_para_servir';
-                        btnText = 'Listo para Servir';
-                        btnIcon = <FaCheckCircle className="inline mr-1 sm:mr-2" />;
-                      } else if (order.estado === 'listo_para_servir') {
                         nextStatus = 'entregado';
-                        btnText = 'Entregado';
+                        btnText = 'Entregar';
                         btnIcon = <FaCheckCircle className="inline mr-1 sm:mr-2" />;
                       }
                       return (
@@ -328,7 +353,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
           <div className="lg:hidden p-3 sm:p-6 pt-0">
             <div className="space-y-3">
               {detallePedido.order?.productos?.map((prod: any, idx: number) => (
-                <Card key={idx} className="hover:shadow-md transition-shadow">
+                <Card key={`modal-mobile-${detallePedido.order.id_venta}-${prod.id_detalle || prod.id_producto || idx}-${prod.nombre_producto}-${idx}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-gray-900 truncate">{prod.nombre_producto || '-'}</h3>
@@ -378,7 +403,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
                 </thead>
                 <tbody>
                   {detallePedido.order?.productos?.map((prod: any, idx: number) => (
-                    <tr key={idx} className="border-b">
+                    <tr key={`modal-table-${detallePedido.order.id_venta}-${prod.id_detalle || prod.id_producto || idx}-${prod.nombre_producto}-${idx}`} className="border-b">
                       <td className="px-3 py-2 border text-center">{prod.cantidad || 1}</td>
                       <td className="px-3 py-2 border">{prod.nombre_producto || '-'}</td>
                       <td className="px-3 py-2 border">{prod.observaciones || '-'}</td>
@@ -492,7 +517,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
                 <span className="text-gray-500">Productos ({selectedOrderForInfo.productos?.length || 0})</span>
                 <div className="mt-2 space-y-1">
                   {selectedOrderForInfo.productos?.slice(0, 3).map((prod: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
+                    <div key={`info-prod-${selectedOrderForInfo.id_venta}-${prod.id_detalle || prod.id_producto || idx}-${prod.nombre_producto}-${idx}`} className="flex items-center justify-between text-sm">
                       <span className="truncate">{prod.nombre_producto}</span>
                       <Badge variant="outline" className="text-xs">x{prod.cantidad}</Badge>
                     </div>
@@ -529,6 +554,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
         </DialogContent>
       </Dialog>
     </div>
+    </PlanGate>
   );
 }
 

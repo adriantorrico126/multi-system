@@ -1,126 +1,216 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { login as apiLogin, apiLogout } from '../services/api'; // Importa las funciones de login y logout de api.ts
-import { useQueryClient } from '@tanstack/react-query';
+// src/context/AuthContext.tsx
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
-  id: number;
+  id_vendedor: number;
   nombre: string;
-  username: string;
-  rol: 'cajero' | 'admin' | 'gerente' | 'cocinero' | 'super_admin' | 'mesero' | 'contador';
-  sucursal: {
-    id: number;
-    nombre: string;
-    ciudad: string;
-    direccion: string;
-  };
+  email: string;
+  rol: string;
+  id_sucursal: number;
   id_restaurante: number;
+  activo: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  refreshAuth: () => Promise<void>;
   clearRestaurantData: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [previousRestaurantId, setPreviousRestaurantId] = useState<number | null>(null);
-
-  // Al cargar la aplicación, intenta cargar el usuario desde localStorage
-  useEffect(() => {
-    console.log('AuthContext: Loading user from localStorage');
-    const storedUser = localStorage.getItem('currentUser');
-    console.log('AuthContext: storedUser:', storedUser);
-    if (storedUser) {
-      try {
-        const parsedUser: User = JSON.parse(storedUser);
-        console.log('AuthContext: Parsed user:', parsedUser);
-        setUser(parsedUser);
-        setPreviousRestaurantId(parsedUser.id_restaurante);
-        setIsAuthenticated(true);
-        console.log('AuthContext: User loaded successfully');
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('currentUser'); // Limpiar datos corruptos
-      }
-    } else {
-      console.log('AuthContext: No stored user found');
-    }
-  }, []);
-
-  const login = async (username: string, password: string) => {
-    try {
-      console.log('AuthContext: Attempting login for username:', username);
-      const userData = await apiLogin(username, password);
-      console.log('AuthContext: Login successful, userData:', userData);
-      
-      // Si hay un usuario anterior con diferente restaurante, limpiar datos
-      if (user && user.id_restaurante !== userData.id_restaurante) {
-        console.log('AuthContext: Different restaurant detected, clearing previous data');
-        clearRestaurantData();
-      }
-      
-      setUser(userData);
-      setPreviousRestaurantId(userData.id_restaurante);
-      setIsAuthenticated(true);
-      localStorage.setItem('currentUser', JSON.stringify(userData)); // Guardar usuario en localStorage
-      console.log('AuthContext: User saved to localStorage');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    console.log('AuthContext: Logging out, clearing all data');
-    clearRestaurantData();
-    setUser(null);
-    setIsAuthenticated(false);
-    setPreviousRestaurantId(null);
-    localStorage.removeItem('currentUser'); // Limpiar usuario de localStorage
-    apiLogout(); // Limpiar token de axios y localStorage
-  };
-
-  // Función para limpiar datos del restaurante anterior
-  const clearRestaurantData = () => {
-    try {
-      // Limpiar localStorage específico del restaurante
-      const keysToRemove = [
-        'selectedSucursalId',
-        'lastSelectedSucursal',
-        'sucursalPreference'
-      ];
-      
-      keysToRemove.forEach(key => {
-        if (localStorage.getItem(key)) {
-          console.log(`AuthContext: Removing localStorage key: ${key}`);
-          localStorage.removeItem(key);
-        }
-      });
-
-      // Limpiar todas las queries de React Query
-      // Esto se hará desde el componente que use este contexto
-      console.log('AuthContext: Restaurant data cleared');
-    } catch (error) {
-      console.error('Error clearing restaurant data:', error);
-    }
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, clearRestaurantData }}>
-      {children}
-    </AuthContext.Provider>
-  );
+const LOCAL_STORAGE_KEYS = {
+  user: 'currentUser',
+  token: 'jwtToken',
+  selectedBranch: 'selectedBranch',
+  restaurantConfig: 'restaurantConfig',
 };
 
-export const useAuth = () => {
+const getBackendURL = (): string =>
+  (window as any).ENV_OVERRIDE?.VITE_BACKEND_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  'http://localhost:3000/api/v1';
+
+const getStoredAuthData = () => {
+  try {
+    const user = localStorage.getItem(LOCAL_STORAGE_KEYS.user);
+    const token = localStorage.getItem(LOCAL_STORAGE_KEYS.token);
+
+    if (user && token) {
+      return {
+        user: JSON.parse(user) as User,
+        token,
+      };
+    }
+  } catch (error) {
+    console.error('Error reading auth data from storage:', error);
+  }
+
+  // Limpieza por si acaso
+  localStorage.removeItem(LOCAL_STORAGE_KEYS.user);
+  localStorage.removeItem(LOCAL_STORAGE_KEYS.token);
+
+  return { user: null, token: null };
+};
+
+const validateToken = async (token: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${getBackendURL()}/auth/validate`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.user);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.token);
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate('/');
+  }, [navigate]);
+
+  const initializeAuth = useCallback(async () => {
+    setIsLoading(true);
+
+    const { user: storedUser, token } = getStoredAuthData();
+
+    if (storedUser && token) {
+      const isValid = await validateToken(token);
+      if (isValid) {
+        setUser(storedUser);
+        setIsAuthenticated(true);
+      } else {
+        logout();
+      }
+    } else {
+      logout();
+    }
+
+    setIsLoading(false);
+  }, [logout]);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${getBackendURL()}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: 'Error de conexión',
+        }));
+        return { success: false, error: errorData.message || 'Credenciales inválidas' };
+      }
+
+      const { token, data: userData } = await response.json();
+
+      if (!token || !userData) {
+        return { success: false, error: 'Respuesta del servidor inválida' };
+      }
+
+      localStorage.setItem(LOCAL_STORAGE_KEYS.token, token);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.user, JSON.stringify(userData));
+
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Error de conexión con el servidor' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshAuth = async () => {
+    setIsLoading(true);
+
+    try {
+      const { user: storedUser, token } = getStoredAuthData();
+
+      if (storedUser && token) {
+        const isValid = await validateToken(token);
+        if (isValid) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        } else {
+          logout();
+        }
+      } else {
+        logout();
+      }
+    } catch (error) {
+      console.error('Error refreshing auth:', error);
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearRestaurantData = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.selectedBranch);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.restaurantConfig);
+  };
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    refreshAuth,
+    clearRestaurantData,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

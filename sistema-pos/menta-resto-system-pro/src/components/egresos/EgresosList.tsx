@@ -12,9 +12,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  CheckCircle,
-  X,
-  Clock,
   Filter,
   Search,
   ChevronLeft,
@@ -23,8 +20,7 @@ import {
   FileText,
   Calendar,
   Building,
-  User,
-  CreditCard
+  User
 } from 'lucide-react';
 
 import {
@@ -49,9 +45,6 @@ interface EgresosListProps {
   onEdit: (egreso: Egreso) => void;
   onView: (egreso: Egreso) => void;
   onDelete: (id: number) => void;
-  onAprobar: (id: number, comentario?: string) => void;
-  onRechazar: (id: number, comentario: string) => void;
-  onPagar: (id: number, comentario?: string) => void;
   onFiltrosChange: (filtros: FiltrosEgresos) => void;
   onPageChange: (page: number) => void;
 }
@@ -66,9 +59,6 @@ export const EgresosList: React.FC<EgresosListProps> = ({
   onEdit,
   onView,
   onDelete,
-  onAprobar,
-  onRechazar,
-  onPagar,
   onFiltrosChange,
   onPageChange
 }) => {
@@ -76,15 +66,6 @@ export const EgresosList: React.FC<EgresosListProps> = ({
   const [selectedEgreso, setSelectedEgreso] = useState<Egreso | null>(null);
   const [selectedEgresoForInfo, setSelectedEgresoForInfo] = useState<Egreso | null>(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-  const [actionModal, setActionModal] = useState<{
-    open: boolean;
-    action: 'aprobar' | 'rechazar' | 'pagar' | null;
-    comentario: string;
-  }>({
-    open: false,
-    action: null,
-    comentario: ''
-  });
 
   const openInfoDialog = (egreso: Egreso) => {
     setSelectedEgresoForInfo(egreso);
@@ -107,43 +88,7 @@ export const EgresosList: React.FC<EgresosListProps> = ({
     });
   };
 
-  // Handler para acciones
-  const handleAction = (egreso: Egreso, action: 'aprobar' | 'rechazar' | 'pagar') => {
-    setSelectedEgreso(egreso);
-    setActionModal({
-      open: true,
-      action,
-      comentario: ''
-    });
-  };
-
-  const executeAction = () => {
-    if (!selectedEgreso || !actionModal.action) return;
-
-    const { id_egreso } = selectedEgreso;
-    const { action, comentario } = actionModal;
-
-    switch (action) {
-      case 'aprobar':
-        onAprobar(id_egreso, comentario);
-        break;
-      case 'rechazar':
-        if (!comentario.trim()) {
-          alert('El comentario es requerido para rechazar');
-          return;
-        }
-        onRechazar(id_egreso, comentario);
-        break;
-      case 'pagar':
-        onPagar(id_egreso, comentario);
-        break;
-    }
-
-    setActionModal({ open: false, action: null, comentario: '' });
-    setSelectedEgreso(null);
-  };
-
-  const getEstadoBadge = (estado: string) => {
+  const getEstadoBadge = (estado: string | null) => {
     const variants = {
       pendiente: 'secondary',
       aprobado: 'default',
@@ -160,9 +105,12 @@ export const EgresosList: React.FC<EgresosListProps> = ({
       rechazado: 'bg-red-100 text-red-800'
     };
 
+    // Manejar caso cuando estado es null o undefined
+    const estadoValue = estado || 'pendiente';
+
     return (
-      <Badge className={colors[estado as keyof typeof colors] || colors.pendiente}>
-        {estado.toUpperCase()}
+      <Badge className={colors[estadoValue as keyof typeof colors] || colors.pendiente}>
+        {estadoValue.toUpperCase()}
       </Badge>
     );
   };
@@ -372,9 +320,7 @@ export const EgresosList: React.FC<EgresosListProps> = ({
                               <span className="truncate">{egreso.categoria_nombre}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <Badge className={`text-xs ${getEstadoBadge(egreso.estado).props.className}`}>
-                                {egreso.estado.toUpperCase()}
-                              </Badge>
+                              {getEstadoBadge(egreso.estado)}
                               <span className="text-sm font-medium text-green-600">
                                 {egresosUtils.formatCurrency(egreso.monto)}
                               </span>
@@ -452,7 +398,7 @@ export const EgresosList: React.FC<EgresosListProps> = ({
                           
                           <TableCell>
                             <div className="flex items-center space-x-1">
-                              <CreditCard className="h-4 w-4 text-gray-400" />
+                              <FileText className="h-4 w-4 text-gray-400" />
                               <span className="text-sm capitalize">
                                 {egreso.metodo_pago.replace('_', ' ')}
                               </span>
@@ -480,45 +426,6 @@ export const EgresosList: React.FC<EgresosListProps> = ({
                                   title="Editar"
                                 >
                                   <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-
-                              {/* Aprobar */}
-                              {canApprove(egreso) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleAction(egreso, 'aprobar')}
-                                  title="Aprobar"
-                                  className="text-green-600 hover:text-green-700"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                              )}
-
-                              {/* Rechazar */}
-                              {canApprove(egreso) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleAction(egreso, 'rechazar')}
-                                  title="Rechazar"
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-
-                              {/* Marcar como pagado */}
-                              {canPay(egreso) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleAction(egreso, 'pagar')}
-                                  title="Marcar como pagado"
-                                  className="text-blue-600 hover:text-blue-700"
-                                >
-                                  <CreditCard className="h-4 w-4" />
                                 </Button>
                               )}
 
@@ -588,63 +495,6 @@ export const EgresosList: React.FC<EgresosListProps> = ({
         </CardContent>
       </Card>
 
-      {/* Modal de acciones */}
-      <Dialog open={actionModal.open} onOpenChange={(open) => !open && setActionModal({ ...actionModal, open: false })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {actionModal.action === 'aprobar' && 'Aprobar Egreso'}
-              {actionModal.action === 'rechazar' && 'Rechazar Egreso'}
-              {actionModal.action === 'pagar' && 'Marcar como Pagado'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedEgreso && (
-            <div className="space-y-4">
-              <div>
-                <strong>Concepto:</strong> {selectedEgreso.concepto}
-              </div>
-              <div>
-                <strong>Monto:</strong> {egresosUtils.formatCurrency(selectedEgreso.monto)}
-              </div>
-              
-              <div>
-                <Label htmlFor="comentario">
-                  Comentario {actionModal.action === 'rechazar' && '*'}
-                </Label>
-                <Textarea
-                  id="comentario"
-                  placeholder={
-                    actionModal.action === 'aprobar' ? 'Comentario opcional...' :
-                    actionModal.action === 'rechazar' ? 'Motivo del rechazo (requerido)...' :
-                    'Comentario sobre el pago...'
-                  }
-                  value={actionModal.comentario}
-                  onChange={(e) => setActionModal({ ...actionModal, comentario: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setActionModal({ ...actionModal, open: false })}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={executeAction}
-              variant={actionModal.action === 'rechazar' ? 'destructive' : 'default'}
-            >
-              {actionModal.action === 'aprobar' && 'Aprobar'}
-              {actionModal.action === 'rechazar' && 'Rechazar'}
-              {actionModal.action === 'pagar' && 'Marcar como Pagado'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Modal de información para móvil */}
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
         <DialogContent className="max-w-md">
@@ -707,7 +557,7 @@ export const EgresosList: React.FC<EgresosListProps> = ({
                 <div>
                   <Label className="text-gray-500">Método de Pago</Label>
                   <div className="flex items-center gap-1">
-                    <CreditCard className="h-4 w-4 text-gray-400" />
+                    <FileText className="h-4 w-4 text-gray-400" />
                     <span className="font-medium capitalize">
                       {selectedEgresoForInfo.metodo_pago.replace('_', ' ')}
                     </span>

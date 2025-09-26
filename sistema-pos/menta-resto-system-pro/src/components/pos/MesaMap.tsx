@@ -39,7 +39,8 @@ import {
   Moon,
   AlertCircle, // Added for error state
   Calendar,
-  BookOpen
+  BookOpen,
+  Crown
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
@@ -56,12 +57,14 @@ import {
   getReservas
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { usePlan } from '@/context/PlanContext';
 import type { Mesa, Product, Category, CartItem, User } from '@/types/restaurant'; // Añadir CartItem
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ReservaModal } from './ReservaModal';
+import { ConfirmarAgregarMesaOcupada } from './ConfirmarAgregarMesaOcupada';
 
 // --- Constants and Type Definitions ---
 
@@ -354,9 +357,17 @@ function OrderCart({ cart, onAdd, onRemove, total }: OrderCartProps) {
 
 export default function MesaMap() {
   const { user } = useAuth();
+  const { currentPlan } = usePlan();
   const { toast } = useToast();
   const id_sucursal = user?.sucursal?.id;
   const id_restaurante = user?.id_restaurante;
+
+  // Funciones para verificar restricciones de plan
+  const canTakeOrders = () => {
+    if (!currentPlan) return false;
+    const planName = currentPlan.nombre.toLowerCase();
+    return planName !== 'profesional'; // Solo Avanzado y Enterprise pueden tomar pedidos
+  };
 
   // DEBUG: Log user and sucursal info
   useEffect(() => {
@@ -391,6 +402,10 @@ export default function MesaMap() {
   const [showReservaModal, setShowReservaModal] = useState(false);
   const [selectedMesaForReserva, setSelectedMesaForReserva] = useState<Mesa | null>(null);
   const [reservas, setReservas] = useState<any[]>([]);
+  
+  // NUEVO: confirmación para mesa ocupada
+  const [showConfirmarMesaOcupada, setShowConfirmarMesaOcupada] = useState(false);
+  const [pendingCart, setPendingCart] = useState<CartItem[]>([]);
   const [isLoadingReservas, setIsLoadingReservas] = useState(false);
 
   // Cargar meseros activos al abrir el modal de unir mesas
@@ -595,14 +610,51 @@ export default function MesaMap() {
 
   // --- Mutations with React Query ---
 
+  // Función para verificar si la mesa está ocupada antes de agregar productos
+  const handleAddProductsToMesa = useCallback(() => {
+    if (!selectedMesa) {
+      toast({
+        title: "Error",
+        description: "No hay mesa seleccionada.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (cart.length === 0) {
+      toast({
+        title: "Error",
+        description: "No hay productos en el carrito.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Si la mesa está ocupada, mostrar modal de confirmación
+    if (selectedMesa.estado === 'en_uso' || selectedMesa.estado === 'pendiente_cobro') {
+      setPendingCart([...cart]);
+      setShowConfirmarMesaOcupada(true);
+    } else {
+      // Si la mesa está libre, proceder directamente
+      addProductsToMesaMutation.mutate();
+    }
+  }, [selectedMesa, cart, addProductsToMesaMutation, toast]);
+
+  // Función para confirmar agregar productos a mesa ocupada
+  const confirmAddToOccupiedMesa = useCallback(() => {
+    setShowConfirmarMesaOcupada(false);
+    addProductsToMesaMutation.mutate();
+  }, [addProductsToMesaMutation]);
+
   // Mutation to add products to a table (mandar a caja)
   const addProductsToMesaMutation = useMutation({
     mutationFn: async () => {
       if (!selectedMesa) throw new Error('No hay mesa seleccionada.');
-      if (cart.length === 0) throw new Error('No hay productos en el carrito.');
+      const cartToUse = pendingCart.length > 0 ? pendingCart : cart;
+      if (cartToUse.length === 0) throw new Error('No hay productos en el carrito.');
       if (!user) throw new Error('Usuario no autenticado.');
 
-      const items = cart.map((item) => ({
+      const items = cartToUse.map((item) => ({
         id: item.id.toString(),
         quantity: item.quantity ?? 1,
         price: item.price,
@@ -610,10 +662,12 @@ export default function MesaMap() {
         modificadores: item.modificadores || [],
       }));
 
+      const total = cartToUse.reduce((acc, item) => acc + (item.price * (item.quantity ?? 1)), 0);
+
       // Usar createSale para crear la venta en estado pendiente_caja
       await createSale({
         items,
-        total: cartTotal,
+        total,
         paymentMethod: 'pendiente_caja',
         cashier: user.username || user.nombre || 'mesero',
         id_sucursal,
@@ -622,13 +676,21 @@ export default function MesaMap() {
         tipo_servicio: 'Mesa',
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setCart([]);
+      setPendingCart([]);
       setIsTakingOrder(false);
       setDrawerOpen(false);
+      
+      // Verificar si la mesa estaba ocupada
+      const mesaEstabaOcupada = data?.data?.mesa_estaba_ocupada;
+      const mensaje = mesaEstabaOcupada 
+        ? `Productos agregados a la mesa ${selectedMesa?.numero} (mesa ocupada).`
+        : "Orden enviada a caja con éxito.";
+      
       toast({
         title: "Orden Enviada",
-        description: "Orden enviada a caja con éxito.",
+        description: mensaje,
       });
       queryClient.invalidateQueries({ queryKey: ['mesas'] }); // Invalidate mesas query to refetch updated state
     },
@@ -1215,10 +1277,23 @@ export default function MesaMap() {
                 <Button
                   variant="default"
                   size="lg"
-                  className="shadow-md px-6 py-3 text-base font-bold flex-grow sm:flex-grow-0 rounded-full animate-pop-in"
-                  onClick={() => setIsTakingOrder(true)}
+                  className={`shadow-md px-6 py-3 text-base font-bold flex-grow sm:flex-grow-0 rounded-full animate-pop-in ${!canTakeOrders() ? 'opacity-50' : ''}`}
+                  onClick={() => {
+                    if (canTakeOrders()) {
+                      setIsTakingOrder(true);
+                    } else {
+                      toast({
+                        title: 'Funcionalidad Restringida',
+                        description: 'La gestión de pedidos está disponible en planes superiores. Aquí puedes ver el estado de los pedidos y cancelarlos.',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                  disabled={!canTakeOrders()}
                 >
-                  <ShoppingCart className="w-5 h-5 mr-2" /> Tomar Pedido
+                  <ShoppingCart className="w-5 h-5 mr-2" /> 
+                  Tomar Pedido
+                  {!canTakeOrders() && <Crown className="h-3 w-3 text-yellow-500 ml-2" />}
                 </Button>
                 <Button
                   variant="outline"
@@ -1292,7 +1367,7 @@ export default function MesaMap() {
                     disabled={
                       cart.length === 0 || addProductsToMesaMutation.isPending
                     }
-                    onClick={() => addProductsToMesaMutation.mutate()}
+                    onClick={handleAddProductsToMesa}
                   >
                     {addProductsToMesaMutation.isPending
                       ? 'Enviando Orden...'
@@ -1545,6 +1620,27 @@ export default function MesaMap() {
           display: none; /* Chrome, Safari, Opera */
         }
       `}</style>
+
+      {/* Modal de confirmación para mesa ocupada */}
+      {selectedMesa && (
+        <ConfirmarAgregarMesaOcupada
+          isOpen={showConfirmarMesaOcupada}
+          onClose={() => setShowConfirmarMesaOcupada(false)}
+          onConfirm={confirmAddToOccupiedMesa}
+          mesa={{
+            numero: selectedMesa.numero,
+            estado: selectedMesa.estado,
+            total_acumulado: selectedMesa.total_acumulado || 0,
+            capacidad: selectedMesa.capacidad
+          }}
+          productos={pendingCart.map(item => ({
+            name: item.name,
+            quantity: item.quantity || 1,
+            price: item.price
+          }))}
+          totalNuevo={pendingCart.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0)}
+        />
+      )}
     </div>
   );
 }

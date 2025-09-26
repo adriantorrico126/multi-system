@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const productoController = require('../controllers/productoController');
 const { authenticateToken, authorizeRoles, ensureTenantContext } = require('../middlewares/authMiddleware');
+const { planMiddleware, resourceLimitMiddleware } = require('../middlewares/planMiddleware');
+const { autoIncrementCounter, autoDecrementCounter, updateProductCounter } = require('../middlewares/usageCountersMiddleware');
+const { limitAlertMiddleware } = require('../middlewares/limitAlertsMiddleware');
 const { check } = require('express-validator');
 const apicache = require('apicache');
 
@@ -41,20 +44,47 @@ const updateStockValidationRules = [
 ];
 
 // Obtener todos los productos (multitenant: NO usar cache global para evitar mezcla entre restaurantes)
-router.get('/', authenticateToken, ensureTenantContext, productoController.getAllProductos);
+router.get('/', authenticateToken, ensureTenantContext, planMiddleware('inventory'), productoController.getAllProductos);
 
-// Crear un nuevo producto (limpia la caché de productos)
-router.post('/', authenticateToken, authorizeRoles('admin', 'super_admin'), createProductValidationRules, clearCache('productos'), productoController.createProducto);
+// Crear un nuevo producto (limpia la caché de productos) - Verificar límite de productos
+router.post('/', 
+  authenticateToken, 
+  authorizeRoles('admin', 'super_admin'), 
+  planMiddleware('inventory'), 
+  resourceLimitMiddleware('productos'), 
+  createProductValidationRules, 
+  clearCache('productos'), 
+  updateProductCounter(),
+  limitAlertMiddleware(),
+  productoController.createProducto
+);
 
 // Actualizar un producto (limpia la caché de productos)
-router.put('/:id', authenticateToken, authorizeRoles('admin', 'super_admin'), updateProductValidationRules, clearCache('productos'), productoController.updateProducto);
+router.put('/:id', 
+  authenticateToken, 
+  authorizeRoles('admin', 'super_admin'), 
+  planMiddleware('inventory'), 
+  updateProductValidationRules, 
+  clearCache('productos'), 
+  updateProductCounter(),
+  limitAlertMiddleware(),
+  productoController.updateProducto
+);
 
 // Eliminar un producto (soft delete) (limpia la caché de productos)
-router.delete('/:id', authenticateToken, authorizeRoles('admin', 'super_admin'), clearCache('productos'), productoController.deleteProducto);
+router.delete('/:id', 
+  authenticateToken, 
+  authorizeRoles('admin', 'super_admin'), 
+  planMiddleware('inventory'), 
+  clearCache('productos'), 
+  updateProductCounter(),
+  limitAlertMiddleware(),
+  productoController.deleteProducto
+);
 
 // Rutas de inventario (para administradores, gerentes y cajeros)
-router.get('/inventario/resumen', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin'), productoController.getInventorySummary);
-router.post('/inventario/:id/stock', authenticateToken, authorizeRoles('admin', 'gerente', 'super_admin'), updateStockValidationRules, clearCache('productos'), productoController.updateProductStock);
-router.get('/inventario/movimientos', authenticateToken, authorizeRoles('admin', 'super_admin'), productoController.getStockMovementsHistory);
+router.get('/inventario/resumen', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin'), planMiddleware('inventory'), productoController.getInventorySummary);
+router.post('/inventario/:id/stock', authenticateToken, authorizeRoles('admin', 'gerente', 'super_admin'), planMiddleware('inventory'), updateStockValidationRules, clearCache('productos'), productoController.updateProductStock);
+router.get('/inventario/movimientos', authenticateToken, authorizeRoles('admin', 'super_admin'), planMiddleware('inventory'), productoController.getStockMovementsHistory);
 
 module.exports = router;

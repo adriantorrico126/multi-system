@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const envConfig = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 8080, // Puerto por defecto para DigitalOcean
+  PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000, // Puerto para desarrollo local
   API_PREFIX: process.env.API_PREFIX || '/api/v1',
   DB_HOST: process.env.DB_HOST,
   DB_USER: process.env.DB_USER,

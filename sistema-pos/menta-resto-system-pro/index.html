@@ -1,50 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    
-    <!-- Meta tags básicos -->
+
+    <!-- SEO -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Sistema de Punto de Venta profesional para restaurantes. Gestión de ventas, inventario, cocina y reportes en tiempo real." />
+    <meta name="description" content="Sistema de Punto de Venta para restaurantes. Gestión de ventas, cocina e inventario en tiempo real." />
     <meta name="keywords" content="POS, restaurante, punto de venta, inventario, cocina, ventas, gestión" />
     <meta name="author" content="Menta Restobar" />
     <meta name="robots" content="index, follow" />
-    
-    <!-- Open Graph / Facebook -->
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pos.forkast.vip/" />
     <meta property="og:title" content="Sistema POS - Menta Restobar" />
     <meta property="og:description" content="Sistema de Punto de Venta profesional para restaurantes" />
     <meta property="og:image" content="https://pos.forkast.vip/og-image.png" />
-    
-    <!-- Twitter -->
+
+    <!-- Twitter Card -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://pos.forkast.vip/" />
     <meta property="twitter:title" content="Sistema POS - Menta Restobar" />
     <meta property="twitter:description" content="Sistema de Punto de Venta profesional para restaurantes" />
     <meta property="twitter:image" content="https://pos.forkast.vip/twitter-image.png" />
-    
-    <!-- Favicon básico -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    
-    <!-- Preconnect para performance -->
+
+    <!-- Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
-    <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="//api.forkast.vip" />
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    
-    <!-- Preload crítico -->
-    <link rel="preload" href="/src/index.css" as="style" />
-    <link rel="preload" href="/src/main.tsx" as="script" />
-    
+
+    <!-- Title -->
     <title>Sistema POS - Menta Restobar</title>
-    
-    <!-- Estilos críticos inline para performance -->
+
+    <!-- Critical inline styles -->
     <style>
-      /* Estilos críticos para evitar FOUC */
       body {
         margin: 0;
         padding: 0;
@@ -53,39 +44,8 @@
         color: #1e293b;
         overflow-x: hidden;
       }
-      
-      /* ELIMINACIÓN COMPLETA DEL LOADING SPINNER */
-      .loading-spinner,
-      #loading-spinner,
-      [class*="loading"],
-      [id*="loading"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        position: absolute !important;
-        left: -9999px !important;
-        top: -9999px !important;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        pointer-events: none !important;
-        background: none !important;
-        background-image: none !important;
-      }
-      
-      /* Eliminar cualquier gradiente morado */
-      *[style*="667eea"],
-      *[style*="764ba2"] {
-        background: none !important;
-        background-image: none !important;
-      }
-      
-      /* Restaurar el body específicamente */
-      body {
-        background-color: #f8fafc !important;
-      }
-      
-      /* Safe area para dispositivos con notch */
+
+      /* Safe area support */
       @supports (padding: max(0px)) {
         body {
           padding-top: max(0px, env(safe-area-inset-top));
@@ -96,276 +56,24 @@
       }
     </style>
   </head>
+
   <body class="h-full">
-    <!-- Script para limpiar cache y desregistrar Service Workers -->
+    <!-- Root app -->
+    <div id="root"></div>
+
+    <!-- Configuración local opcional -->
     <script>
-      // LIMPIAR CACHE Y DESREGISTRAR SERVICE WORKERS
-      (function() {
-        'use strict';
-        
-        // Declarar variables globales para evitar spam de logs
-        window.__swCleanupShown = false;
-        window.__swLogShown = false;
-        
-        // Limpiar cache del navegador
-        if ('caches' in window) {
-          caches.keys().then(function(names) {
-            for (let name of names) {
-              caches.delete(name);
-              console.log('🗑️ Cache eliminado:', name);
-            }
-          });
-        }
-        
-        // Desregistrar Service Workers
-        if ('serviceWorker' in navigator) {
-          console.log('🔧 Iniciando desregistro completo de Service Workers...');
-          
-          // Función para desregistrar todos los service workers
-          async function unregisterAllServiceWorkers() {
-            try {
-              // Obtener todos los registros
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              
-              // Solo mostrar logs si hay Service Workers registrados
-              if (registrations.length > 0 && !window.__swLogShown) {
-                console.log('🔧 Encontrados', registrations.length, 'Service Workers registrados');
-                window.__swLogShown = true;
-              }
-              
-              // Desregistrar cada uno
-              for (let registration of registrations) {
-                if (!window.__swLogShown) {
-                  console.log('🔧 Desregistrando SW:', registration.scope);
-                }
-                await registration.unregister();
-              }
-              
-              // También intentar desregistrar el service worker actual
-              if (navigator.serviceWorker.controller) {
-                if (!window.__swLogShown) {
-                  console.log('🔧 Desregistrando SW controlador actual');
-                }
-                await navigator.serviceWorker.controller.postMessage({type: 'SKIP_WAITING'});
-              }
-              
-              if (registrations.length > 0 && !window.__swLogShown) {
-                console.log('✅ Todos los Service Workers desregistrados');
-                window.__swLogShown = true;
-              }
-            } catch (error) {
-              console.error('❌ Error desregistrando Service Workers:', error);
-            }
-          }
-          
-          // Prevenir futuros registros
-          const originalRegister = navigator.serviceWorker.register;
-          navigator.serviceWorker.register = function() {
-            console.log('🔧 BLOQUEADO: Intento de registrar Service Worker');
-            return Promise.reject(new Error('Service Workers deshabilitados manualmente'));
-          };
-          
-          // Ejecutar desregistro inmediatamente
-          unregisterAllServiceWorkers();
-          
-          // También ejecutar cuando el DOM esté listo
-          document.addEventListener('DOMContentLoaded', unregisterAllServiceWorkers);
-          
-          // Ejecutar periódicamente para asegurar que no se registren nuevos
-          setInterval(unregisterAllServiceWorkers, 5000);
-          
-          // Solo mostrar el log una vez
-          if (!window.__swCleanupShown) {
-            console.log('✅ Sistema anti-Service Worker activado');
-            window.__swCleanupShown = true;
-          }
-        } else {
-          console.log('✅ Service Workers no soportados en este navegador');
-        }
-      })();
+      if (location.hostname === 'localhost') {
+        window.ENV_OVERRIDE = {
+          VITE_BACKEND_URL: 'http://localhost:3000/api/v1',
+          VITE_POS_API_URL: 'http://localhost:3000/api/v1',
+          VITE_SOCKET_URL: 'http://localhost:3000'
+        };
+        console.log('🔧 Configuración local aplicada:', window.ENV_OVERRIDE);
+      }
     </script>
 
-    <!-- Root de la aplicación -->
-    <div id="root"></div>
-    
-    <!-- Script principal -->
-    <script type="module" src="/src/main.tsx?v=20240902"></script>
-    
-    <!-- Scripts de optimización -->
-    <script>
-      // Prevenir zoom en inputs en iOS
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        const viewport = document.querySelector('meta[name=viewport]');
-        if (viewport) {
-          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        }
-      }
-      
-            // SOLUCIÓN RADICAL: Prevenir completamente la creación del loading spinner
-      (function() {
-        'use strict';
-        
-        // Sobrescribir appendChild para interceptar elementos problemáticos
-        const originalAppendChild = Node.prototype.appendChild;
-        Node.prototype.appendChild = function(child) {
-          if (child.nodeType === 1) { // Element node
-            const element = child;
-            if (element.id === 'loading-spinner' || 
-                element.id === 'loading' || 
-                element.classList.contains('loading-spinner')) {
-              console.log('BLOQUEADO: Intento de crear elemento loading spinner:', element.id || element.className);
-              return child; // Retornar el elemento pero no agregarlo al DOM
-            }
-            
-            // Verificar si tiene el gradiente morado en estilos inline
-            if (element.style && element.style.background && 
-                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
-              console.log('BLOQUEADO: Elemento con gradiente morado en style inline');
-              return child;
-            }
-          }
-          
-          return originalAppendChild.call(this, child);
-        };
-        
-        // Sobrescribir insertBefore para interceptar elementos problemáticos
-        const originalInsertBefore = Node.prototype.insertBefore;
-        Node.prototype.insertBefore = function(newNode, referenceNode) {
-          if (newNode.nodeType === 1) { // Element node
-            const element = newNode;
-            if (element.id === 'loading-spinner' || 
-                element.id === 'loading' || 
-                element.classList.contains('loading-spinner')) {
-              console.log('BLOQUEADO: Intento de insertar elemento loading spinner:', element.id || element.className);
-              return newNode; // Retornar el elemento pero no agregarlo al DOM
-            }
-          }
-          
-          return originalInsertBefore.call(this, newNode, referenceNode);
-        };
-        
-        // Función agresiva de limpieza
-        function removePurpleGradients() {
-          // Eliminar elementos específicos por ID
-          const loadingSpinner = document.getElementById('loading-spinner');
-          if (loadingSpinner) {
-            loadingSpinner.remove();
-            console.log('ELIMINADO: loading-spinner por ID');
-          }
-          
-          const loading = document.getElementById('loading');
-          if (loading) {
-            loading.remove();
-            console.log('ELIMINADO: loading por ID');
-          }
-          
-          // Eliminar elementos por clase
-          const loadingSpinnersByClass = document.querySelectorAll('.loading-spinner');
-          loadingSpinnersByClass.forEach(element => {
-            element.remove();
-            console.log('ELIMINADO: elemento con clase loading-spinner');
-          });
-          
-          // Eliminar cualquier div que contenga un spinner o gradiente morado
-          const allElements = document.querySelectorAll('*');
-          allElements.forEach(element => {
-            const style = window.getComputedStyle(element);
-            const backgroundImage = style.backgroundImage;
-            
-            // Verificar si tiene el gradiente morado
-            if (backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) {
-              element.remove();
-              console.log('ELIMINADO: elemento con gradiente morado:', element.tagName, element.id, element.className);
-            }
-            
-            // Verificar estilos inline también
-            if (element.style && element.style.background && 
-                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
-              element.remove();
-              console.log('ELIMINADO: elemento con gradiente morado inline:', element.tagName, element.id, element.className);
-            }
-          });
-        }
-        
-        // Observador de mutaciones mejorado
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === 1) { // Element node
-                const element = node;
-                
-                // Verificar ID y clases problemáticas
-                if (element.id === 'loading-spinner' || 
-                    element.id === 'loading' || 
-                    element.classList.contains('loading-spinner')) {
-                  element.remove();
-                  console.log('INTERCEPTADO: elemento dinámico eliminado:', element.id || element.className);
-                  return;
-                }
-                
-                // Verificar gradientes morados en elementos recién creados
-                setTimeout(() => {
-                  const style = window.getComputedStyle(element);
-                  const backgroundImage = style.backgroundImage;
-                  if (backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) {
-                    element.remove();
-                    console.log('INTERCEPTADO: elemento con gradiente morado eliminado');
-                  }
-                }, 10);
-              }
-            });
-          });
-        });
-        
-        // Ejecutar inmediatamente
-        removePurpleGradients();
-        
-        // Ejecutar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', removePurpleGradients);
-        
-        // Iniciar el observador
-        observer.observe(document.documentElement, { 
-          childList: true, 
-          subtree: true,
-          attributes: true,
-          attributeFilter: ['style', 'class', 'id']
-        });
-        
-        // Ejecutar limpieza periódica
-        setInterval(removePurpleGradients, 250);
-        
-        // LIMPIEZA AGRESIVA ADICIONAL para elementos del Service Worker
-        setInterval(() => {
-          // Eliminar cualquier elemento con el gradiente morado
-          const allElements = document.querySelectorAll('*');
-          allElements.forEach(element => {
-            const style = window.getComputedStyle(element);
-            const backgroundImage = style.backgroundImage;
-            const backgroundColor = style.backgroundColor;
-            
-            // Verificar gradientes morados
-            if ((backgroundImage && (backgroundImage.includes('667eea') || backgroundImage.includes('764ba2'))) ||
-                (backgroundColor && (backgroundColor.includes('667eea') || backgroundColor.includes('764ba2')))) {
-              element.remove();
-              console.log('🔥 ELIMINADO: elemento con gradiente morado del Service Worker');
-            }
-            
-            // Verificar estilos inline
-            if (element.style && element.style.background && 
-                (element.style.background.includes('667eea') || element.style.background.includes('764ba2'))) {
-              element.remove();
-              console.log('🔥 ELIMINADO: elemento con gradiente morado inline del Service Worker');
-            }
-          });
-        }, 100);
-        
-        console.log('🔥 SISTEMA ANTI-LOADING-SPINNER ACTIVADO');
-      })();
-      
-      // Optimización para móviles - DESACTIVADO
-      // if (window.innerWidth <= 768) {
-      //   document.body.classList.add('mobile-device');
-      // }
-    </script>
+    <!-- Script principal (Vite se encarga del hash) -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { usePlan } from '@/context/PlanContext';
+import { PlanInfo } from '@/components/plans/PlanInfo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -69,6 +71,19 @@ export function Header({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileInfo = useMobile();
+  
+  // TEMPORAL: Usar valores por defecto en lugar de usePlan para evitar problemas
+  let planInfo = null;
+  let planLoading = false;
+  try {
+    const planContext = usePlan();
+    planInfo = planContext.planInfo;
+    planLoading = planContext.isLoading;
+    console.log('🔍 [HEADER] Plan context cargado correctamente');
+  } catch (error) {
+    console.log('🔍 [HEADER] Usando modo temporal sin plan context');
+    // Usar valores por defecto
+  }
 
   const handleLogout = () => {
     if (onLogout) {
@@ -89,9 +104,14 @@ export function Header({
   };
 
   const handleNavigation = (path: string) => {
+    console.log('🔍 [HEADER] handleNavigation navegando a:', path);
     navigate(path);
     setIsMobileMenuOpen(false);
   };
+
+  // DEBUG: Log user info
+  console.log('🔍 [HEADER] Usuario actual:', user);
+  console.log('🔍 [HEADER] Rol del usuario:', user?.rol);
 
   // Navegación principal optimizada
   const navigationItems = [
@@ -115,7 +135,15 @@ export function Header({
       icon: FaMoneyBillWave, 
       label: 'Egresos', 
       path: '/egresos-caja', 
-      show: ['cajero'].includes(user?.rol),
+      show: (() => {
+        const hasAccess = ['cajero', 'admin', 'super_admin'].includes(user?.rol);
+        console.log('🔍 [HEADER] Verificando acceso a Egresos:', {
+          userRole: user?.rol,
+          allowedRoles: ['cajero', 'admin', 'super_admin'],
+          hasAccess: hasAccess
+        });
+        return hasAccess;
+      })(),
       color: 'from-red-500 to-pink-600',
       description: 'Registrar gastos'
     },
@@ -201,9 +229,18 @@ export function Header({
   };
 
   // Filtrar elementos de navegación visibles
-  const visibleNavigationItems = navigationItems.filter(item => 
-    item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol))
-  );
+  const visibleNavigationItems = navigationItems.filter(item => {
+    const isVisible = item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol));
+    console.log(`🔍 [HEADER] Item "${item.label}":`, {
+      show: item.show,
+      userRole: user?.rol,
+      isVisible: isVisible
+    });
+    return isVisible;
+  });
+
+  console.log('🔍 [HEADER] Total items visibles:', visibleNavigationItems.length);
+  console.log('🔍 [HEADER] Items visibles:', visibleNavigationItems.map(item => item.label));
 
   // Componente de navegación móvil
   const MobileNavigation = () => (
@@ -370,7 +407,10 @@ export function Header({
                 className={`flex items-center space-x-2 whitespace-nowrap rounded-lg transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg border-2 bg-white/90 backdrop-blur-sm px-4 py-3 min-w-[140px] h-12 ${
                   item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
                 }`}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  console.log('🔍 [HEADER] Desktop button clicked, navegando a:', item.path);
+                  navigate(item.path);
+                }}
               >
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
                   item.color ? `bg-gradient-to-r ${item.color} text-white` : 'bg-gray-100 text-gray-600'
@@ -512,6 +552,13 @@ export function Header({
                    <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
                  </div>
                </div>
+               
+               {/* Información del plan */}
+               {planInfo && !planLoading && (
+                 <div className="hidden xl:block">
+                   <PlanInfo compact={true} className="max-w-xs" />
+                 </div>
+               )}
              </div>
 
                          {/* Menú móvil */}

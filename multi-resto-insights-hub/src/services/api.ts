@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+// DEBUG: Log de configuración
+console.log('🔍 [MULTI-RESTO API] API_URL configurada:', API_URL);
+console.log('🔍 [MULTI-RESTO API] import.meta.env.VITE_API_URL:', import.meta.env.VITE_API_URL);
 
 export async function apiFetch<T>(
   endpoint: string,

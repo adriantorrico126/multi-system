@@ -31,10 +31,12 @@ export interface Sale {
   total: number;
   paymentMethod: string;
   timestamp: Date;
+  fecha: string; // Fecha como string para compatibilidad
   cashier: string;
   branch: string;
   mesa_numero?: number;
   tipo_servicio?: 'Mesa' | 'Delivery' | 'Para Llevar';
+  estado: 'completada' | 'pendiente' | 'cancelada' | 'en_proceso'; // Estado de la venta
   invoiceData?: InvoiceData;
   // Información de promociones aplicadas
   appliedPromociones?: Promocion[];

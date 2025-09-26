@@ -120,7 +120,7 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
       .slice(0, 10);
   }, [egresos]);
 
-  const getEstadoBadge = (estado: string) => {
+  const getEstadoBadge = (estado: string | null) => {
     const colors = {
       pendiente: 'bg-yellow-100 text-yellow-800',
       aprobado: 'bg-blue-100 text-blue-800',
@@ -129,9 +129,11 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
       rechazado: 'bg-red-100 text-red-800'
     };
 
+    const estadoValue = estado || 'pendiente';
+
     return (
-      <Badge className={colors[estado as keyof typeof colors] || colors.pendiente}>
-        {estado.toUpperCase()}
+      <Badge className={colors[estadoValue as keyof typeof colors] || colors.pendiente}>
+        {estadoValue.toUpperCase()}
       </Badge>
     );
   };
@@ -319,9 +321,6 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
                               <span className="truncate">{egreso.categoria_nombre}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <Badge className={`text-xs ${getEstadoBadge(egreso.estado).props.className}`}>
-                                {egreso.estado.toUpperCase()}
-                              </Badge>
                               <span className="text-sm font-medium text-green-600">
                                 {egresosUtils.formatCurrency(egreso.monto)}
                               </span>
@@ -345,7 +344,6 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
                         <TableHead>Concepto</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Monto</TableHead>
-                        <TableHead>Estado</TableHead>
                         <TableHead>Método Pago</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -387,9 +385,6 @@ export const EgresosInfo: React.FC<EgresosInfoProps> = ({ egresos, userRole }) =
                             <span className="font-medium">
                               {egresosUtils.formatCurrency(egreso.monto)}
                             </span>
-                          </TableCell>
-                          <TableCell>
-                            {getEstadoBadge(egreso.estado)}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-1">

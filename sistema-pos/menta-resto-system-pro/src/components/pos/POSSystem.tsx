@@ -4,6 +4,7 @@ import { ProductCard } from './ProductCard';
 import { CategoryFilter } from './CategoryFilter';
 import { Cart } from './Cart';
 import { CheckoutModal } from './CheckoutModal';
+import { ConfirmarAgregarMesaOcupada } from './ConfirmarAgregarMesaOcupada';
 import { SalesHistory } from './SalesHistory';
 import { OrderManagement } from './OrderManagement';
 import { InvoiceModal } from './InvoiceModal';
@@ -12,9 +13,10 @@ import { UserManagement } from './UserManagement';
 import { SucursalManagement } from './SucursalManagement';
 import { DashboardStats } from './DashboardStats';
 import { Header } from './Header';
-import { MesaManagement } from './MesaManagement';
+import MesaManagement from './MesaManagement';
 import CategoryList from './CategoryList';
 import Membresia from '../../pages/Membresia';
+import { PlanGate } from '@/components/plan/PlanGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,13 +56,15 @@ import {
   CreditCard,
   Receipt,
   Database,
-  UserCheck
+  UserCheck,
+  Crown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
-import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS, cerrarArqueoPOS, getArqueoData } from '@/services/api';
+import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS, cerrarArqueoPOS, getArqueoData, agregarProductosAMesa } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
+import { usePlan } from '@/context/PlanContext';
 import { KitchenView } from '../../pages/KitchenView';
 import { MesasMesero } from './MesasMesero';
 import { PedidosPendientesCajero } from './PedidosPendientesCajero';
@@ -118,10 +122,26 @@ export function POSSystem() {
   const queryClient = useQueryClient();
   
   // Hook para manejo de errores de conexión
-  const { connectionError, clearConnectionError, retryConnection } = useConnectionError();
+  const { error: connectionError, clearError: clearConnectionError, retry: retryConnection } = useConnectionError();
   
-  // Usar useTheme directamente sin try-catch
-  const { theme, toggleTheme } = useTheme();
+  // Hook para manejo de planes
+  const { hasFeature, planInfo, isLoading: planLoading } = usePlan();
+  
+  // Funciones para verificar restricciones de plan  
+  const canAccessOrders = () => {
+    console.log('🔍 [POSSystem] Verificando acceso a pedidos...');
+    
+    // Usar la nueva lógica de hasFeature que ya maneja Enterprise correctamente
+    const access = hasFeature('orders');
+    console.log('🔍 [POSSystem] Acceso a pedidos:', access);
+    return access;
+  };
+  
+  // Usar tema por defecto sin hooks problemáticos
+  const theme = 'light';
+  const toggleTheme = () => {
+    console.log('Toggle theme clicked');
+  };
   const navigate = useNavigate();
   const [notifications, setNotifications] = React.useState<any[]>([]);
   const unreadCount = notifications.filter((n: any) => !n.read).length;
@@ -156,8 +176,16 @@ export function POSSystem() {
       setDraftConfig(cfg || {});
       console.log('🔧 Configuración cargada:', cfg);
       const ts = cfg?.tiposServicio || { mesa: true, pickup: true, delivery: false };
-      if (!ts.mesa && ts.pickup) setTipoServicio('Para Llevar');
-      if (!ts.mesa && !ts.pickup && ts.delivery) setTipoServicio('Delivery');
+      console.log('🔧 Tipos de servicio configurados:', ts);
+      
+      // FORZAR 'Mesa' como predeterminado siempre
+      setTipoServicio('Mesa');
+      console.log('🔧 Tipo de servicio establecido a: Mesa');
+      
+      // Limpiar localStorage después de establecer el valor
+      localStorage.removeItem('pos-tipo-servicio');
+      localStorage.removeItem('tipoServicio');
+      console.log('🧹 Limpiado localStorage de tipo de servicio');
     })();
   }, []);
 
@@ -368,7 +396,11 @@ export function POSSystem() {
   // Cierre automático: no se muestra opción manual; el backend autocierra a medianoche
 
   // Estado para sucursal seleccionada (solo admin/gerente)
-  const { data: branches = [], isLoading: branchesLoading } = useQuery({ queryKey: ['branches'], queryFn: getBranches });
+  const { data: branches = [], isLoading: branchesLoading } = useQuery({ 
+    queryKey: ['branches'], 
+    queryFn: getBranches,
+    enabled: !!user // Solo ejecutar si hay usuario autenticado
+  });
   const isAdmin = user.rol === 'admin' || user.rol === 'super_admin';
   const [selectedBranchId, setSelectedBranchId] = React.useState<number | null>(null);
 
@@ -462,7 +494,7 @@ export function POSSystem() {
   const { data: mesas = [] } = useQuery({
     queryKey: ['mesas', selectedBranchId],
     queryFn: () => getMesas(selectedBranchId),
-    enabled: !!selectedBranchId,
+    enabled: !!selectedBranchId && !!user, // Solo ejecutar si hay usuario y sucursal
   });
 
   // Determina si el usuario solo puede ver mesas (cajero)
@@ -481,7 +513,12 @@ export function POSSystem() {
   const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null);
   const [mesaNumero, setMesaNumero] = useState<number | null>(null);
   const [tipoServicio, setTipoServicio] = useState<'Mesa' | 'Delivery' | 'Para Llevar'>('Mesa');
+  
   const [activeDashboardSubTab, setActiveDashboardSubTab] = useState<string>('summary');
+  
+  // Estados para confirmación de mesa ocupada
+  const [showConfirmarMesaOcupada, setShowConfirmarMesaOcupada] = useState(false);
+  const [pendingSaleData, setPendingSaleData] = useState<any>(null);
 
   // --- React Query: Gestión de Datos Asíncronos ---
 
@@ -489,7 +526,7 @@ export function POSSystem() {
   const { data: ventasOrdenadas = [], refetch: refetchVentas, isLoading: isLoadingVentas } = useQuery<Sale[]>({
     queryKey: ['ventas-ordenadas', user?.id_restaurante, selectedBranchId],
     queryFn: () => getVentasOrdenadas(50, selectedBranchId),
-    enabled: !!user?.id_restaurante,
+    enabled: !!user?.id_restaurante && !!user, // Verificar usuario autenticado
     refetchOnWindowFocus: true,
   });
 
@@ -500,6 +537,7 @@ export function POSSystem() {
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ['products'],
     queryFn: () => getProducts(),
+    enabled: !!user, // Solo ejecutar si hay usuario autenticado
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -508,6 +546,7 @@ export function POSSystem() {
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ['categories', user?.id_restaurante],
     queryFn: () => getCategories(),
+    enabled: !!user, // Solo ejecutar si hay usuario autenticado
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
@@ -576,9 +615,6 @@ export function POSSystem() {
       case 'en_preparacion':
         status = 'preparing';
         break;
-      case 'listo_para_servir':
-        status = 'ready';
-        break;
       case 'entregado':
         status = 'delivered';
         break;
@@ -625,6 +661,10 @@ export function POSSystem() {
    */
   const confirmSale = useCallback(
     async (paymentMethod: string, invoiceData?: any, additionalData?: any) => {
+      console.log('🔍 [POSSystem] confirmSale INICIADA');
+      console.log('🔍 [POSSystem] Parámetros:', { paymentMethod, invoiceData, additionalData });
+      console.log('🔍 [POSSystem] Cart length:', cart.length);
+      
       if (cart.length === 0) {
         toast({
           title: '🛒 Carrito Vacío',
@@ -710,8 +750,16 @@ export function POSSystem() {
         if (mesaObj) idMesaSeleccionada = mesaObj.id_mesa;
       }
 
+      // DEBUG: Logs para confirmar estado de caja
+      console.log('🔍 [POSSystem] Estado de caja:', {
+        arqueoActual: arqueoActual,
+        hasArqueoActual: !!arqueoActual,
+        userRole: user.rol
+      });
+
       // Bloquear si no hay caja abierta
       if (!arqueoActual) {
+        console.log('❌ [POSSystem] Caja no abierta - bloqueando venta');
         if (user.rol === 'mesero') {
           toast({ 
             title: 'Caja no abierta', 
@@ -724,6 +772,8 @@ export function POSSystem() {
         }
         return;
       }
+
+      console.log('✅ [POSSystem] Caja abierta - continuando con la venta');
 
       // Normalizar método de pago a etiquetas canónicas
       const pm = (paymentMethod || '').trim().toLowerCase();
@@ -747,7 +797,27 @@ export function POSSystem() {
         tipo_servicio: tipoServicio,
         invoiceData,
       });
-      // Envía la venta al backend
+      // Verificar si la mesa está ocupada para mostrar confirmación
+      if (tipoServicio === 'Mesa' && mesaNumero && idMesaSeleccionada) {
+        const mesaObj = mesas.find((m: any) => m.numero === mesaNumero);
+        if (mesaObj && (mesaObj.estado === 'en_uso' || mesaObj.estado === 'pendiente_cobro')) {
+          // Mesa ocupada: mostrar modal de confirmación
+          console.log('🔍 [POSSystem] Mesa ocupada, mostrando modal de confirmación');
+          setPendingSaleData({
+            newSale,
+            paymentMethodCanon,
+            additionalData,
+            invoiceData,
+            idMesaSeleccionada,
+            mesaObj
+          });
+          setShowConfirmarMesaOcupada(true);
+          return; // Salir de la función sin proceder
+        }
+      }
+
+      // Si llegamos aquí, proceder con createSale (mesa libre o no es mesa)
+      console.log('🔍 [POSSystem] Procediendo con createSale');
       const backendResponse = await createSale({
         items: cart.map((item) => ({
           id: item.originalId || item.id,
@@ -761,7 +831,7 @@ export function POSSystem() {
         cashier: newSale.cashier,
         id_sucursal: selectedBranchId!,
         mesa_numero: newSale.mesa_numero,
-        // id_mesa: idMesaSeleccionada, // <-- ELIMINADO
+        id_mesa: idMesaSeleccionada,
         tipo_servicio: tipoServicio,
         invoiceData,
         // Datos adicionales para pago diferido
@@ -800,10 +870,12 @@ export function POSSystem() {
         }
         queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalida caché de productos
         queryClient.invalidateQueries({ queryKey: ['orders-pos'] }); // Invalida caché de órdenes
+        queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] }); // Invalida específicamente órdenes de cocina
         // Nueva línea: Invalida la query de mesas para actualizar el total acumulado en tiempo real
         queryClient.invalidateQueries({ queryKey: ['mesas', user?.sucursal?.id] });
         // Nueva línea: Invalida todas las queries de prefactura para actualización automática
         queryClient.invalidateQueries({ queryKey: ['prefactura'], exact: false });
+        console.log('✅ [POSSystem] Invalidando todas las queries después de venta exitosa');
         console.log('Frontend: Inventory, orders, mesas, and prefactura refreshed after sale');
       } catch (inventoryError) {
         console.error('Frontend: Error refreshing inventory or orders:', inventoryError);
@@ -813,15 +885,22 @@ export function POSSystem() {
       // 🛡️ Limpiar carrito solo después de venta exitosa
       clearCartAfterSale();
 
-      toast({
-        title: '✅ Venta Registrada',
-        description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
-        // Fallback defensivo por si alguna capa intermedia filtra props
-        variant: 'default',
-        open: true,
-      });
+      console.log('✅ [POSSystem] Mostrando toast de venta exitosa');
+      try {
+        const toastResult = toast({
+          title: '✅ Venta Registrada',
+          description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
+          variant: 'default',
+          duration: 5000, // 5 segundos
+        });
+        console.log('✅ [POSSystem] Toast llamado exitosamente, resultado:', toastResult);
+      } catch (toastError) {
+        console.error('❌ [POSSystem] Error al mostrar toast:', toastError);
+      }
+      console.log('✅ [POSSystem] Toast mostrado exitosamente');
     } catch (error: any) {
       // LOG DETALLADO PARA DEPURACIÓN
+      console.log('❌ [POSSystem] Entró al bloque catch - hubo un error');
       console.error('Error al registrar venta (DETALLE):', error);
       if (error.response?.data) {
         console.error('Backend error message:', error.response.data.message);
@@ -844,11 +923,18 @@ export function POSSystem() {
         }
       }
       
-      toast({
-        title: errorTitle,
-        description: errorDescription,
-        variant: 'destructive',
-      });
+      console.log('❌ [POSSystem] Mostrando toast de error');
+      try {
+        const errorToastResult = toast({
+          title: errorTitle,
+          description: errorDescription,
+          variant: 'destructive',
+          duration: 8000, // 8 segundos para errores
+        });
+        console.log('❌ [POSSystem] Toast de error llamado exitosamente, resultado:', errorToastResult);
+      } catch (errorToastError) {
+        console.error('❌ [POSSystem] Error al mostrar toast de error:', errorToastError);
+      }
     }
   },
   [cart, user, toast, queryClient, mesaNumero, tipoServicio, refetchVentas, selectedBranch, user?.sucursal?.nombre, selectedBranchId, mesas, clearCart, total, subtotal, totalDescuentos, appliedPromociones, arqueoActual]
@@ -866,6 +952,58 @@ export function POSSystem() {
       description: 'Sesión cerrada correctamente.',
     });
   }, [logout, toast, clearCart]);
+
+  // Función para confirmar agregar productos a mesa ocupada
+  const confirmAddToOccupiedMesa = useCallback(async () => {
+    if (!pendingSaleData) return;
+
+    try {
+      console.log('🔍 [POSSystem] Confirmando agregar productos a mesa ocupada');
+      
+      // Usar agregarProductosAMesa para sumar a la mesa existente
+      const backendResponse = await agregarProductosAMesa({
+        id_mesa: pendingSaleData.idMesaSeleccionada,
+        items: cart.map((item) => ({
+          id_producto: parseInt(item.originalId || item.id),
+          cantidad: item.quantity,
+          precio_unitario: item.price,
+          observaciones: item.notes || null
+        })),
+        total: pendingSaleData.newSale.total
+      });
+
+      // Cerrar modal y limpiar datos
+      setShowConfirmarMesaOcupada(false);
+      setPendingSaleData(null);
+
+      // Limpiar carrito
+      clearCart();
+
+      // Mostrar mensaje de éxito
+      toast({
+        title: "✅ Productos Agregados",
+        description: `Productos agregados a la mesa ${pendingSaleData.mesaObj.numero} exitosamente.`,
+      });
+
+      // Refrescar datos
+      queryClient.invalidateQueries({ queryKey: ['mesas'] });
+      refetchVentas();
+
+    } catch (error: any) {
+      console.error('Error al agregar productos a mesa ocupada:', error);
+      toast({
+        title: "❌ Error",
+        description: `Error al agregar productos: ${error?.response?.data?.message || error.message}`,
+        variant: "destructive",
+      });
+    }
+  }, [pendingSaleData, cart, clearCart, toast, queryClient, refetchVentas]);
+
+  // Función para cancelar agregar productos a mesa ocupada
+  const cancelAddToOccupiedMesa = useCallback(() => {
+    setShowConfirmarMesaOcupada(false);
+    setPendingSaleData(null);
+  }, []);
 
   // Mutación para editar venta
   const editSaleMutation = useMutation({
@@ -1303,22 +1441,34 @@ export function POSSystem() {
             <>
               <Button
                 variant={activeTab === 'orders' ? 'default' : 'outline'}
-                onClick={() => handleTabChange('orders')}
-                className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+                onClick={() => {
+                  if (canAccessOrders()) {
+                    handleTabChange('orders');
+                  } else {
+                    toast({
+                      title: 'Funcionalidad Restringida',
+                      description: 'El módulo de gestión de pedidos está disponible en planes superiores. Aquí puedes ver el estado de los pedidos y cancelarlos.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                className={`rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button ${!canAccessOrders() ? 'opacity-50' : ''}`}
+                disabled={!canAccessOrders()}
               >
                 <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Pedidos</span>
                 <span className="sm:hidden">Pedidos</span>
+                {!canAccessOrders() && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
               </Button>
             </>
           )}
-          {user.rol === 'mesero' && (
+          {gestionMesasHabilitada && (
             <Button
               variant={activeTab === 'mesas' ? 'default' : 'outline'}
               onClick={() => handleTabChange('mesas')}
               className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
             >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <UtensilsCrossed className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Mesas</span>
               <span className="sm:hidden">Mesas</span>
             </Button>
@@ -1401,7 +1551,10 @@ export function POSSystem() {
           {(user.rol === 'admin' || user.rol === 'super_admin') && (
             <Button
               variant="outline"
-              onClick={() => navigate('/egresos')}
+              onClick={() => {
+                console.log('🔍 [POSSystem] Botón Egresos Admin clickeado, navegando a /egresos');
+                navigate('/egresos');
+              }}
               className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
               <span className="hidden sm:inline">Egresos</span>
@@ -1463,14 +1616,6 @@ export function POSSystem() {
             >
               <Users className="h-4 w-4 mr-2" />
               Usuarios
-            </Button>
-            <Button
-              variant={activeDashboardSubTab === 'mesas' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleDashboardSubTabChange('mesas')}
-            >
-              <UtensilsCrossed className="h-4 w-4 mr-2" />
-              Mesas
             </Button>
             {user.rol === 'admin' && (
               <Button
@@ -1580,35 +1725,41 @@ export function POSSystem() {
           {/* Vista de Gestión de Pedidos */}
           {activeTab === 'orders' && gestionMesasHabilitada && (
             <div className="p-6">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                <OrderManagement
-                  orders={orders}
-                  onUpdateOrderStatus={handleUpdateOrderStatus}
-                  userRole={roleForOrderMgmt as any}
-                />
-                  </div>
+              <PlanGate feature="cocina" requiredPlan="profesional">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <OrderManagement
+                    orders={orders}
+                    onUpdateOrderStatus={handleUpdateOrderStatus}
+                    userRole={roleForOrderMgmt as any}
+                  />
+                </div>
+              </PlanGate>
             </div>
           )}
 
           {/* Vista de Historial de Ventas */}
           {activeTab === 'sales' && canSeeSales && (
             <div className="p-6">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
-                <SalesHistory
-                  sales={sales}
-                  onDeleteSale={handleDeleteSale}
-                  userRole={roleForSales as any}
-                />
-                  </div>
+              <PlanGate feature="sales.basico" requiredPlan="Básico">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
+                  <SalesHistory
+                    sales={sales}
+                    onDeleteSale={handleDeleteSale}
+                    userRole={roleForSales as any}
+                  />
+                </div>
+              </PlanGate>
             </div>
           )}
 
-          {/* Vista de Mesas para Meseros */}
-          {activeTab === 'mesas' && user?.rol === 'mesero' && (
+          {/* Vista de Gestión de Mesas */}
+          {activeTab === 'mesas' && gestionMesasHabilitada && (
             <div className="p-6">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                <MesaManagement sucursalId={user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
-              </div>
+              <PlanGate feature="mesas">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+                </div>
+              </PlanGate>
             </div>
           )}
 
@@ -1617,9 +1768,11 @@ export function POSSystem() {
             <div className="p-6">
               {onlyMesas ? (
                 // Solo cajero: solo ve la gestión de mesas
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                  <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
+                <PlanGate feature="mesas">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                    <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
                   </div>
+                </PlanGate>
               ) : (
                 // Admin y gerente: ven todas las sub-pestañas
                 <>
@@ -1640,11 +1793,6 @@ export function POSSystem() {
               {activeDashboardSubTab === 'users' && (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <UserManagement />
-                </div>
-              )}
-              {activeDashboardSubTab === 'mesas' && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                  <MesaManagement sucursalId={selectedBranchId || user.sucursal?.id || 1} idRestaurante={user.id_restaurante} />
                 </div>
               )}
               {activeDashboardSubTab === 'categorias' && (
@@ -1680,10 +1828,12 @@ export function POSSystem() {
           {/* Vista de Promociones */}
           {activeTab === 'promociones' && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
             <div className="p-6">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                <PromocionManagement />
-                  </div>
-              </div>
+              <PlanGate feature="promociones">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <PromocionManagement />
+                </div>
+              </PlanGate>
+            </div>
           )}
           </div>
 
@@ -2039,6 +2189,27 @@ export function POSSystem() {
       setMesaNumero={setMesaNumero}
       config={config}
     />
+
+    {/* Modal de confirmación para mesa ocupada */}
+    {pendingSaleData && (
+      <ConfirmarAgregarMesaOcupada
+        isOpen={showConfirmarMesaOcupada}
+        onClose={cancelAddToOccupiedMesa}
+        onConfirm={confirmAddToOccupiedMesa}
+        mesa={{
+          numero: pendingSaleData.mesaObj.numero,
+          estado: pendingSaleData.mesaObj.estado,
+          total_acumulado: pendingSaleData.mesaObj.total_acumulado || 0,
+          capacidad: pendingSaleData.mesaObj.capacidad
+        }}
+        productos={cart.map(item => ({
+          name: item.name,
+          quantity: item.quantity || 1,
+          price: item.price
+        }))}
+        totalNuevo={pendingSaleData.newSale.total}
+      />
+    )}
   </div>
 );
 }

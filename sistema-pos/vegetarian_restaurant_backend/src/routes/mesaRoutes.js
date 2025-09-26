@@ -1,11 +1,15 @@
 const express = require('express');
 const mesaController = require('../controllers/mesaController');
 const { authenticateToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { planMiddleware } = require('../middlewares/planMiddleware');
 
 const router = express.Router();
 
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authenticateToken);
+
+// Aplicar middleware de plan para funcionalidad de mesas
+router.use(planMiddleware('mesas'));
 
 // ===================================
 // 🔹 RUTAS DE CONFIGURACIÓN DE MESAS (MÁS ESPECÍFICAS PRIMERO)

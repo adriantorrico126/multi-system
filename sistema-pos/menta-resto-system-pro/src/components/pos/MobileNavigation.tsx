@@ -49,6 +49,22 @@ export function MobileNavigation({ cartItemsCount = 0, onOpenConfig, onLogout }:
     }
   };
 
+  // Navegación principal optimizada para móvil
+  const mainNavItems = [
+    { id: 'pos', label: 'POS', icon: ShoppingCart, path: '/', color: 'from-blue-500 to-indigo-500' },
+    { id: 'mesas', label: 'Mesas', icon: UtensilsCrossed, path: '/mesas', color: 'from-green-500 to-emerald-500' },
+    { id: 'ventas', label: 'Ventas', icon: Receipt, path: '/ventas', color: 'from-purple-500 to-violet-500' },
+    { id: 'productos', label: 'Productos', icon: Package, path: '/productos', color: 'from-orange-500 to-amber-500' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/dashboard', color: 'from-cyan-500 to-blue-500' }
+  ];
+
+  // Navegación secundaria
+  const secondaryNavItems = [
+    { id: 'usuarios', label: 'Usuarios', icon: Users, path: '/usuarios', color: 'from-pink-500 to-rose-500' },
+    { id: 'inventario', label: 'Inventario', icon: Database, path: '/inventario', color: 'from-teal-500 to-cyan-500' },
+    { id: 'config', label: 'Configuración', icon: Settings, path: '/config', color: 'from-gray-500 to-slate-500' }
+  ];
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
@@ -83,7 +99,7 @@ export function MobileNavigation({ cartItemsCount = 0, onOpenConfig, onLogout }:
       icon: Receipt, 
       label: 'Egresos', 
       path: '/egresos-caja', 
-      show: ['cajero'].includes(user?.rol),
+      show: ['cajero', 'admin', 'super_admin'].includes(user?.rol),
       color: 'from-red-500 to-pink-600',
       description: 'Registrar gastos'
     },

@@ -12,6 +12,8 @@ const soporteRoutes = require('./soporteRoutes');
 const grupoMesaRoutes = require('./grupoMesaRoutes');
 const modificadorRoutes = require('./modificadorRoutes');
 const reservaRoutes = require('./reservaRoutes');
+const planRoutes = require('./planRoutes');
+const metodosPagoRoutes = require('./metodosPagoRoutes');
 
 // Rutas del sistema de egresos
 const egresoRoutes = require('./egresoRoutes');
@@ -29,6 +31,8 @@ router.use('/soporte', soporteRoutes);
 router.use('/grupos-mesas', grupoMesaRoutes);
 router.use('/modificadores', modificadorRoutes);
 router.use('/reservas', reservaRoutes);
+router.use('/plans', planRoutes);
+router.use('/metodos-pago', metodosPagoRoutes);
 
 // Montar rutas del sistema de egresos
 router.use('/egresos', egresoRoutes);
