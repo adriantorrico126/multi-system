@@ -34,6 +34,23 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist', // Carpeta de salida personalizada
       sourcemap: mode === 'development', // Mapas de fuente solo en dev
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor': ['react', 'react-dom', 'react-router-dom'],
+            'radix-ui': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-toast'
+            ],
+            'charts': ['recharts'],
+            'utils': ['axios', 'date-fns', 'dayjs']
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000 // Aumentar límite de advertencia
     },
     optimizeDeps: {
       include: ['react', 'react-dom'],
