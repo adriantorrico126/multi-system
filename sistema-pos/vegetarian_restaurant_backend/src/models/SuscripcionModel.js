@@ -29,6 +29,8 @@ class SuscripcionModel {
      */
     async getActiveSubscription(idRestaurante) {
         try {
+            console.log(`🔍 [SuscripcionModel] Obteniendo suscripción activa para restaurante: ${idRestaurante}`);
+            
             const query = `
                 SELECT 
                     sa.id_suscripcion,
@@ -55,10 +57,21 @@ class SuscripcionModel {
                 AND (sa.fecha_fin IS NULL OR sa.fecha_fin >= CURRENT_DATE)
             `;
             
+            console.log(`🔍 [SuscripcionModel] Ejecutando query...`);
             const result = await this.pool.query(query, [idRestaurante]);
-            return result.rows[0] || null;
+            console.log(`🔍 [SuscripcionModel] Query ejecutado. Filas encontradas: ${result.rows.length}`);
+            
+            const suscripcion = result.rows[0] || null;
+            if (suscripcion) {
+                console.log(`🔍 [SuscripcionModel] Suscripción encontrada: Plan ${suscripcion.nombre_plan} (ID: ${suscripcion.id_plan})`);
+            } else {
+                console.log(`🔍 [SuscripcionModel] No se encontró suscripción activa`);
+            }
+            
+            return suscripcion;
         } catch (error) {
-            console.error('Error al obtener suscripción activa:', error);
+            console.error('❌ [SuscripcionModel] Error al obtener suscripción activa:', error);
+            console.error('❌ [SuscripcionModel] Stack trace:', error.stack);
             throw new Error('Error interno del servidor al obtener suscripción');
         }
     }

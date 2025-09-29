@@ -19,16 +19,22 @@ class PlanValidationMiddleware {
      */
     async validateActiveSubscription(req, res, next) {
         try {
+            console.log('🔍 [PlanValidation] Iniciando validateActiveSubscription...');
+            
             const idRestaurante = req.body.id_restaurante || req.params.idRestaurante;
+            console.log(`🔍 [PlanValidation] ID Restaurante: ${idRestaurante}`);
             
             if (!idRestaurante) {
+                console.log('❌ [PlanValidation] ID de restaurante requerido');
                 return res.status(400).json({
                     success: false,
                     message: 'ID de restaurante requerido'
                 });
             }
 
+            console.log('🔍 [PlanValidation] Obteniendo suscripción activa...');
             const suscripcion = await this.suscripcionModel.getActiveSubscription(parseInt(idRestaurante));
+            console.log(`🔍 [PlanValidation] Suscripción obtenida:`, suscripcion ? 'Sí' : 'No');
             
             if (!suscripcion) {
                 return res.status(403).json({
@@ -69,11 +75,16 @@ class PlanValidationMiddleware {
             req.suscripcion = suscripcion;
             next();
         } catch (error) {
-            console.error('Error en validateActiveSubscription:', error);
+            console.error('❌ [PlanValidation] Error en validateActiveSubscription:', error);
+            console.error('❌ [PlanValidation] Stack trace:', error.stack);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
-                error: error.message
+                error: error.message,
+                details: {
+                    idRestaurante: req.params.idRestaurante || req.body.id_restaurante,
+                    stack: error.stack
+                }
             });
         }
     }
