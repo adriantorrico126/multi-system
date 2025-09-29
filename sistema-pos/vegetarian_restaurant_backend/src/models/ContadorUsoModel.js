@@ -1,17 +1,22 @@
 const { Pool } = require('pg');
-const envConfig = require('../config/envConfig');
 
 class ContadorUsoModel {
     constructor() {
-        this.pool = new Pool({
-            user: envConfig.DB_USER,
-            host: envConfig.DB_HOST,
-            database: envConfig.DB_NAME,
-            password: envConfig.DB_PASSWORD,
-            port: envConfig.DB_PORT,
-            ssl: false,
+        const poolConfig = {
+            user: process.env.DB_USER || 'postgres',
+            host: process.env.DB_HOST || 'localhost',
+            database: process.env.DB_NAME || 'sistempos',
+            password: process.env.DB_PASSWORD || 'password',
+            port: process.env.DB_PORT || 5432,
             connectionTimeoutMillis: 2000
-        });
+        };
+
+        // Si está en producción (DigitalOcean), agregar SSL
+        if (process.env.DB_HOST && process.env.DB_HOST.includes('digitalocean.com')) {
+            poolConfig.ssl = { rejectUnauthorized: false };
+        }
+
+        this.pool = new Pool(poolConfig);
     }
 
     // =====================================================
