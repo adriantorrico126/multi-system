@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const PlanController = require('../controllers/PlanController');
+const PlanController = require('../controllers/planController');
 const {
     validateActiveSubscriptionPlan,
     getCurrentPlanInfo,

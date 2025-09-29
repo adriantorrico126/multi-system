@@ -123,6 +123,22 @@ export function Header({
     setIsMobileMenuOpen(false);
   };
 
+  // Forzar actualización automática de datos de usuario si están incompletos
+  useEffect(() => {
+    if (user && (!user.restaurante || !user.sucursal)) {
+      console.log('🔄 [HEADER] Datos de usuario incompletos detectados, forzando actualización automática...');
+      
+      // Importar y ejecutar refreshAuthToken para obtener datos completos
+      import('@/services/api').then(({ refreshAuthToken }) => {
+        refreshAuthToken().catch(error => {
+          console.error('❌ [HEADER] Error refrescando token para obtener datos completos:', error);
+        });
+      }).catch(error => {
+        console.error('❌ [HEADER] Error importando servicios de API:', error);
+      });
+    }
+  }, [user]);
+
 
   // Navegación principal optimizada
   const navigationItems = [

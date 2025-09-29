@@ -1,0 +1,32 @@
+{
+  "name": "produccion-tests",
+  "version": "1.0.0",
+  "description": "Tests para debuggear problemas del Header en producción",
+  "main": "test_header_produccion.js",
+  "scripts": {
+    "test-header": "node test_header_produccion.js",
+    "test-restaurant": "node test_restaurant_data.js",
+    "test-localstorage": "node test_frontend_localStorage.js",
+    "test-all": "npm run test-header && npm run test-restaurant && npm run test-localstorage",
+    "debug-production": "bash debug_production_header.sh"
+  },
+  "keywords": [
+    "testing",
+    "header",
+    "production",
+    "restaurant",
+    "pos"
+  ],
+  "author": "Sistema POS",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "jq": "^1.6"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

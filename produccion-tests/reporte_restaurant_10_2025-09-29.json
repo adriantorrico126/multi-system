@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-09-29T01:33:31.107Z",
+  "restaurant_id": 10,
+  "resultados": {
+    "restaurante": [],
+    "suscripciones": [],
+    "estadoGeneral": [],
+    "diagnosticoFinal": [],
+    "datosFrontend": [],
+    "contadoresUso": []
+  },
+  "conclusiones": [
+    "❌ Restaurante ID 10 no encontrado en la base de datos",
+    "❌ No se encontraron suscripciones para este restaurante"
+  ],
+  "recomendaciones": [
+    "🔧 PASOS RECOMENDADOS:",
+    "1. Revisar resultados de la consulta \"Diagnóstico Final\"",
+    "2. Verificar que authController.js incluya datos de restaurante en refreshToken",
+    "3. Verificar que AuthContext.tsx sincronice con localStorage",
+    "4. Comprobar headers HTTP en producción",
+    "5. Limpiar cache del navegador si es necesario"
+  ]
+}
