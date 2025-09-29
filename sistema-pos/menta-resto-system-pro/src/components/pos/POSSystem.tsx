@@ -568,7 +568,7 @@ export function POSSystem() {
   });
 
   // Si el modo cambia a "Simplificado", forzar salida de la pestaña Pedidos y limpiar cache de órdenes
-  useEffect(() => {
+  React.useEffect(() => {
     if (!canViewOrders) {
       if (activeTab === 'orders') setActiveTab('pos');
       queryClient.setQueryData(['orders-pos'], []);
@@ -588,7 +588,7 @@ export function POSSystem() {
   }, [backendOrders, user.rol, user.sucursal?.id]);
 
   // Manejar errores de pedidos con useEffect
-  useEffect(() => {
+  React.useEffect(() => {
     if (isErrorOrders) {
       toast({
         title: 'Error al cargar pedidos',
@@ -1179,7 +1179,7 @@ export function POSSystem() {
   }, [filteredOrders, mapBackendOrderToOrder, canViewOrders]);
 
   // useEffect para hidratar ventas desde el backend al abrir la pestaña 'sales'
-  useEffect(() => {
+  React.useEffect(() => {
     if (activeTab === 'sales' && user?.nombre) {
       getVentasOrdenadas(100).then((ventas) => {
         let ventasFiltradas = ventas;
@@ -1208,7 +1208,7 @@ export function POSSystem() {
   }, [activeTab, user?.nombre, user?.rol]);
 
   // Opcional: Forzar sub-pestaña a 'mesas' si el rol es cajero
-  useEffect(() => {
+  React.useEffect(() => {
     if (onlyMesas) {
       setActiveDashboardSubTab('mesas');
     }
