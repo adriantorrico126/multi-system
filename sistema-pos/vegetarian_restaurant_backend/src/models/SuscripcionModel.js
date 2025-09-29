@@ -2,13 +2,20 @@ const { Pool } = require('pg');
 
 class SuscripcionModel {
     constructor() {
-        this.pool = new Pool({
+        const poolConfig = {
             user: process.env.DB_USER || 'postgres',
             host: process.env.DB_HOST || 'localhost',
             database: process.env.DB_NAME || 'sistempos',
             password: process.env.DB_PASSWORD || 'password',
             port: process.env.DB_PORT || 5432,
-        });
+        };
+
+        // Si está en producción (DigitalOcean), agregar SSL
+        if (process.env.DB_HOST && process.env.DB_HOST.includes('digitalocean.com')) {
+            poolConfig.ssl = { rejectUnauthorized: false };
+        }
+
+        this.pool = new Pool(poolConfig);
     }
 
     // =====================================================
