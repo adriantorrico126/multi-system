@@ -4,10 +4,9 @@ node_modules
 .env.local
 *.log
 .DS_Store
-src
-public
-*.md
 test_*.js
 debug_*.js
 fix_*.js
 migration-scripts
+dist
+.vercel
