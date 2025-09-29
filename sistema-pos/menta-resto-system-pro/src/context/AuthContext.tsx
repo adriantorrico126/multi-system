@@ -14,6 +14,7 @@ import { clearAllCache, clearAuthCache, smartCacheCleanup, softCacheCleanup, sho
 interface User {
   id_vendedor: number;
   nombre: string;
+  username: string;
   email: string;
   rol: string;
   id_sucursal: number;
