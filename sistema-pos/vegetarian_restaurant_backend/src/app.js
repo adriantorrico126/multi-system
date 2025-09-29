@@ -267,7 +267,7 @@ app.use('/api/v1/metodos-pago', metodosPagoRoutes);
 // Importar rutas del sistema de planes
 const planesRoutes = require('./routes/planesRoutes');
 const suscripcionesRoutes = require('./routes/suscripcionesRoutes');
-const contadoresRoutes = require('./routes/contadoresRoutes');
+const contadoresSistemaRoutes = require('./routes/contadoresSistemaRoutes');
 const alertasRoutes = require('./routes/alertasRoutes');
 
 // Montar rutas del sistema de planes
@@ -275,7 +275,7 @@ app.use('/api/v1/planes-sistema', planesRoutes);
 startupLogger.logStep('Ruta /api/v1/planes-sistema', 'success');
 app.use('/api/v1/suscripciones-sistema', suscripcionesRoutes);
 startupLogger.logStep('Ruta /api/v1/suscripciones-sistema', 'success');
-app.use('/api/v1/contadores-sistema', contadoresRoutes);
+app.use('/api/v1/contadores-sistema', contadoresSistemaRoutes);
 startupLogger.logStep('Ruta /api/v1/contadores-sistema', 'success');
 app.use('/api/v1/alertas-sistema', alertasRoutes);
 startupLogger.logStep('Ruta /api/v1/alertas-sistema', 'success');
