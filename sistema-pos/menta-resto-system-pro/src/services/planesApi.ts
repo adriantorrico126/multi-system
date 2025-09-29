@@ -172,18 +172,18 @@ export const suscripcionesApi = {
   // Obtener suscripción activa de un restaurante
   getActiveSubscription: async (idRestaurante: number): Promise<Suscripcion> => {
     try {
-      console.log('🔍 [API] Llamando a getActiveSubscription para restaurante:', idRestaurante);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [API] Llamando a getActiveSubscription para restaurante:', idRestaurante);
+      }
       const response = await api.get(`/suscripciones-sistema/restaurante/${idRestaurante}/activa`, {
         timeout: 10000 // 10 segundos de timeout específico
       });
-      console.log('🔍 [API] Respuesta de suscripción completa:', response);
-      console.log('🔍 [API] response.data:', response.data);
-      console.log('🔍 [API] response.data.data:', response.data.data);
-      console.log('🔍 [API] getActiveSubscription completado exitosamente');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [API] getActiveSubscription completado exitosamente');
+      }
       return response.data.data;
     } catch (error) {
       console.error('❌ [API] Error en getActiveSubscription:', error);
-      console.error('❌ [API] Error details:', error);
       if (error.code === 'ECONNABORTED') {
         console.error('⏰ [API] Timeout en getActiveSubscription');
       }
@@ -425,18 +425,18 @@ export const planesSistemaApi = {
   // Obtener información completa del plan actual
   getCurrentPlanInfo: async (idRestaurante: number): Promise<PlanInfo> => {
     try {
-      console.log('🔍 [API] Llamando a getCurrentPlanInfo para restaurante:', idRestaurante);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [API] Llamando a getCurrentPlanInfo para restaurante:', idRestaurante);
+      }
       const response = await api.get(`/planes-sistema/restaurante/${idRestaurante}/actual`, {
         timeout: 10000 // 10 segundos de timeout específico
       });
-      console.log('🔍 [API] Respuesta completa:', response);
-      console.log('🔍 [API] response.data:', response.data);
-      console.log('🔍 [API] response.data.data:', response.data.data);
-      console.log('🔍 [API] getCurrentPlanInfo completado exitosamente');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [API] getCurrentPlanInfo completado exitosamente');
+      }
       return response.data.data;
     } catch (error) {
       console.error('❌ [API] Error en getCurrentPlanInfo:', error);
-      console.error('❌ [API] Error details:', error);
       if (error.code === 'ECONNABORTED') {
         console.error('⏰ [API] Timeout en getCurrentPlanInfo');
       }

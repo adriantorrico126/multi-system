@@ -128,39 +128,48 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
 
   const loadPlanInfo = useCallback(async () => {
     try {
-      console.log('🔍 [PLAN] Cargando información del plan para restaurante:', idRestaurante);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Cargando información del plan para restaurante:', idRestaurante);
+      }
       const data = await planesSistemaApi.getCurrentPlanInfo(idRestaurante);
-      console.log('🔍 [PLAN] Datos del plan recibidos:', data);
-      console.log('🔍 [PLAN] Plan name:', data?.plan?.nombre);
-      console.log('🔍 [PLAN] Plan features:', data?.plan);
-      console.log('🔍 [PLAN] Estableciendo planInfo con:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Datos del plan recibidos:', data);
+        console.log('🔍 [PLAN] Plan name:', data?.plan?.nombre);
+      }
       setPlanInfo(data);
-      console.log('🔍 [PLAN] planInfo establecido correctamente');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] planInfo establecido correctamente');
+      }
     } catch (err) {
       console.error('❌ [PLAN] Error loading plan info:', err);
-      console.error('❌ [PLAN] Error details:', err);
       setError('Error al cargar información del plan');
     }
   }, [idRestaurante]);
 
   const loadSuscripcion = useCallback(async () => {
     try {
-      console.log('🔍 [PLAN] Cargando suscripción para restaurante:', idRestaurante);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Cargando suscripción para restaurante:', idRestaurante);
+      }
       const data = await suscripcionesApi.getActiveSubscription(idRestaurante);
-      console.log('🔍 [PLAN] Datos de suscripción recibidos:', data);
-      console.log('🔍 [PLAN] Estado de suscripción:', data?.estado);
-      console.log('🔍 [PLAN] Estableciendo suscripcion con:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Datos de suscripción recibidos:', data);
+        console.log('🔍 [PLAN] Estado de suscripción:', data?.estado);
+      }
       setSuscripcion(data);
-      console.log('🔍 [PLAN] suscripcion establecida correctamente');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] suscripcion establecida correctamente');
+      }
     } catch (err) {
       console.error('❌ [PLAN] Error loading subscription:', err);
-      console.error('❌ [PLAN] Error details:', err);
       setError('Error al cargar información de suscripción');
     }
   }, [idRestaurante]);
 
   const refreshData = useCallback(async () => {
-    console.log('🔍 [PLAN] refreshData iniciado para restaurante:', idRestaurante);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [PLAN] refreshData iniciado para restaurante:', idRestaurante);
+    }
     setIsLoading(true);
     setError(null);
     
@@ -169,34 +178,43 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
     setSuscripcion(null);
     
     try {
-      console.log('🔍 [PLAN] Ejecutando Promise.all...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Ejecutando Promise.all...');
+      }
       await Promise.all([
         loadPlanInfo(),
         loadSuscripcion()
       ]);
-      console.log('🔍 [PLAN] Promise.all completado exitosamente');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Promise.all completado exitosamente');
+      }
     } catch (err) {
       console.error('❌ [PLAN] Error refreshing data:', err);
-      console.error('❌ [PLAN] Error details:', err);
       setError('Error al actualizar datos');
     } finally {
-      console.log('🔍 [PLAN] refreshData finalizado, estableciendo isLoading = false');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] refreshData finalizado, estableciendo isLoading = false');
+      }
       setIsLoading(false);
     }
-  }, [idRestaurante, loadPlanInfo, loadSuscripcion]); // Agregado de vuelta para que funcione
+  }, [idRestaurante, loadPlanInfo, loadSuscripcion]);
 
   const hasFeature = useCallback((feature: string): boolean => {
-    console.log('🔍 [PLAN] hasFeature llamado para:', feature);
-    console.log('🔍 [PLAN] planInfo:', planInfo);
-    console.log('🔍 [PLAN] suscripcion:', suscripcion);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [PLAN] hasFeature llamado para:', feature);
+    }
     
     if (!planInfo || !suscripcion || !planInfo.plan) {
-      console.log('🔍 [PLAN] hasFeature: false - falta información del plan');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] hasFeature: false - falta información del plan');
+      }
       return false;
     }
     
     if (suscripcion.estado !== 'activa') {
-      console.log('🔍 [PLAN] hasFeature: false - suscripción no activa:', suscripcion.estado);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] hasFeature: false - suscripción no activa:', suscripcion.estado);
+      }
       return false;
     }
     
@@ -223,8 +241,9 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
     const backendFeature = featureMapping[feature] || feature;
     const hasAccess = planInfo.plan[backendFeature as keyof Plan] === true;
     
-    console.log('🔍 [PLAN] hasFeature:', feature, '->', backendFeature, '=', hasAccess);
-    console.log('🔍 [PLAN] planInfo.plan:', planInfo.plan);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [PLAN] hasFeature:', feature, '->', backendFeature, '=', hasAccess);
+    }
     
     return hasAccess;
   }, [planInfo, suscripcion]);
@@ -328,14 +347,20 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
   };
 
   useEffect(() => {
-    console.log('🔍 [PLAN] useEffect ejecutado, idRestaurante:', idRestaurante);
-    if (idRestaurante) {
-      console.log('🔍 [PLAN] Ejecutando refreshData para restaurante:', idRestaurante);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [PLAN] useEffect ejecutado, idRestaurante:', idRestaurante);
+    }
+    if (idRestaurante > 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] Ejecutando refreshData para restaurante:', idRestaurante);
+      }
       refreshData();
     } else {
-      console.log('🔍 [PLAN] No hay idRestaurante, saltando refreshData');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [PLAN] No hay idRestaurante, saltando refreshData');
+      }
     }
-  }, [idRestaurante, refreshData]); // Agregado refreshData de vuelta
+  }, [idRestaurante]); // Removido refreshData para evitar bucle infinito
 
   return {
     planInfo,

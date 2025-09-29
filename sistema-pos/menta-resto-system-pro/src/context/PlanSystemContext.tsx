@@ -136,7 +136,7 @@ export const PlanSystemProvider: React.FC<PlanSystemProviderProps> = ({ children
     } catch (error) {
       console.error('Error refreshing plan system data:', error);
     }
-  }, [planLimits, planFeatures, planAlerts]);
+  }, [planLimits.refreshData, planFeatures.refreshData, planAlerts.refreshData]);
 
   const updateUsage = useCallback(async () => {
     try {
@@ -144,7 +144,7 @@ export const PlanSystemProvider: React.FC<PlanSystemProviderProps> = ({ children
     } catch (error) {
       console.error('Error updating usage:', error);
     }
-  }, [planLimits]);
+  }, [planLimits.updateUsage]);
 
   // =====================================================
   // ESTADO DEL CONTEXTO
@@ -227,7 +227,7 @@ export const PlanSystemProvider: React.FC<PlanSystemProviderProps> = ({ children
     if (idRestaurante > 0) {
       refreshData();
     }
-  }, [idRestaurante]); // Removido refreshData de las dependencias para evitar bucle infinito
+  }, [idRestaurante, refreshData]); // Agregado refreshData de vuelta con memoización
 
   // =====================================================
   // RENDER

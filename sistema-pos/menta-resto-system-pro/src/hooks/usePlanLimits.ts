@@ -321,7 +321,7 @@ export const usePlanLimits = (idRestaurante: number): UsePlanLimitsReturn => {
   // =====================================================
 
   useEffect(() => {
-    if (idRestaurante) {
+    if (idRestaurante > 0) {
       refreshData();
     }
   }, [idRestaurante]); // Removido refreshData de las dependencias para evitar bucle infinito

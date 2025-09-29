@@ -128,14 +128,18 @@ export function POSSystem() {
   const { hasFeature, planInfo, isLoading: planLoading } = usePlanSystem();
   
   // Funciones para verificar restricciones de plan  
-  const canAccessOrders = () => {
-    console.log('🔍 [POSSystem] Verificando acceso a pedidos...');
+  const canAccessOrders = useCallback(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [POSSystem] Verificando acceso a pedidos...');
+    }
     
     // Los pedidos están disponibles en todos los planes
     const access = hasFeature('orders');
-    console.log('🔍 [POSSystem] Acceso a pedidos (orders):', access);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [POSSystem] Acceso a pedidos (orders):', access);
+    }
     return access;
-  };
+  }, [hasFeature]);
   
   // Usar tema por defecto sin hooks problemáticos
   const theme = 'light';
@@ -741,6 +745,8 @@ export function POSSystem() {
         mesa_numero: tipoServicio === 'Mesa' ? mesaNumero : null,
         tipo_servicio: tipoServicio,
         invoiceData,
+        fecha: new Date().toISOString(),
+        estado: 'completada',
       };
 
       // Buscar el id_mesa correspondiente al número de mesa seleccionado
@@ -1317,13 +1323,12 @@ export function POSSystem() {
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex flex-col overflow-hidden">
       {/* Componente de Error de Conexión */}
-      {connectionError && (
-        <ConnectionError 
-          error={connectionError}
-          onRetry={retryConnection}
-          onDismiss={clearConnectionError}
-        />
-      )}
+        {connectionError && (
+          <ConnectionError 
+            error={connectionError} 
+            onRetry={retryConnection}
+          />
+        )}
       
       {showHeader ? (
         <>
@@ -2174,7 +2179,7 @@ export function POSSystem() {
       onRemoveItem={removeFromCart}
       onCheckout={() => setShowCheckout(true)}
       tipoServicio={tipoServicio}
-      setTipoServicio={setTipoServicio}
+      setTipoServicio={(tipo: string) => setTipoServicio(tipo as "Mesa" | "Delivery" | "Para Llevar")}
       mesaNumero={mesaNumero}
       setMesaNumero={setMesaNumero}
       config={config}

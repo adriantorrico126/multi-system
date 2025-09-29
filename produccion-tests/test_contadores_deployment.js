@@ -145,3 +145,4 @@ testContadoresDeployment()
         console.error('💥 Error en el análisis:', error.message);
         process.exit(1);
     });
+

@@ -114,3 +114,4 @@ debugPlanes500()
         console.error('💥 Error en el diagnóstico:', error.message);
         process.exit(1);
     });
+
