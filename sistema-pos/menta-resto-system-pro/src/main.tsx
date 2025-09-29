@@ -10,6 +10,7 @@ import App from './App';
 import { AuthProvider } from '@/context/AuthContext';
 import { PlanSystemProvider } from '@/context/PlanSystemContext';
 import { RestaurantChangeHandler } from '@/components/RestaurantChangeHandler';
+import { PageCacheHandler } from '@/components/PageCacheHandler';
 
 // Estilos globales
 import './index.css';
@@ -39,6 +40,7 @@ createRoot(rootElement).render(
         <AuthProvider>
           <PlanSystemProvider>
             <RestaurantChangeHandler />
+            <PageCacheHandler />
             <App />
           </PlanSystemProvider>
         </AuthProvider>

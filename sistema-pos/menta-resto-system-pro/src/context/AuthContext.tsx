@@ -106,7 +106,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     console.log('🚪 [AuthContext] Cerrando sesión...');
-    clearAuthCache(); // Limpiar datos de autenticación
+    
+    // Limpieza completa de caché al cerrar sesión
+    console.log('🧹 [AuthContext] Limpiando caché completo al cerrar sesión...');
+    clearAllCache();
+    
     setUser(null);
     setIsAuthenticated(false);
     navigate('/');

@@ -174,7 +174,12 @@ export const softCacheCleanup = (): void => {
       'cachedApiResponses',
       'oldUserData',
       'stalePlanData',
-      'expiredTokens'
+      'expiredTokens',
+      'planInfo',
+      'suscripcionData',
+      'contadoresData',
+      'planLimits',
+      'planFeatures'
     ];
     
     problematicKeys.forEach(key => {
@@ -230,7 +235,19 @@ export const clearPlanCache = (): void => {
     'planFeatures',
     'subscriptionData',
     'planLimits',
-    'usageCounters'
+    'usageCounters',
+    'planInfo',
+    'suscripcionData',
+    'contadoresData',
+    'planLimits',
+    'planFeatures',
+    'planUsage',
+    'planAlerts',
+    'planValidation',
+    'planCache',
+    'planData',
+    'suscripcionInfo',
+    'contadoresInfo'
   ];
   
   planKeys.forEach(key => {
