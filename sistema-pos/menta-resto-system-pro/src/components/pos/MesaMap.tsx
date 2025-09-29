@@ -371,7 +371,7 @@ export default function MesaMap() {
   };
 
   // DEBUG: Log user and sucursal info
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('🔍 MesaMap Debug - user:', user);
     console.log('🔍 MesaMap Debug - id_sucursal:', id_sucursal);
     console.log('🔍 MesaMap Debug - id_restaurante:', id_restaurante);

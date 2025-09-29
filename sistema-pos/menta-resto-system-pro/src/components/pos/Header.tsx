@@ -124,7 +124,7 @@ export function Header({
   };
 
   // Forzar actualización automática de datos de usuario si están incompletos
-  useEffect(() => {
+  React.useEffect(() => {
     if (user && (!user.restaurante || !user.sucursal)) {
       console.log('🔄 [HEADER] Datos de usuario incompletos detectados, forzando actualización automática...');
       

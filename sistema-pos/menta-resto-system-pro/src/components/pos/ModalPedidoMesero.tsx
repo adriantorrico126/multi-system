@@ -40,7 +40,7 @@ export function ModalPedidoMesero({ open, onClose, mesa, sucursalId, idRestauran
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Cargar productos
-  useEffect(() => {
+  React.useEffect(() => {
     api.get(`/api/v1/productos?id_restaurante=${idRestaurante}`).then(res => {
       setProductos(res.data?.data || []);
     });
