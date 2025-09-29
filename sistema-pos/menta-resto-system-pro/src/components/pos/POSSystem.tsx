@@ -128,17 +128,12 @@ export function POSSystem() {
   const { hasFeature, planInfo, isLoading: planLoading } = usePlanSystem();
   
   // Funciones para verificar restricciones de plan  
-  const canAccessOrders = useCallback(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [POSSystem] Verificando acceso a pedidos...');
-    }
-    
-    // Los pedidos están disponibles en todos los planes
-    const access = hasFeature('orders');
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [POSSystem] Acceso a pedidos (orders):', access);
-    }
-    return access;
+  const canAccessOrders = useMemo(() => {
+    return hasFeature('orders');
+  }, [hasFeature]);
+  
+  const canAccessPromociones = useMemo(() => {
+    return hasFeature('incluye_promociones');
   }, [hasFeature]);
   
   // Usar tema por defecto sin hooks problemáticos
@@ -1437,7 +1432,7 @@ export function POSSystem() {
               <Button
                 variant={activeTab === 'orders' ? 'default' : 'outline'}
                 onClick={() => {
-                  if (canAccessOrders()) {
+                  if (canAccessOrders) {
                     handleTabChange('orders');
                   } else {
                     toast({
@@ -1447,13 +1442,13 @@ export function POSSystem() {
                     });
                   }
                 }}
-                className={`rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button ${!canAccessOrders() ? 'opacity-50' : ''}`}
-                disabled={!canAccessOrders()}
+                className={`rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button ${!canAccessOrders ? 'opacity-50' : ''}`}
+                disabled={!canAccessOrders}
               >
                 <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Pedidos</span>
                 <span className="sm:hidden">Pedidos</span>
-                {!canAccessOrders() && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
+                {!canAccessOrders && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
               </Button>
             </>
           )}

@@ -25,7 +25,7 @@ export const usePageCacheCleanup = () => {
   }, [queryClient]);
 
   /**
-   * Limpieza suave de caché (solo datos críticos)
+   * Limpieza suave de caché (solo datos críticos, SIN autenticación)
    */
   const performSoftCleanup = useCallback(() => {
     console.log('🧹 [usePageCacheCleanup] Realizando limpieza suave de caché...');
@@ -34,9 +34,8 @@ export const usePageCacheCleanup = () => {
     clearPlanCache();
     console.log('✅ [usePageCacheCleanup] Caché de planes limpiado');
     
-    // 2. Limpiar caché de autenticación
-    clearAuthCache();
-    console.log('✅ [usePageCacheCleanup] Caché de autenticación limpiado');
+    // 2. NO limpiar caché de autenticación para evitar 401 errors
+    // clearAuthCache(); // COMENTADO: No limpiar auth en eventos de visibilidad
     
     // 3. Invalidar queries críticas
     queryClient.invalidateQueries({ queryKey: ['plan'] });
@@ -90,22 +89,22 @@ export const usePageCacheCleanup = () => {
    */
   const handleVisibilityChange = useCallback(() => {
     if (document.visibilityState === 'hidden') {
-      console.log('👁️ [usePageCacheCleanup] Página oculta - limpieza preventiva');
-      performSoftCleanup();
+      console.log('👁️ [usePageCacheCleanup] Página oculta - NO limpiando caché para preservar autenticación');
+      // NO ejecutar performSoftCleanup() para evitar limpiar el token
     } else if (document.visibilityState === 'visible') {
       console.log('👁️ [usePageCacheCleanup] Página visible - verificando caché');
       
-      // Verificar si se necesita limpieza
-      const lastCleanup = localStorage.getItem('lastCacheCleanup');
-      const pageClosing = sessionStorage.getItem('pageClosing');
+      // Solo invalidar queries sin limpiar caché de autenticación
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+      queryClient.invalidateQueries({ queryKey: ['suscripcion'] });
+      queryClient.invalidateQueries({ queryKey: ['contadores'] });
       
-      if (pageClosing === 'true' || !lastCleanup) {
-        console.log('🧹 [usePageCacheCleanup] Limpieza necesaria al volver a la página');
-        performSoftCleanup();
+      const pageClosing = sessionStorage.getItem('pageClosing');
+      if (pageClosing === 'true') {
         sessionStorage.removeItem('pageClosing');
       }
     }
-  }, [performSoftCleanup]);
+  }, [queryClient]);
 
   /**
    * Manejar evento focus (ventana enfocada)
@@ -113,16 +112,16 @@ export const usePageCacheCleanup = () => {
   const handleFocus = useCallback(() => {
     console.log('🎯 [usePageCacheCleanup] Ventana enfocada');
     
-    // En móviles, verificar si se necesita limpieza
-    if (isMobile()) {
-      const pageClosing = sessionStorage.getItem('pageClosing');
-      if (pageClosing === 'true') {
-        console.log('📱 [usePageCacheCleanup] Móvil - limpieza al volver del background');
-        performSoftCleanup();
-        sessionStorage.removeItem('pageClosing');
-      }
+    // Solo invalidar queries sin limpiar caché de autenticación
+    queryClient.invalidateQueries({ queryKey: ['plan'] });
+    queryClient.invalidateQueries({ queryKey: ['suscripcion'] });
+    queryClient.invalidateQueries({ queryKey: ['contadores'] });
+    
+    const pageClosing = sessionStorage.getItem('pageClosing');
+    if (pageClosing === 'true') {
+      sessionStorage.removeItem('pageClosing');
     }
-  }, [isMobile, performSoftCleanup]);
+  }, [queryClient]);
 
   /**
    * Configurar event listeners

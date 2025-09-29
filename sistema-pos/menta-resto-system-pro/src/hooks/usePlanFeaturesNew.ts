@@ -200,21 +200,11 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
   }, [idRestaurante, loadPlanInfo, loadSuscripcion]);
 
   const hasFeature = useCallback((feature: string): boolean => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [PLAN] hasFeature llamado para:', feature);
-    }
-    
     if (!planInfo || !suscripcion || !planInfo.plan) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 [PLAN] hasFeature: false - falta información del plan');
-      }
       return false;
     }
     
     if (suscripcion.estado !== 'activa') {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 [PLAN] hasFeature: false - suscripción no activa:', suscripcion.estado);
-      }
       return false;
     }
     
@@ -239,13 +229,7 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
     };
     
     const backendFeature = featureMapping[feature] || feature;
-    const hasAccess = planInfo.plan[backendFeature as keyof Plan] === true;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [PLAN] hasFeature:', feature, '->', backendFeature, '=', hasAccess);
-    }
-    
-    return hasAccess;
+    return planInfo.plan[backendFeature as keyof Plan] === true;
   }, [planInfo, suscripcion]);
 
   const checkFeatureAccess = useCallback((feature: string): FeatureAccess => {
