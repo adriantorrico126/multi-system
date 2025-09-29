@@ -1,14 +1,14 @@
-const PlanModel = require('../models/PlanModel');
-const SuscripcionModel = require('../models/SuscripcionModel');
-const ContadorUsoModel = require('../models/ContadorUsoModel');
-const AlertaLimiteModel = require('../models/AlertaLimiteModel');
+const planModel = require('../models/planModel');
+const suscripcionModel = require('../models/suscripcionModel');
+const contadorUsoModel = require('../models/contadorUsoModel');
+const alertaLimiteModel = require('../models/alertaLimiteModel');
 
 class PlanController {
     constructor() {
-        this.planModel = new PlanModel();
-        this.suscripcionModel = new SuscripcionModel();
-        this.contadorUsoModel = new ContadorUsoModel();
-        this.alertaLimiteModel = new AlertaLimiteModel();
+        this.planModel = new planModel();
+        this.suscripcionModel = new suscripcionModel();
+        this.contadorUsoModel = new contadorUsoModel();
+        this.alertaLimiteModel = new alertaLimiteModel();
     }
 
     // =====================================================
