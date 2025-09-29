@@ -110,9 +110,13 @@ api.interceptors.response.use(
       
       // Si la renovación falló, limpiar sesión SOLO si había sesión activa
       console.log('🔍 [API Interceptor] Limpiando sesión expirada...');
-      localStorage.removeItem('jwtToken');
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('selectedSucursalId');
+      
+      // Importar y usar la función de limpieza de caché
+      import('../utils/cacheCleanup').then(({ clearAuthCache, softCacheCleanup }) => {
+        // Registrar el error para activar limpieza suave en el próximo login
+        localStorage.setItem('lastApiError', new Date().toISOString());
+        clearAuthCache();
+      });
       
       // Solo redirigir si no estamos ya en la página de login
       if (window.location.pathname !== '/login') {

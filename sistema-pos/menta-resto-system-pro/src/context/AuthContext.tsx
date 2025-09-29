@@ -9,6 +9,7 @@ import React, {
   useCallback,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clearAllCache, clearAuthCache, smartCacheCleanup, softCacheCleanup, shouldSoftCleanup } from '../utils/cacheCleanup';
 
 interface User {
   id_vendedor: number;
@@ -104,8 +105,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.user);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.token);
+    console.log('🚪 [AuthContext] Cerrando sesión...');
+    clearAuthCache(); // Limpiar datos de autenticación
     setUser(null);
     setIsAuthenticated(false);
     navigate('/');
@@ -170,6 +171,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
 
     try {
+      // Limpiar caché antes del login para evitar datos obsoletos
+      console.log('🧹 [AuthContext] Limpiando caché antes del login...');
+      
+      // Usar limpieza suave por defecto, completa solo si es necesario
+      if (shouldSoftCleanup()) {
+        softCacheCleanup();
+      } else {
+        console.log('ℹ️ [AuthContext] No es necesario limpiar caché en este momento');
+      }
+
       const response = await fetch(`${getBackendURL()}/auth/login`, {
         method: 'POST',
         headers: {
@@ -191,11 +202,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: 'Respuesta del servidor inválida' };
       }
 
+      // Guardar datos de autenticación
       localStorage.setItem(LOCAL_STORAGE_KEYS.token, token);
       localStorage.setItem(LOCAL_STORAGE_KEYS.user, JSON.stringify(userData));
 
       setUser(userData);
       setIsAuthenticated(true);
+      
+      console.log('✅ [AuthContext] Login exitoso con caché limpio');
 
       return { success: true };
     } catch (error) {
@@ -232,8 +246,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const clearRestaurantData = () => {
+    console.log('🏪 [AuthContext] Limpiando datos del restaurante...');
     localStorage.removeItem(LOCAL_STORAGE_KEYS.selectedBranch);
     localStorage.removeItem(LOCAL_STORAGE_KEYS.restaurantConfig);
+    // También limpiar caché de planes cuando se cambia de restaurante
+    import('../utils/cacheCleanup').then(({ clearPlanCache }) => {
+      clearPlanCache();
+    });
   };
 
   // Función para actualizar el usuario desde localStorage
