@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 interface PlanGateProps {
-  feature: keyof import('@/context/PlanContext').PlanFeatures | string;
+  feature: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showUpgrade?: boolean;
@@ -30,7 +30,7 @@ export const PlanGate: React.FC<PlanGateProps> = ({
   planName,
   requiredPlan
 }) => {
-  const { hasFeature, currentPlan, isLoading } = usePlan();
+  const { hasFeature, planInfo, isLoading } = usePlanSystem();
 
   if (isLoading) {
     return (
@@ -41,7 +41,7 @@ export const PlanGate: React.FC<PlanGateProps> = ({
     );
   }
 
-  const hasAccess = hasFeature(feature);
+  const hasAccess = hasFeature(feature as string);
 
   if (hasAccess) {
     return <>{children}</>;
@@ -104,10 +104,10 @@ export const PlanGate: React.FC<PlanGateProps> = ({
       'inventory.lots': 'Profesional',
       'dashboard.mesas': 'Profesional',
       'egresos.basico': 'Profesional',
-      mesas: 'Profesional',
+      mesas: 'Básico', // Las mesas están disponibles en todos los planes
       lotes: 'Profesional',
       arqueo: 'Profesional',
-      cocina: 'Profesional',
+      cocina: 'Básico', // La cocina está disponible en todos los planes
       egresos: 'Profesional',
       
       // Plan Avanzado - Funcionalidades avanzadas
@@ -127,8 +127,8 @@ export const PlanGate: React.FC<PlanGateProps> = ({
     return planRequirements[feature] || 'Profesional';
   };
 
-  const requiredPlanName = requiredPlan || planName || getRequiredPlan(feature);
-  const featureName = getFeatureName(feature);
+  const requiredPlanName = requiredPlan || planName || getRequiredPlan(feature as string);
+  const featureName = getFeatureName(feature as string);
 
   return (
     <Card className="border-amber-200 bg-amber-50">
@@ -153,7 +153,7 @@ export const PlanGate: React.FC<PlanGateProps> = ({
 
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-amber-700 border-amber-300">
-              Plan Actual: {currentPlan?.nombre?.charAt(0).toUpperCase() + currentPlan?.nombre?.slice(1)}
+              Plan Actual: {planInfo?.plan?.nombre?.charAt(0).toUpperCase() + planInfo?.plan?.nombre?.slice(1)}
             </Badge>
             <Badge variant="outline" className="text-green-700 border-green-300">
               Requerido: {requiredPlanName}
@@ -177,7 +177,7 @@ export const PlanGate: React.FC<PlanGateProps> = ({
 };
 
 interface PlanLimitProps {
-  limit: keyof import('@/context/PlanContext').PlanLimits;
+  limit: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showUpgrade?: boolean;
@@ -191,7 +191,7 @@ export const PlanLimit: React.FC<PlanLimitProps> = ({
   showUpgrade = true,
   onUpgrade
 }) => {
-  const { isLimitExceeded, currentPlan, isLoading } = usePlan();
+  const { isLimitExceeded, planInfo, isLoading } = usePlanSystem();
 
   if (isLoading) {
     return (
@@ -249,7 +249,7 @@ export const PlanLimit: React.FC<PlanLimitProps> = ({
 
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-red-700 border-red-300">
-              Plan Actual: {currentPlan?.nombre?.charAt(0).toUpperCase() + currentPlan?.nombre?.slice(1)}
+              Plan Actual: {planInfo?.plan?.nombre?.charAt(0).toUpperCase() + planInfo?.plan?.nombre?.slice(1)}
             </Badge>
           </div>
 

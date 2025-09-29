@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +22,10 @@ export const PremiumFeatureGate: React.FC<PremiumFeatureGateProps> = ({
   showUpgradePrompt = true,
   className = '',
 }) => {
-  const { planInfo, hasFeature, checkFeatureAccess } = usePlan();
+  const { planInfo, hasFeature } = usePlanSystem();
 
   // Verificar acceso a la funcionalidad
-  const hasAccess = checkFeatureAccess(feature, false);
+  const hasAccess = hasFeature(feature);
 
   // Si tiene acceso, mostrar el contenido
   if (hasAccess) {

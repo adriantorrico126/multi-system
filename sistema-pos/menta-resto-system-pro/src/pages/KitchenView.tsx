@@ -81,12 +81,12 @@ const KitchenRestricted = () => (
     <Card className="border-blue-200 bg-blue-50">
       <CardHeader>
         <CardTitle className="text-center text-blue-800">
-          🔒 Vista de Cocina - Plan Profesional Requerido
+          🔒 Vista de Cocina - Plan Básico Requerido
         </CardTitle>
       </CardHeader>
       <CardContent className="text-center space-y-4">
         <p className="text-blue-700">
-          La funcionalidad de <strong>Vista de Cocina</strong> está disponible únicamente en el plan <strong>Profesional</strong> o superior.
+          La funcionalidad de <strong>Vista de Cocina</strong> está disponible únicamente en el plan <strong>Básico</strong> o superior.
         </p>
         <p className="text-sm text-blue-600">
           Esta funcionalidad incluye gestión de pedidos en tiempo real, estados de preparación y notificaciones automáticas.
@@ -217,7 +217,7 @@ export function KitchenView({ orders: propOrders, onUpdateOrderStatus }: Kitchen
   if (isError) return <div className="p-6 text-center text-red-500">Error al cargar los pedidos.</div>;
 
   return (
-    <PlanGate feature="cocina" fallback={<KitchenRestricted />} requiredPlan="profesional">
+    <PlanGate feature="cocina" fallback={<KitchenRestricted />} requiredPlan="basico">
       <div className="p-3 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
         <div>

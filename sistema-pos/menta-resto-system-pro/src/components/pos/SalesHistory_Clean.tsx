@@ -58,12 +58,12 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
       <Card className="border-purple-200 bg-purple-50">
         <CardHeader>
           <CardTitle className="text-center text-purple-800">
-            🔒 Funciones Avanzadas - Plan Avanzado Requerido
+            🔒 Funciones Avanzadas - Plan Básico Requerido
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-purple-700">
-            Las <strong>Funciones Avanzadas</strong> están disponibles únicamente en el plan <strong>Avanzado</strong> o superior.
+            Las <strong>Funciones Avanzadas</strong> están disponibles únicamente en el plan <strong>Básico</strong> o superior.
           </p>
           <p className="text-sm text-purple-600">
             Esta funcionalidad incluye analytics avanzados, comparaciones de períodos, análisis de tendencias, exportación profesional con gráficos y métricas detalladas de rendimiento.
@@ -260,7 +260,7 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
 
       {/* Funciones avanzadas */}
       {activeTab === 'avanzadas' && (
-        <PlanGate feature="sales.avanzado" fallback={<FuncionesAvanzadasRestricted />} requiredPlan="Avanzado">
+        <PlanGate feature="sales.avanzado" fallback={<FuncionesAvanzadasRestricted />} requiredPlan="basico">
           <div className="flex-1 p-6">
             {!showAdvancedAnalytics ? (
               <div className="space-y-6">

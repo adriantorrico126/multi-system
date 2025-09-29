@@ -28,7 +28,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { Sale } from '@/types/restaurant';
 import { SaleDetailsModal } from './SaleDetailsModal';
 import { getBranches, getProducts, getPaymentMethods, getUsers } from '@/services/api';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { ProfessionalRestrictionMessage } from '@/components/plan/ProfessionalRestrictionMessage';
 
 interface SalesHistoryProps {
@@ -50,7 +50,7 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
   const mobileInfo = useMobile();
   
   // Hook para verificar acceso a funciones avanzadas
-  const { hasFeature, currentPlan } = usePlan();
+  const { hasFeature, currentPlan } = usePlanSystem();
   
   // Verificar si el usuario tiene acceso a funciones avanzadas de ventas
   const hasAdvancedSalesAccess = hasFeature('sales.avanzado');

@@ -233,3 +233,5 @@ echo "💡 Si el login sigue fallando:"
 echo "   1. Verifica que el backend esté corriendo"
 echo "   2. Revisa la consola del navegador"
 echo "   3. Ejecuta: ./prueba_login.sh"
+
+

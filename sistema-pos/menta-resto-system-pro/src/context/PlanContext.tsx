@@ -304,14 +304,7 @@ export const PlanProvider: React.FC<PlanProviderProps> = ({ children }) => {
       return true;
     }
     
-    // SOLUCIÓN TEMPORAL: Detectar usuario Enterprise por rol admin (fallback)
-    // Esto es mientras implementamos el sistema completo de planes en el backend
-    if (user?.rol === 'admin' || user?.rol === 'super_admin') {
-      if (isImportantFeature) {
-        console.log(`✅ [PLAN] Usuario admin/super_admin detectado - acceso completo a "${feature}": TRUE`);
-      }
-      return true;
-    }
+    // Usar el sistema de planes para todos los usuarios
     
     const features = getPlanFeatureMapping(planName);
     const hasAccess = features[feature] === true || 

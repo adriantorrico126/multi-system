@@ -8,7 +8,8 @@ import App from './App';
 
 // Contextos
 import { AuthProvider } from '@/context/AuthContext';
-import { PlanProvider } from '@/context/PlanContext';
+import { PlanSystemProvider } from '@/context/PlanSystemContext';
+import { RestaurantChangeHandler } from '@/components/RestaurantChangeHandler';
 
 // Estilos globales
 import './index.css';
@@ -36,9 +37,10 @@ createRoot(rootElement).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <PlanProvider>
+          <PlanSystemProvider>
+            <RestaurantChangeHandler />
             <App />
-          </PlanProvider>
+          </PlanSystemProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

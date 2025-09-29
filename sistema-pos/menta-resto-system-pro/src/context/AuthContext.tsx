@@ -18,6 +18,18 @@ interface User {
   id_sucursal: number;
   id_restaurante: number;
   activo: boolean;
+  restaurante?: {
+    id: number;
+    nombre: string;
+    ciudad: string;
+    direccion: string;
+  };
+  sucursal?: {
+    id: number;
+    nombre: string;
+    ciudad: string;
+    direccion: string;
+  };
 }
 
 interface AuthContextType {
@@ -28,6 +40,7 @@ interface AuthContextType {
   logout: () => void;
   refreshAuth: () => Promise<void>;
   clearRestaurantData: () => void;
+  updateUserFromStorage: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,6 +135,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, [initializeAuth]);
 
+  // Escuchar cambios en localStorage para actualizar el usuario
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === LOCAL_STORAGE_KEYS.user && e.newValue) {
+        try {
+          const newUser = JSON.parse(e.newValue);
+          setUser(newUser);
+          console.log('🔄 [AuthContext] Usuario actualizado desde storage event:', newUser);
+        } catch (error) {
+          console.error('Error parsing user from storage event:', error);
+        }
+      }
+    };
+
+    const handleUserUpdated = (e: CustomEvent) => {
+      setUser(e.detail);
+      console.log('🔄 [AuthContext] Usuario actualizado desde custom event:', e.detail);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userUpdated', handleUserUpdated as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userUpdated', handleUserUpdated as EventListener);
+    };
+  }, []);
+
   const login = async (
     username: string,
     password: string
@@ -195,6 +236,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.restaurantConfig);
   };
 
+  // Función para actualizar el usuario desde localStorage
+  const updateUserFromStorage = useCallback(() => {
+    const { user: storedUser } = getStoredAuthData();
+    if (storedUser) {
+      setUser(storedUser);
+      console.log('🔄 [AuthContext] Usuario actualizado desde localStorage:', storedUser);
+    }
+  }, []);
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -203,6 +253,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     refreshAuth,
     clearRestaurantData,
+    updateUserFromStorage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

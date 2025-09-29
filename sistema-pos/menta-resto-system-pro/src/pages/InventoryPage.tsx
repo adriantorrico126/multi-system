@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '@/services/api';
 import { useAuth } from '../context/AuthContext';
-import { usePlan } from '../context/PlanContext';
+import { usePlanSystem } from '../context/PlanSystemContext';
+import { InventarioBasicoFeatureGate, InventarioAvanzadoFeatureGate, ReportesAvanzadosFeatureGate } from '../components/plans';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -95,7 +96,7 @@ const UpgradeMessage: React.FC<{ message: string; title: string }> = ({ message,
 
 const InventoryPage: React.FC = () => {
   const { user } = useAuth();
-  const { currentPlan } = usePlan();
+  const { currentPlan, hasFeature } = usePlanSystem();
   const navigate = useNavigate();
   const role = user?.rol || '';
 
@@ -117,49 +118,28 @@ const InventoryPage: React.FC = () => {
   const [isMovementInfoDialogOpen, setIsMovementInfoDialogOpen] = useState(false);
   const [showMobileTabsMenu, setShowMobileTabsMenu] = useState(false);
 
-  // Funciones para verificar restricciones de plan
+  // Funciones para verificar restricciones de plan usando el nuevo sistema
   const isTabAvailable = (tabName: string): boolean => {
     console.log(`🔍 [INVENTARIO] Verificando acceso a pestaña "${tabName}"`);
     console.log(`🔍 [INVENTARIO] Usuario:`, user);
     console.log(`🔍 [INVENTARIO] CurrentPlan:`, currentPlan);
     
-    // SOLUCIÓN TEMPORAL: Admin/Super_admin = Enterprise = Acceso completo
-    if (user?.rol === 'admin' || user?.rol === 'super_admin') {
-      console.log(`✅ [INVENTARIO] Usuario admin/super_admin detectado - acceso completo a "${tabName}": TRUE`);
-      return true;
+    // Usar el sistema de planes para todos los usuarios
+    switch (tabName) {
+      case 'dashboard':
+        return hasFeature('incluye_reportes_avanzados'); // Dashboard requiere reportes avanzados
+      case 'productos':
+        return hasFeature('incluye_inventario_basico');
+      case 'lotes':
+        return hasFeature('incluye_inventario_avanzado');
+      case 'reportes':
+        return hasFeature('incluye_reportes_avanzados');
+      default:
+        return false;
     }
-    
-    // Si hay información del plan, usarla
-    if (currentPlan) {
-      const planName = currentPlan.nombre.toLowerCase();
-      console.log(`🔍 [INVENTARIO] Plan detectado: "${planName}"`);
-      
-      // Plan Enterprise: Acceso completo
-      if (planName.includes('enterprise')) {
-        console.log(`✅ [INVENTARIO] Plan Enterprise detectado - acceso completo a "${tabName}": TRUE`);
-        return true;
-      }
-      
-      // Plan Profesional: Solo productos y lotes
-      if (planName === 'profesional') {
-        const access = tabName === 'productos' || tabName === 'lotes';
-        console.log(`🔍 [INVENTARIO] Plan Profesional - acceso a "${tabName}": ${access}`);
-        return access;
-      }
-      
-      // Plan Avanzado: Acceso completo
-      console.log(`✅ [INVENTARIO] Plan Avanzado - acceso completo a "${tabName}": TRUE`);
-      return true;
-    }
-    
-    // Si no hay información del plan, denegar por seguridad (excepto admin ya validado arriba)
-    console.log(`⚠️ [INVENTARIO] Sin información del plan - denegando acceso a "${tabName}": FALSE`);
-    return false;
   };
 
   const getTabInfo = (tabName: string) => {
-    const planName = currentPlan?.nombre.toLowerCase() || '';
-    
     switch (tabName) {
       case 'dashboard':
         return {
@@ -174,24 +154,24 @@ const InventoryPage: React.FC = () => {
           icon: Package,
           text: 'Productos',
           available: isTabAvailable('productos'),
-          description: 'Gestión completa de productos e inventario',
-          upgradeMessage: ''
+          description: hasFeature('incluye_inventario_basico') ? 'Gestión completa de productos e inventario' : 'Plan Básico: Solo lectura',
+          upgradeMessage: hasFeature('incluye_inventario_basico') ? '' : 'Actualiza tu plan para gestionar productos'
         };
       case 'lotes':
         return {
           icon: FileText,
           text: 'Lotes',
           available: isTabAvailable('lotes'),
-          description: 'Control de lotes y fechas de vencimiento',
-          upgradeMessage: ''
+          description: hasFeature('incluye_inventario_avanzado') ? 'Control de lotes y fechas de vencimiento' : 'Plan Básico: No disponible',
+          upgradeMessage: hasFeature('incluye_inventario_avanzado') ? '' : 'Actualiza tu plan para gestionar lotes'
         };
       case 'reportes':
         return {
           icon: TrendingUp,
           text: 'Reportes',
           available: isTabAvailable('reportes'),
-          description: 'Reportes detallados y análisis de inventario',
-          upgradeMessage: 'Obtén reportes avanzados y análisis predictivos con el plan Avanzado'
+          description: hasFeature('incluye_reportes_avanzados') ? 'Reportes detallados y análisis de inventario' : 'Plan Básico: No disponible',
+          upgradeMessage: hasFeature('incluye_reportes_avanzados') ? '' : 'Obtén reportes avanzados y análisis predictivos con el plan Avanzado'
         };
       default:
         return {
@@ -207,12 +187,10 @@ const InventoryPage: React.FC = () => {
   // Establecer pestaña activa por defecto según el plan
   useEffect(() => {
     if (currentPlan) {
-      const planName = currentPlan.nombre.toLowerCase();
-      if (planName === 'profesional') {
-        // Para plan Profesional, establecer 'productos' como pestaña activa por defecto
-        if (activeTab === 'dashboard' || activeTab === 'reportes') {
-          setActiveTab('productos');
-        }
+      const planName = currentPlan.toLowerCase();
+      // Para todos los planes, establecer 'productos' como pestaña activa por defecto
+      if (activeTab === 'dashboard' || activeTab === 'reportes') {
+        setActiveTab('productos');
       }
     }
   }, [currentPlan, activeTab]);
@@ -503,23 +481,16 @@ const InventoryPage: React.FC = () => {
           </div>
 
           <TabsContent value="dashboard" className="mt-6">
-            {isTabAvailable('dashboard') ? (
-              <InventoryDashboard
-                inventory={inventory}
-                lotes={lotes}
-                onFilterChange={handleFilterChange}
-                onExportData={handleExportData}
-              />
-            ) : (
-              <UpgradeMessage 
-                title="Dashboard Avanzado"
-                message={getTabInfo('dashboard').upgradeMessage}
-              />
-            )}
+            <InventoryDashboard
+              inventory={inventory}
+              lotes={lotes}
+              onFilterChange={handleFilterChange}
+              onExportData={handleExportData}
+            />
           </TabsContent>
 
           <TabsContent value="productos" className="mt-4 sm:mt-6">
-            {isTabAvailable('productos') ? (
+            <InventarioBasicoFeatureGate>
               <div className="space-y-4 sm:space-y-6">
               {/* Resumen de inventario */}
               <Card>
@@ -844,16 +815,11 @@ const InventoryPage: React.FC = () => {
                 </CardContent>
               </Card>
               </div>
-            ) : (
-              <UpgradeMessage 
-                title="Gestión de Productos"
-                message="Esta funcionalidad está disponible en tu plan actual"
-              />
-            )}
+            </InventarioBasicoFeatureGate>
           </TabsContent>
 
           <TabsContent value="lotes" className="mt-4 sm:mt-6">
-            {isTabAvailable('lotes') ? (
+            <InventarioAvanzadoFeatureGate>
               <LotesManagement
                 lotes={lotes}
                 products={inventory}
@@ -861,27 +827,17 @@ const InventoryPage: React.FC = () => {
                 onDelete={handleDeleteLote}
                 loading={loading}
               />
-            ) : (
-              <UpgradeMessage 
-                title="Gestión de Lotes"
-                message="Esta funcionalidad está disponible en tu plan actual"
-              />
-            )}
+            </InventarioAvanzadoFeatureGate>
           </TabsContent>
 
           <TabsContent value="reportes" className="mt-4 sm:mt-6">
-            {isTabAvailable('reportes') ? (
+            <ReportesAvanzadosFeatureGate>
               <InventoryReports
                 inventory={inventory}
                 lotes={lotes}
                 movements={movements}
               />
-            ) : (
-              <UpgradeMessage 
-                title="Reportes Avanzados"
-                message={getTabInfo('reportes').upgradeMessage}
-              />
-            )}
+            </ReportesAvanzadosFeatureGate>
           </TabsContent>
         </Tabs>
       )}

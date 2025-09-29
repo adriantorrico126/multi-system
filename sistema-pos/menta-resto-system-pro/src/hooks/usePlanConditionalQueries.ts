@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { getProducts } from '@/services/api';
 
 /**
  * Hook personalizado para manejar queries condicionales según el plan del usuario
  */
 export const usePlanConditionalQueries = () => {
-  const { hasFeature, currentPlan, isLoading: planLoading } = usePlan();
+  const { hasFeature, planInfo, isLoading: planLoading } = usePlanSystem();
   const queryClient = useQueryClient();
 
   // Query para productos (solo si tiene acceso a inventory)

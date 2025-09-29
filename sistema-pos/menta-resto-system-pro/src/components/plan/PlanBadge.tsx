@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -35,7 +35,7 @@ export const PlanBadge: React.FC<PlanBadgeProps> = ({
     getUsuariosInfo,
     getProductosInfo,
     isLimitExceeded 
-  } = usePlanFeatures();
+  } = usePlanSystem();
 
   const [isOpen, setIsOpen] = useState(false);
 

@@ -25,7 +25,7 @@ const FeatureShowcase = () => {
       name: 'Dashboard Avanzado',
       description: 'Análisis detallado de ventas y métricas',
       icon: BarChart3,
-      requiredPlan: 'profesional',
+      requiredPlan: 'basico',
       color: 'bg-blue-500'
     },
     {
@@ -33,7 +33,7 @@ const FeatureShowcase = () => {
       name: 'Gestión de Usuarios',
       description: 'Administración completa de usuarios y roles',
       icon: Users,
-      requiredPlan: 'profesional',
+      requiredPlan: 'basico',
       color: 'bg-green-500'
     },
     {
@@ -41,7 +41,7 @@ const FeatureShowcase = () => {
       name: 'Control de Inventario',
       description: 'Gestión avanzada de productos y stock',
       icon: Package,
-      requiredPlan: 'avanzado',
+      requiredPlan: 'basico',
       color: 'bg-purple-500'
     },
     {
@@ -49,7 +49,7 @@ const FeatureShowcase = () => {
       name: 'Múltiples Sucursales',
       description: 'Administración de múltiples ubicaciones',
       icon: Building,
-      requiredPlan: 'avanzado',
+      requiredPlan: 'basico',
       color: 'bg-orange-500'
     },
     {
@@ -57,7 +57,7 @@ const FeatureShowcase = () => {
       name: 'Analytics Avanzados',
       description: 'Reportes detallados y análisis predictivo',
       icon: BarChart3,
-      requiredPlan: 'enterprise',
+      requiredPlan: 'basico',
       color: 'bg-red-500'
     },
     {
@@ -65,7 +65,7 @@ const FeatureShowcase = () => {
       name: 'Configuración Avanzada',
       description: 'Personalización completa del sistema',
       icon: Settings,
-      requiredPlan: 'enterprise',
+      requiredPlan: 'basico',
       color: 'bg-gray-500'
     }
   ];

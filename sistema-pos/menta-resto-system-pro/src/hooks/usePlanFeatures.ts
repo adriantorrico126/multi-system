@@ -1,17 +1,14 @@
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { useCallback } from 'react';
 
 export const usePlanFeatures = () => {
   const { 
-    currentPlan, 
-    planUsage, 
+    planInfo, 
     hasFeature, 
-    hasLimit, 
-    getRemainingLimit, 
     isLimitExceeded,
     isLoading,
     error 
-  } = usePlan();
+  } = usePlanSystem();
 
   // Funciones de conveniencia para verificar funcionalidades específicas
   const canUseMesas = useCallback(() => hasFeature('mesas'), [hasFeature]);
@@ -28,77 +25,77 @@ export const usePlanFeatures = () => {
 
   // Funciones de conveniencia para verificar límites
   const canAddSucursal = useCallback(() => {
-    if (!currentPlan) return false;
-    if (currentPlan.limites.max_sucursales === 0) return true; // Ilimitado
+    if (!planInfo?.plan) return false;
+    if (planInfo.limites.max_sucursales === 0) return true; // Ilimitado
     return !isLimitExceeded('max_sucursales');
-  }, [currentPlan, isLimitExceeded]);
+  }, [planInfo, isLimitExceeded]);
 
   const canAddUsuario = useCallback(() => {
-    if (!currentPlan) return false;
-    if (currentPlan.limites.max_usuarios === 0) return true; // Ilimitado
+    if (!planInfo?.plan) return false;
+    if (planInfo.limites.max_usuarios === 0) return true; // Ilimitado
     return !isLimitExceeded('max_usuarios');
-  }, [currentPlan, isLimitExceeded]);
+  }, [planInfo, isLimitExceeded]);
 
   const canAddProducto = useCallback(() => {
-    if (!currentPlan) return false;
-    if (currentPlan.limites.max_productos === 0) return true; // Ilimitado
+    if (!planInfo?.plan) return false;
+    if (planInfo.limites.max_productos === 0) return true; // Ilimitado
     return !isLimitExceeded('max_productos');
-  }, [currentPlan, isLimitExceeded]);
+  }, [planInfo, isLimitExceeded]);
 
   const canAddTransaccion = useCallback(() => {
-    if (!currentPlan) return false;
-    if (currentPlan.limites.max_transacciones_mes === 0) return true; // Ilimitado
+    if (!planInfo?.plan) return false;
+    if (planInfo.limites.max_transacciones_mes === 0) return true; // Ilimitado
     return !isLimitExceeded('max_transacciones_mes');
-  }, [currentPlan, isLimitExceeded]);
+  }, [planInfo, isLimitExceeded]);
 
   // Funciones para obtener información de límites
   const getSucursalesInfo = useCallback(() => {
-    if (!currentPlan || !planUsage) return { current: 0, max: 0, remaining: 0, unlimited: false };
+    if (!planInfo?.plan || !planInfo.uso_actual) return { current: 0, max: 0, remaining: 0, unlimited: false };
     
-    const max = currentPlan.limites.max_sucursales;
-    const current = planUsage.sucursales || 0;
+    const max = planInfo.limites.max_sucursales;
+    const current = planInfo.uso_actual.sucursales_actuales || 0;
     const unlimited = max === 0;
     const remaining = unlimited ? -1 : Math.max(0, max - current);
     
     return { current, max, remaining, unlimited };
-  }, [currentPlan, planUsage]);
+  }, [planInfo]);
 
   const getUsuariosInfo = useCallback(() => {
-    if (!currentPlan || !planUsage) return { current: 0, max: 0, remaining: 0, unlimited: false };
+    if (!planInfo?.plan || !planInfo.uso_actual) return { current: 0, max: 0, remaining: 0, unlimited: false };
     
-    const max = currentPlan.limites.max_usuarios;
-    const current = planUsage.usuarios || 0;
+    const max = planInfo.limites.max_usuarios;
+    const current = planInfo.uso_actual.usuarios_actuales || 0;
     const unlimited = max === 0;
     const remaining = unlimited ? -1 : Math.max(0, max - current);
     
     return { current, max, remaining, unlimited };
-  }, [currentPlan, planUsage]);
+  }, [planInfo]);
 
   const getProductosInfo = useCallback(() => {
-    if (!currentPlan || !planUsage) return { current: 0, max: 0, remaining: 0, unlimited: false };
+    if (!planInfo?.plan || !planInfo.uso_actual) return { current: 0, max: 0, remaining: 0, unlimited: false };
     
-    const max = currentPlan.limites.max_productos;
-    const current = planUsage.productos || 0;
+    const max = planInfo.limites.max_productos;
+    const current = planInfo.uso_actual.productos_actuales || 0;
     const unlimited = max === 0;
     const remaining = unlimited ? -1 : Math.max(0, max - current);
     
     return { current, max, remaining, unlimited };
-  }, [currentPlan, planUsage]);
+  }, [planInfo]);
 
   const getTransaccionesInfo = useCallback(() => {
-    if (!currentPlan || !planUsage) return { current: 0, max: 0, remaining: 0, unlimited: false };
+    if (!planInfo?.plan || !planInfo.uso_actual) return { current: 0, max: 0, remaining: 0, unlimited: false };
     
-    const max = currentPlan.limites.max_transacciones_mes;
-    const current = planUsage.transacciones || 0;
+    const max = planInfo.limites.max_transacciones_mes;
+    const current = planInfo.uso_actual.transacciones_mes_actual || 0;
     const unlimited = max === 0;
     const remaining = unlimited ? -1 : Math.max(0, max - current);
     
     return { current, max, remaining, unlimited };
-  }, [currentPlan, planUsage]);
+  }, [planInfo]);
 
   // Función para verificar si el plan actual es suficiente para una funcionalidad
   const isPlanSufficient = useCallback((requiredPlan: 'basico' | 'profesional' | 'avanzado' | 'enterprise') => {
-    if (!currentPlan) return false;
+    if (!planInfo?.plan) return false;
     
     const planHierarchy = {
       basico: 1,
@@ -107,11 +104,11 @@ export const usePlanFeatures = () => {
       enterprise: 4
     };
     
-    const currentLevel = planHierarchy[currentPlan.nombre];
+    const currentLevel = planHierarchy[planInfo.plan.nombre as keyof typeof planHierarchy];
     const requiredLevel = planHierarchy[requiredPlan];
     
     return currentLevel >= requiredLevel;
-  }, [currentPlan]);
+  }, [planInfo]);
 
   // Función para obtener el plan mínimo requerido para una funcionalidad
   const getRequiredPlan = useCallback((feature: string) => {
@@ -150,15 +147,12 @@ export const usePlanFeatures = () => {
 
   return {
     // Estado del plan
-    currentPlan,
-    planUsage,
+    planInfo,
     isLoading,
     error,
     
     // Funciones básicas del contexto
     hasFeature,
-    hasLimit,
-    getRemainingLimit,
     isLimitExceeded,
     
     // Funciones de conveniencia para funcionalidades

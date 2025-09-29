@@ -4,7 +4,8 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: (window as any).ENV_OVERRIDE?.VITE_BACKEND_URL || 
            import.meta.env.VITE_BACKEND_URL || 
-           'http://localhost:3000/api/v1'
+           'http://localhost:3000/api/v1',
+  timeout: 30000 // 30 segundos de timeout
 });
 
 // DEBUG: Log de configuración de Axios
@@ -16,6 +17,7 @@ console.log('🔍 [AXIOS DEBUG] import.meta.env.VITE_BACKEND_URL:', import.meta.
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('jwtToken');
+    console.log('🔍 [AXIOS REQUEST] Token en localStorage:', token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('🔍 [AXIOS REQUEST] Token agregado a la petición:', config.url);
@@ -32,7 +34,10 @@ api.interceptors.request.use(
 
 // Interceptor global para manejar expiración de JWT y errores de conexión
 api.interceptors.response.use(
-  response => response,
+  response => {
+    console.log('🔍 [API Interceptor] Respuesta exitosa:', response.config.url, response.status);
+    return response;
+  },
   async error => {
     console.log('🔍 [API Interceptor] Error detectado:', error);
     const status = error?.response?.status;
@@ -1947,6 +1952,9 @@ export const refreshAuthToken = async () => {
     // Actualizar el token y la información del usuario
     setAuthToken(token);
     localStorage.setItem('currentUser', JSON.stringify(data));
+
+    // Disparar evento personalizado para notificar a AuthContext
+    window.dispatchEvent(new CustomEvent('userUpdated', { detail: data }));
 
     console.log('🔍 [API] Token renovado exitosamente');
     return { token, data };

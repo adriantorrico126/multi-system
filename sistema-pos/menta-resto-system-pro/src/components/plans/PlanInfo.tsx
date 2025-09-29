@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -12,7 +12,7 @@ interface PlanInfoProps {
 }
 
 export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className = '' }) => {
-  const { planInfo, isLoading, error, getUsagePercentage, getRemainingLimit } = usePlan();
+  const { planInfo, isLoading, error } = usePlanSystem();
 
   if (isLoading) {
     return (
@@ -93,7 +93,7 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className =
             </Badge>
           </div>
           <p className="text-xs text-gray-500">
-            {limites.max_productos > 0 ? `${uso_actual.productos}/${limites.max_productos} productos` : 'Productos ilimitados'}
+            {limites.max_productos > 0 ? `${uso_actual.productos_actuales}/${limites.max_productos} productos` : 'Productos ilimitados'}
           </p>
         </div>
         {isExpiringSoon && (
@@ -150,14 +150,14 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className =
               <span>Productos</span>
               <span className="text-gray-500">
                 {limites.max_productos > 0 
-                  ? `${uso_actual.productos} / ${limites.max_productos}`
-                  : `${uso_actual.productos} (Ilimitado)`
+                  ? `${uso_actual.productos_actuales} / ${limites.max_productos}`
+                  : `${uso_actual.productos_actuales} (Ilimitado)`
                 }
               </span>
             </div>
             {limites.max_productos > 0 && (
               <Progress 
-                value={getUsagePercentage('max_productos')} 
+                value={(uso_actual.productos_actuales / limites.max_productos) * 100} 
                 className="h-2"
               />
             )}
@@ -169,14 +169,14 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className =
               <span>Usuarios</span>
               <span className="text-gray-500">
                 {limites.max_usuarios > 0 
-                  ? `${uso_actual.usuarios} / ${limites.max_usuarios}`
-                  : `${uso_actual.usuarios} (Ilimitado)`
+                  ? `${uso_actual.usuarios_actuales} / ${limites.max_usuarios}`
+                  : `${uso_actual.usuarios_actuales} (Ilimitado)`
                 }
               </span>
             </div>
             {limites.max_usuarios > 0 && (
               <Progress 
-                value={getUsagePercentage('max_usuarios')} 
+                value={(uso_actual.usuarios_actuales / limites.max_usuarios) * 100} 
                 className="h-2"
               />
             )}
@@ -188,14 +188,14 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className =
               <span>Sucursales</span>
               <span className="text-gray-500">
                 {limites.max_sucursales > 0 
-                  ? `${uso_actual.sucursales} / ${limites.max_sucursales}`
-                  : `${uso_actual.sucursales} (Ilimitado)`
+                  ? `${uso_actual.sucursales_actuales} / ${limites.max_sucursales}`
+                  : `${uso_actual.sucursales_actuales} (Ilimitado)`
                 }
               </span>
             </div>
             {limites.max_sucursales > 0 && (
               <Progress 
-                value={getUsagePercentage('max_sucursales')} 
+                value={(uso_actual.sucursales_actuales / limites.max_sucursales) * 100} 
                 className="h-2"
               />
             )}
@@ -207,14 +207,14 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({ compact = false, className =
               <span>Transacciones (mes)</span>
               <span className="text-gray-500">
                 {limites.max_transacciones_mes > 0 
-                  ? `${uso_actual.transacciones} / ${limites.max_transacciones_mes}`
-                  : `${uso_actual.transacciones} (Ilimitado)`
+                  ? `${uso_actual.transacciones_mes_actual} / ${limites.max_transacciones_mes}`
+                  : `${uso_actual.transacciones_mes_actual} (Ilimitado)`
                 }
               </span>
             </div>
             {limites.max_transacciones_mes > 0 && (
               <Progress 
-                value={getUsagePercentage('max_transacciones_mes')} 
+                value={(uso_actual.transacciones_mes_actual / limites.max_transacciones_mes) * 100} 
                 className="h-2"
               />
             )}

@@ -28,6 +28,7 @@ alertas_limites	fecha_alerta	timestamp without time zone
 alertas_limites	fecha_resolucion	timestamp without time zone
 alertas_limites	mensaje	text
 alertas_limites	datos_adicionales	jsonb
+alertas_limites	nivel_urgencia	character varying
 archivos_egresos	id_archivo	integer
 archivos_egresos	id_egreso	integer
 archivos_egresos	nombre_archivo	character varying
@@ -147,6 +148,15 @@ configuraciones_sistema	clave_config	character varying
 configuraciones_sistema	valor_config	jsonb
 configuraciones_sistema	creado_en	timestamp without time zone
 configuraciones_sistema	actualizado_en	timestamp without time zone
+contadores_uso	id_contador	integer
+contadores_uso	id_restaurante	integer
+contadores_uso	id_plan	integer
+contadores_uso	recurso	character varying
+contadores_uso	uso_actual	integer
+contadores_uso	limite_plan	integer
+contadores_uso	fecha_medicion	date
+contadores_uso	created_at	timestamp without time zone
+contadores_uso	updated_at	timestamp without time zone
 contenido_web	id	integer
 contenido_web	titulo	character varying
 contenido_web	slug	character varying
@@ -410,6 +420,21 @@ planes	activo	boolean
 planes	orden_display	integer
 planes	created_at	timestamp without time zone
 planes	updated_at	timestamp without time zone
+planes	incluye_pos	boolean
+planes	incluye_inventario_basico	boolean
+planes	incluye_inventario_avanzado	boolean
+planes	incluye_promociones	boolean
+planes	incluye_reservas	boolean
+planes	incluye_arqueo_caja	boolean
+planes	incluye_egresos	boolean
+planes	incluye_egresos_avanzados	boolean
+planes	incluye_reportes_avanzados	boolean
+planes	incluye_analytics	boolean
+planes	incluye_delivery	boolean
+planes	incluye_impresion	boolean
+planes	incluye_soporte_24h	boolean
+planes	incluye_api	boolean
+planes	incluye_white_label	boolean
 planes_pos	id	integer
 planes_pos	nombre	character varying
 planes_pos	descripcion	text
@@ -678,6 +703,7 @@ ventas	tipo_pago	character varying
 ventas	id_pago_final	integer
 ventas	fecha_pago_final	timestamp without time zone
 ventas	estado_pago	character varying
+ventas	updated_at	timestamp without time zone
 vista_lotes_criticos	id_lote	integer
 vista_lotes_criticos	numero_lote	character varying
 vista_lotes_criticos	producto_nombre	character varying

@@ -101,3 +101,13 @@ echo "2. O si prefieres, reinicia completamente:"
 echo "   npm run dev"
 echo ""
 echo "✅ Configuración completada!"
+
+
+
+
+
+
+
+
+
+

@@ -2,8 +2,11 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Product, CartItem } from '@/types/restaurant';
 import { useQuery } from '@tanstack/react-query';
 import { getPromocionesActivas } from '@/services/api';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 
 export function useCart() {
+  const { hasFeature } = usePlanSystem();
+  
   // Cargar carrito desde localStorage al inicializar
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -50,6 +53,7 @@ export function useCart() {
   const { data: promociones = [] } = useQuery({
     queryKey: ['promociones-activas'],
     queryFn: getPromocionesActivas,
+    enabled: hasFeature('incluye_promociones'), // Solo cargar promociones si el plan las incluye
   });
 
   const addToCart = useCallback((product: Product, notes?: string) => {

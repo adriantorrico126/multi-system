@@ -155,3 +155,5 @@ else
     echo "   2. Asegúrate de que hay usuarios en la tabla vendedores"
     echo "   3. Verifica las credenciales de la base de datos"
 fi
+
+

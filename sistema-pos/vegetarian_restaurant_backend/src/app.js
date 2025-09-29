@@ -53,8 +53,8 @@ const userRoutes = require('./routes/userRoutes');
 startupLogger.logStep('userRoutes', 'success');
 const soporteRoutes = require('./routes/soporteRoutes');
 startupLogger.logStep('soporteRoutes', 'success');
-const planRoutes = require('./routes/planRoutes');
-startupLogger.logStep('planRoutes', 'success');
+// const planRoutes = require('./routes/planRoutes'); // Comentado - usando nuevo sistema de planes
+// startupLogger.logStep('planRoutes', 'success');
 const modificadorRoutes = require('./routes/modificadorRoutes');
 startupLogger.logStep('modificadorRoutes', 'success');
 const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
@@ -177,7 +177,7 @@ app.use('/api/v1/users', userRoutes);
 startupLogger.logStep('Ruta /api/v1/users', 'success');
 app.use('/api/v1/soporte', soporteRoutes);
 startupLogger.logStep('Ruta /api/v1/soporte', 'success');
-app.use('/api/v1/plans', planRoutes);
+// app.use('/api/v1/plans', planRoutes); // Comentado - usando nuevo sistema de planes
 startupLogger.logStep('Ruta /api/v1/plans', 'success');
 app.use('/api/v1/modificadores', modificadorRoutes);
 startupLogger.logStep('Ruta /api/v1/modificadores', 'success');
@@ -260,6 +260,26 @@ startupLogger.logStep('Ruta /api/v1/analytics', 'success');
 app.use('/api/v1/metodos-pago', metodosPagoRoutes);
 // app.use('/api/v1/pagos_suscripcion', pagoSuscripcionRoutes);
 
+// =====================================================
+// RUTAS DEL SISTEMA DE PLANES Y SUSCRIPCIONES
+// =====================================================
+
+// Importar rutas del sistema de planes
+const planesRoutes = require('./routes/planesRoutes');
+const suscripcionesRoutes = require('./routes/suscripcionesRoutes');
+const contadoresRoutes = require('./routes/contadoresRoutes');
+const alertasRoutes = require('./routes/alertasRoutes');
+
+// Montar rutas del sistema de planes
+app.use('/api/v1/planes-sistema', planesRoutes);
+startupLogger.logStep('Ruta /api/v1/planes-sistema', 'success');
+app.use('/api/v1/suscripciones-sistema', suscripcionesRoutes);
+startupLogger.logStep('Ruta /api/v1/suscripciones-sistema', 'success');
+app.use('/api/v1/contadores-sistema', contadoresRoutes);
+startupLogger.logStep('Ruta /api/v1/contadores-sistema', 'success');
+app.use('/api/v1/alertas-sistema', alertasRoutes);
+startupLogger.logStep('Ruta /api/v1/alertas-sistema', 'success');
+
 // Middleware de logging de solicitudes
 app.use((req, res, next) => {
   console.log(`🔍 [APP] ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
@@ -284,6 +304,10 @@ app.use((req, res, next) => {
     console.log('🔍 [APP] - /api/v1/grupos-mesas');
     console.log('🔍 [APP] - /api/v1/reservas');
     console.log('🔍 [APP] - /api/v1/promociones');
+    console.log('🔍 [APP] - /api/v1/planes-sistema');
+    console.log('🔍 [APP] - /api/v1/suscripciones-sistema');
+    console.log('🔍 [APP] - /api/v1/contadores-sistema');
+    console.log('🔍 [APP] - /api/v1/alertas-sistema');
     return res.json({ message: 'Rutas listadas en consola' });
   }
   next();

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { usePlan } from '../context/PlanContext';
+import { usePlanSystem } from '../context/PlanSystemContext';
+import { EgresosFeatureGate, EgresosAvanzadosFeatureGate } from '../components/plans';
 import { PlanGate } from '../components/plan/PlanGate';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -91,55 +92,33 @@ const EgresosRestricted = () => (
 
 const EgresosPage: React.FC = () => {
   const { user } = useAuth();
-  const { currentPlan } = usePlan();
+  const { currentPlan, hasFeature } = usePlanSystem();
   const navigate = useNavigate();
   const userRole = user?.rol || '';
 
-  // Función para verificar si una pestaña está disponible según el plan
+  // Función para verificar si una pestaña está disponible según el plan usando el nuevo sistema
   const isTabAvailable = (tabName: string): boolean => {
     console.log(`🔍 [EGRESOS] Verificando acceso a pestaña "${tabName}"`);
     console.log(`🔍 [EGRESOS] Usuario:`, user);
     console.log(`🔍 [EGRESOS] CurrentPlan:`, currentPlan);
     
-    // SOLUCIÓN TEMPORAL: Admin/Super_admin = Enterprise = Acceso completo
-    if (user?.rol === 'admin' || user?.rol === 'super_admin') {
-      console.log(`✅ [EGRESOS] Usuario admin/super_admin detectado - acceso completo a "${tabName}": TRUE`);
-      return true;
+    // Usar el sistema de planes para todos los usuarios
+    switch (tabName) {
+      case 'dashboard':
+        return hasFeature('incluye_egresos_avanzados'); // Dashboard requiere egresos avanzados
+      case 'egresos':
+        return hasFeature('incluye_egresos');
+      case 'categorias':
+        return hasFeature('incluye_egresos_avanzados'); // Categorías requieren egresos avanzados
+      case 'presupuestos':
+        return hasFeature('incluye_egresos_avanzados');
+      case 'reportes':
+        return hasFeature('incluye_egresos_avanzados'); // Reportes requieren egresos avanzados
+      case 'informacion':
+        return hasFeature('incluye_egresos'); // Información básica con egresos
+      default:
+        return false;
     }
-    
-    // Si hay información del plan, usarla
-    if (currentPlan) {
-      const planName = currentPlan.nombre.toLowerCase();
-      console.log(`🔍 [EGRESOS] Plan detectado: "${planName}"`);
-      
-      // Plan Enterprise: Acceso completo
-      if (planName.includes('enterprise')) {
-        console.log(`✅ [EGRESOS] Plan Enterprise detectado - acceso completo a "${tabName}": TRUE`);
-        return true;
-      }
-      
-      // Plan Básico: Solo Dashboard
-      if (planName === 'basico') {
-        const access = tabName === 'dashboard';
-        console.log(`🔍 [EGRESOS] Plan Básico - acceso a "${tabName}": ${access}`);
-        return access;
-      }
-      
-      // Plan Profesional: Dashboard y Egresos
-      if (planName === 'profesional') {
-        const access = tabName === 'dashboard' || tabName === 'egresos';
-        console.log(`🔍 [EGRESOS] Plan Profesional - acceso a "${tabName}": ${access}`);
-        return access;
-      }
-      
-      // Plan Avanzado: Todas las pestañas
-      console.log(`✅ [EGRESOS] Plan Avanzado - acceso completo a "${tabName}": TRUE`);
-      return true;
-    }
-    
-    // Si no hay información del plan, denegar por seguridad (excepto admin ya validado arriba)
-    console.log(`⚠️ [EGRESOS] Sin información del plan - denegando acceso a "${tabName}": FALSE`);
-    return false;
   };
 
 
@@ -216,7 +195,7 @@ const EgresosPage: React.FC = () => {
   );
 
   // Estados principales
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes' | 'informacion'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'egresos' | 'categorias' | 'presupuestos' | 'reportes' | 'informacion'>('egresos');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showMobileTabsMenu, setShowMobileTabsMenu] = useState<boolean>(false);
@@ -660,7 +639,7 @@ const EgresosPage: React.FC = () => {
   // =====================================================
 
   return (
-    <PlanGate feature="egresos" fallback={<EgresosRestricted />} requiredPlan="profesional">
+    <EgresosFeatureGate>
       <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -716,9 +695,16 @@ const EgresosPage: React.FC = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         {/* Desktop Navigation */}
         <TabsList className="hidden lg:grid w-full grid-cols-6">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="dashboard" 
+            className={`flex items-center gap-2 ${!isTabAvailable('dashboard') ? 'opacity-60' : ''}`}
+            disabled={!isTabAvailable('dashboard')}
+          >
             <BarChart3 className="h-4 w-4" />
             Dashboard
+            {!isTabAvailable('dashboard') && (
+              <Crown className="h-3 w-3 text-yellow-500" />
+            )}
           </TabsTrigger>
           <TabsTrigger 
             value="egresos" 
@@ -812,14 +798,20 @@ const EgresosPage: React.FC = () => {
               <div className="space-y-1">
                 <Button
                   variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${!isTabAvailable('dashboard') ? 'opacity-60' : ''}`}
+                  disabled={!isTabAvailable('dashboard')}
                   onClick={() => {
-                    setActiveTab('dashboard');
+                    if (isTabAvailable('dashboard')) {
+                      setActiveTab('dashboard');
+                    }
                     setShowMobileTabsMenu(false);
                   }}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Dashboard
+                  {!isTabAvailable('dashboard') && (
+                    <Crown className="h-3 w-3 text-yellow-500 ml-auto" />
+                  )}
                 </Button>
                 <Button
                   variant={activeTab === 'egresos' ? 'default' : 'ghost'}
@@ -945,7 +937,7 @@ const EgresosPage: React.FC = () => {
 
         {/* Categorías Tab */}
         <TabsContent value="categorias" className="mt-6">
-          {isTabAvailable('categorias') ? (
+          <EgresosFeatureGate>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Categorías de Egresos</h2>
@@ -982,14 +974,12 @@ const EgresosPage: React.FC = () => {
                 }}
               />
             </div>
-          ) : (
-            <UpgradeMessage tabInfo={getTabInfo('categorias')} />
-          )}
+          </EgresosFeatureGate>
         </TabsContent>
 
         {/* Presupuestos Tab */}
         <TabsContent value="presupuestos" className="mt-6">
-          {isTabAvailable('presupuestos') ? (
+          <EgresosAvanzadosFeatureGate>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Presupuestos</h2>
@@ -1027,9 +1017,7 @@ const EgresosPage: React.FC = () => {
                 }}
               />
             </div>
-          ) : (
-            <UpgradeMessage tabInfo={getTabInfo('presupuestos')} />
-          )}
+          </EgresosAvanzadosFeatureGate>
         </TabsContent>
 
                  {/* Reportes Tab */}
@@ -1177,7 +1165,7 @@ const EgresosPage: React.FC = () => {
         }}
       />
     </div>
-    </PlanGate>
+    </EgresosFeatureGate>
   );
 };
 

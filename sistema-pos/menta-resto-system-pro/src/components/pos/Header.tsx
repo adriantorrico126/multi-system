@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { PlanInfo } from '@/components/plans/PlanInfo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,13 +76,28 @@ export function Header({
   let planInfo = null;
   let planLoading = false;
   try {
-    const planContext = usePlan();
+    const planContext = usePlanSystem();
     planInfo = planContext.planInfo;
     planLoading = planContext.isLoading;
-    console.log('🔍 [HEADER] Plan context cargado correctamente');
   } catch (error) {
-    console.log('🔍 [HEADER] Usando modo temporal sin plan context');
     // Usar valores por defecto
+  }
+
+  // Verificar si el usuario tiene la estructura correcta
+  if (user && !user.restaurante) {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (!storedUser.restaurante) {
+        // Importar refreshAuthToken dinámicamente
+        import('@/services/api').then(({ refreshAuthToken }) => {
+          refreshAuthToken().catch((error) => {
+            console.error('❌ [HEADER] Error al renovar token:', error);
+          });
+        });
+      }
+    } catch (e) {
+      console.error('Error parsing stored user:', e);
+    }
   }
 
   const handleLogout = () => {
@@ -104,14 +119,10 @@ export function Header({
   };
 
   const handleNavigation = (path: string) => {
-    console.log('🔍 [HEADER] handleNavigation navegando a:', path);
     navigate(path);
     setIsMobileMenuOpen(false);
   };
 
-  // DEBUG: Log user info
-  console.log('🔍 [HEADER] Usuario actual:', user);
-  console.log('🔍 [HEADER] Rol del usuario:', user?.rol);
 
   // Navegación principal optimizada
   const navigationItems = [
@@ -137,11 +148,6 @@ export function Header({
       path: '/egresos-caja', 
       show: (() => {
         const hasAccess = ['cajero', 'admin', 'super_admin'].includes(user?.rol);
-        console.log('🔍 [HEADER] Verificando acceso a Egresos:', {
-          userRole: user?.rol,
-          allowedRoles: ['cajero', 'admin', 'super_admin'],
-          hasAccess: hasAccess
-        });
         return hasAccess;
       })(),
       color: 'from-red-500 to-pink-600',
@@ -231,16 +237,9 @@ export function Header({
   // Filtrar elementos de navegación visibles
   const visibleNavigationItems = navigationItems.filter(item => {
     const isVisible = item.show === true || (Array.isArray(item.show) && item.show.includes(user?.rol));
-    console.log(`🔍 [HEADER] Item "${item.label}":`, {
-      show: item.show,
-      userRole: user?.rol,
-      isVisible: isVisible
-    });
     return isVisible;
   });
 
-  console.log('🔍 [HEADER] Total items visibles:', visibleNavigationItems.length);
-  console.log('🔍 [HEADER] Items visibles:', visibleNavigationItems.map(item => item.label));
 
   // Componente de navegación móvil
   const MobileNavigation = () => (
@@ -275,7 +274,7 @@ export function Header({
                 <RoleIcon className="text-white text-lg" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 truncate">{user?.nombre || user?.username}</p>
+                <p className="font-semibold text-gray-900 truncate">{user?.nombre}</p>
                 <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
               </div>
             </div>
@@ -384,12 +383,17 @@ export function Header({
               mobileInfo.isMobile && isHeaderCollapsed ? 'hidden' : ''
             }`}>
               <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent truncate">
-                Sistema POS
+                Forkast POS
               </h1>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
-                  {currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal'}
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
+                    {user?.restaurante?.nombre || 'Restaurante'}
+                  </p>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 font-normal truncate">
+                  {user?.sucursal?.nombre || (currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal')}
                 </p>
               </div>
             </div>
@@ -408,7 +412,6 @@ export function Header({
                   item.color ? `hover:bg-gradient-to-r ${item.color} hover:text-white hover:border-transparent` : 'hover:bg-blue-50 hover:border-blue-300'
                 }`}
                 onClick={() => {
-                  console.log('🔍 [HEADER] Desktop button clicked, navegando a:', item.path);
                   navigate(item.path);
                 }}
               >
@@ -428,7 +431,7 @@ export function Header({
               variant="ghost"
               size="sm"
               onClick={onToggleHeader}
-              className={`lg:hidden rounded-lg hover:bg-gray-100 transition-all duration-200 header-toggle-btn ${
+              className={`lg:hidden rounded-lg hover:bg-gray-100 transition-all duration-200 header-toggle-btn shadow-md hover:shadow-lg ${
                 isHeaderCollapsed ? 'p-1' : 'p-2'
               }`}
             >
@@ -452,7 +455,7 @@ export function Header({
                      <Button 
                        variant="outline" 
                        size="sm" 
-                       className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-400 transition-all duration-300 shadow-md hover:shadow-lg px-4 py-3 h-12"
+                       className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-400 transition-all duration-300 shadow-md hover:shadow-lg px-4 py-3 h-12 rounded-lg"
                      >
                        <FaBuilding className="h-4 w-4 mr-2 text-blue-600" />
                        <span className="truncate max-w-28 sm:max-w-36 font-semibold text-blue-900 text-sm">
@@ -547,7 +550,7 @@ export function Header({
                  </div>
                  <div className="text-right">
                    <p className="text-base font-semibold text-gray-900 truncate max-w-28">
-                     {user?.nombre || user?.username}
+                     {user?.nombre}
                    </p>
                    <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
                  </div>
@@ -556,7 +559,21 @@ export function Header({
                {/* Información del plan */}
                {planInfo && !planLoading && (
                  <div className="hidden xl:block">
-                   <PlanInfo compact={true} className="max-w-xs" />
+                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-4 py-3 shadow-sm">
+                     <div className="flex items-center space-x-3">
+                       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                         <FaCrown className="text-white text-sm" />
+                       </div>
+                       <div>
+                         <p className="text-sm font-semibold text-blue-900">
+                           {planInfo?.plan?.nombre || 'Plan'}
+                         </p>
+                         <p className="text-xs text-blue-600">
+                           {planInfo?.suscripcion?.estado === 'activa' ? 'Activo' : 'Inactivo'}
+                         </p>
+                       </div>
+                     </div>
+                   </div>
                  </div>
                )}
              </div>
@@ -571,7 +588,7 @@ export function Header({
                    <Button 
                      variant="outline" 
                      size="sm" 
-                     className="bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-gray-50 px-4 py-3 h-12"
+                     className="bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-gray-50 px-4 py-3 h-12 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                    >
                      <FaUser className="h-4 w-4" />
                    </Button>
@@ -583,7 +600,7 @@ export function Header({
                         <RoleIcon className="text-white text-lg" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{user?.nombre || user?.username}</p>
+                        <p className="font-semibold text-gray-900">{user?.nombre}</p>
                         <p className="text-sm text-gray-600 capitalize">{user?.rol}</p>
                       </div>
                     </div>

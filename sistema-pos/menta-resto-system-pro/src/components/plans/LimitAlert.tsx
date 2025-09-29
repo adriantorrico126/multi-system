@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlan, PlanLimits } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -18,13 +18,13 @@ export const LimitAlert: React.FC<LimitAlertProps> = ({
   showProgress = true,
   compact = false,
 }) => {
-  const { planInfo, isLimitExceeded, getRemainingLimit, getUsagePercentage } = usePlan();
+  const { planInfo, isLimitExceeded } = usePlanSystem();
 
   if (!planInfo) return null;
 
   const isExceeded = isLimitExceeded(limitType);
-  const remaining = getRemainingLimit(limitType);
-  const percentage = getUsagePercentage(limitType);
+  const remaining = 0; // TODO: Implementar getRemainingLimit en el nuevo contexto
+  const percentage = 0; // TODO: Implementar getUsagePercentage en el nuevo contexto
   const { limites, uso_actual } = planInfo;
 
   // Si el límite es ilimitado (-1), no mostrar alerta

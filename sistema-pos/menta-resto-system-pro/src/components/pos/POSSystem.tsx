@@ -64,7 +64,7 @@ import { exportSalesToCSV } from '@/utils/csvExport';
 import { getProducts, getCategories, getKitchenOrders, createSale, refreshInventory, updateOrderStatus, getBranches, getVentasOrdenadas, getMesas, editSale, deleteSale, getPromocionesActivas, getConfiguracion, printComanda, saveConfiguracion, getArqueoActualPOS, abrirArqueoPOS, cerrarArqueoPOS, getArqueoData, agregarProductosAMesa } from '@/services/api';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { KitchenView } from '../../pages/KitchenView';
 import { MesasMesero } from './MesasMesero';
 import { PedidosPendientesCajero } from './PedidosPendientesCajero';
@@ -125,15 +125,15 @@ export function POSSystem() {
   const { error: connectionError, clearError: clearConnectionError, retry: retryConnection } = useConnectionError();
   
   // Hook para manejo de planes
-  const { hasFeature, planInfo, isLoading: planLoading } = usePlan();
+  const { hasFeature, planInfo, isLoading: planLoading } = usePlanSystem();
   
   // Funciones para verificar restricciones de plan  
   const canAccessOrders = () => {
     console.log('🔍 [POSSystem] Verificando acceso a pedidos...');
     
-    // Usar la nueva lógica de hasFeature que ya maneja Enterprise correctamente
+    // Los pedidos están disponibles en todos los planes
     const access = hasFeature('orders');
-    console.log('🔍 [POSSystem] Acceso a pedidos:', access);
+    console.log('🔍 [POSSystem] Acceso a pedidos (orders):', access);
     return access;
   };
   
@@ -719,7 +719,7 @@ export function POSSystem() {
         totalDescuentos: totalDescuentos,
         appliedPromociones: appliedPromociones.length > 0 ? appliedPromociones : undefined,
         paymentMethod,
-        cashier: user?.username || 'Desconocido',
+        cashier: user?.nombre || 'Desconocido',
         id_sucursal: selectedBranchId!,
         mesa_numero: tipoServicio === 'Mesa' ? mesaNumero : null,
         tipo_servicio: tipoServicio,
@@ -736,7 +736,7 @@ export function POSSystem() {
         appliedPromociones: appliedPromociones.length > 0 ? [...appliedPromociones] : undefined,
         paymentMethod,
         timestamp: new Date(),
-        cashier: user?.username || 'Desconocido',
+        cashier: user?.nombre || 'Desconocido',
         branch: selectedBranch?.nombre || user?.sucursal?.nombre || 'Desconocido',
         mesa_numero: tipoServicio === 'Mesa' ? mesaNumero : null,
         tipo_servicio: tipoServicio,
@@ -851,7 +851,7 @@ export function POSSystem() {
         items: cart.map((item) => ({ name: item.name, quantity: item.quantity, notes: item.notes })),
         status: 'pending', // Estado inicial para pedidos de cocina
         timestamp: new Date(),
-        cashier: user?.username || 'Desconocido',
+        cashier: user?.nombre || 'Desconocido',
         priority: 'normal',
         table: mesaNumero ? mesaNumero.toString() : tipoServicio,
       };
@@ -1180,14 +1180,14 @@ export function POSSystem() {
 
   // useEffect para hidratar ventas desde el backend al abrir la pestaña 'sales'
   useEffect(() => {
-    if (activeTab === 'sales' && user?.username) {
+    if (activeTab === 'sales' && user?.nombre) {
       getVentasOrdenadas(100).then((ventas) => {
         let ventasFiltradas = ventas;
         if (user.rol === 'cajero') {
           ventasFiltradas = ventas.filter((v: any) =>
-            v.vendedor_nombre === user.username ||
-            v.cashier === user.username ||
-            v.username === user.username
+            v.vendedor_nombre === user.nombre ||
+            v.cashier === user.nombre ||
+            v.username === user.nombre
           );
         }
         // setSales( // Eliminado: sales ahora es de React Query
@@ -1196,7 +1196,7 @@ export function POSSystem() {
         //     items: v.productos || [], // Ajustar si es necesario
         //     paymentMethod: v.metodo_pago || v.paymentMethod || '',
         //     timestamp: v.fecha ? new Date(v.fecha) : new Date(),
-        //     cashier: v.vendedor_nombre || v.cashier || user.username,
+        //     cashier: v.vendedor_nombre || v.cashier || user.nombre,
         //     branch: v.sucursal_nombre || v.branch || '',
         //     mesa_numero: v.mesa_numero || null,
         //     tipo_servicio: v.tipo_servicio || '',
@@ -1205,7 +1205,7 @@ export function POSSystem() {
         // );
       });
     }
-  }, [activeTab, user?.username, user?.rol]);
+  }, [activeTab, user?.nombre, user?.rol]);
 
   // Opcional: Forzar sub-pestaña a 'mesas' si el rol es cajero
   useEffect(() => {
@@ -1257,7 +1257,7 @@ export function POSSystem() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header
         currentUser={{
-          username: user.username,
+          username: user.nombre,
           role: user.rol,
           branch: user.sucursal?.id?.toString() || 'N/A',
         }}
@@ -1291,6 +1291,8 @@ export function POSSystem() {
   // Siempre usar el header global para una experiencia unificada (incluye mesero)
   const showHeader = true;
   const headerRole = user.rol === 'super_admin' ? 'admin' : user.rol;
+  
+  // Debug: Log del estado del header
   const roleForOrderMgmt = user.rol === 'super_admin' ? 'admin' : (user.rol === 'mesero' ? 'cajero' : user.rol);
   const roleForSales = user.rol === 'super_admin' ? 'admin' : user.rol;
   // const navigate = useNavigate();
@@ -1323,10 +1325,11 @@ export function POSSystem() {
         />
       )}
       
-      {showHeader && !branchesLoading ? (
-        <Header
+      {showHeader ? (
+        <>
+          <Header
           currentUser={{
-            username: user.username,
+            username: user.nombre,
             role: headerRole as any,
             branch: user.sucursal?.nombre || ''
           }}
@@ -1334,26 +1337,13 @@ export function POSSystem() {
           salesCount={sales.length}
           onLogout={logout}
           branches={branches}
-          selectedBranchId={selectedBranchId ?? undefined}
-          onSucursalChange={isAdmin ? handleSucursalChange : undefined}
+          selectedBranchId={selectedBranchId?.toString() ?? undefined}
+          onSucursalChange={isAdmin ? (branchId: string) => handleSucursalChange(parseInt(branchId)) : undefined}
           onOpenConfig={() => setConfigOpen(true)}
           isHeaderCollapsed={isHeaderCollapsed}
           onToggleHeader={handleToggleHeader}
         />
-      ) : showHeader && branchesLoading ? (
-        <div className="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 border-b border-gray-200/50 shadow-lg backdrop-blur-sm px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl shadow-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">DATY</h1>
-                <p className="text-sm text-gray-600 font-medium">Cargando sucursales...</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        </>
       ) : null}
       {/* Modal de Apertura de Caja */}
       {showArqueoModal && (
@@ -1725,7 +1715,7 @@ export function POSSystem() {
           {/* Vista de Gestión de Pedidos */}
           {activeTab === 'orders' && gestionMesasHabilitada && (
             <div className="p-6">
-              <PlanGate feature="cocina" requiredPlan="profesional">
+              <PlanGate feature="cocina" requiredPlan="basico">
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <OrderManagement
                     orders={orders}

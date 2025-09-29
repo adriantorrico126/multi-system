@@ -44,12 +44,12 @@ const ArqueoRestricted = () => (
     <Card className="border-amber-200 bg-amber-50">
       <CardHeader>
         <CardTitle className="text-center text-amber-800">
-          🔒 Arqueo de Caja - Plan Profesional Requerido
+          🔒 Arqueo de Caja - Plan Básico Requerido
         </CardTitle>
       </CardHeader>
       <CardContent className="text-center space-y-4">
         <p className="text-amber-700">
-          La funcionalidad de <strong>Arqueo de Caja</strong> está disponible únicamente en el plan <strong>Profesional</strong> o superior.
+          La funcionalidad de <strong>Arqueo de Caja</strong> está disponible únicamente en el plan <strong>Básico</strong> o superior.
         </p>
         <p className="text-sm text-amber-600">
           Esta funcionalidad incluye gestión completa de caja diaria, apertura y cierre de caja, y control de efectivo.
@@ -203,7 +203,7 @@ const ArqueoPage: React.FC = () => {
   }
 
   return (
-    <PlanGate feature="arqueo" fallback={<ArqueoRestricted />} requiredPlan="profesional">
+    <PlanGate feature="arqueo" fallback={<ArqueoRestricted />} requiredPlan="basico">
       <div className="p-3 sm:p-6">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-6">Arqueo de Caja Avanzado</h1>
 

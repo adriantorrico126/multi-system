@@ -379,3 +379,5 @@ echo "   3. Revisa los logs de ambos servicios"
 echo "   4. Verifica que no hay conflictos de puertos"
 echo ""
 echo "✅ Diagnóstico completado!"
+
+

@@ -78,7 +78,6 @@
 #### **📦 Inventario (Acceso Limitado):**
 - ✅ **Solo pestañas "Productos" y "Lotes"**
 - ✅ Control de stock avanzado
-- ✅ Sistema de lotes básico
 - ✅ Alertas de stock bajo
 
 #### **📊 Arqueo de Caja:**

@@ -197,3 +197,5 @@ async function probarVentaEfectivo() {
 }
 
 probarVentaEfectivo();
+
+

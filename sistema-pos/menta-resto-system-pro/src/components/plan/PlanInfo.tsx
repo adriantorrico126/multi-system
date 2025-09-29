@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -28,13 +28,11 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
   onUpgrade 
 }) => {
   const { 
-    currentPlan, 
-    planUsage, 
+    planInfo, 
     isLoading, 
     error,
-    getRemainingLimit,
     isLimitExceeded 
-  } = usePlan();
+  } = usePlanSystem();
 
   if (isLoading) {
     return (
@@ -62,7 +60,7 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
     );
   }
 
-  if (!currentPlan) {
+  if (!planInfo?.plan) {
     return (
       <Card className="w-full">
         <CardContent className="p-6">
@@ -115,11 +113,11 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
     }).format(amount);
   };
 
-  const getUsagePercentage = (limit: keyof typeof currentPlan.limites) => {
-    if (!planUsage) return 0;
+  const getUsagePercentage = (limit: keyof typeof planInfo.limites) => {
+    if (!planInfo.uso_actual) return 0;
     
-    const maxLimit = currentPlan.limites[limit];
-    const currentUsage = planUsage[limit] || 0;
+    const maxLimit = planInfo.limites[limit];
+    const currentUsage = planInfo.uso_actual[limit] || 0;
     
     if (maxLimit === 0) return 0; // Ilimitado
     if (maxLimit === currentUsage) return 100;
@@ -138,18 +136,18 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {getPlanIcon(currentPlan.nombre)}
+            {getPlanIcon(planInfo.plan.nombre)}
             <div>
               <CardTitle className="text-lg">
-                Plan {formatPlanName(currentPlan.nombre)}
+                Plan {formatPlanName(planInfo.plan.nombre)}
               </CardTitle>
               <p className="text-sm text-gray-600">
-                {formatCurrency(currentPlan.precio_mensual)}/mes
+                {formatCurrency(planInfo.plan.precio_mensual)}/mes
               </p>
             </div>
           </div>
-          <Badge className={getPlanColor(currentPlan.nombre)}>
-            {formatPlanName(currentPlan.nombre)}
+          <Badge className={getPlanColor(planInfo.plan.nombre)}>
+            {formatPlanName(planInfo.plan.nombre)}
           </Badge>
         </div>
       </CardHeader>
@@ -158,7 +156,7 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
         {/* Descripción del plan */}
         <div>
           <p className="text-sm text-gray-700">
-            {currentPlan.descripcion}
+            {planInfo.plan.descripcion}
           </p>
         </div>
 
@@ -184,11 +182,11 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                   <span className="text-sm text-gray-600">
-                    {planUsage?.sucursales || 0} / {currentPlan.limites.max_sucursales === 0 ? '∞' : currentPlan.limites.max_sucursales}
+                    {planInfo.uso_actual?.sucursales_actuales || 0} / {planInfo.limites.max_sucursales === 0 ? '∞' : planInfo.limites.max_sucursales}
                   </span>
                 </div>
               </div>
-              {currentPlan.limites.max_sucursales > 0 && (
+              {planInfo.limites.max_sucursales > 0 && (
                 <Progress 
                   value={getUsagePercentage('max_sucursales')} 
                   className="h-2"
@@ -210,11 +208,11 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                   <span className="text-sm text-gray-600">
-                    {planUsage?.usuarios || 0} / {currentPlan.limites.max_usuarios === 0 ? '∞' : currentPlan.limites.max_usuarios}
+                    {planInfo.uso_actual?.usuarios_actuales || 0} / {planInfo.limites.max_usuarios === 0 ? '∞' : planInfo.limites.max_usuarios}
                   </span>
                 </div>
               </div>
-              {currentPlan.limites.max_usuarios > 0 && (
+              {planInfo.limites.max_usuarios > 0 && (
                 <Progress 
                   value={getUsagePercentage('max_usuarios')} 
                   className="h-2"
@@ -236,11 +234,11 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   )}
                   <span className="text-sm text-gray-600">
-                    {planUsage?.productos || 0} / {currentPlan.limites.max_productos === 0 ? '∞' : currentPlan.limites.max_productos}
+                    {planInfo.uso_actual?.productos_actuales || 0} / {planInfo.limites.max_productos === 0 ? '∞' : planInfo.limites.max_productos}
                   </span>
                 </div>
               </div>
-              {currentPlan.limites.max_productos > 0 && (
+              {planInfo.limites.max_productos > 0 && (
                 <Progress 
                   value={getUsagePercentage('max_productos')} 
                   className="h-2"
@@ -256,7 +254,7 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
                   <span className="text-sm font-medium">Almacenamiento</span>
                 </div>
                 <span className="text-sm text-gray-600">
-                  {currentPlan.limites.almacenamiento_gb === 0 ? '∞' : `${currentPlan.limites.almacenamiento_gb}GB`}
+                  {planInfo.limites.almacenamiento_gb === 0 ? '∞' : `${planInfo.limites.almacenamiento_gb}GB`}
                 </span>
               </div>
             </div>
@@ -264,7 +262,7 @@ export const PlanInfo: React.FC<PlanInfoProps> = ({
         </div>
 
         {/* Botón de upgrade */}
-        {showUpgrade && currentPlan.nombre !== 'enterprise' && onUpgrade && (
+        {showUpgrade && planInfo.plan.nombre !== 'enterprise' && onUpgrade && (
           <div className="pt-4 border-t">
             <Button 
               onClick={onUpgrade}

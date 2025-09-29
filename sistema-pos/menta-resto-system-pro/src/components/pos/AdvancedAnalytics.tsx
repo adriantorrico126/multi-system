@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { PremiumFeatureGate } from '@/components/plans/PremiumFeatureGate';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -206,7 +206,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState('7d');
   const { toast } = useToast();
-  const { hasFeature, checkFeatureAccess } = usePlan();
+  const { hasFeature } = usePlanSystem();
 
   // Filtros globales para todas las pestañas
   const [fechaInicio, setFechaInicio] = useState(
@@ -476,24 +476,34 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
     const dailyTrend = analyticsData.tendencia_diaria;
     
     // Calcular crecimiento diario promedio
-    const growthRates = dailyTrend.slice(1).map((day, index) => {
-      const prevDay = dailyTrend[index];
-      return ((day.ingresos_dia - prevDay.ingresos_dia) / prevDay.ingresos_dia) * 100;
-    }).filter(rate => !isNaN(rate));
+    const growthRates = dailyTrend && dailyTrend.length > 1 
+      ? dailyTrend.slice(1).map((day, index) => {
+          const prevDay = dailyTrend[index];
+          return ((day.ingresos_dia - prevDay.ingresos_dia) / prevDay.ingresos_dia) * 100;
+        }).filter(rate => !isNaN(rate))
+      : [];
     
     const avgGrowthRate = growthRates.length > 0 
       ? growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length 
       : 0;
 
     // Calcular eficiencia de vendedores
-    const topVendedor = analyticsData.top_vendedores[0];
-    const avgVendedor = analyticsData.top_vendedores.reduce((sum, v) => sum + v.ingresos, 0) / analyticsData.top_vendedores.length;
-    const efficiency = topVendedor ? (topVendedor.ingresos / avgVendedor) * 100 : 0;
+    const topVendedor = analyticsData.top_vendedores && analyticsData.top_vendedores.length > 0 
+      ? analyticsData.top_vendedores[0] 
+      : null;
+    const avgVendedor = analyticsData.top_vendedores && analyticsData.top_vendedores.length > 0
+      ? analyticsData.top_vendedores.reduce((sum, v) => sum + v.ingresos, 0) / analyticsData.top_vendedores.length
+      : 0;
+    const efficiency = topVendedor && avgVendedor > 0 ? (topVendedor.ingresos / avgVendedor) * 100 : 0;
 
     // Calcular rotación de productos
-    const totalProductos = analyticsData.por_tipo_servicio.reduce((sum, tipo) => sum + tipo.cantidad, 0);
-    const topProducto = analyticsData.por_tipo_servicio[0];
-    const productRotation = topProducto ? (topProducto.cantidad / totalProductos) * 100 : 0;
+    const totalProductos = analyticsData.por_tipo_servicio && analyticsData.por_tipo_servicio.length > 0
+      ? analyticsData.por_tipo_servicio.reduce((sum, tipo) => sum + tipo.cantidad, 0)
+      : 0;
+    const topProducto = analyticsData.por_tipo_servicio && analyticsData.por_tipo_servicio.length > 0
+      ? analyticsData.por_tipo_servicio[0]
+      : null;
+    const productRotation = topProducto && totalProductos > 0 ? (topProducto.cantidad / totalProductos) * 100 : 0;
 
     return {
       crecimientoPromedio: avgGrowthRate,
@@ -588,7 +598,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
   }
 
   // Verificar si tiene acceso a analytics avanzados
-  if (!checkFeatureAccess('analytics', false)) {
+  if (!hasFeature('analytics')) {
     return (
       <PremiumFeatureGate 
         feature="analytics" 
@@ -1065,7 +1075,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
-                          data={analyticsData.por_tipo_servicio}
+                          data={analyticsData.por_tipo_servicio || []}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
@@ -1073,7 +1083,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                           dataKey="cantidad"
                           label={({ tipo_servicio, porcentaje }) => `${tipo_servicio}: ${porcentaje}%`}
                         >
-                          {analyticsData.por_tipo_servicio.map((entry, index) => (
+                          {(analyticsData.por_tipo_servicio || []).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -1090,7 +1100,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {analyticsData.top_vendedores.slice(0, 5).map((vendedor, index) => (
+                    {(analyticsData.top_vendedores || []).slice(0, 5).map((vendedor, index) => (
                       <div key={vendedor.id_vendedor} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
@@ -1682,7 +1692,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
     isLoading,
     error,
     activeTab,
-    checkFeatureResult: checkFeatureAccess('analytics', false)
+    checkFeatureResult: hasFeature('analytics')
   });
 
   // Retornar el contenido COMPLETO con todas las pestañas
@@ -2112,7 +2122,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
-                          data={analyticsData.por_tipo_servicio}
+                          data={analyticsData.por_tipo_servicio || []}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
@@ -2120,7 +2130,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                           dataKey="cantidad"
                           label={({ tipo_servicio, porcentaje }) => `${tipo_servicio}: ${porcentaje}%`}
                         >
-                          {analyticsData.por_tipo_servicio.map((entry, index) => (
+                          {(analyticsData.por_tipo_servicio || []).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -2138,7 +2148,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {analyticsData.top_vendedores.slice(0, 5).map((vendedor, index) => (
+                    {(analyticsData.top_vendedores || []).slice(0, 5).map((vendedor, index) => (
                       <div key={vendedor.id_vendedor} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">

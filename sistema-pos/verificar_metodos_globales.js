@@ -185,3 +185,5 @@ async function verificarMetodosGlobales() {
 }
 
 verificarMetodosGlobales();
+
+

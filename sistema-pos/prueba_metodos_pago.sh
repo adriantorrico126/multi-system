@@ -77,3 +77,5 @@ echo "• La mesa se libera automáticamente después del pago"
 echo ""
 echo "✅ SISTEMA LISTO PARA USAR"
 echo "=========================="
+
+

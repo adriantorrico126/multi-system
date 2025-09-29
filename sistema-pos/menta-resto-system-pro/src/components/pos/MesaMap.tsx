@@ -57,7 +57,7 @@ import {
   getReservas
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import type { Mesa, Product, Category, CartItem, User } from '@/types/restaurant'; // Añadir CartItem
 import { cn } from '@/lib/utils'; // Utility for conditional class names
 import { useToast } from '@/hooks/use-toast';
@@ -357,16 +357,17 @@ function OrderCart({ cart, onAdd, onRemove, total }: OrderCartProps) {
 
 export default function MesaMap() {
   const { user } = useAuth();
-  const { currentPlan } = usePlan();
+  const { planInfo } = usePlanSystem();
   const { toast } = useToast();
   const id_sucursal = user?.sucursal?.id;
   const id_restaurante = user?.id_restaurante;
 
   // Funciones para verificar restricciones de plan
   const canTakeOrders = () => {
-    if (!currentPlan) return false;
-    const planName = currentPlan.nombre.toLowerCase();
-    return planName !== 'profesional'; // Solo Avanzado y Enterprise pueden tomar pedidos
+    if (!planInfo?.plan) return false;
+    const planName = planInfo.plan.nombre.toLowerCase();
+    // Todos los planes pueden tomar pedidos (incluido Enterprise)
+    return true;
   };
 
   // DEBUG: Log user and sucursal info

@@ -58,7 +58,7 @@ import {
 } from '@/services/api';
 import MesaConfiguration from './MesaConfiguration';
 import { useAuth } from '@/context/AuthContext';
-import { usePlan } from '@/context/PlanContext';
+import { usePlanSystem } from '@/context/PlanSystemContext';
 import { Mesa } from '@/types/restaurant';
 
 interface EstadisticasMesas {
@@ -79,7 +79,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { hasFeature } = usePlan();
+  const { hasFeature } = usePlanSystem();
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showPrefactura, setShowPrefactura] = useState(false);

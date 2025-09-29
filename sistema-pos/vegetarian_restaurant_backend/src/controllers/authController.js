@@ -50,6 +50,16 @@ exports.login = async (req, res, next) => {
     const sucursalResult = await pool.query(sucursalQuery, [user.id_sucursal]);
     const sucursal = sucursalResult.rows[0];
 
+    // Obtener información del restaurante
+    const restauranteQuery = `
+      SELECT id_restaurante, nombre, ciudad, direccion
+      FROM restaurantes 
+      WHERE id_restaurante = $1 AND activo = true
+    `;
+    
+    const restauranteResult = await pool.query(restauranteQuery, [user.id_restaurante]);
+    const restaurante = restauranteResult.rows[0];
+
     const token = jwt.sign(
       { 
         id: user.id_vendedor,
@@ -58,7 +68,8 @@ exports.login = async (req, res, next) => {
         rol: user.rol,
         id_sucursal: user.id_sucursal,
         sucursal_nombre: sucursal ? sucursal.nombre : null,
-        id_restaurante: user.id_restaurante
+        id_restaurante: user.id_restaurante,
+        restaurante_nombre: restaurante ? restaurante.nombre : null
       },
       envConfig.JWT_SECRET,
       { expiresIn: '24h' } // Aumentar expiración a 24 horas
@@ -74,6 +85,12 @@ exports.login = async (req, res, next) => {
         username: user.username,
         rol: user.rol,
         id_restaurante: user.id_restaurante,
+        restaurante: {
+          id: restaurante.id_restaurante,
+          nombre: restaurante.nombre,
+          ciudad: restaurante.ciudad,
+          direccion: restaurante.direccion
+        },
         sucursal: {
           id: sucursal.id_sucursal,
           nombre: sucursal.nombre,
@@ -205,6 +222,16 @@ exports.refreshToken = async (req, res, next) => {
     const sucursalResult = await pool.query(sucursalQuery, [user.id_sucursal]);
     const sucursal = sucursalResult.rows[0];
 
+    // Obtener información del restaurante
+    const restauranteQuery = `
+      SELECT id_restaurante, nombre, ciudad, direccion
+      FROM restaurantes 
+      WHERE id_restaurante = $1 AND activo = true
+    `;
+    
+    const restauranteResult = await pool.query(restauranteQuery, [user.id_restaurante]);
+    const restaurante = restauranteResult.rows[0];
+
     // Generar nuevo token
     const newToken = jwt.sign(
       { 
@@ -214,7 +241,8 @@ exports.refreshToken = async (req, res, next) => {
         rol: user.rol,
         id_sucursal: user.id_sucursal,
         sucursal_nombre: sucursal ? sucursal.nombre : null,
-        id_restaurante: user.id_restaurante
+        id_restaurante: user.id_restaurante,
+        restaurante_nombre: restaurante ? restaurante.nombre : null
       },
       envConfig.JWT_SECRET,
       { expiresIn: '24h' }
@@ -230,6 +258,12 @@ exports.refreshToken = async (req, res, next) => {
         username: user.username,
         rol: user.rol,
         id_restaurante: user.id_restaurante,
+        restaurante: restaurante ? {
+          id: restaurante.id_restaurante,
+          nombre: restaurante.nombre,
+          ciudad: restaurante.ciudad,
+          direccion: restaurante.direccion
+        } : null,
         sucursal: sucursal ? {
           id: sucursal.id_sucursal,
           nombre: sucursal.nombre,
