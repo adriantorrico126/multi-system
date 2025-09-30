@@ -435,18 +435,16 @@
   @apply bg-red-50 border-red-200 text-red-800;
 }
 
-/* Header colapsable para móvil */
+/* Header colapsable para móvil - Diseño profesional */
 .header-collapsible {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-collapsible.collapsed {
-  height: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
   overflow: hidden;
-  padding: 0 !important;
-  margin: 0 !important;
 }
 
 .header-collapsible.collapsed .header-content {
@@ -460,7 +458,20 @@
 }
 
 .header-collapsible .header-content {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Header compacto por defecto en móvil */
+@media (max-width: 768px) {
+  .header-collapsible {
+    min-height: 48px;
+  }
+  
+  .header-collapsible.collapsed {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+  }
 }
 
 /* Botón de alternar header */

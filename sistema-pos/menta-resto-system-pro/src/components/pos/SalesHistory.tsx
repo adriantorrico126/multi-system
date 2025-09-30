@@ -28,6 +28,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import { Sale } from '@/types/restaurant';
 import { SaleDetailsModal } from './SaleDetailsModal';
 import { AdvancedAnalytics } from './AdvancedAnalytics';
+import { MobileAdvancedAnalytics } from './MobileAdvancedAnalytics';
 import { getBranches, getProducts, getPaymentMethods, getUsers } from '@/services/api';
 import { PlanGate } from '@/components/plan/PlanGate';
 
@@ -185,17 +186,18 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header con pestañas */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex gap-2">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header con pestañas - Optimizado para móvil */}
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           <Button
             variant={activeTab === 'historial' ? 'default' : 'outline'}
             onClick={() => setActiveTab('historial')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap text-sm px-3 py-2 min-w-fit"
           >
             <FileText className="h-4 w-4" />
-            Historial
+            <span className="hidden sm:inline">Historial</span>
+            <span className="sm:hidden">Ventas</span>
           </Button>
           <Button
             variant={activeTab === 'avanzadas' ? 'default' : 'outline'}
@@ -203,171 +205,203 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
               console.log('🔍 [SALES-HISTORY] Clic en "Funciones Avanzadas"');
               setActiveTab('avanzadas');
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap text-sm px-3 py-2 min-w-fit"
           >
             <BarChart3 className="h-4 w-4" />
-            Funciones Avanzadas
+            <span className="hidden sm:inline">Funciones Avanzadas</span>
+            <span className="sm:hidden">Analytics</span>
           </Button>
         </div>
       </div>
 
       {/* Contenido del historial */}
       {activeTab === 'historial' && (
-        <div className="space-y-4">
-          {/* Filtros de búsqueda */}
+        <div className="space-y-3 md:space-y-4">
+          {/* Filtros de búsqueda - Optimizado para móvil */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex gap-4 items-center">
-                <div className="relative flex-1">
+            <CardContent className="p-3 md:p-4">
+              <div className="space-y-3">
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Buscar por ID, mesa, servicio, estado..."
+                    placeholder="Buscar ventas..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 text-sm md:text-base"
                   />
+                </div>
+                {/* Contador de resultados */}
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>{filteredSales.length} venta{filteredSales.length !== 1 ? 's' : ''} encontrada{filteredSales.length !== 1 ? 's' : ''}</span>
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchTerm('')}
+                      className="text-xs h-6 px-2"
+                    >
+                      Limpiar
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Tabla de ventas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Ventas ({filteredSales.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredSales.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Servicio</TableHead>
-                        <TableHead>Mesa</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredSales.map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell className="font-medium">#{sale.id}</TableCell>
-                          <TableCell>{formatDate(getSaleDate(sale) || '')}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{sale.tipo_servicio || 'N/A'}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {sale.mesa_numero ? `Mesa ${sale.mesa_numero}` : '-'}
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            {formatCurrency(sale.total || 0)}
-                          </TableCell>
-                          <TableCell>
+          {/* Lista de ventas - Optimizada para móvil */}
+          {filteredSales.length > 0 ? (
+            <div className="space-y-3">
+              {filteredSales.map((sale) => (
+                <Card key={sale.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        {/* Header de la venta */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              #{sale.id}
+                            </Badge>
                             <Badge 
                               variant={sale.estado === 'completada' ? 'default' : 'secondary'}
+                              className="text-xs"
                             >
                               {sale.estado || 'N/A'}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleShowDetails(sale)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver Detalles
-                                </DropdownMenuItem>
-                                {userRole === 'admin' && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteSale(sale.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Eliminar
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                          <span className="text-lg font-bold text-green-600">
+                            {formatCurrency(sale.total || 0)}
+                          </span>
+                        </div>
+
+                        {/* Detalles de la venta */}
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(getSaleDate(sale) || '')}</span>
+                          </div>
+                          {sale.tipo_servicio && (
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-3 w-3" />
+                              <span>{sale.tipo_servicio}</span>
+                            </div>
+                          )}
+                          {sale.mesa_numero && (
+                            <div className="flex items-center gap-2">
+                              <Package className="h-3 w-3" />
+                              <span>Mesa {sale.mesa_numero}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Botón de acciones */}
+                      <div className="ml-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleShowDetails(sale)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Detalles
+                            </DropdownMenuItem>
+                            {userRole === 'admin' && (
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteSale(sale.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8">
+                <div className="text-center text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No se encontraron ventas</p>
+                  <p className="text-sm">
+                    {searchTerm ? 'Intenta con otros términos de búsqueda' : 'No hay ventas registradas'}
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No se encontraron ventas
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
-      {/* Funciones avanzadas */}
+      {/* Funciones avanzadas - Optimizado para móvil */}
       {activeTab === 'avanzadas' && (
         <PlanGate feature="sales.avanzado" fallback={<FuncionesAvanzadasRestricted />} requiredPlan="basico">
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-3 md:p-6">
             {!showAdvancedAnalytics ? (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold mb-4">Funciones Avanzadas</h3>
-                  <p className="text-gray-600 mb-8">Accede a analytics avanzados y métricas detalladas</p>
+                  <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Funciones Avanzadas</h3>
+                  <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Accede a analytics avanzados y métricas detalladas</p>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
                     console.log('🔍 [SALES-HISTORY] Clic en "Analytics Avanzados"');
                     setShowAdvancedAnalytics(true);
                   }}>
-                    <CardContent className="p-6 text-center">
-                      <BarChart3 className="h-12 w-12 mx-auto mb-4 text-blue-500" />
-                      <h4 className="text-lg font-semibold mb-2">Analytics Avanzados</h4>
-                      <p className="text-sm text-gray-600">Métricas, KPIs y gráficas interactivas</p>
+                    <CardContent className="p-4 md:p-6 text-center">
+                      <BarChart3 className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-blue-500" />
+                      <h4 className="text-base md:text-lg font-semibold mb-2">Analytics Avanzados</h4>
+                      <p className="text-xs md:text-sm text-gray-600">Métricas, KPIs y gráficas interactivas</p>
                     </CardContent>
                   </Card>
 
                   <Card className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6 text-center">
-                      <Download className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                      <h4 className="text-lg font-semibold mb-2">Exportar Excel</h4>
-                      <p className="text-sm text-gray-600">Exportación con filtros avanzados</p>
+                    <CardContent className="p-4 md:p-6 text-center">
+                      <Download className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-green-500" />
+                      <h4 className="text-base md:text-lg font-semibold mb-2">Exportar Excel</h4>
+                      <p className="text-xs md:text-sm text-gray-600">Exportación con filtros avanzados</p>
                     </CardContent>
                   </Card>
 
                   <Card className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6 text-center">
-                      <TrendingUp className="h-12 w-12 mx-auto mb-4 text-purple-500" />
-                      <h4 className="text-lg font-semibold mb-2">Tendencias</h4>
-                      <p className="text-sm text-gray-600">Análisis de tendencias temporales</p>
+                    <CardContent className="p-4 md:p-6 text-center">
+                      <TrendingUp className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-purple-500" />
+                      <h4 className="text-base md:text-lg font-semibold mb-2">Tendencias</h4>
+                      <p className="text-xs md:text-sm text-gray-600">Análisis de tendencias temporales</p>
                     </CardContent>
                   </Card>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 mb-6">
+              <div className="space-y-3 md:space-y-4">
+                <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                   <Button 
                     variant="outline" 
                     onClick={() => setShowAdvancedAnalytics(false)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-sm"
                   >
                     ← Volver
                   </Button>
-                  <h3 className="text-xl font-bold">Analytics Avanzados</h3>
+                  <h3 className="text-lg md:text-xl font-bold">Analytics Avanzados</h3>
                 </div>
                 {(() => {
                   console.log('🔍 [SALES-HISTORY] Renderizando AdvancedAnalytics con userRole:', userRole);
                   return null;
                 })()}
-                <AdvancedAnalytics userRole={userRole} />
+                {mobileInfo.isMobile ? (
+                  <MobileAdvancedAnalytics userRole={userRole} />
+                ) : (
+                  <AdvancedAnalytics userRole={userRole} />
+                )}
               </div>
             )}
           </div>

@@ -182,3 +182,4 @@ Si el despliegue sigue fallando, revisar:
 1. Configurar Vercel Analytics
 2. Implementar error tracking (Sentry)
 3. Configurar alertas de performance
+

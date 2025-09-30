@@ -146,3 +146,4 @@ testContadoresDeployment()
         process.exit(1);
     });
 
+

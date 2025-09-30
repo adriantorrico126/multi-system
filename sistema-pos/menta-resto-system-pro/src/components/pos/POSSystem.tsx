@@ -57,7 +57,8 @@ import {
   Receipt,
   Database,
   UserCheck,
-  Crown
+  Crown,
+  ChefHat
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
@@ -129,8 +130,12 @@ export function POSSystem() {
   
   // Funciones para verificar restricciones de plan  
   const canAccessOrders = useMemo(() => {
+    // Los admins y super_admins tienen acceso completo a cocina
+    if (['admin', 'super_admin'].includes(user?.rol)) {
+      return true;
+    }
     return hasFeature('orders');
-  }, [hasFeature]);
+  }, [hasFeature, user?.rol]);
   
   const canAccessPromociones = useMemo(() => {
     return hasFeature('incluye_promociones');
@@ -1145,8 +1150,8 @@ export function POSSystem() {
    */
   const handleTabChange = useCallback(
     (value: string) => {
-      if (user?.rol === 'cocinero' && value !== 'orders') {
-        // Los cocineros solo pueden ver la pestaña de órdenes
+      if (user?.rol === 'cocinero' && value !== 'orders' && value !== 'kitchen') {
+        // Los cocineros solo pueden ver la pestaña de órdenes y cocina
         toast({
           title: 'Acceso Restringido',
           description: 'Tu rol no permite acceder a esta sección.',
@@ -1227,6 +1232,11 @@ export function POSSystem() {
 
   // Determinar la sucursal actual para el Header
   const currentBranchForHeader = React.useMemo(() => {
+    console.log('🔄 [HEADER] Recalculando currentBranchForHeader...');
+    console.log('🔄 [HEADER] selectedBranch:', selectedBranch);
+    console.log('🔄 [HEADER] user.sucursal:', user.sucursal);
+    console.log('🔄 [HEADER] selectedBranchId:', selectedBranchId);
+    
     const branch = selectedBranch
       ? {
           id: Number(selectedBranch.id_sucursal ?? selectedBranch.id ?? 0),
@@ -1241,9 +1251,9 @@ export function POSSystem() {
         }
       : undefined;
     
-    console.log('🔍 currentBranchForHeader Debug - selectedBranch:', selectedBranch, 'user.sucursal:', user.sucursal, 'result:', branch);
+    console.log('✅ [HEADER] currentBranchForHeader result:', branch);
     return branch;
-  }, [selectedBranch, user.sucursal]);
+  }, [selectedBranch, user.sucursal, selectedBranchId]);
 
   // --- Renderizado Condicional Basado en el Rol del Usuario ---
 
@@ -1262,15 +1272,7 @@ export function POSSystem() {
           role: user.rol,
           branch: user.sucursal?.id?.toString() || 'N/A',
         }}
-        currentBranch={
-          user.sucursal
-            ? {
-                id: Number(user.sucursal.id ?? 0),
-                name: user.sucursal.nombre,
-                location: `${user.sucursal.ciudad} - ${user.sucursal.direccion}`,
-              }
-            : undefined
-        }
+        currentBranch={currentBranchForHeader}
         salesCount={sales.length}
         onLogout={handleLogout}
       />
@@ -1428,31 +1430,6 @@ export function POSSystem() {
             <span className="sm:hidden">POS</span>
           </Button>
           {gestionMesasHabilitada && (
-            <>
-              <Button
-                variant={activeTab === 'orders' ? 'default' : 'outline'}
-                onClick={() => {
-                  if (canAccessOrders) {
-                    handleTabChange('orders');
-                  } else {
-                    toast({
-                      title: 'Funcionalidad Restringida',
-                      description: 'El módulo de gestión de pedidos está disponible en planes superiores. Aquí puedes ver el estado de los pedidos y cancelarlos.',
-                      variant: 'destructive',
-                    });
-                  }
-                }}
-                className={`rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button ${!canAccessOrders ? 'opacity-50' : ''}`}
-                disabled={!canAccessOrders}
-              >
-                <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Pedidos</span>
-                <span className="sm:hidden">Pedidos</span>
-                {!canAccessOrders && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
-              </Button>
-            </>
-          )}
-          {gestionMesasHabilitada && (
             <Button
               variant={activeTab === 'mesas' ? 'default' : 'outline'}
               onClick={() => handleTabChange('mesas')}
@@ -1463,6 +1440,36 @@ export function POSSystem() {
               <span className="sm:hidden">Mesas</span>
             </Button>
           )}
+          <Button
+            variant={activeTab === 'orders' ? 'default' : 'outline'}
+            onClick={() => {
+              if (canAccessOrders || ['admin', 'super_admin'].includes(user?.rol)) {
+                handleTabChange('orders');
+              } else {
+                toast({
+                  title: 'Funcionalidad Restringida',
+                  description: 'El módulo de gestión de pedidos está disponible en planes superiores.',
+                  variant: 'destructive',
+                });
+              }
+            }}
+            className={`rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button ${!canAccessOrders && !['admin', 'super_admin'].includes(user?.rol) ? 'opacity-50' : ''}`}
+            disabled={!canAccessOrders && !['admin', 'super_admin'].includes(user?.rol)}
+          >
+            <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Pedidos</span>
+            <span className="sm:hidden">Pedidos</span>
+            {!canAccessOrders && !['admin', 'super_admin'].includes(user?.rol) && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
+          </Button>
+          <Button
+            variant={activeTab === 'kitchen' ? 'default' : 'outline'}
+            onClick={() => handleTabChange('kitchen')}
+            className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+          >
+            <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Cocina</span>
+            <span className="sm:hidden">Cocina</span>
+          </Button>
           {user.rol !== 'mesero' && (
             <Button 
               onClick={goCaja} 
@@ -1724,6 +1731,15 @@ export function POSSystem() {
                   />
                 </div>
               </PlanGate>
+            </div>
+          )}
+
+          {/* Vista de Cocina - Pantalla del Cocinero */}
+          {activeTab === 'kitchen' && (
+            <div className="p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                <KitchenView />
+              </div>
             </div>
           )}
 

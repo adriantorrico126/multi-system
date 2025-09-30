@@ -40,6 +40,7 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useMobile } from '@/hooks/use-mobile';
+import { MobileHeaderAdvanced } from './MobileHeaderAdvanced';
 
 interface HeaderProps {
   currentBranch?: any;
@@ -377,39 +378,41 @@ export function Header({
   );
 
     return (
-    <div className={`bg-gradient-to-r from-white via-gray-50/50 to-white border-b border-gray-200/50 shadow-lg backdrop-blur-sm transition-all duration-300 header-collapsible ${
-      mobileInfo.isMobile && isHeaderCollapsed ? 'collapsed' : ''
-    }`}>
+    <>
+      {/* Header principal */}
+      <div className={`bg-white/95 backdrop-blur-md border-b border-gray-200/60 shadow-sm transition-all duration-300 header-collapsible ${
+        mobileInfo.isMobile && isHeaderCollapsed ? 'collapsed' : ''
+      }`}>
       <header className={`transition-all duration-300 header-content ${
-        mobileInfo.isMobile && isHeaderCollapsed ? 'px-2 py-1' : 'px-6 sm:px-8 py-4 sm:py-6'
+        mobileInfo.isMobile && isHeaderCollapsed ? 'px-3 py-2' : 'px-4 py-3'
       }`}>
         <div className="flex items-center justify-between">
           {/* Logo y título */}
           <div className={`flex items-center transition-all duration-300 ${
             mobileInfo.isMobile && isHeaderCollapsed ? 'space-x-2' : 'space-x-4 sm:space-x-6'
           }`}>
-            <div className={`bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-xl transition-all duration-300 ${
-              mobileInfo.isMobile && isHeaderCollapsed ? 'w-6 h-6' : 'w-12 h-12 sm:w-14 sm:h-14'
+            <div className={`bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 ${
+              mobileInfo.isMobile && isHeaderCollapsed ? 'w-7 h-7' : 'w-10 h-10'
             }`}>
               <FaUtensils className={`text-white transition-all duration-300 ${
-                mobileInfo.isMobile && isHeaderCollapsed ? 'text-xs' : 'text-xl sm:text-2xl'
+                mobileInfo.isMobile && isHeaderCollapsed ? 'text-sm' : 'text-lg'
               }`} />
             </div>
             <div className={`min-w-0 transition-all duration-300 ${
               mobileInfo.isMobile && isHeaderCollapsed ? 'hidden' : ''
             }`}>
-              <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent truncate">
-                Forkast POS
-              </h1>
-              <div className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-sm sm:text-base text-gray-600 font-medium truncate">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent truncate">
+                  Forkast POS
+                </h1>
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                  <p className="text-xs text-gray-600 font-medium truncate">
                     {user?.restaurante?.nombre || 'Restaurante'}
                   </p>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-500 font-normal truncate">
-                  {user?.sucursal?.nombre || (currentBranch ? getBranchName(currentBranch) : 'Selecciona una sucursal')}
+                <p className="text-xs text-gray-500 truncate">
+                  {currentBranch ? getBranchName(currentBranch) : (user?.sucursal?.nombre || 'Selecciona una sucursal')}
                 </p>
               </div>
             </div>
@@ -441,22 +444,25 @@ export function Header({
             ))}
           </div>
 
-          {/* Botón para alternar header en móvil */}
+          {/* Botón para alternar header en móvil - Diseño profesional */}
           {mobileInfo.isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleHeader}
-              className={`lg:hidden rounded-lg hover:bg-gray-100 transition-all duration-200 header-toggle-btn shadow-md hover:shadow-lg ${
-                isHeaderCollapsed ? 'p-1' : 'p-2'
-              }`}
-            >
-              {isHeaderCollapsed ? (
-                <FaBars className="h-4 w-4 text-gray-600" />
-              ) : (
-                <FaTimes className="h-5 w-5 text-gray-600" />
-              )}
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleHeader}
+                className="lg:hidden w-8 h-8 rounded-lg bg-gray-50/80 hover:bg-gray-100 border border-gray-200/50 transition-all duration-200 hover:scale-105 touch-manipulation"
+                aria-label={isHeaderCollapsed ? "Expandir header" : "Colapsar header"}
+              >
+                <div className="relative w-4 h-4 flex flex-col justify-center items-center">
+                  {isHeaderCollapsed ? (
+                    <FaBars className="h-3 w-3 text-gray-700" />
+                  ) : (
+                    <FaTimes className="h-3 w-3 text-gray-700" />
+                  )}
+                </div>
+              </Button>
+            </div>
           )}
 
                                {/* Información del usuario y controles */}
@@ -594,8 +600,19 @@ export function Header({
                )}
              </div>
 
-                         {/* Menú móvil */}
-             <MobileNavigation />
+                         {/* Menú móvil avanzado corregido */}
+             <MobileHeaderAdvanced 
+               currentBranch={currentBranch}
+               branches={branches}
+               onBranchChange={onSucursalChange}
+               selectedBranchId={selectedBranchId}
+               salesCount={salesCount}
+               onLogout={onLogout}
+               onOpenConfig={onOpenConfig}
+               isHeaderCollapsed={isHeaderCollapsed}
+               onToggleHeader={onToggleHeader}
+               cartItemsCount={salesCount}
+             />
  
              {/* Controles de usuario - Desktop */}
              <div className="hidden md:flex items-center space-x-3">
@@ -650,7 +667,8 @@ export function Header({
           </div>
         </div>
       </header>
-    </div>
+      </div>
+    </>
   );
 }
 
