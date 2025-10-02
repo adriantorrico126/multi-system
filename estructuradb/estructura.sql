@@ -305,6 +305,7 @@ inventario_lotes	id_categoria_almacen	integer
 inventario_lotes	ubicacion_especifica	character varying
 inventario_lotes	proveedor	character varying
 inventario_lotes	certificacion_organica	boolean
+inventario_lotes	id_sucursal	integer
 leads_prospectos	id	integer
 leads_prospectos	nombre	character varying
 leads_prospectos	email	character varying
@@ -375,6 +376,8 @@ movimientos_inventario	id_restaurante	integer
 movimientos_inventario	id_lote	integer
 movimientos_inventario	id_categoria_almacen	integer
 movimientos_inventario	motivo	text
+movimientos_inventario	id_sucursal	integer
+movimientos_inventario	observaciones	text
 newsletter_suscriptores	id	integer
 newsletter_suscriptores	email	character varying
 newsletter_suscriptores	nombre	character varying
@@ -571,6 +574,17 @@ soporte_tickets	estado	character varying
 soporte_tickets	fecha_creacion	timestamp without time zone
 soporte_tickets	fecha_resuelto	timestamp without time zone
 soporte_tickets	respuesta	text
+stock_sucursal	id_stock_sucursal	integer
+stock_sucursal	id_producto	integer
+stock_sucursal	id_sucursal	integer
+stock_sucursal	stock_actual	integer
+stock_sucursal	stock_minimo	integer
+stock_sucursal	stock_maximo	integer
+stock_sucursal	activo	boolean
+stock_sucursal	created_at	timestamp without time zone
+stock_sucursal	updated_at	timestamp without time zone
+stock_sucursal	fecha_creacion	timestamp without time zone
+stock_sucursal	fecha_actualizacion	timestamp without time zone
 sucursales	id_sucursal	integer
 sucursales	nombre	character varying
 sucursales	ciudad	character varying

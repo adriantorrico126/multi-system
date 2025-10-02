@@ -17,6 +17,27 @@ export default defineConfig(({ mode }) => {
       },
       dedupe: ['react', 'react-dom'], // Evita múltiples instancias de React en dev
     },
+    // Configuración de build optimizada para evitar problemas de caché
+    build: {
+      rollupOptions: {
+        output: {
+          // Agregar hash único a los archivos para evitar caché
+          entryFileNames: `assets/[name]-[hash].js`,
+          chunkFileNames: `assets/[name]-[hash].js`,
+          assetFileNames: `assets/[name]-[hash].[ext]`,
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+            utils: ['axios', 'socket.io-client']
+          }
+        }
+      },
+      // Configuración específica para producción
+      sourcemap: mode === 'development',
+      minify: mode === 'production',
+      // Configurar caché del build
+      cache: false // Deshabilitar caché del build para forzar reconstrucción
+    },
     server: {
       host: '::', // Permite acceso desde red local (útil para testing en móvil)
       port: 8080,

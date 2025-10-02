@@ -1,0 +1,133 @@
+{
+  "table": "sucursales",
+  "timestamp": "2025-09-30T19:32:01.798Z",
+  "rowCount": 14,
+  "data": [
+    {
+      "id_sucursal": 3,
+      "nombre": "Sucursal Fidel Anze",
+      "ciudad": "Cochabamba",
+      "direccion": "Av. Fidel Anze",
+      "activo": true,
+      "created_at": "2025-07-02T21:15:37.271Z",
+      "id_restaurante": 1
+    },
+    {
+      "id_sucursal": 4,
+      "nombre": "Sucursal 16 de Julio",
+      "ciudad": "Cochabamba",
+      "direccion": "Calle 16 de Julio",
+      "activo": true,
+      "created_at": "2025-07-02T21:15:37.271Z",
+      "id_restaurante": 1
+    },
+    {
+      "id_sucursal": 5,
+      "nombre": "Sucursal Santa Cruz",
+      "ciudad": "Santa Cruz de la Sierra",
+      "direccion": "Av. Principal, Santa Cruz",
+      "activo": true,
+      "created_at": "2025-07-02T21:15:37.271Z",
+      "id_restaurante": 1
+    },
+    {
+      "id_sucursal": 6,
+      "nombre": "Torrico",
+      "ciudad": "cochabamba",
+      "direccion": "Niceto Rodriguez",
+      "activo": true,
+      "created_at": "2025-07-12T17:10:36.518Z",
+      "id_restaurante": 1
+    },
+    {
+      "id_sucursal": 7,
+      "nombre": "Sucursal Principal",
+      "ciudad": "Ciudad Demo",
+      "direccion": "Dirección Sucursal 456",
+      "activo": true,
+      "created_at": "2025-07-14T20:35:07.782Z",
+      "id_restaurante": 3
+    },
+    {
+      "id_sucursal": 1,
+      "nombre": "Sucursal Principal",
+      "ciudad": "Ciudad",
+      "direccion": "Dirección Principal",
+      "activo": true,
+      "created_at": "2025-07-18T04:45:49.723Z",
+      "id_restaurante": 1
+    },
+    {
+      "id_sucursal": 10,
+      "nombre": "Sucursal Principal",
+      "ciudad": "Cochabamba",
+      "direccion": "Av. los robles esq Ananas",
+      "activo": true,
+      "created_at": "2025-09-01T13:59:33.053Z",
+      "id_restaurante": 8
+    },
+    {
+      "id_sucursal": 11,
+      "nombre": "Sucursal Principal",
+      "ciudad": "La Paz",
+      "direccion": "Calle Prueba 123",
+      "activo": true,
+      "created_at": "2025-09-10T18:57:12.918Z",
+      "id_restaurante": 9
+    },
+    {
+      "id_sucursal": 9,
+      "nombre": "Sacaba",
+      "ciudad": "cochabamba",
+      "direccion": "Delfin cordova",
+      "activo": true,
+      "created_at": "2025-08-22T18:09:05.416Z",
+      "id_restaurante": 7
+    },
+    {
+      "id_sucursal": 8,
+      "nombre": "Sucursal Principal",
+      "ciudad": "la Paz",
+      "direccion": "Niceto Rodriguez",
+      "activo": true,
+      "created_at": "2025-08-22T16:01:47.427Z",
+      "id_restaurante": 7
+    },
+    {
+      "id_sucursal": 12,
+      "nombre": "TIQUIPAYA",
+      "ciudad": "Cochabamba",
+      "direccion": "Av. Ecológica, Cochabamba, Bolivia",
+      "activo": true,
+      "created_at": "2025-09-06T01:12:24.499Z",
+      "id_restaurante": 10
+    },
+    {
+      "id_sucursal": 13,
+      "nombre": "SACABA",
+      "ciudad": "Cochabamba",
+      "direccion": "sacaba km5",
+      "activo": true,
+      "created_at": "2025-09-08T18:59:10.890Z",
+      "id_restaurante": 10
+    },
+    {
+      "id_sucursal": 14,
+      "nombre": "SIGLO XX",
+      "ciudad": "Cochabamba",
+      "direccion": "Avenida siglo XX",
+      "activo": true,
+      "created_at": "2025-09-08T18:59:57.873Z",
+      "id_restaurante": 10
+    },
+    {
+      "id_sucursal": 15,
+      "nombre": "HUMBOLDT",
+      "ciudad": "Cochabamba",
+      "direccion": "Avenida Humboldt",
+      "activo": true,
+      "created_at": "2025-09-08T19:00:41.344Z",
+      "id_restaurante": 10
+    }
+  ]
+}

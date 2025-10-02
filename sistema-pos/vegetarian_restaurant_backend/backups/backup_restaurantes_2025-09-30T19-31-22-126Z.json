@@ -1,0 +1,87 @@
+{
+  "table": "restaurantes",
+  "timestamp": "2025-09-30T19:31:22.189Z",
+  "rowCount": 8,
+  "data": [
+    {
+      "id_restaurante": 1,
+      "nombre": "Restaurante Principal",
+      "direccion": "Dirección Principal",
+      "ciudad": "Ciudad Principal",
+      "telefono": "123456789",
+      "email": "info@restaurante.com",
+      "activo": true,
+      "created_at": "2025-07-12T16:19:11.710Z"
+    },
+    {
+      "id_restaurante": 3,
+      "nombre": "Restaurante Demo",
+      "direccion": "Dirección Demo 123",
+      "ciudad": "Ciudad Demo",
+      "telefono": "+1234567890",
+      "email": "demo@restaurante.com",
+      "activo": true,
+      "created_at": "2025-07-14T20:35:07.774Z"
+    },
+    {
+      "id_restaurante": 4,
+      "nombre": "Delizia",
+      "direccion": "Niceto Rodriguez",
+      "ciudad": "la Paz",
+      "telefono": "72724814",
+      "email": "jose@gmail.com",
+      "activo": true,
+      "created_at": "2025-08-22T13:14:24.742Z"
+    },
+    {
+      "id_restaurante": 5,
+      "nombre": "delicia",
+      "direccion": "Niceto Rodriguez",
+      "ciudad": "la Paz",
+      "telefono": "71714814",
+      "email": "jose@gmail.com",
+      "activo": true,
+      "created_at": "2025-08-22T13:17:12.495Z"
+    },
+    {
+      "id_restaurante": 7,
+      "nombre": "Torricos",
+      "direccion": "Niceto Rodriguez",
+      "ciudad": "la Paz",
+      "telefono": "69512310",
+      "email": "adri@gmail.com",
+      "activo": true,
+      "created_at": "2025-08-22T13:24:13.075Z"
+    },
+    {
+      "id_restaurante": 8,
+      "nombre": "La creme de la creme",
+      "direccion": "Av. los robles esq Ananas",
+      "ciudad": "Cochabamba",
+      "telefono": "76983039",
+      "email": "cremedelacremecbba@gmail.com",
+      "activo": true,
+      "created_at": "2025-09-01T13:59:33.003Z"
+    },
+    {
+      "id_restaurante": 9,
+      "nombre": "Restaurante Prueba Planes",
+      "direccion": "Calle Prueba 123",
+      "ciudad": "La Paz",
+      "telefono": "12345678",
+      "email": "prueba@restaurante.com",
+      "activo": true,
+      "created_at": "2025-09-10T18:57:12.897Z"
+    },
+    {
+      "id_restaurante": 10,
+      "nombre": "Pizzeria Il Capriccio",
+      "direccion": "Av. Ecológica, Cochabamba, Bolivia",
+      "ciudad": "Cochabamba",
+      "telefono": "75998430",
+      "email": null,
+      "activo": true,
+      "created_at": "2025-09-06T01:12:24.499Z"
+    }
+  ]
+}

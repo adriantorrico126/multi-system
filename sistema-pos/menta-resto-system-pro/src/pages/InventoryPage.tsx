@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { InventoryDashboard } from '../components/inventory/InventoryDashboard';
 import { LotesManagement } from '../components/inventory/LotesManagement';
 import { InventoryReports } from '../components/inventory/InventoryReports';
+import { StockByBranchManagement } from '../components/inventory/StockByBranchManagement';
+import { updateStockByBranch } from '../services/api';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
@@ -31,7 +33,8 @@ import {
   User,
   DollarSign,
   Crown,
-  ArrowUp
+  ArrowUp,
+  Building
 } from 'lucide-react';
 import { 
   getLotesPorVencer,
@@ -47,6 +50,8 @@ interface Product {
   stock_actual: number;
   precio: number;
   categoria_nombre: string;
+  stock_minimo?: number;
+  stock_maximo?: number;
 }
 
 interface Movement {
@@ -108,8 +113,10 @@ const InventoryPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [changeAmount, setChangeAmount] = useState<string>('');
   const [movementType, setMovementType] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'productos' | 'lotes' | 'reportes'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'productos' | 'lotes' | 'stock-sucursal' | 'reportes'>('dashboard');
   const [filteredInventory, setFilteredInventory] = useState<Product[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [productSearchTerm, setProductSearchTerm] = useState<string>(''); // Search term for products
   
   // Estados para modales de información y menú móvil
   const [selectedProductForInfo, setSelectedProductForInfo] = useState<Product | null>(null);
@@ -132,6 +139,8 @@ const InventoryPage: React.FC = () => {
         return hasFeature('incluye_inventario_basico');
       case 'lotes':
         return hasFeature('incluye_inventario_avanzado');
+      case 'stock-sucursal':
+        return hasFeature('incluye_inventario_avanzado') && (role === 'admin' || role === 'super_admin');
       case 'reportes':
         return hasFeature('incluye_reportes_avanzados');
       default:
@@ -165,6 +174,14 @@ const InventoryPage: React.FC = () => {
           description: hasFeature('incluye_inventario_avanzado') ? 'Control de lotes y fechas de vencimiento' : 'Plan Básico: No disponible',
           upgradeMessage: hasFeature('incluye_inventario_avanzado') ? '' : 'Actualiza tu plan para gestionar lotes'
         };
+      case 'stock-sucursal':
+        return {
+          icon: Building,
+          text: 'Stock por Sucursal',
+          available: isTabAvailable('stock-sucursal'),
+          description: hasFeature('incluye_inventario_avanzado') && (role === 'admin' || role === 'super_admin') ? 'Gestión avanzada de stock por sucursal' : 'Solo administradores con plan Avanzado',
+          upgradeMessage: hasFeature('incluye_inventario_avanzado') && (role === 'admin' || role === 'super_admin') ? '' : 'Funcionalidad exclusiva para administradores con plan Avanzado'
+        };
       case 'reportes':
         return {
           icon: TrendingUp,
@@ -188,12 +205,12 @@ const InventoryPage: React.FC = () => {
   useEffect(() => {
     if (currentPlan) {
       const planName = currentPlan.toLowerCase();
-      // Para todos los planes, establecer 'productos' como pestaña activa por defecto
-      if (activeTab === 'dashboard' || activeTab === 'reportes') {
+      // Solo establecer 'productos' como pestaña activa por defecto si no hay pestaña activa
+      if (!activeTab || (activeTab === 'dashboard' && !isTabAvailable('dashboard')) || (activeTab === 'reportes' && !isTabAvailable('reportes'))) {
         setActiveTab('productos');
       }
     }
-  }, [currentPlan, activeTab]);
+  }, [currentPlan]); // Remover activeTab de las dependencias para evitar loop
 
   const openProductInfoDialog = (product: Product) => {
     setSelectedProductForInfo(product);
@@ -205,13 +222,29 @@ const InventoryPage: React.FC = () => {
     setIsMovementInfoDialogOpen(true);
   };
 
-  const fetchInventoryData = async () => {
+  const fetchInventoryData = async (branchId?: number) => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('jwtToken');
+      
+      // Usar el branchId proporcionado directamente, sin depender del estado selectedBranch
+      // Si branchId es undefined, significa que se deben cargar todos los productos
+      const currentBranchId = branchId;
+      
+      // Construir URL para productos según si hay filtro de sucursal
+      let productosUrl = `${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`;
+      if (currentBranchId) {
+        productosUrl = `${import.meta.env.VITE_BACKEND_URL}/productos?id_sucursal=${currentBranchId}`;
+      }
+      
+      console.log('🔍 Frontend: fetchInventoryData called with branchId:', branchId);
+      console.log('🔍 Frontend: currentBranchId:', currentBranchId);
+      console.log('🔍 Frontend: selectedBranch:', selectedBranch);
+      console.log('🔍 Frontend: productosUrl:', productosUrl);
+      
       const [inventoryResponse, movementsResponse, lotesResponse] = await Promise.all([
-        api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/resumen`, {
+        api.get(productosUrl, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         api.get(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/movimientos`, {
@@ -222,13 +255,22 @@ const InventoryPage: React.FC = () => {
         }),
       ]);
 
-      setInventory(inventoryResponse.data.data || []);
+      const productos = inventoryResponse.data.data || [];
+      console.log('🔍 Frontend: Productos recibidos:', productos.length);
+      console.log('🔍 Frontend: Primeros productos:', productos.slice(0, 3).map(p => ({
+        id: p.id_producto,
+        nombre: p.nombre,
+        stock: p.stock_actual
+      })));
+      
+      setInventory(productos);
       setMovements(movementsResponse.data.data || []);
       setLotes(lotesResponse.data.data || []);
-      setFilteredInventory(inventoryResponse.data.data || []);
+      setFilteredInventory(productos);
 
     } catch (err) {
-      console.error('Error fetching inventory data:', err);
+      console.error('❌ Frontend: Error fetching inventory data:', err);
+      console.error('❌ Frontend: Error response:', err.response?.data);
       setError('Error al cargar los datos de inventario. Asegúrate de tener permisos.');
       toast.error('Error al cargar los datos de inventario.');
     } finally {
@@ -250,7 +292,6 @@ const InventoryPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('jwtToken');
       const cantidad = parseFloat(changeAmount);
       
       let nuevaCantidad = selectedProduct.stock_actual || 0;
@@ -260,20 +301,26 @@ const InventoryPage: React.FC = () => {
         nuevaCantidad -= cantidad;
       }
 
-      await api.post(`${import.meta.env.VITE_BACKEND_URL}/productos/inventario/${selectedProduct.id_producto}/stock`, {
-        cantidad: cantidad,
-        tipo_movimiento: movementType,
-        stock_anterior: selectedProduct.stock_actual || 0,
-        stock_actual: nuevaCantidad
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+      // Usar el endpoint de stock por sucursal para mantener consistencia
+      const currentBranchId = selectedBranch !== 'all' ? parseInt(selectedBranch) : 1; // Default a sucursal 1 si no hay sucursal específica
+      
+      console.log('🔄 Frontend: Actualizando stock usando stock-sucursal endpoint');
+      console.log('🔄 Frontend: Producto:', selectedProduct.id_producto, 'Sucursal:', currentBranchId, 'Nueva cantidad:', nuevaCantidad);
+      
+      await updateStockByBranch(selectedProduct.id_producto, currentBranchId, {
+        stock_actual: nuevaCantidad,
+        stock_minimo: selectedProduct.stock_minimo || 0,
+        stock_maximo: selectedProduct.stock_maximo || 100
       });
 
       toast.success('Stock actualizado correctamente');
       setChangeAmount('');
       setMovementType('');
       setSelectedProduct(null);
-      fetchInventoryData();
+      
+      // Recargar datos manteniendo el filtro de sucursal actual
+      const reloadBranchId = selectedBranch !== 'all' ? parseInt(selectedBranch) : undefined;
+      fetchInventoryData(reloadBranchId);
     } catch (err) {
       console.error('Error updating stock:', err);
       toast.error('Error al actualizar el stock');
@@ -283,12 +330,46 @@ const InventoryPage: React.FC = () => {
   };
 
   const handleFilterChange = (filters: any) => {
-    setFilteredInventory(filters.filteredInventory || inventory);
+    console.log('🔍 Frontend: handleFilterChange called with filters:', filters);
+    console.log('🔍 Frontend: current selectedBranch:', selectedBranch);
+    console.log('🔍 Frontend: current inventory length:', inventory.length);
+    
+    // Solo actualizar filteredInventory si no es un cambio de sucursal
+    // Para cambios de sucursal, fetchInventoryData ya actualiza filteredInventory
+    if (!filters.selectedBranch || filters.selectedBranch === selectedBranch) {
+      setFilteredInventory(filters.filteredInventory || inventory);
+    }
+    
+    // Si cambió la sucursal seleccionada, recargar datos
+    if (filters.selectedBranch && filters.selectedBranch !== selectedBranch) {
+      console.log('🔍 Frontend: Branch changed from', selectedBranch, 'to', filters.selectedBranch);
+      setSelectedBranch(filters.selectedBranch);
+      if (filters.selectedBranch === 'all') {
+        console.log('🔍 Frontend: Loading all products (no branch filter)');
+        fetchInventoryData(undefined); // Cargar todos los productos (sin filtro de sucursal)
+      } else {
+        console.log('🔍 Frontend: Loading products for branch:', filters.selectedBranch);
+        fetchInventoryData(parseInt(filters.selectedBranch)); // Cargar productos de la sucursal específica
+      }
+    }
   };
 
   const handleExportData = () => {
     toast.info('Exportación', { description: 'Usa la pestaña de Reportes para exportar datos específicos.' });
   };
+
+  // Filtrar productos por término de búsqueda
+  const searchedProducts = useMemo(() => {
+    if (!productSearchTerm.trim()) {
+      return filteredInventory;
+    }
+    
+    const searchLower = productSearchTerm.toLowerCase();
+    return filteredInventory.filter(product => 
+      product.nombre.toLowerCase().includes(searchLower) ||
+      product.categoria_nombre.toLowerCase().includes(searchLower)
+    );
+  }, [filteredInventory, productSearchTerm]);
 
   const handleSaveLote = async (loteData: Lote) => {
     try {
@@ -486,12 +567,54 @@ const InventoryPage: React.FC = () => {
               lotes={lotes}
               onFilterChange={handleFilterChange}
               onExportData={handleExportData}
+              selectedBranch={selectedBranch}
+              onStockUpdate={fetchInventoryData}
             />
           </TabsContent>
 
           <TabsContent value="productos" className="mt-4 sm:mt-6">
             <InventarioBasicoFeatureGate>
               <div className="space-y-4 sm:space-y-6">
+              
+              {/* Buscador de productos */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="Buscar productos por nombre o categoría..."
+                        value={productSearchTerm}
+                        onChange={(e) => setProductSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    {productSearchTerm && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setProductSearchTerm('')}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </Button>
+                    )}
+                  </div>
+                  {productSearchTerm && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      {searchedProducts.length} producto{searchedProducts.length !== 1 ? 's' : ''} encontrado{searchedProducts.length !== 1 ? 's' : ''}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Resumen de inventario */}
               <Card>
                 <CardHeader className="p-3 sm:p-6">
@@ -503,7 +626,7 @@ const InventoryPage: React.FC = () => {
                 <CardContent className="p-3 sm:p-6 pt-0">
                   {/* Vista móvil: Tarjetas */}
                   <div className="lg:hidden space-y-3">
-                    {filteredInventory.map((product) => (
+                    {searchedProducts.map((product) => (
                       <Card key={product.id_producto} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -630,7 +753,7 @@ const InventoryPage: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredInventory.map((product) => (
+                        {searchedProducts.map((product) => (
                           <TableRow key={product.id_producto}>
                             <TableCell className="font-medium">{product.nombre}</TableCell>
                             <TableCell>{product.categoria_nombre}</TableCell>
@@ -830,12 +953,26 @@ const InventoryPage: React.FC = () => {
             </InventarioAvanzadoFeatureGate>
           </TabsContent>
 
+          <TabsContent value="stock-sucursal" className="mt-4 sm:mt-6">
+            <InventarioAvanzadoFeatureGate>
+              {isTabAvailable('stock-sucursal') ? (
+                <StockByBranchManagement onStockUpdate={fetchInventoryData} />
+              ) : (
+                <UpgradeMessage 
+                  title="Stock por Sucursal - Plan Avanzado Requerido"
+                  message="La gestión avanzada de stock por sucursal está disponible únicamente para administradores con plan Avanzado o superior."
+                />
+              )}
+            </InventarioAvanzadoFeatureGate>
+          </TabsContent>
+
           <TabsContent value="reportes" className="mt-4 sm:mt-6">
             <ReportesAvanzadosFeatureGate>
               <InventoryReports
                 inventory={inventory}
                 lotes={lotes}
                 movements={movements}
+                selectedBranch={selectedBranch}
               />
             </ReportesAvanzadosFeatureGate>
           </TabsContent>

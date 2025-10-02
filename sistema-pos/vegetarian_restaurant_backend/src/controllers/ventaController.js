@@ -518,6 +518,7 @@ exports.createVenta = async (req, res, next) => {
           observaciones: item.observaciones || null
         })),
         id_restaurante, // Pasar id_restaurante a createDetalleVenta
+        venta.id_sucursal, // Pasar id_sucursal para stock por sucursal
         client
       );
       logger.info('Backend: Detalles created successfully:', detalles);

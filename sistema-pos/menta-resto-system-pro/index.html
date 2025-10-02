@@ -73,7 +73,41 @@
       }
     </script>
 
-    <!-- Script principal (Vite se encarga del hash) -->
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Script principal (Vite se encarga del hash) -->
+  <script type="module" src="/src/main.tsx"></script>
+  
+  <!-- Anti-caché script para producción -->
+  <script>
+    // Eliminar caché del navegador en versiones nuevas
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    
+    // Limpiar caché localStorage/sessionStorage si es necesario
+    if (performance.navigation.type === 1) { // Refresco de página
+      const lastVersion = localStorage.getItem('app_version');
+      const currentVersion = '1.0.0'; // Incrementar en cada deploy
+      
+      if (lastVersion !== currentVersion) {
+        console.log('🔄 Nueva versión detectada, limpiando caché...');
+        localStorage.clear();
+        sessionStorage.clear();
+        localStorage.setItem('app_version', currentVersion);
+        
+        // Forzar recarga limpia
+        if (caches) {
+          caches.keys().then(function(names) {
+            names.forEach(function(name) {
+              caches.delete(name);
+            });
+          });
+        }
+      }
+    }
+  </script>
+</body>
 </html>

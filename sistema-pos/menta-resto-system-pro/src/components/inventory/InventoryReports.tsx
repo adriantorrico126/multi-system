@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { 
   Download, 
   FileText, 
@@ -18,25 +18,213 @@ import {
   BarChart3,
   AlertTriangle,
   Eye,
-  User
+  User,
+  Building,
+  Activity,
+  PieChart
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../hooks/use-toast';
+import { useAuth } from '../../context/AuthContext';
+import { getStockReports, getStockByBranch, getBranches } from '../../services/api';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 interface InventoryReportProps {
   inventory: any[];
   lotes: any[];
   movements: any[];
+  selectedBranch?: string;
+}
+
+interface Branch {
+  id_sucursal: number;
+  nombre: string;
+  ciudad: string;
+  direccion: string;
+}
+
+interface StockReport {
+  sucursal_id: number;
+  sucursal_nombre: string;
+  total_productos: number;
+  stock_total: number;
+  valor_total: number;
+  productos_sin_stock: number;
+  productos_stock_bajo: number;
+  productos_stock_ok: number;
+  rotacion_promedio: number;
+  categoria_distribucion: Record<string, number>;
 }
 
 export const InventoryReports: React.FC<InventoryReportProps> = ({
   inventory,
   lotes,
-  movements
+  movements,
+  selectedBranch: parentSelectedBranch
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [reportType, setReportType] = useState('summary');
   const [dateRange, setDateRange] = useState('30');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [stockReports, setStockReports] = useState<StockReport[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Cargar datos de sucursales al montar el componente
+  useEffect(() => {
+    loadBranchesData();
+  }, [user]);
+
+  // Sincronizar con el estado del padre
+  useEffect(() => {
+    if (parentSelectedBranch && parentSelectedBranch !== selectedBranch) {
+      setSelectedBranch(parentSelectedBranch);
+    }
+  }, [parentSelectedBranch]);
+
+  // Cargar reportes cuando cambie el tipo de reporte o sucursal
+  useEffect(() => {
+    if (reportType === 'branch' || reportType === 'comparison') {
+      loadStockReports();
+    }
+  }, [reportType, selectedBranch, dateRange]);
+
+  const loadBranchesData = async () => {
+    if (!user?.restaurante?.id) return;
+    
+    try {
+      setLoading(true);
+      const branchesData = await getBranches();
+      setBranches(branchesData);
+    } catch (error) {
+      console.error('Error cargando sucursales:', error);
+      // Fallback a datos de ejemplo si falla la API
+      const fallbackData: Branch[] = [
+        {
+          id_sucursal: user.sucursal?.id || 1,
+          nombre: user.sucursal?.nombre || 'Sucursal Principal',
+          ciudad: user.sucursal?.ciudad || 'Ciudad Demo',
+          direccion: user.sucursal?.direccion || 'Dirección Demo'
+        }
+      ];
+      setBranches(fallbackData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStockReports = async () => {
+    try {
+      setLoading(true);
+      const reportsData = await getStockReports({
+        fecha_inicio: getDateRangeStart(),
+        fecha_fin: new Date().toISOString().split('T')[0],
+        id_sucursal: selectedBranch !== 'all' ? parseInt(selectedBranch) : undefined
+      });
+      setStockReports(reportsData.reports || []);
+    } catch (error) {
+      console.error('Error cargando reportes de stock:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los reportes de stock",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDateRangeStart = () => {
+    const days = parseInt(dateRange);
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Función para exportar reportes por sucursal
+  const exportBranchReport = async () => {
+    try {
+      if (stockReports.length === 0) {
+        toast({
+          title: "Sin datos",
+          description: "No hay datos para exportar",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const headers = [
+        'Sucursal',
+        'Productos',
+        'Stock Total',
+        'Valor Total',
+        'Sin Stock',
+        'Stock Bajo',
+        'Stock OK',
+        'Rotación Promedio'
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...stockReports.map(report => [
+          `"${report.sucursal_nombre}"`,
+          report.total_productos,
+          report.stock_total,
+          report.valor_total,
+          report.productos_sin_stock,
+          report.productos_stock_bajo,
+          report.productos_stock_ok,
+          report.rotacion_promedio?.toFixed(2) || 0
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `reporte_sucursales_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Exportación exitosa",
+        description: "El reporte se ha descargado correctamente",
+      });
+    } catch (error) {
+      console.error('Error exportando reporte:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo exportar el reporte",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Función para actualizar reportes
+  const refreshReports = async () => {
+    try {
+      setLoading(true);
+      if (reportType === 'branch' || reportType === 'comparison') {
+        await loadStockReports();
+      }
+      toast({
+        title: "Actualizado",
+        description: "Los reportes se han actualizado correctamente",
+      });
+    } catch (error) {
+      console.error('Error actualizando reportes:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los reportes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Estados para modales de información
   const [selectedProductForInfo, setSelectedProductForInfo] = useState<any>(null);
@@ -667,6 +855,202 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
           </Card>
         );
 
+      case 'branch':
+        return (
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Building className="h-4 w-4 sm:h-5 sm:w-5" />
+                Reporte por Sucursal: {selectedBranch === 'all' ? 'Selecciona una Sucursal' : branches.find(b => b.id_sucursal.toString() === selectedBranch)?.nombre || 'Sucursal'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              {selectedBranch === 'all' ? (
+                <div className="text-center py-8">
+                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Selecciona una Sucursal</h3>
+                  <p className="text-gray-600">Por favor selecciona una sucursal específica para ver su reporte de inventario</p>
+                </div>
+              ) : loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : stockReports.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Estadísticas por sucursal */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {stockReports.map((report) => (
+                      <Card key={report.sucursal_id} className="bg-gradient-to-br from-blue-50 to-indigo-50">
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-lg mb-3">{report.sucursal_nombre}</h3>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Productos:</span>
+                              <span className="font-medium">{report.total_productos}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Stock Total:</span>
+                              <span className="font-medium">{report.stock_total.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Valor Total:</span>
+                              <span className="font-medium text-green-600">Bs {report.valor_total.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Sin Stock:</span>
+                              <Badge variant="destructive">{report.productos_sin_stock}</Badge>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Stock Bajo:</span>
+                              <Badge variant="secondary">{report.productos_stock_bajo}</Badge>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Gráfico de distribución por categoría */}
+                  {stockReports.length === 1 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <PieChart className="h-5 w-5" />
+                          Distribución por Categoría
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <Pie
+                                data={Object.entries(stockReports[0].categoria_distribucion).map(([categoria, cantidad]) => ({ categoria, cantidad }))}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="cantidad"
+                                label={({ categoria, cantidad }) => `${categoria}: ${cantidad}`}
+                              >
+                                {Object.entries(stockReports[0].categoria_distribucion).map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 50%)`} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay datos</h3>
+                  <p className="text-gray-600">No se encontraron reportes para la sucursal seleccionada</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 'comparison':
+        return (
+          <Card>
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+                Comparación de Sucursales
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : stockReports.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Gráfico de comparación */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Comparación de Stock Total
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={stockReports}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="sucursal_nombre" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="stock_total" fill="#8884d8" name="Stock Total" />
+                            <Bar dataKey="productos_sin_stock" fill="#ff6b6b" name="Sin Stock" />
+                            <Bar dataKey="productos_stock_bajo" fill="#ffa726" name="Stock Bajo" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Tabla de comparación */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Resumen Comparativo</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Sucursal</TableHead>
+                              <TableHead className="text-right">Productos</TableHead>
+                              <TableHead className="text-right">Stock Total</TableHead>
+                              <TableHead className="text-right">Valor Total</TableHead>
+                              <TableHead className="text-right">Sin Stock</TableHead>
+                              <TableHead className="text-right">Stock Bajo</TableHead>
+                              <TableHead className="text-right">Stock OK</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {stockReports.map((report) => (
+                              <TableRow key={report.sucursal_id}>
+                                <TableCell className="font-medium">{report.sucursal_nombre}</TableCell>
+                                <TableCell className="text-right">{report.total_productos}</TableCell>
+                                <TableCell className="text-right">{report.stock_total.toLocaleString()}</TableCell>
+                                <TableCell className="text-right">Bs {report.valor_total.toLocaleString()}</TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="destructive">{report.productos_sin_stock}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="secondary">{report.productos_stock_bajo}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant="default">{report.productos_stock_ok}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay datos</h3>
+                  <p className="text-gray-600">No se encontraron datos para comparar sucursales</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
       default:
         return null;
     }
@@ -687,13 +1071,15 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
             <div className="space-y-2">
               <Label htmlFor="reportType" className="text-sm">Tipo de Reporte</Label>
               <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger id="reportType" className="text-sm">
                   <SelectValue placeholder="Selecciona tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="summary">Resumen Ejecutivo</SelectItem>
                   <SelectItem value="movements">Movimientos de Stock</SelectItem>
                   <SelectItem value="lotes">Reporte de Lotes</SelectItem>
+                  <SelectItem value="branch">Reporte por Sucursal</SelectItem>
+                  <SelectItem value="comparison">Comparación de Sucursales</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -701,7 +1087,7 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
             <div className="space-y-2">
               <Label htmlFor="dateRange" className="text-sm">Rango de Fechas</Label>
               <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger id="dateRange" className="text-sm">
                   <SelectValue placeholder="Selecciona rango" />
                 </SelectTrigger>
                 <SelectContent>
@@ -716,7 +1102,7 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
             <div className="space-y-2">
               <Label htmlFor="categoryFilter" className="text-sm">Categoría</Label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger id="categoryFilter" className="text-sm">
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
@@ -728,39 +1114,88 @@ export const InventoryReports: React.FC<InventoryReportProps> = ({
               </Select>
             </div>
 
+            {(reportType === 'branch' || reportType === 'comparison') && (
+              <div className="space-y-2">
+                <Label htmlFor="selectedBranch" className="text-sm">Sucursal</Label>
+                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                  <SelectTrigger id="selectedBranch" className="text-sm">
+                    <SelectValue placeholder="Todas las sucursales" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las sucursales</SelectItem>
+                    {branches.map(branch => (
+                      <SelectItem key={branch.id_sucursal} value={branch.id_sucursal.toString()}>
+                        {branch.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label className="text-sm">Acciones</Label>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button 
-                  onClick={exportInventoryReport} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Inventario</span>
-                  <span className="sm:hidden">Inv.</span>
-                </Button>
-                <Button 
-                  onClick={exportMovementsReport} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Movimientos</span>
-                  <span className="sm:hidden">Mov.</span>
-                </Button>
-                <Button 
-                  onClick={exportLotesReport} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Lotes</span>
-                  <span className="sm:hidden">Lot.</span>
-                </Button>
+                {/* Botones según el tipo de reporte */}
+                {reportType === 'branch' || reportType === 'comparison' ? (
+                  <>
+                    <Button 
+                      onClick={exportBranchReport} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                      disabled={loading || stockReports.length === 0}
+                    >
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Exportar Sucursales</span>
+                      <span className="sm:hidden">Exportar</span>
+                    </Button>
+                    <Button 
+                      onClick={refreshReports} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                      disabled={loading}
+                    >
+                      <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Actualizar</span>
+                      <span className="sm:hidden">Ref.</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      onClick={exportInventoryReport} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Inventario</span>
+                      <span className="sm:hidden">Inv.</span>
+                    </Button>
+                    <Button 
+                      onClick={exportMovementsReport} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Movimientos</span>
+                      <span className="sm:hidden">Mov.</span>
+                    </Button>
+                    <Button 
+                      onClick={exportLotesReport} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Lotes</span>
+                      <span className="sm:hidden">Lot.</span>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

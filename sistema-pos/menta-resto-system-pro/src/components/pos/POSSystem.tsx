@@ -537,10 +537,10 @@ export function POSSystem() {
   // Reemplazar el estado local de sales por el dato de React Query
   const sales = ventasOrdenadas;
 
-  // Obtener productos disponibles
+  // Obtener productos disponibles con stock por sucursal
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
-    queryKey: ['products'],
-    queryFn: () => getProducts(),
+    queryKey: ['products', selectedBranchId],
+    queryFn: () => getProducts(selectedBranchId ? { id_sucursal: selectedBranchId } : {}),
     enabled: !!user, // Solo ejecutar si hay usuario autenticado
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

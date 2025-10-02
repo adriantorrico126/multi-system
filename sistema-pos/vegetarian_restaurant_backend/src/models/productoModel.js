@@ -1,29 +1,89 @@
 const { pool } = require('../config/database');
 
 const Producto = {
-  async getAllProductos(id_restaurante) {
-    const query = `
-      SELECT p.id_producto, p.nombre, p.precio, p.stock_actual, p.activo, p.imagen_url, p.id_restaurante,
-             c.nombre as categoria_nombre, c.id_categoria
-      FROM productos p
-      LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
-      WHERE p.id_restaurante = $1 AND p.activo = true
-      ORDER BY c.nombre, p.nombre
-    `;
-    const { rows } = await pool.query(query, [id_restaurante]);
+  async getAllProductos(id_restaurante, id_sucursal = null) {
+    let query;
+    let params;
+    
+    console.log('🔍 Model: getAllProductos called with:', { id_restaurante, id_sucursal });
+    
+    if (id_sucursal) {
+      // Obtener productos con stock por sucursal (mostrar todos los productos, incluso sin stock)
+      query = `
+        SELECT p.id_producto, p.nombre, p.precio, 
+               COALESCE(ss.stock_actual, 0) as stock_actual, 
+               p.activo, p.imagen_url, p.id_restaurante,
+               c.nombre as categoria_nombre, c.id_categoria,
+               COALESCE(ss.stock_minimo, 0) as stock_minimo, 
+               COALESCE(ss.stock_maximo, 0) as stock_maximo
+        FROM productos p
+        LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+        LEFT JOIN stock_sucursal ss ON p.id_producto = ss.id_producto AND ss.id_sucursal = $2 AND ss.activo = true
+        WHERE p.id_restaurante = $1 AND p.activo = true
+        ORDER BY c.nombre, p.nombre
+      `;
+      params = [id_restaurante, id_sucursal];
+      console.log('🔍 Model: Query for sucursal:', query);
+      console.log('🔍 Model: Params:', params);
+    } else {
+      // Obtener productos con stock global (compatibilidad)
+      query = `
+        SELECT p.id_producto, p.nombre, p.precio, p.stock_actual, p.activo, p.imagen_url, p.id_restaurante,
+               c.nombre as categoria_nombre, c.id_categoria
+        FROM productos p
+        LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+        WHERE p.id_restaurante = $1 AND p.activo = true
+        ORDER BY c.nombre, p.nombre
+      `;
+      params = [id_restaurante];
+      console.log('🔍 Model: Query for all products:', query);
+      console.log('🔍 Model: Params:', params);
+    }
+    
+    const { rows } = await pool.query(query, params);
+    console.log('🔍 Model: Query result:', rows.length, 'rows');
+    console.log('🔍 Model: First 3 rows:', rows.slice(0, 3).map(r => ({
+      id: r.id_producto,
+      nombre: r.nombre,
+      stock: r.stock_actual
+    })));
     return rows;
   },
 
-  async getAllProductosWithInactive(id_restaurante) {
-    const query = `
-      SELECT p.id_producto, p.nombre, p.precio, p.stock_actual, p.activo, p.imagen_url, p.id_restaurante,
-             c.nombre as categoria_nombre, c.id_categoria
-      FROM productos p
-      LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
-      WHERE p.id_restaurante = $1
-      ORDER BY c.nombre, p.nombre
-    `;
-    const { rows } = await pool.query(query, [id_restaurante]);
+  async getAllProductosWithInactive(id_restaurante, id_sucursal = null) {
+    let query;
+    let params;
+    
+    if (id_sucursal) {
+      // Obtener productos con stock por sucursal (incluyendo inactivos, mostrar todos los productos)
+      query = `
+        SELECT p.id_producto, p.nombre, p.precio, 
+               COALESCE(ss.stock_actual, 0) as stock_actual, 
+               p.activo, p.imagen_url, p.id_restaurante,
+               c.nombre as categoria_nombre, c.id_categoria,
+               COALESCE(ss.stock_minimo, 0) as stock_minimo, 
+               COALESCE(ss.stock_maximo, 0) as stock_maximo
+        FROM productos p
+        LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+        LEFT JOIN stock_sucursal ss ON p.id_producto = ss.id_producto AND ss.id_sucursal = $2 AND ss.activo = true
+        WHERE p.id_restaurante = $1
+        ORDER BY c.nombre, p.nombre
+      `;
+      params = [id_restaurante, id_sucursal];
+    } else {
+      // Obtener productos con stock global (compatibilidad)
+      query = `
+        SELECT p.id_producto, p.nombre, p.precio, p.stock_actual, p.activo, p.imagen_url, p.id_restaurante,
+               c.nombre as categoria_nombre, c.id_categoria
+        FROM productos p
+        LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+        WHERE p.id_restaurante = $1
+        ORDER BY c.nombre, p.nombre
+      `;
+      params = [id_restaurante];
+    }
+    
+    const { rows } = await pool.query(query, params);
     return rows;
   },
 
@@ -159,10 +219,18 @@ const Producto = {
 
   async getInventorySummary(id_restaurante) {
     const query = `
-      SELECT p.id_producto, p.nombre, p.stock_actual, CAST(p.precio AS DECIMAL(10,2)) as precio, c.nombre as categoria_nombre, p.id_restaurante
+      SELECT 
+        p.id_producto, 
+        p.nombre, 
+        COALESCE(SUM(ss.stock_actual), 0) as stock_actual, 
+        CAST(p.precio AS DECIMAL(10,2)) as precio, 
+        c.nombre as categoria_nombre, 
+        p.id_restaurante
       FROM productos p
       LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+      LEFT JOIN stock_sucursal ss ON p.id_producto = ss.id_producto AND ss.activo = true
       WHERE p.activo = true AND p.id_restaurante = $1
+      GROUP BY p.id_producto, p.nombre, p.precio, c.nombre, p.id_restaurante
       ORDER BY p.nombre;
     `;
     const { rows } = await pool.query(query, [id_restaurante]);

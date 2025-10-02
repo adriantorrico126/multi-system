@@ -269,6 +269,7 @@ const planesRoutes = require('./routes/planesRoutes');
 const suscripcionesRoutes = require('./routes/suscripcionesRoutes');
 const contadoresSistemaRoutes = require('./routes/contadoresSistemaRoutes');
 const alertasRoutes = require('./routes/alertasRoutes');
+const stockSucursalRoutes = require('./routes/stockSucursalRoutes');
 
 // Montar rutas del sistema de planes
 app.use('/api/v1/planes-sistema', planesRoutes);
@@ -279,6 +280,8 @@ app.use('/api/v1/contadores-sistema', contadoresSistemaRoutes);
 startupLogger.logStep('Ruta /api/v1/contadores-sistema', 'success');
 app.use('/api/v1/alertas-sistema', alertasRoutes);
 startupLogger.logStep('Ruta /api/v1/alertas-sistema', 'success');
+app.use('/api/v1/stock-sucursal', stockSucursalRoutes);
+startupLogger.logStep('Ruta /api/v1/stock-sucursal', 'success');
 
 // Middleware de logging de solicitudes
 app.use((req, res, next) => {

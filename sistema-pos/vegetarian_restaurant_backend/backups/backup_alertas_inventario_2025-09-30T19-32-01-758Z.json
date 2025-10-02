@@ -1,0 +1,19 @@
+{
+  "table": "alertas_inventario",
+  "timestamp": "2025-09-30T19:32:01.794Z",
+  "rowCount": 1,
+  "data": [
+    {
+      "id_alerta": 1,
+      "id_producto": 94,
+      "id_lote": 378,
+      "tipo_alerta": "caducidad",
+      "mensaje": "Lote 1 caduca en 8 días",
+      "nivel_urgencia": "media",
+      "resuelta": false,
+      "fecha_creacion": "2025-09-10T13:02:11.079Z",
+      "fecha_resolucion": null,
+      "id_restaurante": 1
+    }
+  ]
+}

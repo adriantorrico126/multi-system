@@ -91,3 +91,7 @@ sistema-pos/test_mesero_comentarios_movil.js
 sistema-pos/test_mesero_mesa_management.js
 sistema-pos/test_mesero_mesas.js
 sistema-pos/test_server_status.js
+
+# Python cache
+__pycache__/
+*.pyc

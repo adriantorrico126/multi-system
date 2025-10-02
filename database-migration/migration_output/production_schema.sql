@@ -1,5 +1,5 @@
 -- Esquema extraído automáticamente
--- Fecha: 2025-09-28 19:54:51
+-- Fecha: 2025-10-02 14:39:52
 
 -- EXTENSIONES
 CREATE EXTENSION IF NOT EXISTS plpgsql;
@@ -10,6 +10,9 @@ CREATE EXTENSION IF NOT EXISTS plpgsql;
 
 -- Tipo: alertas_inventario
 -- Definición: alertas_inventario
+
+-- Tipo: alertas_limite
+-- Definición: alertas_limite
 
 -- Tipo: alertas_limites
 -- Definición: alertas_limites
@@ -52,6 +55,9 @@ CREATE EXTENSION IF NOT EXISTS plpgsql;
 
 -- Tipo: configuraciones_sistema
 -- Definición: configuraciones_sistema
+
+-- Tipo: contadores_uso
+-- Definición: contadores_uso
 
 -- Tipo: contenido_web
 -- Definición: contenido_web
@@ -213,6 +219,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql;
 -- SECUENCIAS
 CREATE SEQUENCE IF NOT EXISTS public.admin_users_id_seq;
 CREATE SEQUENCE IF NOT EXISTS public.alertas_inventario_id_alerta_seq;
+CREATE SEQUENCE IF NOT EXISTS public.alertas_limite_id_alerta_seq;
 CREATE SEQUENCE IF NOT EXISTS public.alertas_limites_id_alerta_seq;
 CREATE SEQUENCE IF NOT EXISTS public.archivos_egresos_id_archivo_seq;
 CREATE SEQUENCE IF NOT EXISTS public.arqueos_caja_id_arqueo_seq;
@@ -226,6 +233,7 @@ CREATE SEQUENCE IF NOT EXISTS public.categorias_id_categoria_seq;
 CREATE SEQUENCE IF NOT EXISTS public.clientes_id_cliente_seq;
 CREATE SEQUENCE IF NOT EXISTS public.configuracion_web_id_seq;
 CREATE SEQUENCE IF NOT EXISTS public.configuraciones_restaurante_id_config_seq;
+CREATE SEQUENCE IF NOT EXISTS public.contadores_uso_id_contador_seq;
 CREATE SEQUENCE IF NOT EXISTS public.contenido_web_id_seq;
 CREATE SEQUENCE IF NOT EXISTS public.conversion_events_id_seq;
 CREATE SEQUENCE IF NOT EXISTS public.demos_reuniones_id_seq;
@@ -278,6 +286,8 @@ CREATE SEQUENCE IF NOT EXISTS public.ventas_id_venta_seq;
 CREATE TABLE IF NOT EXISTS public.admin_users ();
 -- Tabla: public.alertas_inventario
 CREATE TABLE IF NOT EXISTS public.alertas_inventario ();
+-- Tabla: public.alertas_limite
+CREATE TABLE IF NOT EXISTS public.alertas_limite ();
 -- Tabla: public.alertas_limites
 CREATE TABLE IF NOT EXISTS public.alertas_limites ();
 -- Tabla: public.archivos_egresos
@@ -306,6 +316,8 @@ CREATE TABLE IF NOT EXISTS public.configuracion_web ();
 CREATE TABLE IF NOT EXISTS public.configuraciones_restaurante ();
 -- Tabla: public.configuraciones_sistema
 CREATE TABLE IF NOT EXISTS public.configuraciones_sistema ();
+-- Tabla: public.contadores_uso
+CREATE TABLE IF NOT EXISTS public.contadores_uso ();
 -- Tabla: public.contenido_web
 CREATE TABLE IF NOT EXISTS public.contenido_web ();
 -- Tabla: public.conversion_events
@@ -404,97 +416,114 @@ CREATE TABLE IF NOT EXISTS public.ventas ();
 -- COLUMNAS
 
 -- Columnas de public.admin_users
-ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('admin_users_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('admin_users_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS username character varying(50) NOT NULL;
 ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS password_hash character varying(255) NOT NULL;
 ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone DEFAULT now();
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone DEFAULT now();
 
 -- Columnas de public.alertas_inventario
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_alerta integer(32) DEFAULT nextval('alertas_inventario_id_alerta_seq'::regclass) NOT NULL;
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_producto integer(32) NOT NULL;
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_lote integer(32);
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_alerta integer DEFAULT nextval('alertas_inventario_id_alerta_seq'::regclass) NOT NULL;
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_producto integer NOT NULL;
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_lote integer;
 ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS tipo_alerta character varying(50) NOT NULL;
 ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS mensaje text NOT NULL;
 ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS nivel_urgencia character varying(20) NOT NULL;
 ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS resuelta boolean DEFAULT false;
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS fecha_resolucion timestamp without time zone(6);
-ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone DEFAULT now();
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS fecha_resolucion timestamp without time zone;
+ALTER TABLE public.alertas_inventario ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+
+-- Columnas de public.alertas_limite
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS id_alerta integer DEFAULT nextval('alertas_limite_id_alerta_seq'::regclass) NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS id_plan integer NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS tipo_alerta character varying(50) NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS recurso character varying(50) NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS valor_actual integer DEFAULT 0;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS valor_limite integer NOT NULL;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS porcentaje_uso numeric(5,2) DEFAULT 0.00;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS estado character varying(30) DEFAULT 'pendiente'::character varying;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS fecha_alerta timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS fecha_resolucion timestamp without time zone;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS mensaje text;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS datos_adicionales jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE public.alertas_limite ADD COLUMN IF NOT EXISTS nivel_urgencia character varying(20) DEFAULT 'medio'::character varying;
 
 -- Columnas de public.alertas_limites
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_alerta integer(32) DEFAULT nextval('alertas_limites_id_alerta_seq'::regclass) NOT NULL;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_plan integer(32) NOT NULL;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_alerta integer DEFAULT nextval('alertas_limites_id_alerta_seq'::regclass) NOT NULL;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS id_plan integer NOT NULL;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS tipo_alerta character varying(20) NOT NULL;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS recurso character varying(30) NOT NULL;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS valor_actual integer(32) NOT NULL;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS valor_limite integer(32) NOT NULL;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS valor_actual integer NOT NULL;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS valor_limite integer NOT NULL;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS porcentaje_uso numeric(5,2) NOT NULL;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'pendiente'::character varying;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS fecha_alerta timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS fecha_resolucion timestamp without time zone(6);
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS fecha_alerta timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS fecha_resolucion timestamp without time zone;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS mensaje text;
 ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS datos_adicionales jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE public.alertas_limites ADD COLUMN IF NOT EXISTS nivel_urgencia character varying(20) DEFAULT 'medio'::character varying;
 
 -- Columnas de public.archivos_egresos
-ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS id_archivo integer(32) DEFAULT nextval('archivos_egresos_id_archivo_seq'::regclass) NOT NULL;
-ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS id_egreso integer(32) NOT NULL;
+ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS id_archivo integer DEFAULT nextval('archivos_egresos_id_archivo_seq'::regclass) NOT NULL;
+ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS id_egreso integer NOT NULL;
 ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS nombre_archivo character varying(255) NOT NULL;
 ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS ruta_archivo character varying(500) NOT NULL;
 ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS tipo_archivo character varying(50);
-ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS tamaño_archivo integer(32);
-ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS subido_por integer(32) NOT NULL;
-ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS fecha_subida timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS tamaño_archivo integer;
+ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS subido_por integer NOT NULL;
+ALTER TABLE public.archivos_egresos ADD COLUMN IF NOT EXISTS fecha_subida timestamp without time zone DEFAULT now();
 
 -- Columnas de public.arqueos_caja
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_arqueo integer(32) DEFAULT nextval('arqueos_caja_id_arqueo_seq'::regclass) NOT NULL;
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_sucursal integer(32);
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_vendedor integer(32);
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_arqueo integer DEFAULT nextval('arqueos_caja_id_arqueo_seq'::regclass) NOT NULL;
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_sucursal integer;
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS id_vendedor integer;
 ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS monto_inicial numeric(12,2) NOT NULL;
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS fecha_apertura timestamp without time zone(6) DEFAULT now() NOT NULL;
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS fecha_apertura timestamp without time zone DEFAULT now() NOT NULL;
 ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS monto_final numeric(12,2);
-ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS fecha_cierre timestamp without time zone(6);
+ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS fecha_cierre timestamp without time zone;
 ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS diferencia numeric(12,2);
 ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'abierto'::character varying NOT NULL;
 ALTER TABLE public.arqueos_caja ADD COLUMN IF NOT EXISTS observaciones text;
 
 -- Columnas de public.auditoria_admin
-ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_auditoria integer(32) DEFAULT nextval('auditoria_admin_id_auditoria_seq'::regclass) NOT NULL;
-ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_usuario integer(32);
+ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_auditoria integer DEFAULT nextval('auditoria_admin_id_auditoria_seq'::regclass) NOT NULL;
+ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_usuario integer;
 ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS accion character varying(64);
 ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS tabla_afectada character varying(32);
-ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_registro integer(32);
+ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS id_registro integer;
 ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS datos_anteriores jsonb;
 ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS datos_nuevos jsonb;
-ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS fecha_accion timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.auditoria_admin ADD COLUMN IF NOT EXISTS fecha_accion timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.auditoria_planes
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_auditoria integer(32) DEFAULT nextval('auditoria_planes_id_auditoria_seq'::regclass) NOT NULL;
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_plan_anterior integer(32);
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_plan_nuevo integer(32) NOT NULL;
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_auditoria integer DEFAULT nextval('auditoria_planes_id_auditoria_seq'::regclass) NOT NULL;
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_plan_anterior integer;
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_plan_nuevo integer NOT NULL;
 ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS tipo_cambio character varying(20) NOT NULL;
 ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS motivo text;
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_usuario_cambio integer(32);
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS id_usuario_cambio integer;
 ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS nombre_usuario character varying(100);
-ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS fecha_cambio timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS fecha_cambio timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS fecha_efectiva date DEFAULT CURRENT_DATE;
 ALTER TABLE public.auditoria_planes ADD COLUMN IF NOT EXISTS datos_adicionales jsonb DEFAULT '{}'::jsonb;
 
 -- Columnas de public.auditoria_pos
-ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_auditoria bigint(64) DEFAULT nextval('auditoria_pos_id_auditoria_seq'::regclass) NOT NULL;
-ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_vendedor integer(32);
+ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_auditoria bigint DEFAULT nextval('auditoria_pos_id_auditoria_seq'::regclass) NOT NULL;
+ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_vendedor integer;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS accion character varying(64) NOT NULL;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS tabla_afectada character varying(64) NOT NULL;
-ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_registro bigint(64);
+ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_registro bigint;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS datos_anteriores jsonb;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS datos_nuevos jsonb;
-ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS fecha_accion timestamp with time zone(6) DEFAULT now() NOT NULL;
-ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_restaurante integer(32);
+ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS fecha_accion timestamp with time zone DEFAULT now() NOT NULL;
+ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS id_restaurante integer;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS ip_origen inet;
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS user_agent character varying(256);
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS descripcion text;
@@ -502,13 +531,13 @@ ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS exito boolean DEFAULT 
 ALTER TABLE public.auditoria_pos ADD COLUMN IF NOT EXISTS error_msg text;
 
 -- Columnas de public.casos_exito
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('casos_exito_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('casos_exito_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS nombre_restaurante character varying(100) NOT NULL;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS logo_url character varying(255);
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS tipo_restaurante character varying(50);
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS ciudad character varying(50);
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS sucursales integer(32) DEFAULT 1;
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS tiempo_uso_meses integer(32);
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS sucursales integer DEFAULT 1;
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS tiempo_uso_meses integer;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS testimonio text;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS nombre_contacto character varying(100);
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS cargo_contacto character varying(50);
@@ -521,71 +550,82 @@ ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS plan_contratado characte
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS fecha_implementacion date;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
 ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS destacado boolean DEFAULT false;
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS orden_display integer(32) DEFAULT 0;
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS orden_display integer DEFAULT 0;
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.casos_exito ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.categorias
-ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS id_categoria integer(32) DEFAULT nextval('categorias_id_categoria_seq'::regclass) NOT NULL;
+ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS id_categoria integer DEFAULT nextval('categorias_id_categoria_seq'::regclass) NOT NULL;
 ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.categorias ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.categorias_almacen
-ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS id_categoria_almacen integer(32) DEFAULT nextval('categorias_almacen_id_categoria_almacen_seq'::regclass) NOT NULL;
+ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS id_categoria_almacen integer DEFAULT nextval('categorias_almacen_id_categoria_almacen_seq'::regclass) NOT NULL;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS tipo_almacen character varying(50) NOT NULL;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS condiciones_especiales text;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS rotacion_recomendada character varying(50);
-ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.categorias_almacen ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.categorias_egresos
-ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer(32) DEFAULT nextval('categorias_egresos_id_categoria_egreso_seq'::regclass) NOT NULL;
+ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer DEFAULT nextval('categorias_egresos_id_categoria_egreso_seq'::regclass) NOT NULL;
 ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS color character varying(7) DEFAULT '#6B7280'::character varying;
 ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS icono character varying(50) DEFAULT 'DollarSign'::character varying;
 ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.categorias_egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.clientes
-ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS id_cliente integer(32) DEFAULT nextval('clientes_id_cliente_seq'::regclass) NOT NULL;
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS id_cliente integer DEFAULT nextval('clientes_id_cliente_seq'::regclass) NOT NULL;
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS nombre character varying(150);
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS telefono character varying(20);
 ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS email character varying(100);
-ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS fecha_registro timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS fecha_registro timestamp without time zone DEFAULT now();
 
 -- Columnas de public.configuracion_web
-ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('configuracion_web_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('configuracion_web_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS clave character varying(100) NOT NULL;
 ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS valor text;
 ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS tipo character varying(30);
 ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS seccion character varying(50);
-ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.configuracion_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.configuraciones_restaurante
-ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS id_config integer(32) DEFAULT nextval('configuraciones_restaurante_id_config_seq'::regclass) NOT NULL;
-ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS id_config integer DEFAULT nextval('configuraciones_restaurante_id_config_seq'::regclass) NOT NULL;
+ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS clave_config text NOT NULL;
 ALTER TABLE public.configuraciones_restaurante ADD COLUMN IF NOT EXISTS valor_config jsonb NOT NULL;
 
 -- Columnas de public.configuraciones_sistema
 ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS clave_config character varying(100) NOT NULL;
 ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS valor_config jsonb DEFAULT '{}'::jsonb NOT NULL;
-ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone DEFAULT now();
+ALTER TABLE public.configuraciones_sistema ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone DEFAULT now();
+
+-- Columnas de public.contadores_uso
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS id_contador integer DEFAULT nextval('contadores_uso_id_contador_seq'::regclass) NOT NULL;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS id_plan integer NOT NULL;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS recurso character varying(50) NOT NULL;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS uso_actual integer DEFAULT 0;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS limite_plan integer NOT NULL;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS fecha_medicion date DEFAULT CURRENT_DATE;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.contadores_uso ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.contenido_web
-ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('contenido_web_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('contenido_web_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS titulo character varying(200) NOT NULL;
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS slug character varying(200) NOT NULL;
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS contenido text;
@@ -595,76 +635,76 @@ ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS tipo_contenido charact
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS autor character varying(100);
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS tags ARRAY;
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'borrador'::character varying;
-ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS fecha_publicacion timestamp without time zone(6);
-ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS fecha_modificacion timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS fecha_publicacion timestamp without time zone;
+ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS meta_title character varying(200);
 ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS meta_description text;
-ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.contenido_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.conversion_events
-ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('conversion_events_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('conversion_events_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS event_type character varying(50) NOT NULL;
-ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS timestamp timestamp without time zone(6) NOT NULL;
+ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS timestamp timestamp without time zone NOT NULL;
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS plan_name character varying(50);
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS user_agent text;
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS referrer text;
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS session_id character varying(100);
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS ip_address inet;
 ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
-ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.conversion_events ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.demos_reuniones
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('demos_reuniones_id_seq'::regclass) NOT NULL;
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS lead_id integer(32);
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('demos_reuniones_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS lead_id integer;
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS tipo_reunion character varying(30);
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS fecha_programada timestamp without time zone(6) NOT NULL;
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS duracion_minutos integer(32) DEFAULT 60;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS fecha_programada timestamp without time zone NOT NULL;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS duracion_minutos integer DEFAULT 60;
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS plataforma character varying(50);
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS link_reunion character varying(255);
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS estado character varying(30) DEFAULT 'programada'::character varying;
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS notas_pre_reunion text;
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS notas_post_reunion text;
 ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS resultado character varying(30);
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS proximo_seguimiento timestamp without time zone(6);
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS proximo_seguimiento timestamp without time zone;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.demos_reuniones ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.detalle_ventas
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_detalle integer(32) DEFAULT nextval('detalle_ventas_id_detalle_seq'::regclass) NOT NULL;
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_venta integer(32);
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_producto integer(32);
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS cantidad integer(32) NOT NULL;
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_detalle integer DEFAULT nextval('detalle_ventas_id_detalle_seq'::regclass) NOT NULL;
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_venta integer;
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_producto integer;
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS cantidad integer NOT NULL;
 ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS precio_unitario numeric(10,2) NOT NULL;
 ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS subtotal numeric(10,2);
 ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.detalle_ventas ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.detalle_ventas_modificadores
-ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS id_detalle_venta integer(32) NOT NULL;
-ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS id_modificador integer(32) NOT NULL;
+ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS id_detalle_venta integer NOT NULL;
+ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS id_modificador integer NOT NULL;
 ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS precio_aplicado numeric(10,2) DEFAULT 0.00;
-ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.detalle_ventas_modificadores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.dim_tiempo
-ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS id_tiempo integer(32) DEFAULT nextval('dim_tiempo_id_tiempo_seq'::regclass) NOT NULL;
+ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS id_tiempo integer DEFAULT nextval('dim_tiempo_id_tiempo_seq'::regclass) NOT NULL;
 ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS fecha date NOT NULL;
-ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS dia integer(32) NOT NULL;
-ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS mes integer(32) NOT NULL;
-ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS anio integer(32) NOT NULL;
+ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS dia integer NOT NULL;
+ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS mes integer NOT NULL;
+ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS anio integer NOT NULL;
 ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS nombre_mes character varying(20) NOT NULL;
 ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS nombre_dia character varying(20) NOT NULL;
 ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS es_fin_de_semana boolean NOT NULL;
 ALTER TABLE public.dim_tiempo ADD COLUMN IF NOT EXISTS turno character varying(10) NOT NULL;
 
 -- Columnas de public.egresos
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_egreso integer(32) DEFAULT nextval('egresos_id_egreso_seq'::regclass) NOT NULL;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_egreso integer DEFAULT nextval('egresos_id_egreso_seq'::regclass) NOT NULL;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS concepto character varying(200) NOT NULL;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS monto numeric(12,2) NOT NULL;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS fecha_egreso date DEFAULT CURRENT_DATE NOT NULL;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer(32) NOT NULL;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer NOT NULL;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS metodo_pago character varying(50) DEFAULT 'efectivo'::character varying NOT NULL;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS proveedor_nombre character varying(150);
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS proveedor_documento character varying(50);
@@ -675,8 +715,8 @@ ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS numero_recibo character vary
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS numero_comprobante character varying(50);
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS estado character varying(30) DEFAULT 'pendiente'::character varying;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS requiere_aprobacion boolean DEFAULT false;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS aprobado_por integer(32);
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS fecha_aprobacion timestamp without time zone(6);
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS aprobado_por integer;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS fecha_aprobacion timestamp without time zone;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS comentario_aprobacion text;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS es_deducible boolean DEFAULT true;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS numero_autorizacion_fiscal character varying(50);
@@ -685,64 +725,64 @@ ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS es_recurrente boolean DEFAUL
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS frecuencia_recurrencia character varying(20);
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS proxima_fecha_recurrencia date;
 ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS archivos_adjuntos jsonb DEFAULT '[]'::jsonb;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS registrado_por integer(32) NOT NULL;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_sucursal integer(32) NOT NULL;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS registrado_por integer NOT NULL;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_sucursal integer NOT NULL;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.facturas
-ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS id_factura integer(32) DEFAULT nextval('facturas_id_factura_seq'::regclass) NOT NULL;
+ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS id_factura integer DEFAULT nextval('facturas_id_factura_seq'::regclass) NOT NULL;
 ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS numero character varying(50) NOT NULL;
 ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS nit_cliente character varying(20);
 ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS razon_social character varying(200);
 ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS total numeric(10,2);
-ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS fecha timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS id_venta integer(32);
+ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS fecha timestamp without time zone DEFAULT now();
+ALTER TABLE public.facturas ADD COLUMN IF NOT EXISTS id_venta integer;
 
 -- Columnas de public.flujo_aprobaciones_egresos
-ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_flujo integer(32) DEFAULT nextval('flujo_aprobaciones_egresos_id_flujo_seq'::regclass) NOT NULL;
-ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_egreso integer(32) NOT NULL;
-ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_vendedor integer(32) NOT NULL;
+ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_flujo integer DEFAULT nextval('flujo_aprobaciones_egresos_id_flujo_seq'::regclass) NOT NULL;
+ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_egreso integer NOT NULL;
+ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS id_vendedor integer NOT NULL;
 ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS accion character varying(20) NOT NULL;
 ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS comentario text;
-ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS fecha_accion timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.flujo_aprobaciones_egresos ADD COLUMN IF NOT EXISTS fecha_accion timestamp without time zone DEFAULT now();
 
 -- Columnas de public.grupos_mesas
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_grupo_mesa integer(32) DEFAULT nextval('grupos_mesas_id_grupo_mesa_seq'::regclass) NOT NULL;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_sucursal integer(32) NOT NULL;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_venta_principal integer(32);
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_grupo_mesa integer DEFAULT nextval('grupos_mesas_id_grupo_mesa_seq'::regclass) NOT NULL;
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_sucursal integer NOT NULL;
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_venta_principal integer;
 ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS estado character varying(50) DEFAULT 'ABIERTO'::character varying NOT NULL;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_mesero integer(32);
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.grupos_mesas ADD COLUMN IF NOT EXISTS id_mesero integer;
 
 -- Columnas de public.historial_pagos_diferidos
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_historial integer(32) DEFAULT nextval('historial_pagos_diferidos_id_historial_seq'::regclass) NOT NULL;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer(32) NOT NULL;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer(32) NOT NULL;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_final integer(32) NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_historial integer DEFAULT nextval('historial_pagos_diferidos_id_historial_seq'::regclass) NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_final integer NOT NULL;
 ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS monto_pagado numeric NOT NULL;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_pago timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_vendedor integer(32) NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_pago timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_vendedor integer NOT NULL;
 ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS procesado_por integer(32);
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.historial_pagos_diferidos ADD COLUMN IF NOT EXISTS procesado_por integer;
 
 -- Columnas de public.integrity_logs
-ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('integrity_logs_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('integrity_logs_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS check_name character varying(100) NOT NULL;
 ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS status character varying(20) NOT NULL;
 ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS message text;
-ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS details_count integer(32);
-ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS execution_time_ms integer(32);
-ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS details_count integer;
+ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS execution_time_ms integer;
+ALTER TABLE public.integrity_logs ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.inventario_lotes
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_lote integer(32) DEFAULT nextval('inventario_lotes_id_lote_seq'::regclass) NOT NULL;
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_producto integer(32) NOT NULL;
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_lote integer DEFAULT nextval('inventario_lotes_id_lote_seq'::regclass) NOT NULL;
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_producto integer NOT NULL;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS numero_lote character varying(100) NOT NULL;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS cantidad_inicial numeric(10,2) DEFAULT 0 NOT NULL;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS cantidad_actual numeric(10,2) DEFAULT 0 NOT NULL;
@@ -750,273 +790,288 @@ ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS fecha_fabricacion d
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS fecha_caducidad date;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS precio_compra numeric(10,2) DEFAULT 0;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_categoria_almacen integer(32) DEFAULT 1;
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS id_categoria_almacen integer DEFAULT 1;
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS ubicacion_especifica character varying(100);
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS proveedor character varying(100);
 ALTER TABLE public.inventario_lotes ADD COLUMN IF NOT EXISTS certificacion_organica boolean DEFAULT false;
 
 -- Columnas de public.leads_prospectos
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('leads_prospectos_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('leads_prospectos_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS email character varying(100) NOT NULL;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS telefono character varying(20);
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS nombre_restaurante character varying(100);
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS tipo_restaurante character varying(50);
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS num_sucursales integer(32) DEFAULT 1;
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS num_empleados integer(32);
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS num_sucursales integer DEFAULT 1;
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS num_empleados integer;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS ciudad character varying(50);
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS pais character varying(50) DEFAULT 'Bolivia'::character varying;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS fuente_lead character varying(50);
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS estado character varying(30) DEFAULT 'nuevo'::character varying;
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS interes_plan_id integer(32);
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS interes_plan_id integer;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS notas text;
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS fecha_contacto timestamp without time zone(6);
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS fecha_demo timestamp without time zone(6);
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS fecha_contacto timestamp without time zone;
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS fecha_demo timestamp without time zone;
 ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS vendedor_asignado character varying(100);
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.leads_prospectos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.mesas
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_mesa integer(32) DEFAULT nextval('mesas_id_mesa_seq'::regclass) NOT NULL;
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS numero integer(32) NOT NULL;
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_sucursal integer(32);
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS capacidad integer(32) DEFAULT 4;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_mesa integer DEFAULT nextval('mesas_id_mesa_seq'::regclass) NOT NULL;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS numero integer NOT NULL;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_sucursal integer;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS capacidad integer DEFAULT 4;
 ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'libre'::character varying;
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_venta_actual integer(32);
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS hora_apertura timestamp without time zone(6);
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS hora_cierre timestamp without time zone(6);
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_venta_actual integer;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS hora_apertura timestamp without time zone;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS hora_cierre timestamp without time zone;
 ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS total_acumulado numeric(10,2) DEFAULT 0;
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_mesero_actual integer(32);
-ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_grupo_mesa integer(32);
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_mesero_actual integer;
+ALTER TABLE public.mesas ADD COLUMN IF NOT EXISTS id_grupo_mesa integer;
 
 -- Columnas de public.mesas_en_grupo
-ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_mesa_en_grupo integer(32) DEFAULT nextval('mesas_en_grupo_id_mesa_en_grupo_seq'::regclass) NOT NULL;
-ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_grupo_mesa integer(32) NOT NULL;
-ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_mesa integer(32) NOT NULL;
-ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_mesa_en_grupo integer DEFAULT nextval('mesas_en_grupo_id_mesa_en_grupo_seq'::regclass) NOT NULL;
+ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_grupo_mesa integer NOT NULL;
+ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS id_mesa integer NOT NULL;
+ALTER TABLE public.mesas_en_grupo ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.metodos_pago
-ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS id_pago integer(32) DEFAULT nextval('metodos_pago_id_pago_seq1'::regclass) NOT NULL;
+ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS id_pago integer DEFAULT nextval('metodos_pago_id_pago_seq1'::regclass) NOT NULL;
 ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS descripcion character varying(100) NOT NULL;
 ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.metodos_pago ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.metodos_pago_backup
-ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS id_pago integer(32) DEFAULT nextval('metodos_pago_id_pago_seq'::regclass) NOT NULL;
+ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS id_pago integer DEFAULT nextval('metodos_pago_id_pago_seq'::regclass) NOT NULL;
 ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS descripcion character varying(50) NOT NULL;
 ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.metodos_pago_backup ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.metricas_web
-ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('metricas_web_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('metricas_web_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS fecha date NOT NULL;
 ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS tipo_metrica character varying(50);
-ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS valor integer(32) DEFAULT 0;
+ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS valor integer DEFAULT 0;
 ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS fuente character varying(50);
 ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS pagina character varying(100);
-ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.metricas_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.migrations
-ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('migrations_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('migrations_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS migration_name character varying(255) NOT NULL;
-ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS executed_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS executed_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS description text;
 ALTER TABLE public.migrations ADD COLUMN IF NOT EXISTS status character varying(50) DEFAULT 'completed'::character varying;
 
 -- Columnas de public.movimientos_inventario
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_movimiento integer(32) DEFAULT nextval('movimientos_inventario_id_movimiento_seq'::regclass) NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_producto integer(32) NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_movimiento integer DEFAULT nextval('movimientos_inventario_id_movimiento_seq'::regclass) NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_producto integer NOT NULL;
 ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS tipo_movimiento character varying(50) NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS cantidad integer(32) NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS stock_anterior integer(32) NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS stock_actual integer(32) NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS fecha_movimiento timestamp with time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_vendedor integer(32);
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_lote integer(32);
-ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_categoria_almacen integer(32);
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS cantidad integer NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS stock_anterior integer NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS stock_actual integer NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS fecha_movimiento timestamp with time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_vendedor integer;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_lote integer;
+ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS id_categoria_almacen integer;
 ALTER TABLE public.movimientos_inventario ADD COLUMN IF NOT EXISTS motivo text;
 
 -- Columnas de public.newsletter_suscriptores
-ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('newsletter_suscriptores_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('newsletter_suscriptores_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS email character varying(100) NOT NULL;
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS nombre character varying(100);
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'activo'::character varying;
-ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS fecha_suscripcion timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS fecha_baja timestamp without time zone(6);
+ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS fecha_suscripcion timestamp without time zone DEFAULT now();
+ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS fecha_baja timestamp without time zone;
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS fuente character varying(50);
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS ip_address inet;
 ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS user_agent text;
-ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.newsletter_suscriptores ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.pagos_diferidos
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer(32) DEFAULT nextval('pagos_diferidos_id_pago_diferido_seq'::regclass) NOT NULL;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer(32) NOT NULL;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_mesa integer(32);
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer DEFAULT nextval('pagos_diferidos_id_pago_diferido_seq'::regclass) NOT NULL;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer NOT NULL;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_mesa integer;
 ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS total_pendiente numeric NOT NULL;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_vencimiento timestamp without time zone(6);
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_vencimiento timestamp without time zone;
 ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'pendiente'::character varying;
 ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.pagos_diferidos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.pagos_restaurantes
-ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('pagos_restaurantes_id_seq'::regclass) NOT NULL;
-ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('pagos_restaurantes_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS monto numeric(10,2) NOT NULL;
-ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS fecha_pago timestamp without time zone(6) DEFAULT now() NOT NULL;
+ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS fecha_pago timestamp without time zone DEFAULT now() NOT NULL;
 ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS metodo_pago character varying(50);
 ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS registrado_por integer(32);
-ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS registrado_por integer;
+ALTER TABLE public.pagos_restaurantes ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone DEFAULT now();
 
 -- Columnas de public.planes
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS id_plan integer(32) DEFAULT nextval('planes_id_plan_seq'::regclass) NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS id_plan integer DEFAULT nextval('planes_id_plan_seq'::regclass) NOT NULL;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS nombre character varying(50) NOT NULL;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS precio_mensual numeric(10,2) NOT NULL;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS precio_anual numeric(10,2);
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_sucursales integer(32) DEFAULT 1 NOT NULL;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_usuarios integer(32) DEFAULT 2 NOT NULL;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_productos integer(32) DEFAULT 100 NOT NULL;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_transacciones_mes integer(32) DEFAULT 500 NOT NULL;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS almacenamiento_gb integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_sucursales integer DEFAULT 1 NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_usuarios integer DEFAULT 2 NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_productos integer DEFAULT 100 NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS max_transacciones_mes integer DEFAULT 500 NOT NULL;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS almacenamiento_gb integer DEFAULT 1 NOT NULL;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS funcionalidades jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS orden_display integer(32) DEFAULT 0;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS orden_display integer DEFAULT 0;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_pos boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_inventario_basico boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_inventario_avanzado boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_promociones boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_reservas boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_arqueo_caja boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_egresos boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_egresos_avanzados boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_reportes_avanzados boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_analytics boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_delivery boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_impresion boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_soporte_24h boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_api boolean DEFAULT false;
+ALTER TABLE public.planes ADD COLUMN IF NOT EXISTS incluye_white_label boolean DEFAULT false;
 
 -- Columnas de public.planes_pos
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('planes_pos_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('planes_pos_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS descripcion text;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS precio_mensual numeric(10,2);
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS precio_anual numeric(10,2);
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS caracteristicas jsonb;
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS max_sucursales integer(32) DEFAULT 1;
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS max_usuarios integer(32) DEFAULT 5;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS max_sucursales integer DEFAULT 1;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS max_usuarios integer DEFAULT 5;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS incluye_impresion boolean DEFAULT false;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS incluye_delivery boolean DEFAULT false;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS incluye_reservas boolean DEFAULT false;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS incluye_analytics boolean DEFAULT false;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS incluye_soporte_24h boolean DEFAULT false;
 ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS orden_display integer(32) DEFAULT 0;
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS orden_display integer DEFAULT 0;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.planes_pos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.prefacturas
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_prefactura integer(32) DEFAULT nextval('prefacturas_id_prefactura_seq'::regclass) NOT NULL;
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_mesa integer(32);
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_venta_principal integer(32);
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_prefactura integer DEFAULT nextval('prefacturas_id_prefactura_seq'::regclass) NOT NULL;
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_mesa integer;
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_venta_principal integer;
 ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS total_acumulado numeric(10,2) DEFAULT 0;
 ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'abierta'::character varying;
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS fecha_apertura timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS fecha_cierre timestamp without time zone(6);
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS fecha_apertura timestamp without time zone DEFAULT now();
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS fecha_cierre timestamp without time zone;
 ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.prefacturas ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.presupuestos_egresos
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_presupuesto integer(32) DEFAULT nextval('presupuestos_egresos_id_presupuesto_seq'::regclass) NOT NULL;
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS anio integer(32) NOT NULL;
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS mes integer(32);
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer(32) NOT NULL;
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_presupuesto integer DEFAULT nextval('presupuestos_egresos_id_presupuesto_seq'::regclass) NOT NULL;
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS anio integer NOT NULL;
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS mes integer;
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_categoria_egreso integer NOT NULL;
 ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS monto_presupuestado numeric(12,2) NOT NULL;
 ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS monto_gastado numeric(12,2) DEFAULT 0;
 ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.presupuestos_egresos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.productos
-ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_producto integer(32) DEFAULT nextval('productos_id_producto_seq'::regclass) NOT NULL;
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_producto integer DEFAULT nextval('productos_id_producto_seq'::regclass) NOT NULL;
 ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS nombre character varying(200) NOT NULL;
 ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS precio numeric(10,2) NOT NULL;
-ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_categoria integer(32);
-ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS stock_actual integer(32) DEFAULT 0;
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_categoria integer;
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS stock_actual integer DEFAULT 0;
 ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
 ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS imagen_url text;
-ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.productos ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.productos_modificadores
-ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS id_modificador integer(32) DEFAULT nextval('productos_modificadores_id_modificador_seq'::regclass) NOT NULL;
-ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS id_producto integer(32) NOT NULL;
+ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS id_modificador integer DEFAULT nextval('productos_modificadores_id_modificador_seq'::regclass) NOT NULL;
+ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS id_producto integer NOT NULL;
 ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS nombre_modificador character varying(100) NOT NULL;
 ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS precio_extra numeric(10,2) DEFAULT 0.00;
 ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS tipo_modificador character varying(50) DEFAULT 'opcional'::character varying;
 ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.productos_modificadores ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.promociones
-ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_promocion integer(32) DEFAULT nextval('promociones_id_promocion_seq'::regclass) NOT NULL;
+ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_promocion integer DEFAULT nextval('promociones_id_promocion_seq'::regclass) NOT NULL;
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS nombre character varying(100);
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS tipo character varying(20);
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS valor numeric(10,2);
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS fecha_inicio date;
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS fecha_fin date;
-ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_producto integer(32);
-ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS creada_en timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_producto integer;
+ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS creada_en timestamp without time zone DEFAULT now();
 ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS activa boolean DEFAULT true;
-ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.promociones ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 
 -- Columnas de public.promociones_sucursales
-ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_relacion integer(32) DEFAULT nextval('promociones_sucursales_id_relacion_seq'::regclass) NOT NULL;
-ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_promocion integer(32) NOT NULL;
-ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_sucursal integer(32) NOT NULL;
-ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS aplicada_en timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_relacion integer DEFAULT nextval('promociones_sucursales_id_relacion_seq'::regclass) NOT NULL;
+ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_promocion integer NOT NULL;
+ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS id_sucursal integer NOT NULL;
+ALTER TABLE public.promociones_sucursales ADD COLUMN IF NOT EXISTS aplicada_en timestamp without time zone DEFAULT now();
 
 -- Columnas de public.reservas
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_reserva integer(32) DEFAULT nextval('reservas_id_reserva_seq'::regclass) NOT NULL;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_sucursal integer(32) NOT NULL;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_mesa integer(32);
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_cliente integer(32);
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_reserva integer DEFAULT nextval('reservas_id_reserva_seq'::regclass) NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_sucursal integer NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_mesa integer;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS id_cliente integer;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS nombre_cliente character varying(255) NOT NULL;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS telefono_cliente character varying(50);
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS email_cliente character varying(255);
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS fecha_hora_inicio timestamp with time zone(6) NOT NULL;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS fecha_hora_fin timestamp with time zone(6) NOT NULL;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS numero_personas integer(32) NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS fecha_hora_inicio timestamp with time zone NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS fecha_hora_fin timestamp with time zone NOT NULL;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS numero_personas integer NOT NULL;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS estado character varying(50) DEFAULT 'PENDIENTE'::character varying NOT NULL;
 ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS registrado_por integer(32);
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS registrado_por integer;
 
 -- Columnas de public.restaurantes
-ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT nextval('restaurantes_id_restaurante_seq'::regclass) NOT NULL;
+ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT nextval('restaurantes_id_restaurante_seq'::regclass) NOT NULL;
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS nombre character varying(255) NOT NULL;
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS direccion text;
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS ciudad character varying(100);
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS telefono character varying(20);
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS email character varying(255);
 ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.restaurantes ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.roles_admin
-ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS id_rol integer(32) DEFAULT nextval('roles_admin_id_rol_seq'::regclass) NOT NULL;
+ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS id_rol integer DEFAULT nextval('roles_admin_id_rol_seq'::regclass) NOT NULL;
 ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS nombre character varying(32) NOT NULL;
 ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS descripcion character varying(255);
 ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS permisos jsonb;
-ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.roles_admin ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.servicios_restaurante
-ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('servicios_restaurante_id_seq'::regclass) NOT NULL;
-ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('servicios_restaurante_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS nombre_plan character varying(100) NOT NULL;
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS descripcion_plan text;
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS fecha_inicio date DEFAULT CURRENT_DATE NOT NULL;
@@ -1025,11 +1080,11 @@ ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS estado_suscrip
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS precio_mensual numeric(10,2);
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS ultimo_pago date;
 ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS funcionalidades_json jsonb DEFAULT '{}'::jsonb;
-ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS creado_en timestamp with time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS actualizado_en timestamp with time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS creado_en timestamp with time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.servicios_restaurante ADD COLUMN IF NOT EXISTS actualizado_en timestamp with time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.solicitudes_demo
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS id_solicitud integer(32) DEFAULT nextval('solicitudes_demo_id_solicitud_seq'::regclass) NOT NULL;
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS id_solicitud integer DEFAULT nextval('solicitudes_demo_id_solicitud_seq'::regclass) NOT NULL;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS email character varying(100) NOT NULL;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS telefono character varying(20) NOT NULL;
@@ -1039,93 +1094,93 @@ ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS tipo_negocio charac
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS mensaje text;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS horario_preferido character varying(50);
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'pendiente'::character varying;
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS fecha_solicitud timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS fecha_solicitud timestamp without time zone DEFAULT now();
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS ip_address inet;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS user_agent text;
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS procesado_por integer(32);
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS fecha_procesamiento timestamp without time zone(6);
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS procesado_por integer;
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS fecha_procesamiento timestamp without time zone;
 ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.solicitudes_demo ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.soporte_tickets
-ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_ticket integer(32) DEFAULT nextval('soporte_tickets_id_ticket_seq'::regclass) NOT NULL;
-ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_vendedor integer(32) NOT NULL;
-ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_ticket integer DEFAULT nextval('soporte_tickets_id_ticket_seq'::regclass) NOT NULL;
+ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_vendedor integer NOT NULL;
+ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS asunto character varying(100) NOT NULL;
 ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS descripcion text NOT NULL;
 ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'pendiente'::character varying;
-ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS fecha_resuelto timestamp without time zone(6);
+ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone DEFAULT now();
+ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS fecha_resuelto timestamp without time zone;
 ALTER TABLE public.soporte_tickets ADD COLUMN IF NOT EXISTS respuesta text;
 
 -- Columnas de public.sucursales
-ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS id_sucursal integer(32) DEFAULT nextval('sucursales_id_sucursal_seq'::regclass) NOT NULL;
+ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS id_sucursal integer DEFAULT nextval('sucursales_id_sucursal_seq'::regclass) NOT NULL;
 ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS nombre character varying(150) NOT NULL;
 ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS ciudad character varying(100) NOT NULL;
 ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS direccion text;
 ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
+ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.sucursales ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
 
 -- Columnas de public.suscripciones
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_suscripcion integer(32) DEFAULT nextval('suscripciones_id_suscripcion_seq'::regclass) NOT NULL;
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_plan integer(32) NOT NULL;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_suscripcion integer DEFAULT nextval('suscripciones_id_suscripcion_seq'::regclass) NOT NULL;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS id_plan integer NOT NULL;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'activa'::character varying;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS fecha_inicio date DEFAULT CURRENT_DATE NOT NULL;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS fecha_fin date;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS fecha_renovacion date;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS metodo_pago character varying(20) DEFAULT 'mensual'::character varying;
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS ultimo_pago timestamp without time zone(6);
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS proximo_pago timestamp without time zone(6);
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS ultimo_pago timestamp without time zone;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS proximo_pago timestamp without time zone;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS auto_renovacion boolean DEFAULT true;
 ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS notificaciones_email boolean DEFAULT true;
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.suscripciones ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.system_tasks
-ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('system_tasks_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('system_tasks_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS task_name character varying(100) NOT NULL;
-ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS last_run timestamp without time zone(6);
-ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS next_run timestamp without time zone(6);
-ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS interval_minutes integer(32) DEFAULT 60;
+ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS last_run timestamp without time zone;
+ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS next_run timestamp without time zone;
+ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS interval_minutes integer DEFAULT 60;
 ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
-ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.system_tasks ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.testimonios_web
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('testimonios_web_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('testimonios_web_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS nombre character varying(100) NOT NULL;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS cargo character varying(50);
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS empresa character varying(100);
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS foto_url character varying(255);
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS testimonio text NOT NULL;
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS calificacion integer(32);
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS calificacion integer;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS ciudad character varying(50);
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS fecha_experiencia date;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS plan_contratado character varying(50);
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS tiempo_uso_meses integer(32);
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS tiempo_uso_meses integer;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
 ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS destacado boolean DEFAULT false;
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS orden_display integer(32) DEFAULT 0;
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS orden_display integer DEFAULT 0;
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.testimonios_web ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.transferencias_almacen
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_transferencia integer(32) DEFAULT nextval('transferencias_almacen_id_transferencia_seq'::regclass) NOT NULL;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_producto integer(32) NOT NULL;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_lote integer(32);
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_transferencia integer DEFAULT nextval('transferencias_almacen_id_transferencia_seq'::regclass) NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_producto integer NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_lote integer;
 ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS cantidad_transferida numeric(10,2) NOT NULL;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS almacen_origen integer(32) NOT NULL;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS almacen_destino integer(32) NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS almacen_origen integer NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS almacen_destino integer NOT NULL;
 ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS motivo character varying(200);
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_responsable integer(32) NOT NULL;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS fecha_transferencia timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_responsable integer NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS fecha_transferencia timestamp without time zone DEFAULT now();
 ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS estado character varying(20) DEFAULT 'pendiente'::character varying;
-ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
+ALTER TABLE public.transferencias_almacen ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
 
 -- Columnas de public.user_sessions
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS id integer(32) DEFAULT nextval('user_sessions_id_seq'::regclass) NOT NULL;
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS id integer DEFAULT nextval('user_sessions_id_seq'::regclass) NOT NULL;
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS session_id character varying(100) NOT NULL;
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS ip_address inet;
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS user_agent text;
@@ -1141,81 +1196,81 @@ ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS city character varying
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS device_type character varying(50);
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS browser character varying(100);
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS os character varying(100);
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS first_visit timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS last_visit timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS visit_count integer(32) DEFAULT 1;
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS first_visit timestamp without time zone DEFAULT now();
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS last_visit timestamp without time zone DEFAULT now();
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS visit_count integer DEFAULT 1;
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS is_converted boolean DEFAULT false;
 ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS conversion_event character varying(50);
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS conversion_timestamp timestamp without time zone(6);
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS conversion_timestamp timestamp without time zone;
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.uso_recursos
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_uso integer(32) DEFAULT nextval('uso_recursos_id_uso_seq'::regclass) NOT NULL;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_restaurante integer(32) NOT NULL;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_plan integer(32) NOT NULL;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS productos_actuales integer(32) DEFAULT 0;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS usuarios_actuales integer(32) DEFAULT 0;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS sucursales_actuales integer(32) DEFAULT 0;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS transacciones_mes_actual integer(32) DEFAULT 0;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS almacenamiento_usado_mb integer(32) DEFAULT 0;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS mes_medicion integer(32) NOT NULL;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS año_medicion integer(32) NOT NULL;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_uso integer DEFAULT nextval('uso_recursos_id_uso_seq'::regclass) NOT NULL;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_restaurante integer NOT NULL;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS id_plan integer NOT NULL;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS productos_actuales integer DEFAULT 0;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS usuarios_actuales integer DEFAULT 0;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS sucursales_actuales integer DEFAULT 0;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS transacciones_mes_actual integer DEFAULT 0;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS almacenamiento_usado_mb integer DEFAULT 0;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS mes_medicion integer NOT NULL;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS año_medicion integer NOT NULL;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE public.uso_recursos ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP;
 
 -- Columnas de public.usuarios
-ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS id_usuario integer(32);
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS id_usuario integer;
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS nombre character varying(150);
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS email character varying(255);
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS password_hash character varying(255);
-ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS rol_id integer(32);
-ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS id_sucursal integer(32);
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS rol_id integer;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS id_sucursal integer;
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS activo boolean;
-ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone(6);
-ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone(6);
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS creado_en timestamp without time zone;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS actualizado_en timestamp without time zone;
 
 -- Columnas de public.v_integrity_monitoring
 ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS table_name text;
-ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS total_records bigint(64);
-ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS active_mesas bigint(64);
-ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS free_mesas bigint(64);
+ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS total_records bigint;
+ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS active_mesas bigint;
+ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS free_mesas bigint;
 ALTER TABLE public.v_integrity_monitoring ADD COLUMN IF NOT EXISTS total_acumulado numeric;
 
 -- Columnas de public.vendedores
-ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_vendedor integer(32) DEFAULT nextval('vendedores_id_vendedor_seq'::regclass) NOT NULL;
+ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_vendedor integer DEFAULT nextval('vendedores_id_vendedor_seq'::regclass) NOT NULL;
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS nombre character varying(150) NOT NULL;
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS username character varying(50) NOT NULL;
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS email character varying(255);
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS password_hash character varying(255);
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS rol character varying(255) DEFAULT 'cajero'::character varying;
 ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS activo boolean DEFAULT true;
-ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_sucursal integer(32);
-ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
-ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS rol_admin_id integer(32);
+ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
+ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_sucursal integer;
+ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
+ALTER TABLE public.vendedores ADD COLUMN IF NOT EXISTS rol_admin_id integer;
 
 -- Columnas de public.ventas
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_venta integer(32) DEFAULT nextval('ventas_id_venta_seq'::regclass) NOT NULL;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS fecha timestamp without time zone(6) DEFAULT now();
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_vendedor integer(32);
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_pago integer(32);
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_sucursal integer(32);
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_venta integer DEFAULT nextval('ventas_id_venta_seq'::regclass) NOT NULL;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS fecha timestamp without time zone DEFAULT now();
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_vendedor integer;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_pago integer;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_sucursal integer;
 ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS tipo_servicio character varying(20) DEFAULT 'Mesa'::character varying;
 ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS total numeric(10,2) DEFAULT 0;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS mesa_numero integer(32);
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS mesa_numero integer;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS created_at timestamp without time zone DEFAULT now();
 ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS estado character varying(30) DEFAULT 'recibido'::character varying;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_restaurante integer(32) DEFAULT 1 NOT NULL;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_mesa integer(32);
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_restaurante integer DEFAULT 1 NOT NULL;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_mesa integer;
 ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS tipo_pago character varying(20) DEFAULT 'anticipado'::character varying;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_pago_final integer(32);
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS fecha_pago_final timestamp without time zone(6);
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS id_pago_final integer;
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS fecha_pago_final timestamp without time zone;
 ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS estado_pago character varying(20) DEFAULT 'pagado'::character varying;
-ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone(6) DEFAULT now();
+ALTER TABLE public.ventas ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone DEFAULT now();
 
 -- Columnas de public.vista_lotes_criticos
-ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS id_lote integer(32);
+ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS id_lote integer;
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS numero_lote character varying(100);
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS producto_nombre character varying(200);
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS categoria_nombre character varying(100);
@@ -1224,33 +1279,33 @@ ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS fecha_caducidad
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS precio_compra numeric(10,2);
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS estado_caducidad text;
 ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS estado_stock text;
-ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS dias_vencido integer(32);
-ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS dias_restantes integer(32);
+ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS dias_vencido integer;
+ALTER TABLE public.vista_lotes_criticos ADD COLUMN IF NOT EXISTS dias_restantes integer;
 
 -- Columnas de public.vista_pagos_diferidos
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer(32);
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer(32);
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS mesa_numero integer(32);
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_pago_diferido integer;
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_venta integer;
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS mesa_numero integer;
 ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS total numeric(10,2);
 ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS tipo_servicio character varying(20);
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone(6);
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_vencimiento timestamp without time zone(6);
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_creacion timestamp without time zone;
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS fecha_vencimiento timestamp without time zone;
 ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS estado character varying(20);
 ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS observaciones text;
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer(32);
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS id_restaurante integer;
 ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS estado_real character varying;
-ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS dias_pendiente integer(32);
+ALTER TABLE public.vista_pagos_diferidos ADD COLUMN IF NOT EXISTS dias_pendiente integer;
 
 -- Columnas de public.vista_resumen_inventario
-ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS id_producto integer(32);
+ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS id_producto integer;
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS producto_nombre character varying(200);
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS categoria_nombre character varying(100);
-ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS stock_actual integer(32);
+ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS stock_actual integer;
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS precio numeric(10,2);
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS stock_en_lotes numeric;
-ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS total_lotes bigint(64);
-ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS lotes_vencidos bigint(64);
-ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS lotes_por_vencer bigint(64);
+ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS total_lotes bigint;
+ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS lotes_vencidos bigint;
+ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS lotes_por_vencer bigint;
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS proxima_caducidad date;
 ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS estado_stock text;
 
@@ -1258,6 +1313,9 @@ ALTER TABLE public.vista_resumen_inventario ADD COLUMN IF NOT EXISTS estado_stoc
 ALTER TABLE public.admin_users ADD CONSTRAINT admin_users_pkey PRIMARY KEY (id);
 ALTER TABLE public.admin_users ADD CONSTRAINT admin_users_username_key UNIQUE (username);
 ALTER TABLE public.alertas_inventario ADD CONSTRAINT alertas_inventario_pkey PRIMARY KEY (id_alerta);
+ALTER TABLE public.alertas_limite ADD CONSTRAINT alertas_limite_pkey PRIMARY KEY (id_alerta);
+ALTER TABLE public.alertas_limite ADD CONSTRAINT fk_alertas_plan FOREIGN KEY (id_plan) REFERENCES public.planes(id_plan);
+ALTER TABLE public.alertas_limite ADD CONSTRAINT fk_alertas_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.alertas_limites ADD CONSTRAINT alertas_limites_pkey PRIMARY KEY (id_alerta);
 ALTER TABLE public.alertas_limites ADD CONSTRAINT fk_alerta_plan FOREIGN KEY (id_plan) REFERENCES public.planes(id_plan);
 ALTER TABLE public.alertas_limites ADD CONSTRAINT fk_alerta_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
@@ -1279,27 +1337,38 @@ ALTER TABLE public.casos_exito ADD CONSTRAINT casos_exito_pkey PRIMARY KEY (id);
 ALTER TABLE public.categorias ADD CONSTRAINT categorias_nombre_key UNIQUE (nombre);
 ALTER TABLE public.categorias ADD CONSTRAINT categorias_pkey PRIMARY KEY (id_categoria);
 ALTER TABLE public.categorias ADD CONSTRAINT fk_categorias_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
-ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (id_restaurante);
+ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (nombre);
 ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (nombre);
-ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (nombre);
+ALTER TABLE public.categorias ADD CONSTRAINT unique_categoria_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.categorias_almacen ADD CONSTRAINT categorias_almacen_nombre_key UNIQUE (nombre);
 ALTER TABLE public.categorias_almacen ADD CONSTRAINT categorias_almacen_pkey PRIMARY KEY (id_categoria_almacen);
 ALTER TABLE public.categorias_egresos ADD CONSTRAINT categorias_egresos_pkey PRIMARY KEY (id_categoria_egreso);
 ALTER TABLE public.categorias_egresos ADD CONSTRAINT fk_categorias_egresos_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
-ALTER TABLE public.categorias_egresos ADD CONSTRAINT uk_categorias_egresos_nombre_restaurante UNIQUE (nombre);
 ALTER TABLE public.categorias_egresos ADD CONSTRAINT uk_categorias_egresos_nombre_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.categorias_egresos ADD CONSTRAINT uk_categorias_egresos_nombre_restaurante UNIQUE (nombre);
 ALTER TABLE public.categorias_egresos ADD CONSTRAINT uk_categorias_egresos_nombre_restaurante UNIQUE (id_restaurante);
+ALTER TABLE public.categorias_egresos ADD CONSTRAINT uk_categorias_egresos_nombre_restaurante UNIQUE (nombre);
 ALTER TABLE public.clientes ADD CONSTRAINT clientes_pkey PRIMARY KEY (id_cliente);
 ALTER TABLE public.configuracion_web ADD CONSTRAINT configuracion_web_clave_key UNIQUE (clave);
 ALTER TABLE public.configuracion_web ADD CONSTRAINT configuracion_web_pkey PRIMARY KEY (id);
-ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_id_restaurante_clave_config_key UNIQUE (id_restaurante);
 ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_id_restaurante_clave_config_key UNIQUE (clave_config);
+ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_id_restaurante_clave_config_key UNIQUE (id_restaurante);
 ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_id_restaurante_clave_config_key UNIQUE (clave_config);
 ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_id_restaurante_clave_config_key UNIQUE (id_restaurante);
 ALTER TABLE public.configuraciones_restaurante ADD CONSTRAINT configuraciones_restaurante_pkey PRIMARY KEY (id_config);
 ALTER TABLE public.configuraciones_sistema ADD CONSTRAINT configuraciones_sistema_pkey PRIMARY KEY (clave_config);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_plan_fkey FOREIGN KEY (id_plan) REFERENCES public.planes(id_plan);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (id_restaurante);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (fecha_medicion);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (recurso);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (id_restaurante);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (fecha_medicion);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (id_restaurante);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (recurso);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (fecha_medicion);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_id_restaurante_recurso_fecha_medicion_key UNIQUE (recurso);
+ALTER TABLE public.contadores_uso ADD CONSTRAINT contadores_uso_pkey PRIMARY KEY (id_contador);
 ALTER TABLE public.contenido_web ADD CONSTRAINT contenido_web_pkey PRIMARY KEY (id);
 ALTER TABLE public.contenido_web ADD CONSTRAINT contenido_web_slug_key UNIQUE (slug);
 ALTER TABLE public.conversion_events ADD CONSTRAINT conversion_events_pkey PRIMARY KEY (id);
@@ -1347,13 +1416,13 @@ ALTER TABLE public.mesas ADD CONSTRAINT fk_mesas_mesero_actual FOREIGN KEY (id_m
 ALTER TABLE public.mesas ADD CONSTRAINT fk_mesas_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_id_sucursal_fkey FOREIGN KEY (id_sucursal) REFERENCES public.sucursales(id_sucursal);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_id_venta_actual_fkey FOREIGN KEY (id_venta_actual) REFERENCES public.ventas(id_venta);
-ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (numero);
-ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_sucursal);
-ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_restaurante);
-ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_restaurante);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_restaurante);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_sucursal);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (numero);
+ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_restaurante);
+ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_sucursal);
+ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (numero);
+ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_restaurante);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (id_sucursal);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_numero_sucursal_restaurante_unique UNIQUE (numero);
 ALTER TABLE public.mesas ADD CONSTRAINT mesas_pkey PRIMARY KEY (id_mesa);
@@ -1365,10 +1434,10 @@ ALTER TABLE public.metodos_pago ADD CONSTRAINT metodos_pago_descripcion_unique U
 ALTER TABLE public.metodos_pago ADD CONSTRAINT metodos_pago_pkey1 PRIMARY KEY (id_pago);
 ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT fk_metodos_pago_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT metodos_pago_pkey PRIMARY KEY (id_pago);
-ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (descripcion);
+ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (descripcion);
 ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (id_restaurante);
-ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (id_restaurante);
+ALTER TABLE public.metodos_pago_backup ADD CONSTRAINT unique_metodo_pago_restaurante UNIQUE (descripcion);
 ALTER TABLE public.metricas_web ADD CONSTRAINT metricas_web_pkey PRIMARY KEY (id);
 ALTER TABLE public.migrations ADD CONSTRAINT migrations_migration_name_key UNIQUE (migration_name);
 ALTER TABLE public.migrations ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
@@ -1392,29 +1461,29 @@ ALTER TABLE public.prefacturas ADD CONSTRAINT prefacturas_pkey PRIMARY KEY (id_p
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT fk_presupuestos_categoria FOREIGN KEY (id_categoria_egreso) REFERENCES public.categorias_egresos(id_categoria_egreso);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT fk_presupuestos_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT presupuestos_egresos_pkey PRIMARY KEY (id_presupuesto);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_restaurante);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_restaurante);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_restaurante);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
+ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_categoria_egreso);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (id_restaurante);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (anio);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
-ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
 ALTER TABLE public.presupuestos_egresos ADD CONSTRAINT uk_presupuestos_categoria_periodo UNIQUE (mes);
 ALTER TABLE public.productos ADD CONSTRAINT fk_productos_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.productos ADD CONSTRAINT productos_id_categoria_fkey FOREIGN KEY (id_categoria) REFERENCES public.categorias(id_categoria);
 ALTER TABLE public.productos ADD CONSTRAINT productos_pkey PRIMARY KEY (id_producto);
 ALTER TABLE public.productos ADD CONSTRAINT unique_producto_restaurante UNIQUE (nombre);
 ALTER TABLE public.productos ADD CONSTRAINT unique_producto_restaurante UNIQUE (id_restaurante);
-ALTER TABLE public.productos ADD CONSTRAINT unique_producto_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.productos ADD CONSTRAINT unique_producto_restaurante UNIQUE (nombre);
+ALTER TABLE public.productos ADD CONSTRAINT unique_producto_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.productos_modificadores ADD CONSTRAINT productos_modificadores_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto);
 ALTER TABLE public.productos_modificadores ADD CONSTRAINT productos_modificadores_pkey PRIMARY KEY (id_modificador);
 ALTER TABLE public.promociones ADD CONSTRAINT promociones_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto);
@@ -1423,8 +1492,8 @@ ALTER TABLE public.promociones ADD CONSTRAINT promociones_pkey PRIMARY KEY (id_p
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT fk_promociones_sucursales_promocion FOREIGN KEY (id_promocion) REFERENCES public.promociones(id_promocion);
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT fk_promociones_sucursales_sucursal FOREIGN KEY (id_sucursal) REFERENCES public.sucursales(id_sucursal);
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT promociones_sucursales_pkey PRIMARY KEY (id_relacion);
-ALTER TABLE public.promociones_sucursales ADD CONSTRAINT unique_promocion_sucursal UNIQUE (id_sucursal);
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT unique_promocion_sucursal UNIQUE (id_promocion);
+ALTER TABLE public.promociones_sucursales ADD CONSTRAINT unique_promocion_sucursal UNIQUE (id_sucursal);
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT unique_promocion_sucursal UNIQUE (id_promocion);
 ALTER TABLE public.promociones_sucursales ADD CONSTRAINT unique_promocion_sucursal UNIQUE (id_sucursal);
 ALTER TABLE public.reservas ADD CONSTRAINT fk_reservas_cliente FOREIGN KEY (id_cliente) REFERENCES public.clientes(id_cliente);
@@ -1445,8 +1514,8 @@ ALTER TABLE public.soporte_tickets ADD CONSTRAINT soporte_tickets_id_vendedor_fk
 ALTER TABLE public.soporte_tickets ADD CONSTRAINT soporte_tickets_pkey PRIMARY KEY (id_ticket);
 ALTER TABLE public.sucursales ADD CONSTRAINT fk_sucursales_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
 ALTER TABLE public.sucursales ADD CONSTRAINT sucursales_pkey PRIMARY KEY (id_sucursal);
-ALTER TABLE public.sucursales ADD CONSTRAINT unique_sucursal_restaurante UNIQUE (nombre);
 ALTER TABLE public.sucursales ADD CONSTRAINT unique_sucursal_restaurante UNIQUE (id_restaurante);
+ALTER TABLE public.sucursales ADD CONSTRAINT unique_sucursal_restaurante UNIQUE (nombre);
 ALTER TABLE public.sucursales ADD CONSTRAINT unique_sucursal_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.sucursales ADD CONSTRAINT unique_sucursal_restaurante UNIQUE (nombre);
 ALTER TABLE public.suscripciones ADD CONSTRAINT fk_suscripcion_plan FOREIGN KEY (id_plan) REFERENCES public.planes(id_plan);
@@ -1460,21 +1529,21 @@ ALTER TABLE public.user_sessions ADD CONSTRAINT user_sessions_pkey PRIMARY KEY (
 ALTER TABLE public.user_sessions ADD CONSTRAINT user_sessions_session_id_key UNIQUE (session_id);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT fk_uso_plan FOREIGN KEY (id_plan) REFERENCES public.planes(id_plan);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT fk_uso_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
-ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (año_medicion);
+ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (mes_medicion);
+ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (mes_medicion);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (id_restaurante);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (año_medicion);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (id_restaurante);
-ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (id_restaurante);
-ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (mes_medicion);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (mes_medicion);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (año_medicion);
-ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (mes_medicion);
+ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (id_restaurante);
+ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_id_restaurante_mes_medicion_año_medicion_key UNIQUE (año_medicion);
 ALTER TABLE public.uso_recursos ADD CONSTRAINT uso_recursos_pkey PRIMARY KEY (id_uso);
 ALTER TABLE public.vendedores ADD CONSTRAINT fk_vendedores_restaurante FOREIGN KEY (id_restaurante) REFERENCES public.restaurantes(id_restaurante);
-ALTER TABLE public.vendedores ADD CONSTRAINT unique_vendedor_restaurante UNIQUE (username);
 ALTER TABLE public.vendedores ADD CONSTRAINT unique_vendedor_restaurante UNIQUE (id_restaurante);
 ALTER TABLE public.vendedores ADD CONSTRAINT unique_vendedor_restaurante UNIQUE (username);
 ALTER TABLE public.vendedores ADD CONSTRAINT unique_vendedor_restaurante UNIQUE (id_restaurante);
+ALTER TABLE public.vendedores ADD CONSTRAINT unique_vendedor_restaurante UNIQUE (username);
 ALTER TABLE public.vendedores ADD CONSTRAINT vendedores_email_key UNIQUE (email);
 ALTER TABLE public.vendedores ADD CONSTRAINT vendedores_id_sucursal_fkey FOREIGN KEY (id_sucursal) REFERENCES public.sucursales(id_sucursal);
 ALTER TABLE public.vendedores ADD CONSTRAINT vendedores_pkey PRIMARY KEY (id_vendedor);
@@ -1512,6 +1581,12 @@ CREATE INDEX idx_alertas_resuelta ON public.alertas_inventario USING btree (resu
 
 -- Índice: idx_alertas_urgencia
 CREATE INDEX idx_alertas_urgencia ON public.alertas_inventario USING btree (nivel_urgencia);
+
+-- Índice: alertas_limite_pkey
+CREATE UNIQUE INDEX alertas_limite_pkey ON public.alertas_limite USING btree (id_alerta);
+
+-- Índice: idx_alertas_tipo
+CREATE INDEX idx_alertas_tipo ON public.alertas_limite USING btree (tipo_alerta);
 
 -- Índice: alertas_limites_pkey
 CREATE UNIQUE INDEX alertas_limites_pkey ON public.alertas_limites USING btree (id_alerta);
@@ -1608,6 +1683,12 @@ CREATE UNIQUE INDEX configuraciones_restaurante_pkey ON public.configuraciones_r
 
 -- Índice: configuraciones_sistema_pkey
 CREATE UNIQUE INDEX configuraciones_sistema_pkey ON public.configuraciones_sistema USING btree (clave_config);
+
+-- Índice: contadores_uso_id_restaurante_recurso_fecha_medicion_key
+CREATE UNIQUE INDEX contadores_uso_id_restaurante_recurso_fecha_medicion_key ON public.contadores_uso USING btree (id_restaurante, recurso, fecha_medicion);
+
+-- Índice: contadores_uso_pkey
+CREATE UNIQUE INDEX contadores_uso_pkey ON public.contadores_uso USING btree (id_contador);
 
 -- Índice: contenido_web_pkey
 CREATE UNIQUE INDEX contenido_web_pkey ON public.contenido_web USING btree (id);
@@ -2644,6 +2725,70 @@ AS $function$
         $function$
 ;
 
+-- Función: update_contadores_on_plan_change
+CREATE OR REPLACE FUNCTION public.update_contadores_on_plan_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+            BEGIN
+                -- Solo actualizar si cambió el plan
+                IF OLD.id_plan != NEW.id_plan THEN
+                    -- Actualizar contadores existentes para el restaurante
+                    UPDATE contadores_uso 
+                    SET 
+                        id_plan = NEW.id_plan,
+                        limite_plan = CASE 
+                            WHEN recurso = 'sucursales' THEN (SELECT max_sucursales FROM planes WHERE id_plan = NEW.id_plan)
+                            WHEN recurso = 'usuarios' THEN (SELECT max_usuarios FROM planes WHERE id_plan = NEW.id_plan)
+                            WHEN recurso = 'productos' THEN (SELECT max_productos FROM planes WHERE id_plan = NEW.id_plan)
+                            WHEN recurso = 'transacciones' THEN (SELECT max_transacciones_mes FROM planes WHERE id_plan = NEW.id_plan)
+                            WHEN recurso = 'almacenamiento' THEN (SELECT almacenamiento_gb * 1024 FROM planes WHERE id_plan = NEW.id_plan)
+                            ELSE limite_plan
+                        END,
+                        updated_at = NOW()
+                    WHERE id_restaurante = NEW.id_restaurante
+                    AND fecha_medicion = CURRENT_DATE;
+                    
+                    -- Crear contadores si no existen
+                    INSERT INTO contadores_uso (id_restaurante, id_plan, recurso, uso_actual, limite_plan, fecha_medicion, created_at, updated_at)
+                    SELECT 
+                        NEW.id_restaurante,
+                        NEW.id_plan,
+                        recurso,
+                        0 as uso_actual,
+                        CASE 
+                            WHEN recurso = 'sucursales' THEN p.max_sucursales
+                            WHEN recurso = 'usuarios' THEN p.max_usuarios
+                            WHEN recurso = 'productos' THEN p.max_productos
+                            WHEN recurso = 'transacciones' THEN p.max_transacciones_mes
+                            WHEN recurso = 'almacenamiento' THEN p.almacenamiento_gb * 1024
+                            ELSE 0
+                        END as limite_plan,
+                        CURRENT_DATE,
+                        NOW(),
+                        NOW()
+                    FROM planes p
+                    CROSS JOIN (
+                        SELECT 'sucursales' as recurso
+                        UNION SELECT 'usuarios'
+                        UNION SELECT 'productos'
+                        UNION SELECT 'transacciones'
+                        UNION SELECT 'almacenamiento'
+                    ) recursos
+                    WHERE p.id_plan = NEW.id_plan
+                    AND NOT EXISTS (
+                        SELECT 1 FROM contadores_uso 
+                        WHERE id_restaurante = NEW.id_restaurante 
+                        AND recurso = recursos.recurso 
+                        AND fecha_medicion = CURRENT_DATE
+                    );
+                END IF;
+                
+                RETURN NEW;
+            END;
+            $function$
+;
+
 -- Función: update_grupos_mesas_updated_at
 CREATE OR REPLACE FUNCTION public.update_grupos_mesas_updated_at()
  RETURNS trigger
@@ -3169,13 +3314,13 @@ CREATE TRIGGER update_contenido_web_updated_at BEFORE UPDATE ON contenido_web FO
 CREATE TRIGGER update_demos_reuniones_updated_at BEFORE UPDATE ON demos_reuniones FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger: trigger_update_venta_total
-CREATE TRIGGER trigger_update_venta_total AFTER UPDATE ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION update_venta_total();
+CREATE TRIGGER trigger_update_venta_total AFTER DELETE ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION update_venta_total();
 
 -- Trigger: trigger_update_venta_total
 CREATE TRIGGER trigger_update_venta_total AFTER INSERT ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION update_venta_total();
 
 -- Trigger: trigger_update_venta_total
-CREATE TRIGGER trigger_update_venta_total AFTER DELETE ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION update_venta_total();
+CREATE TRIGGER trigger_update_venta_total AFTER UPDATE ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION update_venta_total();
 
 -- Trigger: trigger_validate_detalle_venta_integrity
 CREATE TRIGGER trigger_validate_detalle_venta_integrity BEFORE UPDATE ON detalle_ventas FOR EACH ROW EXECUTE FUNCTION validate_detalle_venta_integrity();
@@ -3196,43 +3341,43 @@ CREATE TRIGGER trigger_egresos_updated_at BEFORE UPDATE ON egresos FOR EACH ROW 
 CREATE TRIGGER update_grupos_mesas_updated_at BEFORE UPDATE ON grupos_mesas FOR EACH ROW EXECUTE FUNCTION update_grupos_mesas_updated_at();
 
 -- Trigger: trigger_actualizar_stock_producto
-CREATE TRIGGER trigger_actualizar_stock_producto AFTER UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION actualizar_stock_producto();
+CREATE TRIGGER trigger_actualizar_stock_producto AFTER DELETE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION actualizar_stock_producto();
 
 -- Trigger: trigger_actualizar_stock_producto
 CREATE TRIGGER trigger_actualizar_stock_producto AFTER INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION actualizar_stock_producto();
 
 -- Trigger: trigger_actualizar_stock_producto
-CREATE TRIGGER trigger_actualizar_stock_producto AFTER DELETE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION actualizar_stock_producto();
-
--- Trigger: trigger_generar_alertas_inventario
-CREATE TRIGGER trigger_generar_alertas_inventario AFTER UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION generar_alertas_inventario();
+CREATE TRIGGER trigger_actualizar_stock_producto AFTER UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION actualizar_stock_producto();
 
 -- Trigger: trigger_generar_alertas_inventario
 CREATE TRIGGER trigger_generar_alertas_inventario AFTER INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION generar_alertas_inventario();
 
--- Trigger: trigger_registrar_movimiento_inventario
-CREATE TRIGGER trigger_registrar_movimiento_inventario AFTER INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION registrar_movimiento_inventario();
+-- Trigger: trigger_generar_alertas_inventario
+CREATE TRIGGER trigger_generar_alertas_inventario AFTER UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION generar_alertas_inventario();
 
 -- Trigger: trigger_registrar_movimiento_inventario
 CREATE TRIGGER trigger_registrar_movimiento_inventario AFTER DELETE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION registrar_movimiento_inventario();
 
 -- Trigger: trigger_registrar_movimiento_inventario
+CREATE TRIGGER trigger_registrar_movimiento_inventario AFTER INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION registrar_movimiento_inventario();
+
+-- Trigger: trigger_registrar_movimiento_inventario
 CREATE TRIGGER trigger_registrar_movimiento_inventario AFTER UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION registrar_movimiento_inventario();
 
 -- Trigger: trigger_validar_integridad_lote
-CREATE TRIGGER trigger_validar_integridad_lote BEFORE UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION validar_integridad_lote();
+CREATE TRIGGER trigger_validar_integridad_lote BEFORE INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION validar_integridad_lote();
 
 -- Trigger: trigger_validar_integridad_lote
-CREATE TRIGGER trigger_validar_integridad_lote BEFORE INSERT ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION validar_integridad_lote();
+CREATE TRIGGER trigger_validar_integridad_lote BEFORE UPDATE ON inventario_lotes FOR EACH ROW EXECUTE FUNCTION validar_integridad_lote();
 
 -- Trigger: update_leads_prospectos_updated_at
 CREATE TRIGGER update_leads_prospectos_updated_at BEFORE UPDATE ON leads_prospectos FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger: trg_validate_mesa_integrity
-CREATE TRIGGER trg_validate_mesa_integrity BEFORE INSERT ON mesas FOR EACH ROW EXECUTE FUNCTION validate_mesa_integrity();
+CREATE TRIGGER trg_validate_mesa_integrity BEFORE UPDATE ON mesas FOR EACH ROW EXECUTE FUNCTION validate_mesa_integrity();
 
 -- Trigger: trg_validate_mesa_integrity
-CREATE TRIGGER trg_validate_mesa_integrity BEFORE UPDATE ON mesas FOR EACH ROW EXECUTE FUNCTION validate_mesa_integrity();
+CREATE TRIGGER trg_validate_mesa_integrity BEFORE INSERT ON mesas FOR EACH ROW EXECUTE FUNCTION validate_mesa_integrity();
 
 -- Trigger: trigger_validate_mesa_integrity
 CREATE TRIGGER trigger_validate_mesa_integrity BEFORE INSERT ON mesas FOR EACH ROW EXECUTE FUNCTION validate_mesa_integrity();
@@ -3262,10 +3407,10 @@ CREATE TRIGGER trigger_validate_prefactura_integrity BEFORE INSERT ON prefactura
 CREATE TRIGGER trigger_presupuestos_egresos_updated_at BEFORE UPDATE ON presupuestos_egresos FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at_egresos();
 
 -- Trigger: trigger_validate_producto_integrity
-CREATE TRIGGER trigger_validate_producto_integrity BEFORE INSERT ON productos FOR EACH ROW EXECUTE FUNCTION validate_producto_integrity();
+CREATE TRIGGER trigger_validate_producto_integrity BEFORE UPDATE ON productos FOR EACH ROW EXECUTE FUNCTION validate_producto_integrity();
 
 -- Trigger: trigger_validate_producto_integrity
-CREATE TRIGGER trigger_validate_producto_integrity BEFORE UPDATE ON productos FOR EACH ROW EXECUTE FUNCTION validate_producto_integrity();
+CREATE TRIGGER trigger_validate_producto_integrity BEFORE INSERT ON productos FOR EACH ROW EXECUTE FUNCTION validate_producto_integrity();
 
 -- Trigger: update_productos_modificadores_updated_at
 CREATE TRIGGER update_productos_modificadores_updated_at BEFORE UPDATE ON productos_modificadores FOR EACH ROW EXECUTE FUNCTION update_modificadores_updated_at();
@@ -3275,6 +3420,12 @@ CREATE TRIGGER trg_promociones_timestamp BEFORE INSERT ON promociones FOR EACH R
 
 -- Trigger: update_servicios_restaurante_actualizado_en
 CREATE TRIGGER update_servicios_restaurante_actualizado_en BEFORE UPDATE ON servicios_restaurante FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+-- Trigger: trigger_create_contadores_on_new_subscription
+CREATE TRIGGER trigger_create_contadores_on_new_subscription AFTER INSERT ON suscripciones FOR EACH ROW EXECUTE FUNCTION update_contadores_on_plan_change();
+
+-- Trigger: trigger_update_contadores_on_plan_change
+CREATE TRIGGER trigger_update_contadores_on_plan_change AFTER UPDATE ON suscripciones FOR EACH ROW EXECUTE FUNCTION update_contadores_on_plan_change();
 
 -- Trigger: update_suscripciones_updated_at
 CREATE TRIGGER update_suscripciones_updated_at BEFORE UPDATE ON suscripciones FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -3286,10 +3437,10 @@ CREATE TRIGGER update_testimonios_web_updated_at BEFORE UPDATE ON testimonios_we
 CREATE TRIGGER update_uso_recursos_updated_at BEFORE UPDATE ON uso_recursos FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger: trg_validate_venta_mesa
-CREATE TRIGGER trg_validate_venta_mesa BEFORE UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_mesa();
+CREATE TRIGGER trg_validate_venta_mesa BEFORE INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_mesa();
 
 -- Trigger: trg_validate_venta_mesa
-CREATE TRIGGER trg_validate_venta_mesa BEFORE INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_mesa();
+CREATE TRIGGER trg_validate_venta_mesa BEFORE UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_mesa();
 
 -- Trigger: trigger_update_mesa_total_acumulado
 CREATE TRIGGER trigger_update_mesa_total_acumulado AFTER INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION update_mesa_total_acumulado();
@@ -3301,10 +3452,10 @@ CREATE TRIGGER trigger_update_mesa_total_acumulado AFTER DELETE ON ventas FOR EA
 CREATE TRIGGER trigger_update_mesa_total_acumulado AFTER UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION update_mesa_total_acumulado();
 
 -- Trigger: trigger_validate_venta_integrity
-CREATE TRIGGER trigger_validate_venta_integrity BEFORE UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_integrity();
+CREATE TRIGGER trigger_validate_venta_integrity BEFORE INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_integrity();
 
 -- Trigger: trigger_validate_venta_integrity
-CREATE TRIGGER trigger_validate_venta_integrity BEFORE INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_integrity();
+CREATE TRIGGER trigger_validate_venta_integrity BEFORE UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION validate_venta_integrity();
 
 -- Trigger: validar_estado_venta
 CREATE TRIGGER validar_estado_venta BEFORE UPDATE ON ventas FOR EACH ROW EXECUTE FUNCTION validar_estado_venta();

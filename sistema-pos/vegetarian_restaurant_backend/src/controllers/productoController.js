@@ -6,20 +6,29 @@ const logger = require('../config/logger'); // Importar el logger
 exports.getAllProductos = async (req, res, next) => {
   try {
     const id_restaurante = req.user.id_restaurante; // Obtener id_restaurante del usuario autenticado
+    const id_sucursal = req.query.id_sucursal ? parseInt(req.query.id_sucursal) : null;
     const includeInactive = req.query.includeInactive === 'true';
     const aplicarDescuentos = req.query.aplicarDescuentos === 'true';
     
+    console.log('🔍 Backend: getAllProductos called with:', { id_restaurante, id_sucursal, includeInactive, aplicarDescuentos });
+    
     let productos;
     if (includeInactive) {
-      productos = await Producto.getAllProductosWithInactive(id_restaurante);
+      productos = await Producto.getAllProductosWithInactive(id_restaurante, id_sucursal);
     } else {
-      productos = await Producto.getAllProductos(id_restaurante);
+      productos = await Producto.getAllProductos(id_restaurante, id_sucursal);
     }
+    
+    console.log('🔍 Backend: Productos obtenidos:', productos.length);
+    console.log('🔍 Backend: Primeros productos:', productos.slice(0, 3).map(p => ({
+      id: p.id_producto,
+      nombre: p.nombre,
+      stock: p.stock_actual
+    })));
     
     // Aplicar descuentos si se solicita
     if (aplicarDescuentos) {
       try {
-        const id_sucursal = req.query.id_sucursal ? parseInt(req.query.id_sucursal) : null;
         productos = await PromocionModel.aplicarDescuentosAProductos(productos, id_restaurante, id_sucursal);
       } catch (error) {
         logger.warn('Error aplicando descuentos a productos:', error);
@@ -27,12 +36,13 @@ exports.getAllProductos = async (req, res, next) => {
       }
     }
     
-    logger.info('Productos obtenidos exitosamente.', { id_restaurante, includeInactive, aplicarDescuentos });
+    logger.info('Productos obtenidos exitosamente.', { id_restaurante, id_sucursal, includeInactive, aplicarDescuentos });
     res.status(200).json({
       message: 'Productos obtenidos exitosamente.',
       data: productos
     });
   } catch (error) {
+    console.error('❌ Backend: Error al obtener productos:', error);
     logger.error('Error al obtener productos:', error);
     next(error);
   }

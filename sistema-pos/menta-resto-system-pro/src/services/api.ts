@@ -489,15 +489,20 @@ export const updateUser = async (userId: string, userData: {
 };
 
 // Productos
-export const getProducts = async (aplicarDescuentos = true) => {
+export const getProducts = async (options: { aplicarDescuentos?: boolean; id_sucursal?: number } = {}) => {
   try {
     const restauranteId = getRestauranteId();
     if (!restauranteId) throw new Error('Restaurante ID not found.');
+    
+    const { aplicarDescuentos = true, id_sucursal } = options;
     
     const params = new URLSearchParams();
     params.append('id_restaurante', restauranteId.toString());
     if (aplicarDescuentos) {
       params.append('aplicarDescuentos', 'true');
+    }
+    if (id_sucursal) {
+      params.append('id_sucursal', id_sucursal.toString());
     }
     
     const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/productos?${params.toString()}`);
@@ -2077,5 +2082,99 @@ export const getVentaConDetalles = async (id_venta: number) => {
       console.error('Error en fallback:', fallbackError);
       throw error;
     }
+  }
+};
+
+// ==================== STOCK BY BRANCH API FUNCTIONS ====================
+
+/**
+ * Obtiene el stock de productos por sucursal
+ */
+export const getStockByBranch = async (id_sucursal: number) => {
+  try {
+    const response = await api.get(`/stock-sucursal/${id_sucursal}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error al obtener stock por sucursal:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza el stock de un producto en una sucursal específica
+ */
+export const updateStockByBranch = async (
+  id_producto: number, 
+  id_sucursal: number, 
+  stockData: { stock_actual: number; stock_minimo: number; stock_maximo: number }
+) => {
+  try {
+    const response = await api.put(`/stock-sucursal/${id_producto}/${id_sucursal}`, stockData);
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar stock por sucursal:', error);
+    throw error;
+  }
+};
+
+/**
+ * Transfiere stock entre sucursales
+ */
+export const transferStockBetweenBranches = async (transferData: {
+  id_producto: number;
+  cantidad: number;
+  sucursal_origen: number;
+  sucursal_destino: number;
+  observaciones?: string;
+}) => {
+  try {
+    const response = await api.post('/stock-sucursal/transfer', transferData);
+    return response.data;
+  } catch (error) {
+    console.error('Error al transferir stock entre sucursales:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene alertas de stock
+ */
+export const getStockAlerts = async () => {
+  try {
+    const response = await api.get('/stock-sucursal/alerts');
+    return response.data.data;
+  } catch (error) {
+    console.error('Error al obtener alertas de stock:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene reportes de stock
+ */
+export const getStockReports = async (filters?: {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  id_sucursal?: number;
+  tipo_reporte?: string;
+}) => {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.fecha_inicio) params.append('fecha_inicio', filters.fecha_inicio);
+    if (filters?.fecha_fin) params.append('fecha_fin', filters.fecha_fin);
+    if (filters?.id_sucursal) params.append('id_sucursal', filters.id_sucursal.toString());
+    if (filters?.tipo_reporte) params.append('tipo_reporte', filters.tipo_reporte);
+    
+    const response = await api.get(`/stock-sucursal/reports?${params.toString()}`);
+    
+    // Para el tipo 'analytics', devolver analytics en lugar de data
+    if (filters?.tipo_reporte === 'analytics') {
+      return response.data.analytics || [];
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error('Error al obtener reportes de stock:', error);
+    throw error;
   }
 };

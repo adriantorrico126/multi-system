@@ -183,3 +183,6 @@ Si el despliegue sigue fallando, revisar:
 2. Implementar error tracking (Sentry)
 3. Configurar alertas de performance
 
+
+
+

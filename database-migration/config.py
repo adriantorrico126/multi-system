@@ -9,20 +9,20 @@ load_dotenv()
 
 # Configuración de la base de datos local
 LOCAL_DB_CONFIG = {
-    'host': os.getenv('LOCAL_DB_HOST', 'localhost'),
-    'port': int(os.getenv('LOCAL_DB_PORT', 5432)),
-    'user': os.getenv('LOCAL_DB_USER', 'postgres'),
-    'password': os.getenv('LOCAL_DB_PASSWORD', 'password'),
-    'database': os.getenv('LOCAL_DB_NAME', 'sistempos')
+    'host': 'localhost',
+    'port': 5432,
+    'user': 'postgres',
+    'password': os.getenv('LOCAL_DB_PASSWORD'),
+    'database': 'sistempos'
 }
 
 # Configuración de la base de datos de producción
 PRODUCTION_DB_CONFIG = {
-    'host': os.getenv('PROD_DB_HOST', 'db-postgresql-nyc3-64232-do-user-24932517-0.j.db.ondigitalocean.com'),
-    'port': int(os.getenv('PROD_DB_PORT', 25060)),
-    'user': os.getenv('PROD_DB_USER', 'doadmin'),
-    'password': os.getenv('PROD_DB_PASSWORD', 'placeholder_password'),
-    'database': os.getenv('PROD_DB_NAME', 'defaultdb')
+    'host': 'db-postgresql-nyc3-64232-do-user-24932517-0.j.db.ondigitalocean.com',
+    'port': 25060,
+    'user': 'doadmin',
+    'password': os.getenv('PROD_DB_PASSWORD'),
+    'database': 'defaultdb'
 }
 
 # Configuración de archivos de salida

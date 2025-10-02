@@ -21,7 +21,7 @@ const Venta = {
     return rows[0];
   },
 
-  async createDetalleVenta(id_venta, items, id_restaurante, client = pool) {
+  async createDetalleVenta(id_venta, items, id_restaurante, id_sucursal, client = pool) {
     
     const detalles = [];
     for (const item of items) {
@@ -36,29 +36,33 @@ const Venta = {
       const { rows } = await client.query(query, values);
       detalles.push(rows[0]);
       
-      // Actualizar stock del producto
+      // Actualizar stock del producto por sucursal
       try {
-        
-        // Verificar stock antes del update
-        const stockBeforeQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1 AND id_restaurante = $2';
-        const stockBeforeResult = await client.query(stockBeforeQuery, [item.id_producto, id_restaurante]);
-        
-        // Actualizar stock sin permitir valores negativos
-        const updateStockQuery = `
-          UPDATE productos 
-          SET stock_actual = GREATEST(0, stock_actual - $1) 
-          WHERE id_producto = $2 AND id_restaurante = $3;
-        `;
-        
-        const { rowCount } = await client.query(updateStockQuery, [item.cantidad, item.id_producto, id_restaurante]);
-        
-        // Verificar stock después del update
-        const stockAfterQuery = 'SELECT stock_actual FROM productos WHERE id_producto = $1 AND id_restaurante = $2';
-        const stockAfterResult = await client.query(stockAfterQuery, [item.id_producto, id_restaurante]);
+        if (id_sucursal) {
+          // Usar función para actualizar stock por sucursal
+          const stockUpdateResult = await client.query(`
+            SELECT actualizar_stock_venta($1, $2, $3, $4) as resultado
+          `, [item.id_producto, id_sucursal, item.cantidad, null]);
+          
+          const resultado = stockUpdateResult.rows[0].resultado;
+          
+          if (!resultado.success) {
+            console.warn(`Stock insuficiente para producto ${item.id_producto} en sucursal ${id_sucursal}:`, resultado.error);
+            // Continuar con la venta pero registrar el warning
+          }
+        } else {
+          // Fallback: actualizar stock global (compatibilidad)
+          const updateStockQuery = `
+            UPDATE productos 
+            SET stock_actual = GREATEST(0, stock_actual - $1) 
+            WHERE id_producto = $2 AND id_restaurante = $3;
+          `;
+          
+          await client.query(updateStockQuery, [item.cantidad, item.id_producto, id_restaurante]);
+        }
       } catch (err) {
         console.error('Model: Error updating stock for product', item.id_producto, err);
         console.error('Model: Error details:', err.message);
-        console.error('Model: Error stack:', err.stack);
         // No lanzar el error para que la venta se complete
         console.log('Model: Continuing with sale despite stock update error');
       }
