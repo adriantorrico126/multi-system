@@ -14,10 +14,6 @@
         {
           "key": "Expires",
           "value": "0"
-        },
-        {
-          "key": "X-Vercel-Cache-Bypass",
-          "value": "true"
         }
       ]
     },
@@ -31,7 +27,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg))",
+      "source": "/static/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -57,15 +53,10 @@
       ]
     }
   ],
-  "functions": {
-    "src/pages/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/health"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
