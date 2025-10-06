@@ -344,7 +344,7 @@ export const usePlanFeaturesNew = (idRestaurante: number): UsePlanFeaturesReturn
         console.log('🔍 [PLAN] No hay idRestaurante, saltando refreshData');
       }
     }
-  }, [idRestaurante]); // Removido refreshData para evitar bucle infinito
+  }, [idRestaurante, refreshData]); // Agregado refreshData de vuelta con memoización
 
   return {
     planInfo,

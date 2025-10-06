@@ -285,7 +285,7 @@ export const usePlanAlerts = (idRestaurante: number): UsePlanAlertsReturn => {
       refreshSummary();
       refreshDashboard();
     }
-  }, [idRestaurante]); // Removidas las funciones de las dependencias para evitar bucle infinito
+  }, [idRestaurante, refreshData, refreshSummary, refreshDashboard]); // Agregadas las funciones de vuelta con memoización
 
   // =====================================================
   // RETORNO

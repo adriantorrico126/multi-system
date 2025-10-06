@@ -324,7 +324,7 @@ export const usePlanLimits = (idRestaurante: number): UsePlanLimitsReturn => {
     if (idRestaurante > 0) {
       refreshData();
     }
-  }, [idRestaurante]); // Removido refreshData de las dependencias para evitar bucle infinito
+  }, [idRestaurante, refreshData]); // Agregado refreshData de vuelta con memoización
 
   // =====================================================
   // RETORNO

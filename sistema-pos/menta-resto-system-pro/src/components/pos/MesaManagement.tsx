@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMesaRealTime } from '@/hooks/useMesaRealTime';
+import { useMobile } from '@/hooks/use-mobile';
 import { MesaCardOptimized } from './MesaCardOptimized';
 import { CobrarButtonOptimized } from './CobrarButtonOptimized';
 import { MetodosPagoModal } from './MetodosPagoModal';
 import { ProfessionalPrefacturaModal } from './ProfessionalPrefacturaModal';
+import { ProfessionalDesktopPrefacturaModal } from './ProfessionalDesktopPrefacturaModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
@@ -81,6 +84,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { hasFeature } = usePlanSystem();
+  const { isMobile } = useMobile();
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showPrefactura, setShowPrefactura] = useState(false);
@@ -577,8 +581,8 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
 
       {/* Modal de Prefactura */}
       <Dialog open={showPrefactura} onOpenChange={setShowPrefactura}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto mobile-modal prefactura-modal">
-          <DialogHeader className="mobile-header prefactura-header">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] flex flex-col mobile-modal prefactura-modal">
+          <DialogHeader className="mobile-header prefactura-header flex-shrink-0">
             <DialogTitle className="mobile-text-xl">Prefactura - Mesa {selectedMesa?.numero}</DialogTitle>
             <DialogDescription className="mobile-text-sm">
               Detalles de consumo y opciones de pago
@@ -586,8 +590,10 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
           </DialogHeader>
           
           {selectedMesa && (
-            <div className="space-y-4 mobile-p-4 prefactura-content">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg mobile-spacing prefactura-summary">
+            <>
+              <ScrollArea className="flex-1 mobile-p-4">
+                <div className="space-y-4 prefactura-content pr-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg mobile-spacing prefactura-summary">
                 <div className="mb-2 sm:mb-0">
                   <h3 className="text-lg font-semibold mobile-text-lg">Mesa {selectedMesa.numero}</h3>
                   <p className="text-gray-600 mobile-text-sm">Capacidad: {selectedMesa.capacidad} personas</p>
@@ -693,7 +699,11 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-2 mobile-gap-2 prefactura-buttons">
+                </div>
+              </ScrollArea>
+              
+              {/* Botones fijos fuera del ScrollArea */}
+              <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 mobile-gap-2 prefactura-buttons p-4 border-t bg-white">
                 {selectedMesa.estado === 'pendiente_cobro' && (
                   <Button
                     onClick={() => marcarComoPagadoMutation.mutate({ id_mesa: selectedMesa.id_mesa })}
@@ -714,7 +724,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                   <span className="mobile-text-sm">Liberar Mesa</span>
                 </Button>
               </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -732,47 +742,95 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
         onResetMesa={handleResetMesa}
       />
 
-      {/* Modal de Prefactura Profesional */}
+      {/* Modal de Prefactura - Responsive */}
       {prefacturaData && (
-        <ProfessionalPrefacturaModal
-          isOpen={showProfessionalPrefactura}
-          onClose={() => {
-            setShowProfessionalPrefactura(false);
-            setPrefacturaData(null);
-          }}
-          type="individual"
-          data={prefacturaData}
-          loading={loadingDetalles}
-          onAction={(action) => {
-            console.log('🔍 [PREFACTURA PROFESIONAL] Acción:', action);
-            switch (action) {
-              case 'cobrar':
-                if (selectedMesa) {
-                  handleShowMetodosPago(selectedMesa);
-                  setShowProfessionalPrefactura(false);
+        <>
+          {/* Modal Profesional para Móvil */}
+          {isMobile && (
+            <ProfessionalPrefacturaModal
+              isOpen={showProfessionalPrefactura}
+              onClose={() => {
+                setShowProfessionalPrefactura(false);
+                setPrefacturaData(null);
+              }}
+              type="individual"
+              data={prefacturaData}
+              loading={loadingDetalles}
+              onAction={(action) => {
+                console.log('🔍 [PREFACTURA PROFESIONAL] Acción:', action);
+                switch (action) {
+                  case 'cobrar':
+                    if (selectedMesa) {
+                      handleShowMetodosPago(selectedMesa);
+                      setShowProfessionalPrefactura(false);
+                    }
+                    break;
+                  case 'imprimir':
+                    toast({
+                      title: "Imprimir",
+                      description: "Función de impresión en desarrollo",
+                    });
+                    break;
+                  case 'descargar':
+                    toast({
+                      title: "Descargar",
+                      description: "Función de descarga en desarrollo",
+                    });
+                    break;
+                  case 'editar':
+                    toast({
+                      title: "Editar",
+                      description: "Función de edición en desarrollo",
+                    });
+                    break;
                 }
-                break;
-              case 'imprimir':
-                toast({
-                  title: "Imprimir",
-                  description: "Función de impresión en desarrollo",
-                });
-                break;
-              case 'descargar':
-                toast({
-                  title: "Descargar",
-                  description: "Función de descarga en desarrollo",
-                });
-                break;
-              case 'editar':
-                toast({
-                  title: "Editar",
-                  description: "Función de edición en desarrollo",
-                });
-                break;
-            }
-          }}
-        />
+              }}
+            />
+          )}
+          
+          {/* Modal Profesional para Desktop */}
+          {!isMobile && (
+            <ProfessionalDesktopPrefacturaModal
+              isOpen={showProfessionalPrefactura}
+              onClose={() => {
+                setShowProfessionalPrefactura(false);
+                setPrefacturaData(null);
+              }}
+              type="individual"
+              data={prefacturaData}
+              loading={loadingDetalles}
+              onAction={(action) => {
+                console.log('🔍 [PREFACTURA PROFESIONAL DESKTOP] Acción:', action);
+                switch (action) {
+                  case 'cobrar':
+                    if (selectedMesa) {
+                      handleShowMetodosPago(selectedMesa);
+                      setShowProfessionalPrefactura(false);
+                    }
+                    break;
+                  case 'imprimir':
+                    toast({
+                      title: "Imprimir",
+                      description: "Función de impresión en desarrollo",
+                    });
+                    break;
+                  case 'descargar':
+                    toast({
+                      title: "Descargar",
+                      description: "Función de descarga en desarrollo",
+                    });
+                    break;
+                  case 'editar':
+                    toast({
+                      title: "Editar",
+                      description: "Función de edición en desarrollo",
+                    });
+                    break;
+                }
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

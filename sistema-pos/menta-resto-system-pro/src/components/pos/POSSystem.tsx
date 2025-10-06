@@ -6,6 +6,7 @@ import { Cart } from './Cart';
 import { CheckoutModal } from './CheckoutModal';
 import { ConfirmarAgregarMesaOcupada } from './ConfirmarAgregarMesaOcupada';
 import { SalesHistory } from './SalesHistory';
+import { ProfessionalSalesHistory } from './ProfessionalSalesHistory';
 import { OrderManagement } from './OrderManagement';
 import { InvoiceModal } from './InvoiceModal';
 import { ProductManagement } from './ProductManagement';
@@ -68,13 +69,11 @@ import { useAuth } from '@/context/AuthContext';
 import { usePlanSystem } from '@/context/PlanSystemContext';
 import { KitchenView } from '../../pages/KitchenView';
 import { MesasMesero } from './MesasMesero';
-import { PedidosPendientesCajero } from './PedidosPendientesCajero';
 import { MesaMap } from './index';
 import { useTheme } from '@/context/ThemeContext';
 import { Switch } from '@/components/ui/switch';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
-import { PedidosMeseroCajero } from './PedidosMeseroCajero';
 import { PromocionManagement } from '../promociones/PromocionManagement';
 import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
@@ -505,7 +504,7 @@ export function POSSystem() {
   const gestionMesasHabilitada = config?.gestionMesas?.habilitado !== false; // por defecto true
   const onlyMesas = (user.rol === 'cajero' || user.rol === 'mesero') && gestionMesasHabilitada;
   // Determina si se deben mostrar las pestañas de administración
-  const showAdminFeatures = ['admin', 'cajero', 'cocinero', 'super_admin'].includes(user.rol as any);
+  const showAdminFeatures = ['admin', 'cocinero', 'super_admin'].includes(user.rol as any);
   const canSeeSales = ['admin', 'cajero', 'cocinero', 'super_admin'].includes(user.rol as any);
 
   // --- Estado Local del Componente ---
@@ -558,7 +557,7 @@ export function POSSystem() {
   // Obtener pedidos para la vista de cocina/gestión de pedidos
   // Profesional: permitir también al rol 'mesero' ver el feed unificado de cocina
   const flujoCocinaModo = config?.flujoCocina?.modo || 'Completo';
-  const canViewOrders = ['cocinero', 'admin', 'cajero', 'mesero'].includes(user.rol) && flujoCocinaModo !== 'Simplificado';
+  const canViewOrders = ['cocinero', 'admin', 'mesero', 'cajero'].includes(user.rol) && flujoCocinaModo !== 'Simplificado';
   const {
     data: backendOrders = [],
     isError: isErrorOrders,
@@ -1461,15 +1460,17 @@ export function POSSystem() {
             <span className="sm:hidden">Pedidos</span>
             {!canAccessOrders && !['admin', 'super_admin'].includes(user?.rol) && <Crown className="h-3 w-3 text-yellow-500 ml-1" />}
           </Button>
-          <Button
-            variant={activeTab === 'kitchen' ? 'default' : 'outline'}
-            onClick={() => handleTabChange('kitchen')}
-            className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
-          >
-            <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Cocina</span>
-            <span className="sm:hidden">Cocina</span>
-          </Button>
+          {user.rol !== 'cajero' && (
+            <Button
+              variant={activeTab === 'kitchen' ? 'default' : 'outline'}
+              onClick={() => handleTabChange('kitchen')}
+              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
+            >
+              <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Cocina</span>
+              <span className="sm:hidden">Cocina</span>
+            </Button>
+          )}
           {user.rol !== 'mesero' && (
             <Button 
               onClick={goCaja} 
@@ -1488,28 +1489,6 @@ export function POSSystem() {
             >
               <span className="hidden sm:inline">Cerrar Caja</span>
               <span className="sm:hidden">Cerrar</span>
-            </Button>
-          )}
-          {(user.rol === 'cajero') && (
-            <Button
-              variant={activeTab === 'mesero' ? 'default' : 'outline'}
-              onClick={() => handleTabChange('mesero')}
-              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
-            >
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Mesero</span>
-              <span className="sm:hidden">Mesero</span>
-            </Button>
-          )}
-          {user.rol === 'cajero' && (
-            <Button
-              variant={activeTab === 'pedidos-pendientes' ? 'default' : 'outline'}
-              onClick={() => handleTabChange('pedidos-pendientes')}
-              className="rounded-xl transition-all duration-200 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 flex-shrink-0 mobile-nav-button"
-            >
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Pedidos Pendientes</span>
-              <span className="sm:hidden">Pendientes</span>
             </Button>
           )}
           {canSeeSales && (
@@ -1748,10 +1727,15 @@ export function POSSystem() {
             <div className="p-6">
               <PlanGate feature="sales.basico" requiredPlan="Básico">
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl h-full">
-                  <SalesHistory
+                  <ProfessionalSalesHistory
                     sales={sales}
                     onDeleteSale={handleDeleteSale}
                     userRole={roleForSales as any}
+                    onRefresh={() => {
+                      // Refrescar datos de ventas
+                      queryClient.invalidateQueries({ queryKey: ['ventas-ordenadas'] });
+                    }}
+                    loading={isLoadingVentas}
                   />
                 </div>
               </PlanGate>
@@ -1824,12 +1808,6 @@ export function POSSystem() {
           {/* Vista de Mesero - rol mesero */}
           {/* El rol mesero ahora usa POS + gestión de mesas dentro de Dashboard/Mesas */}
 
-          {/* Vista de Pedidos Pendientes */}
-          {activeTab === 'pedidos-pendientes' && user?.rol === 'cajero' && (
-            <div className="p-6">
-              <PedidosPendientesCajero />
-                  </div>
-          )}
 
           {/* Vista de Promociones */}
           {activeTab === 'promociones' && (user?.rol === 'admin' || user?.rol === 'super_admin') && (

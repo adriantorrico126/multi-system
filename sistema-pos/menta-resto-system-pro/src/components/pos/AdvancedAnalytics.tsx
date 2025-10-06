@@ -13,6 +13,14 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { useMobile } from '@/hooks/use-mobile';
+import { 
   BarChart3, 
   TrendingUp, 
   TrendingDown, 
@@ -34,7 +42,8 @@ import {
   Clock,
   Package,
   Save,
-  RotateCcw
+  RotateCcw,
+  Menu
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -205,8 +214,10 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
   const [isLoadingProductos, setIsLoadingProductos] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState('7d');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { hasFeature } = usePlanSystem();
+  const { isMobile } = useMobile();
 
   // Filtros globales para todas las pestañas
   const [fechaInicio, setFechaInicio] = useState(
@@ -238,6 +249,23 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
 
   // Control de visibilidad de filtros
   const [showFilters, setShowFilters] = useState(false);
+
+  // Función para manejar el cambio de tab en móvil
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  // Definir las pestañas de analytics
+  const analyticsTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, emoji: '📊' },
+    { id: 'kpis', label: 'KPIs', icon: Target, emoji: '🎯' },
+    { id: 'trends', label: 'Tendencias', icon: TrendingUp, emoji: '📈' },
+    { id: 'performance', label: 'Rendimiento', icon: Award, emoji: '🏆' },
+    { id: 'products', label: 'Productos', icon: Package, emoji: '📦' }
+  ];
 
   const fetchAnalytics = async () => {
     console.log('🚀 [ANALYTICS] fetchAnalytics INICIADA');
@@ -950,14 +978,108 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
       </Card>
 
       {analyticsData && (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
-            <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
-            <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
-            <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
-            <TabsTrigger value="products">📦 Productos</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          {/* Menú hamburguesa para móvil */}
+          {isMobile ? (
+            <div className="mb-6 analytics-mobile-menu">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 analytics-mobile-menu-trigger analytics-mobile-touch-feedback"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                        <Menu className="h-3 w-3 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {analyticsTabs.find(tab => tab.id === activeTab)?.emoji} {analyticsTabs.find(tab => tab.id === activeTab)?.label}
+                        </p>
+                        <p className="text-xs text-gray-500">Toca para cambiar</p>
+                      </div>
+                    </div>
+                    <div className="p-0.5 bg-white rounded-full shadow-sm">
+                      <Menu className="h-3 w-3 text-gray-600" />
+                    </div>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[60vh] max-h-[60vh] bg-white/95 backdrop-blur-sm analytics-mobile-menu-sheet analytics-mobile-menu-glass">
+                  <SheetHeader className="text-left analytics-mobile-menu-header pb-2">
+                    <SheetTitle className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                        <BarChart3 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold text-gray-900">Analytics Avanzados</h2>
+                        <p className="text-xs text-gray-500">Selecciona una sección</p>
+                      </div>
+                    </SheetTitle>
+                  </SheetHeader>
+                  
+                  <div className="mt-3 space-y-2 analytics-mobile-menu-content analytics-mobile-menu-scroll">
+                    {analyticsTabs.map((tab, index) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <Button
+                          key={tab.id}
+                          variant={isActive ? "default" : "ghost"}
+                          onClick={() => handleTabChange(tab.id)}
+                          className={`w-full justify-start p-3 h-auto analytics-mobile-menu-item analytics-mobile-touch-feedback analytics-mobile-menu-optimized analytics-mobile-menu-stagger-${(index % 5) + 1} ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg analytics-mobile-menu-active' 
+                              : 'hover:bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3 w-full">
+                            <div className={`p-2 rounded-lg ${
+                              isActive 
+                                ? 'bg-white/20' 
+                                : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                            }`}>
+                              <Icon className={`h-4 w-4 ${
+                                isActive ? 'text-white' : 'text-white'
+                              }`} />
+                            </div>
+                            <div className="text-left flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-base">{tab.emoji}</span>
+                                <span className="font-semibold text-sm">{tab.label}</span>
+                              </div>
+                              <p className={`text-xs mt-0.5 ${
+                                isActive ? 'text-white/80' : 'text-gray-500'
+                              }`}>
+                                {tab.id === 'dashboard' && 'Vista general de métricas'}
+                                {tab.id === 'kpis' && 'Indicadores clave de rendimiento'}
+                                {tab.id === 'trends' && 'Análisis de tendencias'}
+                                {tab.id === 'performance' && 'Rendimiento y eficiencia'}
+                                {tab.id === 'products' && 'Análisis de productos'}
+                              </p>
+                            </div>
+                            {isActive && (
+                              <div className="p-0.5 bg-white/20 rounded-full">
+                                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          ) : (
+            /* Tabs tradicionales para desktop */
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
+              <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
+              <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
+              <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
+              <TabsTrigger value="products">📦 Productos</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="dashboard" className="space-y-6">
             {/* Métricas principales */}
@@ -1999,14 +2121,108 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
 
       {/* Sistema completo de pestañas */}
       {analyticsData && (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
-            <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
-            <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
-            <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
-            <TabsTrigger value="products">📦 Productos</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          {/* Menú hamburguesa para móvil */}
+          {isMobile ? (
+            <div className="mb-6 analytics-mobile-menu">
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 analytics-mobile-menu-trigger analytics-mobile-touch-feedback"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                        <Menu className="h-3 w-3 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {analyticsTabs.find(tab => tab.id === activeTab)?.emoji} {analyticsTabs.find(tab => tab.id === activeTab)?.label}
+                        </p>
+                        <p className="text-xs text-gray-500">Toca para cambiar</p>
+                      </div>
+                    </div>
+                    <div className="p-0.5 bg-white rounded-full shadow-sm">
+                      <Menu className="h-3 w-3 text-gray-600" />
+                    </div>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[60vh] max-h-[60vh] bg-white/95 backdrop-blur-sm analytics-mobile-menu-sheet analytics-mobile-menu-glass">
+                  <SheetHeader className="text-left analytics-mobile-menu-header pb-2">
+                    <SheetTitle className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
+                        <BarChart3 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold text-gray-900">Analytics Avanzados</h2>
+                        <p className="text-xs text-gray-500">Selecciona una sección</p>
+                      </div>
+                    </SheetTitle>
+                  </SheetHeader>
+                  
+                  <div className="mt-3 space-y-2 analytics-mobile-menu-content analytics-mobile-menu-scroll">
+                    {analyticsTabs.map((tab, index) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <Button
+                          key={tab.id}
+                          variant={isActive ? "default" : "ghost"}
+                          onClick={() => handleTabChange(tab.id)}
+                          className={`w-full justify-start p-3 h-auto analytics-mobile-menu-item analytics-mobile-touch-feedback analytics-mobile-menu-optimized analytics-mobile-menu-stagger-${(index % 5) + 1} ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg analytics-mobile-menu-active' 
+                              : 'hover:bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3 w-full">
+                            <div className={`p-2 rounded-lg ${
+                              isActive 
+                                ? 'bg-white/20' 
+                                : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                            }`}>
+                              <Icon className={`h-4 w-4 ${
+                                isActive ? 'text-white' : 'text-white'
+                              }`} />
+                            </div>
+                            <div className="text-left flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-base">{tab.emoji}</span>
+                                <span className="font-semibold text-sm">{tab.label}</span>
+                              </div>
+                              <p className={`text-xs mt-0.5 ${
+                                isActive ? 'text-white/80' : 'text-gray-500'
+                              }`}>
+                                {tab.id === 'dashboard' && 'Vista general de métricas'}
+                                {tab.id === 'kpis' && 'Indicadores clave de rendimiento'}
+                                {tab.id === 'trends' && 'Análisis de tendencias'}
+                                {tab.id === 'performance' && 'Rendimiento y eficiencia'}
+                                {tab.id === 'products' && 'Análisis de productos'}
+                              </p>
+                            </div>
+                            {isActive && (
+                              <div className="p-0.5 bg-white/20 rounded-full">
+                                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          ) : (
+            /* Tabs tradicionales para desktop */
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
+              <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
+              <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
+              <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
+              <TabsTrigger value="products">📦 Productos</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="dashboard" className="space-y-6">
             {/* Métricas principales */}
