@@ -99,7 +99,7 @@ export const MesaCardOptimized: React.FC<MesaCardOptimizedProps> = ({
     onSuccess: (data) => {
       toast({
         title: "Mesa Liberada",
-        description: `Mesa ${data.data.mesa.numero} liberada exitosamente. Total anterior: $${data.data.total_final}`,
+        description: `Mesa ${data.data.mesa.numero} liberada exitosamente. Total anterior: Bs ${data.data.total_final}`,
       });
       // Resetear mesa en cache inmediatamente
       onResetMesa(mesa.id_mesa);
@@ -159,7 +159,7 @@ export const MesaCardOptimized: React.FC<MesaCardOptimizedProps> = ({
                 <span className="text-sm font-medium text-gray-700">Total Acumulado:</span>
               </div>
               <span className="text-lg font-bold text-green-600">
-                ${Number(mesa.total_acumulado || 0).toFixed(2)}
+                Bs {Number(mesa.total_acumulado || 0).toFixed(2)}
               </span>
             </div>
           )}
@@ -194,7 +194,7 @@ export const MesaCardOptimized: React.FC<MesaCardOptimizedProps> = ({
                 Ver Prefactura
               </Button>
               
-              {/* Botón de cobrar optimizado - aparece para pagos diferidos */}
+              {/* Botón de cobrar optimizado - aparece solo para pagos diferidos */}
               <CobrarButtonOptimized
                 mesa={mesa}
                 sucursalId={sucursalId}

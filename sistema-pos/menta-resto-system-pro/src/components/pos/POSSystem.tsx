@@ -80,7 +80,7 @@ import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
 import { egresosApi } from '@/services/egresosApi';
 import { useNavigate } from 'react-router-dom';
-import { MobileCart } from './MobileCart';
+import { ProfessionalMobileCart } from './ProfessionalMobileCart';
 import { 
   Sheet,
   SheetContent,
@@ -2179,8 +2179,8 @@ export function POSSystem() {
       </div>
     )}
     
-    {/* Carrito móvil */}
-    <MobileCart
+    {/* Carrito móvil profesional */}
+    <ProfessionalMobileCart
       cart={cart}
       total={total}
       subtotal={subtotal}

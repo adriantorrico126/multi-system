@@ -18,7 +18,8 @@ import {
   TrendingDown,
   X,
   Package,
-  Settings
+  Settings,
+  Trash
 } from 'lucide-react';
 import { CartItem } from '@/types/restaurant';
 import { useMobile } from '@/hooks/use-mobile';
@@ -99,7 +100,10 @@ export function MobileCart({
            </div>
          </SheetTrigger>
         
-        <SheetContent side="bottom" className="h-[90vh] bg-white/95 backdrop-blur-sm flex flex-col">
+        <SheetContent 
+          side="bottom" 
+          className="h-[90vh] bg-white/95 backdrop-blur-sm flex flex-col [&>button]:!hidden"
+        >
           <SheetHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
             <SheetTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -114,10 +118,28 @@ export function MobileCart({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                onClick={() => {
+                  if (cart.length > 0) {
+                    if (window.confirm('¿Estás seguro de que quieres vaciar el carrito?')) {
+                      // Vaciar carrito
+                      cart.forEach(item => onRemoveItem(item.id));
+                    }
+                  } else {
+                    setIsOpen(false);
+                  }
+                }}
+                className={`p-2 rounded-lg transition-colors ${
+                  cart.length > 0 
+                    ? 'hover:bg-red-50 hover:text-red-600 text-red-500' 
+                    : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                title={cart.length > 0 ? "Vaciar carrito" : "Cerrar carrito"}
               >
-                <X className="h-5 w-5" />
+                {cart.length > 0 ? (
+                  <Trash className="h-5 w-5" />
+                ) : (
+                  <X className="h-5 w-5" />
+                )}
               </Button>
             </SheetTitle>
             

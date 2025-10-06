@@ -4,6 +4,7 @@ import { useMesaRealTime } from '@/hooks/useMesaRealTime';
 import { MesaCardOptimized } from './MesaCardOptimized';
 import { CobrarButtonOptimized } from './CobrarButtonOptimized';
 import { MetodosPagoModal } from './MetodosPagoModal';
+import { ProfessionalPrefacturaModal } from './ProfessionalPrefacturaModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,11 +84,13 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showPrefactura, setShowPrefactura] = useState(false);
+  const [showProfessionalPrefactura, setShowProfessionalPrefactura] = useState(false);
   const [selectedMesa, setSelectedMesa] = useState<any | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ventaDetalles, setVentaDetalles] = useState<any>(null);
   const [loadingDetalles, setLoadingDetalles] = useState(false);
+  const [prefacturaData, setPrefacturaData] = useState<any>(null);
   const [showMetodosPago, setShowMetodosPago] = useState(false);
   const [mesaParaPago, setMesaParaPago] = useState<any | null>(null);
 
@@ -149,7 +152,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
     onSuccess: (data) => {
       toast({
         title: "Mesa Liberada",
-        description: `Mesa ${data.data.mesa.numero} liberada exitosamente. Total anterior: $${data.data.total_final}`,
+        description: `Mesa ${data.data.mesa.numero} liberada exitosamente. Total anterior: Bs ${data.data.total_final}`,
       });
       // Resetear mesa inmediatamente en cache
       resetMesaInCache(data.data.mesa.id_mesa);
@@ -171,7 +174,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
     onSuccess: (data: any) => {
       toast({
         title: "Mesa Marcada como Pagada",
-        description: `Mesa ${data.data.mesa.numero} marcada como pagada exitosamente. Total cobrado: $${data.data.total_final}`,
+        description: `Mesa ${data.data.mesa.numero} marcada como pagada exitosamente. Total cobrado: Bs ${data.data.total_final}`,
       });
       // Resetear mesa inmediatamente en cache
       resetMesaInCache(data.data.mesa.id_mesa);
@@ -266,7 +269,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                 <DollarSign className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Acumulado</p>
-                  <p className="text-lg font-bold text-yellow-600">${Number(estadisticas.total_acumulado_general || 0).toFixed(2)}</p>
+                  <p className="text-lg font-bold text-yellow-600">Bs {Number(estadisticas.total_acumulado_general || 0).toFixed(2)}</p>
                 </div>
               </div>
             </Card>
@@ -418,47 +421,47 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                     mesa={mesa}
                     sucursalId={sucursalId}
                     onShowPrefactura={async (mesa) => {
-                      console.log('🔍 [PREFACTURA] Mesa seleccionada:', mesa);
+                      console.log('🔍 [PREFACTURA PROFESIONAL] Mesa seleccionada:', mesa);
                       setSelectedMesa(mesa);
-                      setShowPrefactura(true);
+                      setLoadingDetalles(true);
                       
-                      // Obtener detalles de la venta si existe
-                      if (mesa.id_venta_actual) {
-                        console.log('🔍 [PREFACTURA] Obteniendo detalles para venta:', mesa.id_venta_actual);
-                        setLoadingDetalles(true);
-                        try {
+                      try {
+                        // Obtener detalles de la venta si existe
+                        let ventaDetalles = null;
+                        if (mesa.id_venta_actual) {
+                          console.log('🔍 [PREFACTURA PROFESIONAL] Obteniendo detalles para venta:', mesa.id_venta_actual);
                           const response = await getVentaConDetalles(mesa.id_venta_actual);
-                          console.log('🔍 [PREFACTURA] Respuesta recibida:', response);
+                          console.log('🔍 [PREFACTURA PROFESIONAL] Respuesta recibida:', response);
                           
                           if (response && response.data) {
-                            setVentaDetalles(response.data);
-                          } else {
-                            console.log('⚠️ [PREFACTURA] Respuesta sin datos válidos');
-                            setVentaDetalles(null);
+                            ventaDetalles = response.data;
                           }
-                        } catch (error) {
-                          console.error('❌ [PREFACTURA] Error al obtener detalles:', error);
-                          // Crear datos de prueba para debugging
-                          setVentaDetalles({
-                            id_venta: mesa.id_venta_actual,
-                            total: mesa.total_acumulado,
-                            detalles: [
-                              {
-                                id_detalle: 1,
-                                producto_nombre: 'Producto de Prueba',
-                                cantidad: 1,
-                                precio_unitario: mesa.total_acumulado || 0,
-                                subtotal: mesa.total_acumulado || 0,
-                                observaciones: 'Producto de prueba para debugging'
-                              }
-                            ]
-                          });
-                        } finally {
-                          setLoadingDetalles(false);
                         }
-                      } else {
-                        console.log('⚠️ [PREFACTURA] No hay id_venta_actual en la mesa');
-                        setVentaDetalles(null);
+
+                        // Preparar datos para la prefactura profesional
+                        const prefacturaData = {
+                          mesa: mesa,
+                          detalles: ventaDetalles?.detalles || [],
+                          total: mesa.total_acumulado || 0,
+                          subtotal: ventaDetalles?.subtotal || mesa.total_acumulado || 0,
+                          descuentos: ventaDetalles?.descuentos || 0,
+                          impuestos: ventaDetalles?.impuestos || 0,
+                          fecha_generacion: new Date().toISOString(),
+                          numero_prefactura: `PF-${mesa.numero}-${Date.now()}`
+                        };
+
+                        setPrefacturaData(prefacturaData);
+                        setShowProfessionalPrefactura(true);
+                        console.log('✅ [PREFACTURA PROFESIONAL] Datos preparados:', prefacturaData);
+                      } catch (error) {
+                        console.error('❌ [PREFACTURA PROFESIONAL] Error:', error);
+                        toast({
+                          title: "Error",
+                          description: "No se pudo cargar la prefactura",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setLoadingDetalles(false);
                       }
                     }}
                     onResetMesa={handleResetMesa}
@@ -517,7 +520,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                             {mesa.capacidad} personas
                           </TableCell>
                           <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right hidden lg:table-cell">
-                            ${Number(mesa.total_acumulado || 0).toFixed(2)}
+                            Bs {Number(mesa.total_acumulado || 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
@@ -591,7 +594,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                 </div>
                 <div className="text-left sm:text-right w-full sm:w-auto">
                   <p className="text-2xl font-bold text-green-600 mobile-text-xl prefactura-total">
-                    ${Number(selectedMesa.total_acumulado || 0).toFixed(2)}
+                    Bs {Number(selectedMesa.total_acumulado || 0).toFixed(2)}
                   </p>
                   <p className="text-sm text-gray-500 mobile-text-xs">Total Acumulado</p>
                 </div>
@@ -628,8 +631,8 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                               )}
                             </TableCell>
                             <TableCell className="text-center mobile-text-sm">{detalle.cantidad}</TableCell>
-                            <TableCell className="text-right mobile-text-sm">${Number(detalle.precio_unitario || 0).toFixed(2)}</TableCell>
-                            <TableCell className="text-right mobile-text-sm">${Number(detalle.subtotal || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-right mobile-text-sm">Bs {Number(detalle.precio_unitario || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-right mobile-text-sm">Bs {Number(detalle.subtotal || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -639,7 +642,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold mobile-text-lg">Total:</span>
                       <span className="text-xl font-bold text-green-600 mobile-text-xl">
-                        ${Number(ventaDetalles.total || 0).toFixed(2)}
+                        Bs {Number(ventaDetalles.total || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -659,14 +662,14 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                       </div>
                       <p className="text-sm text-blue-700">
                         No se pudieron obtener los detalles de productos porque el backend no está respondiendo.
-                        El total acumulado de la mesa es de ${Number(selectedMesa.total_acumulado).toFixed(2)}.
+                        El total acumulado de la mesa es de Bs {Number(selectedMesa.total_acumulado).toFixed(2)}.
                       </p>
                     </div>
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-semibold">Total Acumulado:</span>
                         <span className="text-xl font-bold text-green-600">
-                          ${Number(selectedMesa.total_acumulado).toFixed(2)}
+                          Bs {Number(selectedMesa.total_acumulado).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -684,7 +687,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                     <div className="mt-4 text-sm text-gray-400">
                       <p>Debug: ID Venta Actual: {selectedMesa.id_venta_actual || 'null'}</p>
                       <p>Debug: Estado: {selectedMesa.estado}</p>
-                      <p>Debug: Total: ${Number(selectedMesa.total_acumulado || 0).toFixed(2)}</p>
+                      <p>Debug: Total: Bs {Number(selectedMesa.total_acumulado || 0).toFixed(2)}</p>
                     </div>
                   )}
                 </div>
@@ -698,7 +701,7 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
                     className="flex-1 bg-green-600 hover:bg-green-700 mobile-button mobile-touch-target"
                   >
                     <CreditCard className="h-4 w-4 mr-2 mobile-icon" />
-                    <span className="mobile-text-sm">Cobrar ${Number(selectedMesa.total_acumulado || 0).toFixed(2)}</span>
+                    <span className="mobile-text-sm">Cobrar Bs {Number(selectedMesa.total_acumulado || 0).toFixed(2)}</span>
                   </Button>
                 )}
                 <Button
@@ -728,6 +731,49 @@ export default function MesaManagement({ sucursalId, idRestaurante }: MesaManage
         }}
         onResetMesa={handleResetMesa}
       />
+
+      {/* Modal de Prefactura Profesional */}
+      {prefacturaData && (
+        <ProfessionalPrefacturaModal
+          isOpen={showProfessionalPrefactura}
+          onClose={() => {
+            setShowProfessionalPrefactura(false);
+            setPrefacturaData(null);
+          }}
+          type="individual"
+          data={prefacturaData}
+          loading={loadingDetalles}
+          onAction={(action) => {
+            console.log('🔍 [PREFACTURA PROFESIONAL] Acción:', action);
+            switch (action) {
+              case 'cobrar':
+                if (selectedMesa) {
+                  handleShowMetodosPago(selectedMesa);
+                  setShowProfessionalPrefactura(false);
+                }
+                break;
+              case 'imprimir':
+                toast({
+                  title: "Imprimir",
+                  description: "Función de impresión en desarrollo",
+                });
+                break;
+              case 'descargar':
+                toast({
+                  title: "Descargar",
+                  description: "Función de descarga en desarrollo",
+                });
+                break;
+              case 'editar':
+                toast({
+                  title: "Editar",
+                  description: "Función de edición en desarrollo",
+                });
+                break;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

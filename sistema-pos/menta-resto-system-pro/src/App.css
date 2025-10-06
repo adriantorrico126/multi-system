@@ -517,6 +517,193 @@
 /* Footer del carrito móvil */
 .mobile-cart-footer {
   position: relative;
+}
+
+/* Estilos para el carrito profesional */
+.professional-cart {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.professional-cart-item {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.professional-cart-expand {
+  animation: expandCart 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes expandCart {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 70vh;
+    opacity: 1;
+  }
+}
+
+.professional-cart-collapse {
+  animation: collapseCart 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes collapseCart {
+  from {
+    max-height: 70vh;
+    opacity: 1;
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+  }
+}
+
+/* Mejoras táctiles para el carrito profesional */
+.professional-cart-touch {
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.professional-cart-drag-indicator {
+  transition: all 0.2s ease;
+}
+
+.professional-cart-drag-indicator:active {
+  transform: scale(1.1);
+}
+
+/* Efectos de hover mejorados */
+.professional-cart-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.professional-cart-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.professional-cart-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollbar personalizado para el carrito */
+.professional-cart-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.professional-cart-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.professional-cart-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.professional-cart-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.professional-cart-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animaciones de entrada para items */
+.professional-cart-item-enter {
+  animation: itemEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes itemEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(-10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Efectos de promoción */
+.professional-cart-promo {
+  position: relative;
+  overflow: hidden;
+}
+
+.professional-cart-promo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.1), transparent);
+  animation: promoShine 2s infinite;
+}
+
+@keyframes promoShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Mejoras para el indicador de arrastre */
+.professional-cart-drag-handle {
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.professional-cart-drag-handle:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+/* Efectos de glassmorphism */
+.professional-cart-glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Animaciones de micro-interacciones */
+.professional-cart-micro-bounce {
+  animation: microBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes microBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
   z-index: 10;
   background: linear-gradient(to right, #f9fafb, #ffffff);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);

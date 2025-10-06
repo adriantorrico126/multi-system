@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ProfessionalPrefacturaModal } from './ProfessionalPrefacturaModal';
 import { 
   Users2, 
   Coffee, 
@@ -69,6 +70,7 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
   const { isMobile } = useMobile();
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoMesa | null>(null);
   const [showPrefactura, setShowPrefactura] = useState(false);
+  const [showProfessionalPrefactura, setShowProfessionalPrefactura] = useState(false);
   const [prefacturaData, setPrefacturaData] = useState<any>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedGrupoForInfo, setSelectedGrupoForInfo] = useState<GrupoMesa | null>(null);
@@ -105,9 +107,24 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
   const generarPrefacturaMutation = useMutation({
     mutationFn: generarPrefacturaGrupo,
     onSuccess: (data) => {
-      console.log('🔍 Prefactura recibida:', data);
-      setPrefacturaData(data);
-      setShowPrefactura(true);
+      console.log('🔍 [PREFACTURA PROFESIONAL GRUPO] Prefactura recibida:', data);
+      
+      // Preparar datos para la prefactura profesional
+      const prefacturaData = {
+        grupo: data,
+        detalles: data.historial || [],
+        total: data.total_acumulado || 0,
+        subtotal: data.total_acumulado || 0,
+        descuentos: 0,
+        impuestos: 0,
+        fecha_generacion: new Date().toISOString(),
+        numero_prefactura: `PF-GRUPO-${data.id_grupo_mesa}-${Date.now()}`
+      };
+
+      setPrefacturaData(prefacturaData);
+      setShowProfessionalPrefactura(true);
+      console.log('✅ [PREFACTURA PROFESIONAL GRUPO] Datos preparados:', prefacturaData);
+      
       toast({
         title: "✅ Prefactura generada",
         description: "La prefactura del grupo se ha generado exitosamente.",
@@ -650,6 +667,49 @@ export function GruposMesasManagement({ idRestaurante }: GruposMesasManagementPr
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Prefactura Profesional para Grupos */}
+      {prefacturaData && (
+        <ProfessionalPrefacturaModal
+          isOpen={showProfessionalPrefactura}
+          onClose={() => {
+            setShowProfessionalPrefactura(false);
+            setPrefacturaData(null);
+          }}
+          type="grupo"
+          data={prefacturaData}
+          loading={generarPrefacturaMutation.isPending}
+          onAction={(action) => {
+            console.log('🔍 [PREFACTURA PROFESIONAL GRUPO] Acción:', action);
+            switch (action) {
+              case 'cobrar':
+                toast({
+                  title: "Cobrar Grupo",
+                  description: "Función de cobro de grupo en desarrollo",
+                });
+                break;
+              case 'imprimir':
+                toast({
+                  title: "Imprimir",
+                  description: "Función de impresión en desarrollo",
+                });
+                break;
+              case 'descargar':
+                toast({
+                  title: "Descargar",
+                  description: "Función de descarga en desarrollo",
+                });
+                break;
+              case 'editar':
+                toast({
+                  title: "Editar",
+                  description: "Función de edición en desarrollo",
+                });
+                break;
+            }
+          }}
+        />
+      )}
     </div>
   );
 } 
