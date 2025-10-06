@@ -126,14 +126,14 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
         r.id_reconciliacion,
         r.id_restaurante,
         r.id_sucursal,
-        r.id_usuario,
-        r.fecha_reconciliacion,
-        r.fecha_inicio,
-        r.fecha_fin,
-        r.efectivo_inicial,
-        r.efectivo_final,
+        r.id_vendedor as id_usuario,
+        r.fecha as fecha_reconciliacion,
+        r.fecha as fecha_inicio,
+        r.fecha as fecha_fin,
+        r.monto_inicial as efectivo_inicial,
+        r.efectivo_fisico as efectivo_final,
         r.efectivo_esperado,
-        r.diferencia,
+        COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) as diferencia,
         r.observaciones,
         r.estado,
         r.created_at,
@@ -144,7 +144,7 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
         v.rol as usuario_rol
       FROM reconciliaciones_caja r
       LEFT JOIN sucursales s ON r.id_sucursal = s.id_sucursal
-      LEFT JOIN vendedores v ON r.id_usuario = v.id_vendedor
+      LEFT JOIN vendedores v ON r.id_vendedor = v.id_vendedor
       WHERE r.id_restaurante = $1
     `;
     
@@ -154,13 +154,13 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
     // Filtros opcionales
     if (fecha_inicio) {
       paramCount++;
-      query += ` AND r.fecha_reconciliacion >= $${paramCount}`;
+      query += ` AND r.fecha >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      query += ` AND r.fecha_reconciliacion <= $${paramCount}`;
+      query += ` AND r.fecha <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -170,7 +170,7 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
       params.push(id_sucursal);
     }
 
-    query += ' ORDER BY r.fecha_reconciliacion DESC';
+    query += ' ORDER BY r.fecha DESC, r.created_at DESC';
 
     const result = await pool.query(query, params);
 
@@ -181,10 +181,10 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
           SELECT 
             metodo_pago,
             monto_esperado,
-            monto_real,
+            monto_registrado as monto_real,
             diferencia,
-            observaciones
-          FROM reconciliaciones_detalle
+            '' as observaciones
+          FROM reconciliaciones_metodos_pago
           WHERE id_reconciliacion = $1
           ORDER BY metodo_pago
         `;
@@ -341,14 +341,14 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
 
     let query = `
       SELECT 
-        DATE(r.fecha_reconciliacion) as fecha,
+        DATE(r.fecha) as fecha,
         r.id_sucursal,
         s.nombre as sucursal_nombre,
         COUNT(*) as total_reconciliaciones,
         SUM(r.efectivo_esperado) as total_efectivo_esperado,
-        SUM(r.efectivo_final) as total_efectivo_final,
-        SUM(r.diferencia) as total_diferencia,
-        AVG(r.diferencia) as diferencia_promedio
+        SUM(r.efectivo_fisico) as total_efectivo_final,
+        SUM(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as total_diferencia,
+        AVG(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio
       FROM reconciliaciones_caja r
       LEFT JOIN sucursales s ON r.id_sucursal = s.id_sucursal
       WHERE r.id_restaurante = $1
@@ -359,13 +359,13 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
 
     if (fecha_inicio) {
       paramCount++;
-      query += ` AND r.fecha_reconciliacion >= $${paramCount}`;
+      query += ` AND r.fecha >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      query += ` AND r.fecha_reconciliacion <= $${paramCount}`;
+      query += ` AND r.fecha <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -375,7 +375,7 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
       params.push(id_sucursal);
     }
 
-    query += ' GROUP BY DATE(r.fecha_reconciliacion), r.id_sucursal, s.nombre ORDER BY fecha DESC';
+    query += ' GROUP BY DATE(r.fecha), r.id_sucursal, s.nombre ORDER BY fecha DESC';
 
     const result = await pool.query(query, params);
 
@@ -591,13 +591,13 @@ exports.obtenerEstadisticasReconciliaciones = async (req, res, next) => {
 
     if (fecha_inicio) {
       paramCount++;
-      whereClause += ` AND r.fecha_reconciliacion >= $${paramCount}`;
+      whereClause += ` AND r.fecha >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      whereClause += ` AND r.fecha_reconciliacion <= $${paramCount}`;
+      whereClause += ` AND r.fecha <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -613,15 +613,15 @@ exports.obtenerEstadisticasReconciliaciones = async (req, res, next) => {
         COUNT(CASE WHEN r.estado = 'completada' THEN 1 END) as reconciliaciones_completadas,
         COUNT(CASE WHEN r.estado = 'pendiente' THEN 1 END) as reconciliaciones_pendientes,
         COUNT(CASE WHEN r.estado = 'cancelada' THEN 1 END) as reconciliaciones_canceladas,
-        COUNT(CASE WHEN r.diferencia = 0 THEN 1 END) as reconciliaciones_cuadradas,
-        COUNT(CASE WHEN r.diferencia > 0 THEN 1 END) as reconciliaciones_sobrantes,
-        COUNT(CASE WHEN r.diferencia < 0 THEN 1 END) as reconciliaciones_faltantes,
-        AVG(r.diferencia) as diferencia_promedio,
-        SUM(r.diferencia) as diferencia_total,
+        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) = 0 THEN 1 END) as reconciliaciones_cuadradas,
+        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) > 0 THEN 1 END) as reconciliaciones_sobrantes,
+        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) < 0 THEN 1 END) as reconciliaciones_faltantes,
+        AVG(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio,
+        SUM(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_total,
         SUM(r.efectivo_esperado) as total_efectivo_esperado,
-        SUM(r.efectivo_final) as total_efectivo_final,
-        MIN(r.fecha_reconciliacion) as fecha_primera,
-        MAX(r.fecha_reconciliacion) as fecha_ultima
+        SUM(r.efectivo_fisico) as total_efectivo_final,
+        MIN(r.fecha) as fecha_primera,
+        MAX(r.fecha) as fecha_ultima
       FROM reconciliaciones_caja r
       ${whereClause}
     `;
