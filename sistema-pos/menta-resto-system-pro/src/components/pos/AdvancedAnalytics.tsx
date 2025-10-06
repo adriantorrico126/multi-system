@@ -43,11 +43,13 @@ import {
   Package,
   Save,
   RotateCcw,
-  Menu
+  Menu,
+  Calculator
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ReconciliacionesAnalytics } from '@/components/analytics/ReconciliacionesAnalytics';
 import {
   LineChart as RechartsLineChart,
   BarChart as RechartsBarChart,
@@ -264,7 +266,8 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
     { id: 'kpis', label: 'KPIs', icon: Target, emoji: '🎯' },
     { id: 'trends', label: 'Tendencias', icon: TrendingUp, emoji: '📈' },
     { id: 'performance', label: 'Rendimiento', icon: Award, emoji: '🏆' },
-    { id: 'products', label: 'Productos', icon: Package, emoji: '📦' }
+    { id: 'products', label: 'Productos', icon: Package, emoji: '📦' },
+    { id: 'reconciliaciones', label: 'Reconciliaciones', icon: Calculator, emoji: '💰' }
   ];
 
   const fetchAnalytics = async () => {
@@ -1055,6 +1058,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                                 {tab.id === 'trends' && 'Análisis de tendencias'}
                                 {tab.id === 'performance' && 'Rendimiento y eficiencia'}
                                 {tab.id === 'products' && 'Análisis de productos'}
+                                {tab.id === 'reconciliaciones' && 'Análisis de reconciliaciones de caja'}
                               </p>
                             </div>
                             {isActive && (
@@ -1072,12 +1076,13 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
             </div>
           ) : (
             /* Tabs tradicionales para desktop */
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
               <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
               <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
               <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
               <TabsTrigger value="products">📦 Productos</TabsTrigger>
+              <TabsTrigger value="reconciliaciones">💰 Reconciliaciones</TabsTrigger>
             </TabsList>
           )}
 
@@ -2198,6 +2203,7 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                                 {tab.id === 'trends' && 'Análisis de tendencias'}
                                 {tab.id === 'performance' && 'Rendimiento y eficiencia'}
                                 {tab.id === 'products' && 'Análisis de productos'}
+                                {tab.id === 'reconciliaciones' && 'Análisis de reconciliaciones de caja'}
                               </p>
                             </div>
                             {isActive && (
@@ -2215,12 +2221,13 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
             </div>
           ) : (
             /* Tabs tradicionales para desktop */
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
               <TabsTrigger value="kpis">🎯 KPIs</TabsTrigger>
               <TabsTrigger value="trends">📈 Tendencias</TabsTrigger>
               <TabsTrigger value="performance">🏆 Rendimiento</TabsTrigger>
               <TabsTrigger value="products">📦 Productos</TabsTrigger>
+              <TabsTrigger value="reconciliaciones">💰 Reconciliaciones</TabsTrigger>
             </TabsList>
           )}
 
@@ -2911,6 +2918,11 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Tab: Reconciliaciones */}
+          <TabsContent value="reconciliaciones" className="space-y-6">
+            <ReconciliacionesAnalytics userRole={userRole} />
           </TabsContent>
         </Tabs>
       )}

@@ -1660,3 +1660,401 @@
   animation: analyticsMenuPulse 2s infinite;
   box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
 }
+
+/* ===================================
+   💰 ESTILOS PARA SISTEMA DE INFORMACIÓN DE CAJEROS
+   =================================== */
+
+/* Animaciones específicas para el sistema de cajeros */
+@keyframes cashierSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cashierFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cashierPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes cashierShine {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes cashierGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  }
+}
+
+/* Clases para el sistema de cajeros */
+.cashier-professional-system {
+  animation: cashierSlideIn 0.4s ease-out;
+}
+
+.cashier-metric-card {
+  animation: cashierFadeIn 0.5s ease-out;
+  transition: all 0.3s ease;
+}
+
+.cashier-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.cashier-metric-card:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Efectos de glassmorphism para el sistema de cajeros */
+.cashier-glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Efectos de brillo para métricas importantes */
+.cashier-metric-important {
+  position: relative;
+  overflow: hidden;
+}
+
+.cashier-metric-important::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.cashier-metric-important:hover::before {
+  left: 100%;
+}
+
+/* Efectos de touch para móvil */
+.cashier-touch-feedback {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.cashier-touch-feedback:active {
+  background-color: rgba(16, 185, 129, 0.1);
+  transition: background-color 0.1s ease;
+}
+
+/* Optimizaciones para pantallas pequeñas */
+@media (max-width: 640px) {
+  .cashier-professional-system {
+    padding: 0.5rem;
+  }
+  
+  .cashier-metric-card {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .cashier-tab {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 2.5rem;
+  }
+  
+  .cashier-header {
+    padding: 1rem;
+  }
+  
+  .cashier-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .cashier-header p {
+    font-size: 0.75rem;
+  }
+  
+  .cashier-badge {
+    font-size: 0.625rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .cashier-button {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 2.25rem;
+  }
+  
+  .cashier-chart {
+    height: 200px;
+  }
+  
+  .cashier-modal {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+  }
+  
+  .cashier-modal-header {
+    padding: 1rem;
+  }
+  
+  .cashier-modal-content {
+    padding: 0.75rem;
+  }
+  
+  .cashier-modal-title {
+    font-size: 1.125rem;
+  }
+  
+  .cashier-reconciliation-form {
+    padding: 0.75rem;
+  }
+  
+  .cashier-reconciliation-input {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .cashier-reconciliation-button {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Optimizaciones para tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .cashier-professional-system {
+    padding: 1rem;
+  }
+  
+  .cashier-metric-card {
+    margin-bottom: 1rem;
+  }
+  
+  .cashier-tab {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .cashier-header {
+    padding: 1.5rem;
+  }
+  
+  .cashier-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .cashier-header p {
+    font-size: 0.875rem;
+  }
+  
+  .cashier-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .cashier-button {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .cashier-chart {
+    height: 300px;
+  }
+  
+  .cashier-modal {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .cashier-modal-header {
+    padding: 1.5rem;
+  }
+  
+  .cashier-modal-content {
+    padding: 1rem;
+  }
+  
+  .cashier-modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .cashier-reconciliation-form {
+    padding: 1rem;
+  }
+  
+  .cashier-reconciliation-input {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .cashier-reconciliation-button {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Efectos de hover mejorados para desktop */
+@media (min-width: 1025px) {
+  .cashier-metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  .cashier-touch-feedback:hover {
+    background-color: rgba(16, 185, 129, 0.05);
+    transition: background-color 0.2s ease;
+  }
+}
+
+/* Efectos de scroll suaves */
+.cashier-smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimizaciones de rendimiento */
+.cashier-optimized {
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Efectos de carga */
+.cashier-loading {
+  animation: cashierPulse 2s infinite;
+}
+
+/* Efectos de entrada escalonados */
+.cashier-stagger-1 { animation-delay: 0.1s; }
+.cashier-stagger-2 { animation-delay: 0.2s; }
+.cashier-stagger-3 { animation-delay: 0.3s; }
+.cashier-stagger-4 { animation-delay: 0.4s; }
+.cashier-stagger-5 { animation-delay: 0.5s; }
+
+/* Efectos de gradiente animado para iconos */
+.cashier-icon-gradient {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background-size: 200% 200%;
+  animation: cashierShine 3s ease-in-out infinite;
+}
+
+/* Efectos de texto con brillo */
+.cashier-text-glow {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Efectos especiales para métricas críticas */
+.cashier-critical-metric {
+  animation: cashierGlow 2s ease-in-out infinite;
+}
+
+/* Efectos para alertas */
+.cashier-alert-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}
+
+.cashier-alert-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}
+
+.cashier-alert-error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}
+
+/* Efectos para gráficos */
+.cashier-chart-container {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* Efectos para botones de acción */
+.cashier-action-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.cashier-action-button:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+.cashier-action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Efectos para inputs de reconciliación */
+.cashier-reconciliation-input {
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.cashier-reconciliation-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Efectos para indicadores de diferencia */
+.cashier-difference-positive {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}
+
+.cashier-difference-negative {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}
+
+.cashier-difference-zero {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  animation: cashierFadeIn 0.5s ease-out;
+}

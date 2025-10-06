@@ -252,6 +252,11 @@ startupLogger.logStep('Ruta /api/v1/categorias-egresos', 'success');
 app.use('/api/v1/presupuestos-egresos', presupuestoEgresoRoutes);
 startupLogger.logStep('Ruta /api/v1/presupuestos-egresos', 'success');
 
+// Rutas de Reconciliaciones
+const reconciliacionesRoutes = require('./routes/reconciliaciones');
+app.use('/api/v1/reconciliaciones', reconciliacionesRoutes);
+startupLogger.logStep('Ruta /api/v1/reconciliaciones', 'success');
+
 // Rutas de Analytics Avanzados
 const analyticsRoutes = require('./routes/analyticsRoutes');
 app.use('/api/v1/analytics', analyticsRoutes);
