@@ -68,13 +68,14 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { usePlanSystem } from '@/context/PlanSystemContext';
 import { KitchenView } from '../../pages/KitchenView';
+import { ProfessionalKitchenView } from '../../pages/ProfessionalKitchenView';
 import { MesasMesero } from './MesasMesero';
 import { MesaMap } from './index';
 import { useTheme } from '@/context/ThemeContext';
 import { Switch } from '@/components/ui/switch';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
-import { PromocionManagement } from '../promociones/PromocionManagement';
+import { PromocionManagementAdvanced } from '../promociones/PromocionManagementAdvanced';
 import { PromocionCart } from '../promociones/PromocionCart';
 import { useCart } from '@/hooks/useCart';
 import { egresosApi } from '@/services/egresosApi';
@@ -1256,15 +1257,22 @@ export function POSSystem() {
 
   // --- Renderizado Condicional Basado en el Rol del Usuario ---
 
+  // Si el usuario es mesero, forzar la pestaña por defecto a 'mesero'
+  React.useEffect(() => {
+    if (user?.rol === 'mesero') {
+      setActiveTab('pos');
+    }
+  }, [user?.rol]);
+
   // Si el usuario no está autenticado, no renderiza el POS (esto es manejado por Index.tsx)
   if (!user) {
     return null; // Podrías mostrar un spinner de carga aquí si es necesario.
   }
 
-  // Si el usuario es 'cocinero', solo muestra la vista de cocina
+  // Si el usuario es 'cocinero', solo muestra la vista de cocina profesional
   if (user.rol === 'cocinero') {
       return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen">
       <Header
         currentUser={{
           username: user.nombre,
@@ -1275,20 +1283,13 @@ export function POSSystem() {
         salesCount={sales.length}
         onLogout={handleLogout}
       />
-      <main className="p-6">
-        {/* La vista de KitchenView debería consultar pedidos directamente del backend */}
-        <KitchenView />
+      <main>
+        {/* Vista profesional de cocina con notificaciones y diseño avanzado */}
+        <ProfessionalKitchenView />
       </main>
     </div>
   );
   }
-
-  // Si el usuario es mesero, forzar la pestaña por defecto a 'mesero'
-  React.useEffect(() => {
-    if (user.rol === 'mesero') {
-      setActiveTab('pos');
-    }
-  }, [user.rol]);
  
   // Siempre usar el header global para una experiencia unificada (incluye mesero)
   const showHeader = true;
@@ -1809,12 +1810,12 @@ export function POSSystem() {
           {/* El rol mesero ahora usa POS + gestión de mesas dentro de Dashboard/Mesas */}
 
 
-          {/* Vista de Promociones */}
+          {/* Vista de Promociones Avanzadas */}
           {activeTab === 'promociones' && (user?.rol === 'admin' || user?.rol === 'super_admin') && (
             <div className="p-6">
               <PlanGate feature="promociones">
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                  <PromocionManagement />
+                  <PromocionManagementAdvanced />
                 </div>
               </PlanGate>
             </div>

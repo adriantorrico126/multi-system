@@ -50,6 +50,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ReconciliacionesAnalytics } from '@/components/analytics/ReconciliacionesAnalytics';
+import { AdvancedExportModal } from '@/components/analytics/AdvancedExportModal';
+import { ExportData } from '@/utils/advancedExport';
 import {
   LineChart as RechartsLineChart,
   BarChart as RechartsBarChart,
@@ -251,6 +253,10 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
 
   // Control de visibilidad de filtros
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Estados para exportación avanzada
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportData, setExportData] = useState<ExportData | null>(null);
 
   // Función para manejar el cambio de tab en móvil
   const handleTabChange = (tab: string) => {
@@ -258,6 +264,267 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
     if (isMobile) {
       setIsMobileMenuOpen(false);
     }
+  };
+
+  // Función para preparar datos de exportación
+  const prepareExportData = async (): Promise<ExportData> => {
+    console.log('🔍 [EXPORT] Iniciando preparación de datos...');
+    try {
+      // Obtener datos reales de ventas con filtros aplicados
+      const params = new URLSearchParams({
+        fechaInicio,
+        fechaFin,
+        ...(sucursalSeleccionada && sucursalSeleccionada !== 'all' && { id_sucursal: sucursalSeleccionada }),
+        ...(vendedorSeleccionado && vendedorSeleccionado !== 'all' && { id_vendedor: vendedorSeleccionado }),
+        ...(tipoServicio && tipoServicio !== 'all' && { tipo_servicio: tipoServicio }),
+        limit: '1000' // Obtener más datos para exportación
+      });
+
+      console.log('🔍 [EXPORT] Parámetros de búsqueda:', params.toString());
+
+      // Obtener ventas detalladas
+      const ventasResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/ventas/ordenadas?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('🔍 [EXPORT] Respuesta de ventas:', ventasResponse.status);
+
+      const ventasData = ventasResponse.ok ? await ventasResponse.json() : { data: [] };
+      const ventas = ventasData.data || [];
+      console.log('🔍 [EXPORT] Ventas obtenidas:', ventas.length);
+
+      // Obtener productos con filtros
+      const productos = productosData?.productos || [];
+      console.log('🔍 [EXPORT] Productos obtenidos:', productos.length);
+      
+      // Obtener vendedores
+      const vendedores = analyticsData?.top_vendedores || [];
+      console.log('🔍 [EXPORT] Vendedores obtenidos:', vendedores.length);
+      
+      // Obtener sucursales (usar datos del contexto)
+      const sucursales = [
+        {
+          id_sucursal: 1,
+          nombre_sucursal: 'Sucursal Principal',
+          ciudad: 'Ciudad',
+          direccion: 'Dirección',
+          ventas_totales: ventas.length,
+          ingresos_totales: ventas.reduce((sum: number, v: any) => sum + (Number(v.total) || 0), 0),
+          vendedores_activos: vendedores.length,
+          estado: 'Activa'
+        }
+      ];
+      
+      // Calcular métodos de pago desde las ventas
+      const metodosPagoMap = new Map();
+      ventas.forEach((venta: any) => {
+        const metodo = venta.metodo_pago || 'Efectivo';
+        const total = Number(venta.total) || 0;
+        if (metodosPagoMap.has(metodo)) {
+          const existente = metodosPagoMap.get(metodo);
+          existente.total += total;
+          existente.cantidad_ventas += 1;
+        } else {
+          metodosPagoMap.set(metodo, { metodo_pago: metodo, total, cantidad_ventas: 1 });
+        }
+      });
+      
+      const totalIngresos = ventas.reduce((sum: number, v: any) => sum + (Number(v.total) || 0), 0);
+      const metodosPago = Array.from(metodosPagoMap.values()).map(metodo => ({
+        ...metodo,
+        porcentaje: totalIngresos > 0 ? ((metodo.total / totalIngresos) * 100).toFixed(2) : '0'
+      }));
+
+      console.log('🔍 [EXPORT] Métodos de pago calculados:', metodosPago.length);
+
+      return {
+        ventas: ventas.map((venta: any) => ({
+          id_venta: venta.id_venta || venta.id || 'N/A',
+          fecha: venta.fecha || venta.timestamp || new Date().toISOString(),
+          sucursal_nombre: venta.sucursal_nombre || venta.branch || 'N/A',
+          vendedor_nombre: venta.vendedor_nombre || venta.cashier || 'N/A',
+          mesa_numero: venta.mesa_numero || venta.mesa || 'N/A',
+          tipo_servicio: venta.tipo_servicio || venta.serviceType || 'N/A',
+          metodo_pago: venta.metodo_pago || venta.paymentMethod || 'N/A',
+          subtotal: Number(venta.subtotal) || Number(venta.subtotal) || 0,
+          descuentos: Number(venta.descuentos) || 0,
+          total: Number(venta.total) || 0,
+          productos: venta.productos || venta.items || [],
+          observaciones: venta.observaciones || venta.notes || '',
+          estado: venta.estado || venta.status || 'N/A',
+          factura_nit: venta.factura_nit || venta.invoiceData?.nit || '',
+          razon_social: venta.razon_social || venta.invoiceData?.businessName || ''
+        })),
+        productos: productos.map(producto => ({
+          id_producto: producto.id_producto,
+          nombre_producto: producto.producto,
+          categoria: producto.categoria,
+          cantidad_vendida: producto.cantidad_vendida_final,
+          ingresos_totales: producto.ingresos_totales_final,
+          precio_promedio: producto.precio_venta,
+          ticket_promedio: producto.ticket_promedio_producto,
+          ventas_asociadas: producto.ventas_asociadas_final,
+          porcentaje: producto.porcentaje_cantidad,
+          tendencia: 'Estable',
+          stock_actual: 'N/A',
+          estado: producto.activo ? 'Activo' : 'Inactivo'
+        })),
+        vendedores: vendedores.map(vendedor => ({
+          id_vendedor: vendedor.id_vendedor,
+          nombre_vendedor: vendedor.nombre_vendedor,
+          sucursal_nombre: 'N/A', // Valor por defecto
+          total_ventas: vendedor.ventas,
+          ingresos_generados: vendedor.ingresos,
+          ticket_promedio: vendedor.promedio_venta,
+          ventas_por_dia: vendedor.ventas / 30, // Aproximación
+          productos_vendidos: 0,
+          eficiencia: 85, // Valor por defecto
+          estado: 'Activo'
+        })),
+        sucursales: sucursales.map((sucursal: any) => ({
+          id_sucursal: sucursal.id_sucursal || 1,
+          nombre_sucursal: sucursal.nombre_sucursal || 'Sucursal Principal',
+          ciudad: sucursal.ciudad || 'N/A',
+          direccion: sucursal.direccion || 'N/A',
+          ventas_totales: sucursal.ventas_totales || 0,
+          ingresos_totales: sucursal.ingresos_totales || 0,
+          vendedores_activos: sucursal.vendedores_activos || 0,
+          estado: 'Activa'
+        })),
+        metodosPago: metodosPago.map((metodo: any) => ({
+          metodo_pago: metodo.metodo_pago || 'Efectivo',
+          total: metodo.total || 0,
+          porcentaje: metodo.porcentaje || 0,
+          cantidad_ventas: metodo.cantidad_ventas || 0
+        })),
+        periodos: {
+          fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
+          tipo: 'personalizado' as const
+        }
+      };
+      
+      console.log('✅ [EXPORT] Datos preparados exitosamente');
+      return {
+        ventas: ventas.map((venta: any) => ({
+          id_venta: venta.id_venta || venta.id || 'N/A',
+          fecha: venta.fecha || venta.timestamp || new Date().toISOString(),
+          sucursal_nombre: venta.sucursal_nombre || venta.branch || 'N/A',
+          vendedor_nombre: venta.vendedor_nombre || venta.cashier || 'N/A',
+          mesa_numero: venta.mesa_numero || venta.mesa || 'N/A',
+          tipo_servicio: venta.tipo_servicio || venta.serviceType || 'N/A',
+          metodo_pago: venta.metodo_pago || venta.paymentMethod || 'N/A',
+          subtotal: Number(venta.subtotal) || Number(venta.subtotal) || 0,
+          descuentos: Number(venta.descuentos) || 0,
+          total: Number(venta.total) || 0,
+          productos: venta.productos || venta.items || [],
+          observaciones: venta.observaciones || venta.notes || '',
+          estado: venta.estado || venta.status || 'N/A',
+          factura_nit: venta.factura_nit || venta.invoiceData?.nit || '',
+          razon_social: venta.razon_social || venta.invoiceData?.businessName || ''
+        })),
+        productos: productos.map(producto => ({
+          id_producto: producto.id_producto,
+          nombre_producto: producto.producto,
+          categoria: producto.categoria,
+          cantidad_vendida: producto.cantidad_vendida_final,
+          ingresos_totales: producto.ingresos_totales_final,
+          precio_promedio: producto.precio_venta,
+          ticket_promedio: producto.ticket_promedio_producto,
+          ventas_asociadas: producto.ventas_asociadas_final,
+          porcentaje: producto.porcentaje_cantidad,
+          tendencia: 'Estable',
+          stock_actual: 'N/A',
+          estado: producto.activo ? 'Activo' : 'Inactivo'
+        })),
+        vendedores: vendedores.map(vendedor => ({
+          id_vendedor: vendedor.id_vendedor,
+          nombre_vendedor: vendedor.nombre_vendedor,
+          sucursal_nombre: 'N/A', // Valor por defecto
+          total_ventas: vendedor.ventas,
+          ingresos_generados: vendedor.ingresos,
+          ticket_promedio: vendedor.promedio_venta,
+          ventas_por_dia: vendedor.ventas / 30, // Aproximación
+          productos_vendidos: 0,
+          eficiencia: 85, // Valor por defecto
+          estado: 'Activo'
+        })),
+        sucursales: sucursales.map((sucursal: any) => ({
+          id_sucursal: sucursal.id_sucursal || 1,
+          nombre_sucursal: sucursal.nombre_sucursal || 'Sucursal Principal',
+          ciudad: sucursal.ciudad || 'N/A',
+          direccion: sucursal.direccion || 'N/A',
+          ventas_totales: sucursal.ventas_totales || 0,
+          ingresos_totales: sucursal.ingresos_totales || 0,
+          vendedores_activos: sucursal.vendedores_activos || 0,
+          estado: 'Activa'
+        })),
+        metodosPago: metodosPago.map((metodo: any) => ({
+          metodo_pago: metodo.metodo_pago || 'Efectivo',
+          total: metodo.total || 0,
+          porcentaje: metodo.porcentaje || 0,
+          cantidad_ventas: metodo.cantidad_ventas || 0
+        })),
+        periodos: {
+          fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
+          tipo: 'personalizado' as const
+        }
+      };
+    } catch (error) {
+      console.error('❌ [EXPORT] Error preparando datos de exportación:', error);
+      // Devolver datos por defecto en caso de error
+      const fallbackData = {
+        ventas: [],
+        productos: productosData?.productos || [],
+        vendedores: analyticsData?.top_vendedores || [],
+        sucursales: [],
+        metodosPago: [],
+        periodos: {
+          fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
+          tipo: 'personalizado' as const
+        }
+      };
+      console.log('🔄 [EXPORT] Usando datos por defecto:', fallbackData);
+      return fallbackData;
+    }
+  };
+
+  // Función para abrir modal de exportación
+  const handleOpenExportModal = async () => {
+    console.log('🚀 [EXPORT] Abriendo modal de exportación...');
+    try {
+      setIsLoading(true);
+      console.log('🚀 [EXPORT] Preparando datos...');
+      const data = await prepareExportData();
+      console.log('🚀 [EXPORT] Datos preparados:', data);
+      setExportData(data);
+      setShowExportModal(true);
+      console.log('🚀 [EXPORT] Modal abierto exitosamente');
+    } catch (error) {
+      console.error('❌ [EXPORT] Error preparando datos para exportación:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los datos para exportación",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para manejar exportación completada
+  const handleExportComplete = (result: any) => {
+    console.log('✅ Exportación completada:', result);
+    toast({
+      title: "Exportación Exitosa",
+      description: `Reporte generado: ${result.filename}`,
+      duration: 5000,
+    });
   };
 
   // Definir las pestañas de analytics
@@ -912,6 +1179,15 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
                     <Filter className="h-4 w-4 mr-2" />
                   )}
                   Aplicar Filtros
+                </Button>
+                
+                <Button 
+                  onClick={handleOpenExportModal} 
+                  disabled={!analyticsData || isLoading}
+                  className="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Avanzado
                 </Button>
                 
                 <Button 
@@ -2926,6 +3202,25 @@ export function AdvancedAnalytics({ userRole }: AdvancedAnalyticsProps) {
           </TabsContent>
         </Tabs>
       )}
+      
+      {/* Modal de Exportación Avanzada */}
+      <AdvancedExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={exportData || {
+          ventas: [],
+          productos: [],
+          vendedores: [],
+          sucursales: [],
+          metodosPago: [],
+          periodos: {
+            fechaInicio: fechaInicio,
+            fechaFin: fechaFin,
+            tipo: 'personalizado' as const
+          }
+        }}
+        onExportComplete={handleExportComplete}
+      />
     </div>
   );
 }

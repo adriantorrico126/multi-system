@@ -185,6 +185,203 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
     );
   });
 
+  // =====================================================
+  // FUNCIONES DE EXPORTACIÓN
+  // =====================================================
+
+  // Función para exportar a Excel
+  const handleExportExcel = async () => {
+    console.log('🚀 [EXPORT] Iniciando exportación a Excel...');
+    setLoadingExport(true);
+    setExportError(null);
+
+    try {
+      const workbook = XLSX.utils.book_new();
+      const fechaExportacion = format(new Date(), 'dd/MM/yyyy HH:mm');
+
+      // Hoja 1: Resumen
+      const resumenData = [
+        ['REPORTE DE VENTAS - HISTORIAL'],
+        [''],
+        ['Fecha de Exportación:', fechaExportacion],
+        ['Total de Ventas:', filteredSales.length],
+        ['Ingresos Totales:', `Bs ${filteredSales.reduce((sum, sale) => sum + (sale.total || 0), 0).toFixed(2)}`],
+        ['Ticket Promedio:', `Bs ${(filteredSales.reduce((sum, sale) => sum + (sale.total || 0), 0) / filteredSales.length || 0).toFixed(2)}`],
+        [''],
+        ['DETALLES DE VENTAS']
+      ];
+
+      const resumenSheet = XLSX.utils.aoa_to_sheet(resumenData);
+      XLSX.utils.book_append_sheet(workbook, resumenSheet, 'Resumen');
+
+      // Hoja 2: Ventas Detalladas
+      const ventasHeaders = [
+        'ID',
+        'Fecha',
+        'Hora',
+        'Cajero',
+        'Mesa',
+        'Tipo Servicio',
+        'Método de Pago',
+        'Subtotal',
+        'Descuentos',
+        'Total',
+        'Productos',
+        'Estado',
+        'Observaciones'
+      ];
+
+      const ventasData = filteredSales.map(sale => {
+        const fecha = getSaleDate(sale);
+        const fechaStr = fecha ? format(fecha, 'dd/MM/yyyy') : 'N/A';
+        const horaStr = fecha ? format(fecha, 'HH:mm:ss') : 'N/A';
+        
+        const productos = sale.items?.map((item: any) => `${item.name} x${item.quantity}`).join('; ') || '';
+
+        return [
+          sale.id,
+          fechaStr,
+          horaStr,
+          sale.cashier || 'N/A',
+          sale.mesa_numero || 'N/A',
+          sale.tipo_servicio || 'N/A',
+          sale.paymentMethod || 'N/A',
+          (sale.subtotal || 0).toFixed(2),
+          (sale.totalDescuentos || 0).toFixed(2),
+          (sale.total || 0).toFixed(2),
+          productos,
+          sale.estado || 'N/A',
+          ''
+        ];
+      });
+
+      const ventasSheet = XLSX.utils.aoa_to_sheet([ventasHeaders, ...ventasData]);
+      XLSX.utils.book_append_sheet(workbook, ventasSheet, 'Ventas Detalladas');
+
+      // Generar y descargar archivo
+      const filename = `Historial_Ventas_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      toast({
+        title: "✅ Exportación Exitosa",
+        description: `Archivo Excel generado: ${filename}`,
+        duration: 5000,
+      });
+
+    } catch (error) {
+      console.error('❌ Error exportando a Excel:', error);
+      setExportError('Error al generar el archivo Excel');
+      toast({
+        title: "❌ Error",
+        description: "No se pudo generar el archivo Excel",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
+  // Función para exportar a PDF
+  const handleExportPDF = async () => {
+    console.log('🚀 [EXPORT] Iniciando exportación a PDF...');
+    setLoadingExport(true);
+    setExportError(null);
+
+    try {
+      const doc = new jsPDF();
+      const fechaExportacion = format(new Date(), 'dd/MM/yyyy HH:mm');
+
+      // Configuración de página
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Título
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('HISTORIAL DE VENTAS', pageWidth / 2, 30, { align: 'center' });
+
+      // Información del reporte
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fecha de Exportación: ${fechaExportacion}`, 20, 50);
+      doc.text(`Total de Ventas: ${filteredSales.length}`, 20, 60);
+      doc.text(`Ingresos Totales: Bs ${filteredSales.reduce((sum, sale) => sum + (sale.total || 0), 0).toFixed(2)}`, 20, 70);
+
+      // Tabla de ventas
+      const tableData = filteredSales.map(sale => {
+        const fecha = getSaleDate(sale);
+        const fechaStr = fecha ? format(fecha, 'dd/MM/yyyy HH:mm') : 'N/A';
+        
+        return [
+          sale.id.toString(),
+          fechaStr,
+          sale.cashier || 'N/A',
+          (sale.total || 0).toFixed(2),
+          sale.paymentMethod || 'N/A',
+          sale.estado || 'N/A'
+        ];
+      });
+
+      (doc as any).autoTable({
+        head: [['ID', 'Fecha', 'Cajero', 'Total', 'Método Pago', 'Estado']],
+        body: tableData,
+        startY: 90,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+
+      // Generar y descargar archivo
+      const filename = `Historial_Ventas_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`;
+      doc.save(filename);
+
+      toast({
+        title: "✅ Exportación Exitosa",
+        description: `Archivo PDF generado: ${filename}`,
+        duration: 5000,
+      });
+
+    } catch (error) {
+      console.error('❌ Error exportando a PDF:', error);
+      setExportError('Error al generar el archivo PDF');
+      toast({
+        title: "❌ Error",
+        description: "No se pudo generar el archivo PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
+  // Función para exportar a CSV
+  const handleExportCSV = async () => {
+    console.log('🚀 [EXPORT] Iniciando exportación a CSV...');
+    setLoadingExport(true);
+    setExportError(null);
+
+    try {
+      const filename = `Historial_Ventas_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`;
+      exportSalesToCSV(filteredSales, filename);
+
+      toast({
+        title: "✅ Exportación Exitosa",
+        description: `Archivo CSV generado: ${filename}`,
+        duration: 5000,
+      });
+
+    } catch (error) {
+      console.error('❌ Error exportando a CSV:', error);
+      setExportError('Error al generar el archivo CSV');
+      toast({
+        title: "❌ Error",
+        description: "No se pudo generar el archivo CSV",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header con pestañas - Optimizado para móvil */}
@@ -352,6 +549,37 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
                   <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Accede a analytics avanzados y métricas detalladas</p>
                 </div>
                 
+                {/* Indicador de carga y errores */}
+                {loadingExport && (
+                  <div className="col-span-full">
+                    <Card className="border-blue-200 bg-blue-50">
+                      <CardContent className="p-4 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
+                        <p className="text-blue-700 font-medium">Generando reporte...</p>
+                        <p className="text-blue-600 text-sm">Por favor espera mientras se procesa la exportación</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {exportError && (
+                  <div className="col-span-full">
+                    <Alert variant="destructive">
+                      <AlertDescription>
+                        <strong>Error en exportación:</strong> {exportError}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setExportError(null)}
+                          className="ml-2"
+                        >
+                          Cerrar
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
                     console.log('🔍 [SALES-HISTORY] Clic en "Analytics Avanzados"');
@@ -364,7 +592,10 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
                     </CardContent>
                   </Card>
 
-                  <Card className="hover:shadow-lg transition-shadow">
+                  <Card 
+                    className="hover:shadow-lg transition-shadow cursor-pointer" 
+                    onClick={handleExportExcel}
+                  >
                     <CardContent className="p-4 md:p-6 text-center">
                       <Download className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-green-500" />
                       <h4 className="text-base md:text-lg font-semibold mb-2">Exportar Excel</h4>
@@ -372,11 +603,25 @@ export function SalesHistory({ sales, onDeleteSale, userRole }: SalesHistoryProp
                     </CardContent>
                   </Card>
 
-                  <Card className="hover:shadow-lg transition-shadow">
+                  <Card 
+                    className="hover:shadow-lg transition-shadow cursor-pointer" 
+                    onClick={handleExportPDF}
+                  >
                     <CardContent className="p-4 md:p-6 text-center">
-                      <TrendingUp className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-purple-500" />
-                      <h4 className="text-base md:text-lg font-semibold mb-2">Tendencias</h4>
-                      <p className="text-xs md:text-sm text-gray-600">Análisis de tendencias temporales</p>
+                      <FileText className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-red-500" />
+                      <h4 className="text-base md:text-lg font-semibold mb-2">Exportar PDF</h4>
+                      <p className="text-xs md:text-sm text-gray-600">Reporte profesional en PDF</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card 
+                    className="hover:shadow-lg transition-shadow cursor-pointer" 
+                    onClick={handleExportCSV}
+                  >
+                    <CardContent className="p-4 md:p-6 text-center">
+                      <FileSpreadsheet className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4 text-blue-500" />
+                      <h4 className="text-base md:text-lg font-semibold mb-2">Exportar CSV</h4>
+                      <p className="text-xs md:text-sm text-gray-600">Datos estructurados para análisis</p>
                     </CardContent>
                   </Card>
                 </div>

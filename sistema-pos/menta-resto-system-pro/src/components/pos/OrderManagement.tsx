@@ -44,8 +44,8 @@ export function OrderManagement({ orders, onUpdateOrderStatus, userRole }: Order
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'preparing': return 'bg-blue-100 text-blue-700';
+      case 'pending': return 'bg-yellow-100 text-red-700';
+      case 'preparing': return 'bg-blue-600 text-white';
       case 'ready': return 'bg-green-100 text-green-700';
       case 'delivered': return 'bg-gray-100 text-gray-700';
       case 'cancelado': return 'bg-gray-100 text-gray-700';

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
@@ -20,7 +21,11 @@ import {
   Eye,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Crown,
+  BarChart3,
+  Settings,
+  Zap
 } from 'lucide-react';
 import { 
   crearPromocion, 
@@ -29,6 +34,8 @@ import {
   eliminarPromocion,
   getProducts
 } from '@/services/api';
+import { AdvancedPromocionModal } from './AdvancedPromocionModal';
+import { PromocionesAnalytics } from './PromocionesAnalytics';
 
 interface Promocion {
   id_promocion: number;
@@ -53,21 +60,12 @@ interface Producto {
 export function PromocionManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('gestion');
+  const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPromocion, setSelectedPromocion] = useState<Promocion | null>(null);
-  const [selectedPromocionForInfo, setSelectedPromocionForInfo] = useState<Promocion | null>(null);
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    tipo: 'porcentaje' as 'porcentaje' | 'monto_fijo' | 'precio_fijo',
-    valor: 0,
-    fecha_inicio: '',
-    fecha_fin: '',
-    id_producto: 0
-  });
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
   // Obtener promociones
   const { data: promociones = [], isLoading: isLoadingPromociones } = useQuery({
@@ -79,6 +77,12 @@ export function PromocionManagement() {
   const { data: productos = [] } = useQuery({
     queryKey: ['productos'],
     queryFn: () => getProducts(false) // Sin descuentos para evitar recursión
+  });
+
+  // Obtener ventas para analytics
+  const { data: ventas = [] } = useQuery({
+    queryKey: ['ventas'],
+    queryFn: () => Promise.resolve([]) // Placeholder - implementar cuando esté disponible
   });
 
   // Mutaciones

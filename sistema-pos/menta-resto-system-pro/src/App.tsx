@@ -8,8 +8,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 // UI global
 import { Toaster } from '@/components/ui/toaster';
 
-// Contextos
-import { PlanSystemProvider } from '@/context/PlanSystemContext';
+// Contextos - PlanSystemProvider ya está en main.tsx
 
 // Páginas
 import Index from '@/pages/Index';
@@ -22,7 +21,7 @@ import SupportPage from '@/pages/SupportPage';
 
 const App: React.FC = () => {
   return (
-    <PlanSystemProvider>
+    <>
       <Routes>
         {/* Página principal / login */}
         <Route path="/" element={<Index />} />
@@ -88,7 +87,7 @@ const App: React.FC = () => {
 
       {/* Toaster para notificaciones */}
       <Toaster />
-    </PlanSystemProvider>
+    </>
   );
 };
 
