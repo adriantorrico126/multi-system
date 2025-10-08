@@ -14,7 +14,7 @@ router.get('/cocina', authenticateToken, authorizeRoles('cocinero', 'admin', 'ca
 router.put('/:id/status', authenticateToken, authorizeRoles('cocinero', 'admin', 'super_admin'), ensureTenantContext, ventaController.actualizarEstadoPedido);
 
 // Actualizar estado de venta (nuevo endpoint profesional)
-router.patch('/:id/estado', authenticateToken, authorizeRoles('cocinero', 'admin', 'super_admin'), ensureTenantContext, ventaController.updateEstadoVenta);
+router.patch('/:id/estado', authenticateToken, authorizeRoles('cocinero', 'admin', 'cajero', 'super_admin'), ensureTenantContext, ventaController.updateEstadoVenta);
 
 // PATCH para actualizar detalle de venta desde la cocina
 router.patch('/detalle-ventas/:id_detalle', authenticateToken, authorizeRoles('admin', 'cocinero', 'super_admin'), ventaController.actualizarDetalleVentaKDS);
@@ -23,7 +23,7 @@ router.patch('/detalle-ventas/:id_detalle', authenticateToken, authorizeRoles('a
 router.post('/cerrar-mesa', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin'), ensureTenantContext, ventaController.cerrarMesaConFactura);
 
 // Obtener datos de arqueo
-router.get('/arqueo', authenticateToken, authorizeRoles('admin', 'super_admin'), ensureTenantContext, ventaController.getArqueoData);
+router.get('/arqueo', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin'), ensureTenantContext, ventaController.getArqueoData);
 
 // Obtener ventas ordenadas por fecha
 router.get('/ordenadas', authenticateToken, authorizeRoles('admin', 'cajero', 'super_admin', 'cocinero', 'mesero'), ensureTenantContext, ventaController.getVentasOrdenadas);
