@@ -151,13 +151,29 @@ export const DashboardStats = React.memo(({ sales, orders, products }: Dashboard
   const productosActivos = products.filter(p => p.available).length;
   const pedidosPendientes = orders.filter(o => o.status === 'pending' || o.status === 'preparing').length;
 
-  // Calcular crecimiento vs día anterior
-  const ventasHoy = ventasFiltradas.filter(v => 
-    format(new Date(v.timestamp), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-  );
-  const ventasAyer = ventasFiltradas.filter(v => 
-    format(new Date(v.timestamp), 'yyyy-MM-dd') === format(new Date(Date.now() - 86400000), 'yyyy-MM-dd')
-  );
+  // Calcular crecimiento vs día anterior (usando fecha en vez de timestamp)
+  const getVentaDate = (venta: any) => {
+    // Intentar obtener la fecha de diferentes propiedades
+    const fechaStr = venta.fecha || venta.timestamp;
+    if (!fechaStr) return null;
+    try {
+      return new Date(fechaStr);
+    } catch {
+      return null;
+    }
+  };
+  
+  const ventasHoy = ventasFiltradas.filter(v => {
+    const fecha = getVentaDate(v);
+    if (!fecha) return false;
+    return format(fecha, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  });
+  
+  const ventasAyer = ventasFiltradas.filter(v => {
+    const fecha = getVentaDate(v);
+    if (!fecha) return false;
+    return format(fecha, 'yyyy-MM-dd') === format(new Date(Date.now() - 86400000), 'yyyy-MM-dd');
+  });
   
   const crecimientoVentas = ventasAyer.length > 0 
     ? ((ventasHoy.length - ventasAyer.length) / ventasAyer.length) * 100 

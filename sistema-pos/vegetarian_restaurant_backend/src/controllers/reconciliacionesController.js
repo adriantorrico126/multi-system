@@ -126,25 +126,26 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
         r.id_reconciliacion,
         r.id_restaurante,
         r.id_sucursal,
-        r.id_vendedor as id_usuario,
-        r.fecha as fecha_reconciliacion,
-        r.fecha as fecha_inicio,
-        r.fecha as fecha_fin,
-        r.monto_inicial as efectivo_inicial,
-        r.efectivo_fisico as efectivo_final,
+        r.id_usuario,
+        r.fecha_reconciliacion,
+        r.fecha_inicio,
+        r.fecha_fin,
+        r.efectivo_inicial,
+        r.efectivo_final,
         r.efectivo_esperado,
-        COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) as diferencia,
+        COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0) as diferencia,
         r.observaciones,
         r.estado,
         r.created_at,
         r.updated_at,
         s.nombre as sucursal_nombre,
-        v.nombre as usuario_nombre,
-        v.username as usuario_email,
-        v.rol as usuario_rol
+        COALESCE(v.nombre, u.nombre, 'Sin Usuario') as usuario_nombre,
+        COALESCE(v.email, u.email, v.username, 'Sin Email') as usuario_email,
+        COALESCE(v.rol, 'Sin Rol') as usuario_rol
       FROM reconciliaciones_caja r
       LEFT JOIN sucursales s ON r.id_sucursal = s.id_sucursal
-      LEFT JOIN vendedores v ON r.id_vendedor = v.id_vendedor
+      LEFT JOIN vendedores v ON r.id_usuario = v.id_vendedor
+      LEFT JOIN usuarios u ON r.id_usuario = u.id_usuario
       WHERE r.id_restaurante = $1
     `;
     
@@ -154,13 +155,13 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
     // Filtros opcionales
     if (fecha_inicio) {
       paramCount++;
-      query += ` AND r.fecha >= $${paramCount}`;
+      query += ` AND r.fecha_reconciliacion >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      query += ` AND r.fecha <= $${paramCount}`;
+      query += ` AND r.fecha_reconciliacion <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -170,7 +171,7 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
       params.push(id_sucursal);
     }
 
-    query += ' ORDER BY r.fecha DESC, r.created_at DESC';
+    query += ' ORDER BY r.fecha_reconciliacion DESC, r.created_at DESC';
 
     const result = await pool.query(query, params);
 
@@ -191,18 +192,21 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
         
         const detallesResult = await pool.query(detallesQuery, [reconciliacion.id_reconciliacion]);
         
-        // Formatear datos en JavaScript
-        const fechaReconciliacion = new Date(reconciliacion.fecha_reconciliacion);
-        const fechaInicio = new Date(reconciliacion.fecha_inicio);
-        const fechaFin = new Date(reconciliacion.fecha_fin);
+        // Formatear datos en JavaScript con validaciones
+        const fechaReconciliacion = reconciliacion.fecha_reconciliacion ? new Date(reconciliacion.fecha_reconciliacion) : new Date();
+        const fechaInicio = reconciliacion.fecha_inicio ? new Date(reconciliacion.fecha_inicio) : fechaReconciliacion;
+        const fechaFin = reconciliacion.fecha_fin ? new Date(reconciliacion.fecha_fin) : fechaReconciliacion;
         
-        // Calcular duración en horas
-        const duracionMs = fechaFin.getTime() - fechaInicio.getTime();
-        const duracionHoras = duracionMs / (1000 * 60 * 60);
+        // Calcular duración en horas (con validación)
+        let duracionHoras = 0;
+        if (fechaFin && fechaInicio && !isNaN(fechaFin.getTime()) && !isNaN(fechaInicio.getTime())) {
+          const duracionMs = fechaFin.getTime() - fechaInicio.getTime();
+          duracionHoras = duracionMs / (1000 * 60 * 60);
+        }
         
         // Formatear estado
-        let estadoFormateado = reconciliacion.estado;
-        switch (reconciliacion.estado) {
+        let estadoFormateado = reconciliacion.estado || 'completada';
+        switch (estadoFormateado) {
           case 'completada':
             estadoFormateado = '✅ Completada';
             break;
@@ -215,23 +219,24 @@ exports.obtenerReconciliaciones = async (req, res, next) => {
         }
         
         // Formatear diferencia
+        const diferencia = parseFloat(reconciliacion.diferencia) || 0;
         let diferenciaFormateada = 'Sin diferencia';
-        if (reconciliacion.diferencia === 0) {
+        if (diferencia === 0) {
           diferenciaFormateada = '✅ Cuadrada';
-        } else if (reconciliacion.diferencia > 0) {
-          diferenciaFormateada = `📈 Sobrante: Bs ${reconciliacion.diferencia}`;
-        } else if (reconciliacion.diferencia < 0) {
-          diferenciaFormateada = `📉 Faltante: Bs ${Math.abs(reconciliacion.diferencia)}`;
+        } else if (diferencia > 0) {
+          diferenciaFormateada = `📈 Sobrante: Bs ${diferencia.toFixed(2)}`;
+        } else if (diferencia < 0) {
+          diferenciaFormateada = `📉 Faltante: Bs ${Math.abs(diferencia).toFixed(2)}`;
         }
         
         return {
           ...reconciliacion,
           detalles_metodos: detallesResult.rows,
           total_metodos: detallesResult.rows.length,
-          // Campos formateados
-          fecha_formateada: fechaReconciliacion.toLocaleDateString('es-ES'),
-          hora_formateada: fechaReconciliacion.toLocaleTimeString('es-ES'),
-          fecha_hora_completa: fechaReconciliacion.toLocaleString('es-ES'),
+          // Campos formateados con validaciones
+          fecha_formateada: fechaReconciliacion && !isNaN(fechaReconciliacion.getTime()) ? fechaReconciliacion.toLocaleDateString('es-ES') : 'N/A',
+          hora_formateada: fechaReconciliacion && !isNaN(fechaReconciliacion.getTime()) ? fechaReconciliacion.toLocaleTimeString('es-ES') : 'N/A',
+          fecha_hora_completa: fechaReconciliacion && !isNaN(fechaReconciliacion.getTime()) ? fechaReconciliacion.toLocaleString('es-ES') : 'N/A',
           duracion_horas: Math.round(duracionHoras * 100) / 100,
           estado_formateado: estadoFormateado,
           diferencia_formateada: diferenciaFormateada
@@ -341,14 +346,14 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
 
     let query = `
       SELECT 
-        DATE(r.fecha) as fecha,
+        DATE(r.fecha_reconciliacion) as fecha,
         r.id_sucursal,
         s.nombre as sucursal_nombre,
         COUNT(*) as total_reconciliaciones,
         SUM(r.efectivo_esperado) as total_efectivo_esperado,
-        SUM(r.efectivo_fisico) as total_efectivo_final,
-        SUM(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as total_diferencia,
-        AVG(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio
+        SUM(r.efectivo_final) as total_efectivo_final,
+        SUM(COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0)) as total_diferencia,
+        AVG(COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio
       FROM reconciliaciones_caja r
       LEFT JOIN sucursales s ON r.id_sucursal = s.id_sucursal
       WHERE r.id_restaurante = $1
@@ -359,13 +364,13 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
 
     if (fecha_inicio) {
       paramCount++;
-      query += ` AND r.fecha >= $${paramCount}`;
+      query += ` AND r.fecha_reconciliacion >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      query += ` AND r.fecha <= $${paramCount}`;
+      query += ` AND r.fecha_reconciliacion <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -375,7 +380,7 @@ exports.obtenerResumenReconciliaciones = async (req, res, next) => {
       params.push(id_sucursal);
     }
 
-    query += ' GROUP BY DATE(r.fecha), r.id_sucursal, s.nombre ORDER BY fecha DESC';
+    query += ' GROUP BY DATE(r.fecha_reconciliacion), r.id_sucursal, s.nombre ORDER BY fecha DESC';
 
     const result = await pool.query(query, params);
 
@@ -591,13 +596,13 @@ exports.obtenerEstadisticasReconciliaciones = async (req, res, next) => {
 
     if (fecha_inicio) {
       paramCount++;
-      whereClause += ` AND r.fecha >= $${paramCount}`;
+      whereClause += ` AND r.fecha_reconciliacion >= $${paramCount}`;
       params.push(fecha_inicio);
     }
 
     if (fecha_fin) {
       paramCount++;
-      whereClause += ` AND r.fecha <= $${paramCount}`;
+      whereClause += ` AND r.fecha_reconciliacion <= $${paramCount}`;
       params.push(fecha_fin);
     }
 
@@ -613,15 +618,15 @@ exports.obtenerEstadisticasReconciliaciones = async (req, res, next) => {
         COUNT(CASE WHEN r.estado = 'completada' THEN 1 END) as reconciliaciones_completadas,
         COUNT(CASE WHEN r.estado = 'pendiente' THEN 1 END) as reconciliaciones_pendientes,
         COUNT(CASE WHEN r.estado = 'cancelada' THEN 1 END) as reconciliaciones_canceladas,
-        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) = 0 THEN 1 END) as reconciliaciones_cuadradas,
-        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) > 0 THEN 1 END) as reconciliaciones_sobrantes,
-        COUNT(CASE WHEN COALESCE(r.diferencia_efectivo, r.diferencia_total, 0) < 0 THEN 1 END) as reconciliaciones_faltantes,
-        AVG(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio,
-        SUM(COALESCE(r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_total,
+        COUNT(CASE WHEN COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0) = 0 THEN 1 END) as reconciliaciones_cuadradas,
+        COUNT(CASE WHEN COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0) > 0 THEN 1 END) as reconciliaciones_sobrantes,
+        COUNT(CASE WHEN COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0) < 0 THEN 1 END) as reconciliaciones_faltantes,
+        AVG(COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_promedio,
+        SUM(COALESCE(r.diferencia, r.diferencia_efectivo, r.diferencia_total, 0)) as diferencia_total,
         SUM(r.efectivo_esperado) as total_efectivo_esperado,
-        SUM(r.efectivo_fisico) as total_efectivo_final,
-        MIN(r.fecha) as fecha_primera,
-        MAX(r.fecha) as fecha_ultima
+        SUM(r.efectivo_final) as total_efectivo_final,
+        MIN(r.fecha_reconciliacion) as fecha_primera,
+        MAX(r.fecha_reconciliacion) as fecha_ultima
       FROM reconciliaciones_caja r
       ${whereClause}
     `;

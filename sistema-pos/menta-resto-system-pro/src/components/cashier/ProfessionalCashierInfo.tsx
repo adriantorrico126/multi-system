@@ -294,9 +294,17 @@ export function ProfessionalCashierInfo({ onClose }: ProfessionalCashierInfoProp
   const cargarHistorialReconciliaciones = () => {
     try {
       const reconciliaciones = JSON.parse(localStorage.getItem('reconciliaciones_caja') || '[]');
-      // Filtrar solo las del día actual
-      const hoy = new Date().toISOString().split('T')[0];
-      const delDia = reconciliaciones.filter((r: any) => r.fecha === hoy);
+      // Filtrar solo las del día actual (hasta las 23:59:59)
+      const ahora = new Date();
+      const inicioDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+      const finDia = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+      
+      const delDia = reconciliaciones.filter((r: any) => {
+        if (!r.fechaCompleta) return false;
+        const fechaReconciliacion = new Date(r.fechaCompleta);
+        return fechaReconciliacion >= inicioDia && fechaReconciliacion <= finDia;
+      });
+      
       setHistorialReconciliaciones(delDia.reverse()); // Más recientes primero
     } catch (error) {
       console.error('❌ Error cargando historial:', error);
@@ -314,10 +322,12 @@ export function ProfessionalCashierInfo({ onClose }: ProfessionalCashierInfoProp
   const guardarReconciliacion = (datos: any) => {
     try {
       const reconciliaciones = JSON.parse(localStorage.getItem('reconciliaciones_caja') || '[]');
+      const fechaCompleta = new Date();
       const nuevaReconciliacion = {
         id: Date.now(),
-        fecha: new Date().toISOString().split('T')[0],
-        hora: new Date().toLocaleTimeString('es-BO'),
+        fecha: fechaCompleta.toISOString().split('T')[0],
+        fechaCompleta: fechaCompleta.toISOString(), // Guardamos la fecha completa para filtrar correctamente
+        hora: fechaCompleta.toLocaleTimeString('es-BO'),
         usuario: user?.nombre || 'Cajero',
         id_usuario: 0, // Se puede obtener del contexto de autenticación
         id_restaurante: user?.id_restaurante || 0,

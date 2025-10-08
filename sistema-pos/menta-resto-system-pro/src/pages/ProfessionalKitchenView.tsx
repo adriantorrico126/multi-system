@@ -27,7 +27,10 @@ import {
   Volume2,
   VolumeX,
   Smartphone,
-  Monitor
+  Monitor,
+  Truck,
+  ShoppingBag,
+  Home
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -103,6 +106,41 @@ const triggerVibration = () => {
     } catch (error) {
       console.log('Vibración no disponible');
     }
+  }
+};
+
+// Funciones helper para servicios
+const getServiceIcon = (tipoServicio: string) => {
+  switch (tipoServicio?.toLowerCase()) {
+    case 'delivery':
+      return <Truck className="h-6 w-6" />;
+    case 'para llevar':
+    case 'takeaway':
+      return <ShoppingBag className="h-6 w-6" />;
+    case 'domicilio':
+      return <Home className="h-6 w-6" />;
+    default:
+      return <MapPin className="h-6 w-6" />;
+  }
+};
+
+const getServiceTitle = (tipoServicio: string, mesaNumero: number | null) => {
+  if (mesaNumero) {
+    return `Mesa ${mesaNumero}`;
+  }
+  
+  switch (tipoServicio?.toLowerCase()) {
+    case 'delivery':
+      return 'Delivery';
+    case 'para llevar':
+    case 'takeaway':
+      return 'Para Llevar';
+    case 'domicilio':
+      return 'Domicilio';
+    case 'mesa':
+      return 'Mesa';
+    default:
+      return tipoServicio || 'Servicio';
   }
 };
 
@@ -255,31 +293,54 @@ export function ProfessionalKitchenView({ orders: propOrders, onUpdateOrderStatu
 
   // Detectar nuevos pedidos y activar notificaciones
   useEffect(() => {
-    if (orders && orders.length > lastOrderCount && lastOrderCount > 0) {
-      const newOrders = orders.slice(0, orders.length - lastOrderCount);
-      const hasNewReceivedOrders = newOrders.some(order => order.estado === 'recibido');
+    if (orders && orders.length > 0) {
+      console.log('🔔 [Notifications] Verificando nuevos pedidos:', {
+        currentCount: orders.length,
+        lastCount: lastOrderCount,
+        notificationsEnabled,
+        soundEnabled
+      });
       
-      if (hasNewReceivedOrders && notificationsEnabled) {
-        // Reproducir sonido
-        if (soundEnabled && audioRef.current) {
-          audioRef.current.play().catch(() => {
-            playNotificationSound();
-          });
-        }
+      if (orders.length > lastOrderCount && lastOrderCount > 0) {
+        const newOrdersCount = orders.length - lastOrderCount;
+        const newOrders = orders.slice(0, newOrdersCount);
+        const hasNewReceivedOrders = newOrders.some(order => order.estado === 'recibido' || order.estado === 'pending');
         
-        // Activar vibración
-        triggerVibration();
-        
-        // Mostrar notificación toast
-        toast({
-          title: "🔔 Nuevo Pedido",
-          description: `Llegó un nuevo pedido a la cocina`,
-          duration: 3000,
+        console.log('🔔 [Notifications] Nuevos pedidos detectados:', {
+          newOrdersCount,
+          hasNewReceivedOrders,
+          newOrders
         });
+        
+        if (hasNewReceivedOrders && notificationsEnabled) {
+          console.log('🔔 [Notifications] Activando notificaciones...');
+          
+          // Reproducir sonido
+          if (soundEnabled && audioRef.current) {
+            audioRef.current.play().catch(() => {
+              console.log('🔔 [Notifications] Fallback a playNotificationSound');
+              playNotificationSound();
+            });
+          }
+          
+          // Activar vibración
+          triggerVibration();
+          
+          // Mostrar notificación toast
+          toast({
+            title: "🔔 Nuevo Pedido",
+            description: `${newOrdersCount} nuevo${newOrdersCount > 1 ? 's' : ''} pedido${newOrdersCount > 1 ? 's' : ''} en cocina`,
+            duration: 5000,
+            className: "bg-green-600 text-white"
+          });
+          
+          console.log('🔔 [Notifications] Notificación mostrada');
+        }
       }
+      
+      setLastOrderCount(orders.length);
     }
-    setLastOrderCount(orders?.length || 0);
-  }, [orders, lastOrderCount, notificationsEnabled, soundEnabled, toast]);
+  }, [orders, notificationsEnabled, soundEnabled, toast]);
 
   // Configurar WebSocket
   useEffect(() => {
@@ -523,11 +584,11 @@ export function ProfessionalKitchenView({ orders: propOrders, onUpdateOrderStatu
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            {order.mesa_numero || '#'}
+                            {order.mesa_numero || getServiceIcon(order.tipo_servicio)}
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-white">
-                              Mesa {order.mesa_numero || 'Sin Mesa'}
+                              {getServiceTitle(order.tipo_servicio, order.mesa_numero)}
                             </h3>
                             <p className="text-purple-200 text-sm">
                               #{order.id_venta} • {order.tipo_servicio}
