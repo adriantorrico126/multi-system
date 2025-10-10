@@ -53,8 +53,6 @@ const userRoutes = require('./routes/userRoutes');
 startupLogger.logStep('userRoutes', 'success');
 const soporteRoutes = require('./routes/soporteRoutes');
 startupLogger.logStep('soporteRoutes', 'success');
-// const planRoutes = require('./routes/planRoutes'); // Comentado - usando nuevo sistema de planes
-// startupLogger.logStep('planRoutes', 'success');
 const modificadorRoutes = require('./routes/modificadorRoutes');
 startupLogger.logStep('modificadorRoutes', 'success');
 const grupoMesaRoutes = require('./routes/grupoMesaRoutes');
@@ -177,8 +175,6 @@ app.use('/api/v1/users', userRoutes);
 startupLogger.logStep('Ruta /api/v1/users', 'success');
 app.use('/api/v1/soporte', soporteRoutes);
 startupLogger.logStep('Ruta /api/v1/soporte', 'success');
-// app.use('/api/v1/plans', planRoutes); // Comentado - usando nuevo sistema de planes
-startupLogger.logStep('Ruta /api/v1/plans', 'success');
 app.use('/api/v1/modificadores', modificadorRoutes);
 startupLogger.logStep('Ruta /api/v1/modificadores', 'success');
 app.use('/api/v1/grupos-mesas', grupoMesaRoutes);

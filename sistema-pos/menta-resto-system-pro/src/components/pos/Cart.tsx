@@ -73,7 +73,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onAppl
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-tight line-clamp-2">
                   {item.name}
                 </h4>
-                <div className="flex items-center space-x-2 mt-1">
+                <div className="flex flex-col gap-1 mt-1">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {item.category || 'Sin categoría'}
                   </span>
@@ -81,6 +81,15 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onAppl
                     <span className="text-xs text-blue-600 dark:text-blue-400">
                       📝 {item.notes}
                     </span>
+                  )}
+                  {item.modificadores && item.modificadores.length > 0 && (
+                    <div className="flex flex-col gap-0.5">
+                      {item.modificadores.map((mod: any, idx: number) => (
+                        <span key={idx} className="text-xs text-green-600 dark:text-green-400">
+                          + {mod.nombre_modificador} (Bs {parseFloat(mod.precio_extra).toFixed(2)})
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

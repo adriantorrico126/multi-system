@@ -17,9 +17,10 @@ interface CheckoutModalProps {
   onConfirmSale: (paymentMethod: string, invoiceData?: InvoiceData, additionalData?: any) => void;
   onCancel: () => void;
   mesaNumero?: number | null; // Add mesaNumero prop
+  tipoServicio?: 'Mesa' | 'Delivery' | 'Para Llevar'; // Add tipoServicio prop
 }
 
-export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: CheckoutModalProps) {
+export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipoServicio }: CheckoutModalProps) {
   const [selectedPayment, setSelectedPayment] = useState<string>('');
   const [needsInvoice, setNeedsInvoice] = useState(false);
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
@@ -27,10 +28,18 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
     businessName: '',
     customerName: ''
   });
-  const [tipoPedido, setTipoPedido] = useState<'mesa' | 'llevar' | 'delivery'>(
-    mesaNumero ? 'mesa' : 'llevar'
-  );
-  const lockByLlevar = !mesaNumero; // Si viene sin mesa, bloquear cambio de opción
+  // Determinar tipoPedido inicial basado en tipoServicio y mesaNumero
+  const getInitialTipoPedido = (): 'mesa' | 'llevar' | 'delivery' => {
+    if (tipoServicio === 'Mesa') {
+      return 'mesa'; // Siempre usar mesa si el tipoServicio es Mesa
+    } else if (tipoServicio === 'Delivery') {
+      return 'delivery';
+    } else {
+      return 'llevar';
+    }
+  };
+
+  const [tipoPedido] = useState<'mesa' | 'llevar' | 'delivery'>(getInitialTipoPedido());
   const [clienteInfo, setClienteInfo] = useState({
     nombre: '',
     telefono: '',
@@ -50,17 +59,39 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
     queryFn: getMetodosPago,
   });
 
-  // Filtrar solo métodos activos
+  // Filtrar solo métodos activos y ordenar según preferencias
   const metodosPagoActivos = metodosPagoDB.filter((metodo: any) => 
     metodo.activo
-  );
+  ).sort((a: any, b: any) => {
+    // Ordenar: Efectivo primero, luego Pago Móvil, luego el resto
+    const ordenPreferido = ['Efectivo', 'Pago Móvil', 'Pago Movil'];
+    const indexA = ordenPreferido.indexOf(a.descripcion);
+    const indexB = ordenPreferido.indexOf(b.descripcion);
+    
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    } else if (indexA !== -1) {
+      return -1;
+    } else if (indexB !== -1) {
+      return 1;
+    }
+    return a.descripcion.localeCompare(b.descripcion);
+  });
 
-  // Seleccionar automáticamente el primer método de pago cuando se carguen
+  // Seleccionar automáticamente Efectivo como predeterminado
   useEffect(() => {
     if (metodosPagoActivos.length > 0 && !selectedPayment) {
-      setSelectedPayment(metodosPagoActivos[0].descripcion);
+      const efectivo = metodosPagoActivos.find((metodo: any) => 
+        metodo.descripcion === 'Efectivo'
+      );
+      setSelectedPayment(efectivo ? efectivo.descripcion : metodosPagoActivos[0].descripcion);
     }
   }, [metodosPagoActivos, selectedPayment]);
+
+  // Log de validación para debug
+  useEffect(() => {
+    console.log('🔍 [CheckoutModal] Estado actual:', { mesaNumero, tipoPedido, tipoServicio });
+  }, [mesaNumero, tipoPedido, tipoServicio]);
 
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -69,6 +100,18 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
     console.log('🔍 [CheckoutModal] selectedPayment:', selectedPayment);
     console.log('🔍 [CheckoutModal] needsInvoice:', needsInvoice);
     console.log('🔍 [CheckoutModal] items:', items);
+    console.log('🔍 [CheckoutModal] tipoPedido:', tipoPedido);
+    console.log('🔍 [CheckoutModal] mesaNumero:', mesaNumero);
+    
+    // Validación: Si es mesa, debe tener número de mesa
+    if (tipoPedido === 'mesa' && (!mesaNumero || mesaNumero <= 0)) {
+      toast({
+        title: "Error de Validación",
+        description: "Debe seleccionar un número de mesa válido para procesar la venta.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Preparar datos adicionales para pago diferido
     const additionalData = {
@@ -140,33 +183,20 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 pt-0">
-          {/* Tipo de Pedido */}
+          {/* Tipo de Pedido - Solo Mostrar */}
           <div>
             <Label className="text-sm sm:text-base font-semibold">Tipo de Pedido</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-              <Button
-                variant={tipoPedido === 'mesa' ? "default" : "outline"}
-                onClick={() => setTipoPedido('mesa')}
-                disabled={!mesaNumero || lockByLlevar}
-                className="text-xs sm:text-sm h-10 sm:h-auto"
-              >
-                Mesa {mesaNumero || 'N/A'}
-              </Button>
-              <Button
-                variant={tipoPedido === 'llevar' ? "default" : "outline"}
-                onClick={() => setTipoPedido('llevar')}
-                className="text-xs sm:text-sm h-10 sm:h-auto"
-              >
-                Para Llevar
-              </Button>
-              <Button
-                variant={tipoPedido === 'delivery' ? "default" : "outline"}
-                onClick={() => setTipoPedido('delivery')}
-                disabled={lockByLlevar}
-                className="text-xs sm:text-sm h-10 sm:h-auto"
-              >
-                Delivery
-              </Button>
+            <div className="mt-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-lg border border-blue-200">
+                <span className="text-sm font-medium">
+                  {tipoPedido === 'mesa' && `🍽️ Mesa ${mesaNumero || 'N/A'}`}
+                  {tipoPedido === 'llevar' && '📦 Para Llevar'}
+                  {tipoPedido === 'delivery' && '🚚 Delivery'}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Tipo de servicio seleccionado en el carrito
+              </p>
             </div>
           </div>
 
@@ -373,6 +403,15 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
             )}
           </div>
 
+          {/* Mensaje de validación para mesa */}
+          {tipoPedido === 'mesa' && (!mesaNumero || mesaNumero <= 0) && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-700 text-sm font-medium">
+                ⚠️ Debe seleccionar un número de mesa válido para procesar la venta.
+              </p>
+            </div>
+          )}
+
           {/* Botones */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
             <Button variant="outline" onClick={onCancel} className="flex-1 h-10 sm:h-auto text-xs sm:text-sm">
@@ -393,7 +432,10 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero }: Ch
             <Button 
               onClick={handleConfirm}
               className="flex-1 h-10 sm:h-auto text-xs sm:text-sm"
-              disabled={needsInvoice && (!invoiceData.nit || !invoiceData.businessName)}
+              disabled={
+                (needsInvoice && (!invoiceData.nit || !invoiceData.businessName)) ||
+                (tipoPedido === 'mesa' && (!mesaNumero || mesaNumero <= 0))
+              }
             >
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Confirmar Venta</span>

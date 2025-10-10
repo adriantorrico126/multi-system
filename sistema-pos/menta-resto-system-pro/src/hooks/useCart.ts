@@ -56,14 +56,28 @@ export function useCart() {
     enabled: hasFeature('incluye_promociones'), // Solo cargar promociones si el plan las incluye
   });
 
-  const addToCart = useCallback((product: Product, notes?: string) => {
+  const addToCart = useCallback((product: Product, notes?: string, modificadores?: any[]) => {
     setCart((currentCart) => {
-      const existingItem = currentCart.find((item) => 
-        (item.originalId === product.id || item.id === product.id) && item.notes === notes
-      );
+      // Calcular precio de modificadores
+      const precioModificadores = modificadores?.reduce((total, mod) => {
+        return total + (parseFloat(mod.precio_extra) || 0);
+      }, 0) || 0;
+
+      // Para items con modificadores, siempre crear un item nuevo
+      // Para items sin modificadores, buscar si ya existe
+      const existingItem = !modificadores || modificadores.length === 0 
+        ? currentCart.find((item) => 
+            (item.originalId === product.id || item.id === product.id) && 
+            item.notes === notes &&
+            (!item.modificadores || item.modificadores.length === 0)
+          )
+        : null;
+
       if (existingItem) {
         return currentCart.map((item) =>
-          (item.originalId === product.id || item.id === product.id) && item.notes === notes 
+          (item.originalId === product.id || item.id === product.id) && 
+          item.notes === notes &&
+          (!item.modificadores || item.modificadores.length === 0)
             ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
@@ -72,17 +86,18 @@ export function useCart() {
       const cartItemId = `${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       const precioOriginal = product.price_original || product.price;
-      const precioConDescuento = product.price;
+      const precioConDescuento = product.price + precioModificadores;
       const tieneDescuentoBackend = product.price_original && product.price_original !== product.price;
       
       const newItem = { 
         ...product, 
-        id: cartItemId, 
+        id: cartItemId,
         originalId: product.id, 
         originalPrice: precioOriginal, 
         price: precioConDescuento, 
         quantity: 1, 
-        notes: notes || '' 
+        notes: notes || '',
+        modificadores: modificadores || [] // Agregar modificadores al item
       };
       
       if (!tieneDescuentoBackend) {

@@ -254,7 +254,7 @@ const getSucursalId = () => {
 
 export const getCategories = async () => {
   try {
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias`);
+    const response = await api.get('/categorias');
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
@@ -268,7 +268,7 @@ export const getCategories = async () => {
 
 export const getAllCategories = async () => {
   try {
-    const response = await api.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000/api/v1'}/categorias?includeInactive=true`);
+    const response = await api.get('/categorias?includeInactive=true');
     return response.data.data.map((category: any) => ({
       id_categoria: category.id_categoria,
       nombre: category.nombre,
@@ -625,7 +625,7 @@ export const createSale = async (sale: {
   const items = sale.items.map(item => ({
     id_producto: parseInt(item.id, 10),
     cantidad: item.quantity,
-    precio_unitario: item.price,
+    precio_unitario: (item as any).originalPrice || item.price, // Usar precio original SIN modificadores
     observaciones: item.notes || '',
     modificadores: item.modificadores || []
   }));

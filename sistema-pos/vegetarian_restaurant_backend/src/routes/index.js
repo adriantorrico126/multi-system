@@ -16,7 +16,6 @@ const soporteRoutes = require('./soporteRoutes');
 const grupoMesaRoutes = require('./grupoMesaRoutes');
 const modificadorRoutes = require('./modificadorRoutes');
 const reservaRoutes = require('./reservaRoutes');
-// const planRoutes = require('./planRoutes'); // Comentado - usando nuevo sistema de planes
 const metodosPagoRoutes = require('./metodosPagoRoutes');
 
 // Rutas del sistema de egresos
@@ -49,7 +48,6 @@ router.use('/soporte', soporteRoutes);
 router.use('/grupos-mesas', grupoMesaRoutes);
 router.use('/modificadores', modificadorRoutes);
 router.use('/reservas', reservaRoutes);
-// router.use('/plans', planRoutes); // Comentado - usando nuevo sistema de planes
 router.use('/metodos-pago', metodosPagoRoutes);
 
 // Montar rutas del sistema de egresos
@@ -95,7 +93,6 @@ router.get('/info', (req, res) => {
                     '/api/v1/grupos-mesas',
                     '/api/v1/modificadores',
                     '/api/v1/reservas',
-                    '/api/v1/plans',
                     '/api/v1/metodos-pago',
                     '/api/v1/egresos',
                     '/api/v1/categorias-egresos',

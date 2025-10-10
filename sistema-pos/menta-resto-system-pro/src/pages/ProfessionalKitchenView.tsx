@@ -44,6 +44,12 @@ interface ProductDetail {
   prioridad?: string;
   estacion_cocina?: string;
   tiempo_estimado?: number;
+  modificadores?: Array<{
+    id_modificador: number;
+    nombre_modificador: string;
+    cantidad?: number;
+    tipo_modificador?: string;
+  }>;
 }
 
 interface KitchenOrder {
@@ -668,6 +674,24 @@ export function ProfessionalKitchenView({ orders: propOrders, onUpdateOrderStatu
                                     <p className="text-pink-300 text-sm bg-pink-500/10 rounded px-2 py-1 mt-1">
                                       📝 {detalle.observaciones}
                                     </p>
+                                  )}
+                                  
+                                  {/* Mostrar modificadores/toppings */}
+                                  {detalle.modificadores && detalle.modificadores.length > 0 && (
+                                    <div className="mt-2 space-y-1 bg-green-500/10 rounded-lg p-2 border border-green-500/30">
+                                      <p className="text-green-200 text-xs font-semibold mb-1">✨ Extras:</p>
+                                      {detalle.modificadores.map((mod, idx) => (
+                                        <div key={idx} className="text-green-300 text-sm flex items-center gap-2">
+                                          <span className="text-green-400">+</span>
+                                          <span className="font-medium">{mod.nombre_modificador}</span>
+                                          {mod.cantidad && mod.cantidad > 1 && (
+                                            <Badge variant="secondary" className="bg-green-500/20 text-green-200 text-xs">
+                                              x{mod.cantidad}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
                                   )}
                                   
                                   {detalle.estacion_cocina && (

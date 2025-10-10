@@ -17,6 +17,7 @@ import { Header } from './Header';
 import MesaManagement from './MesaManagement';
 import CategoryList from './CategoryList';
 import Membresia from '../../pages/Membresia';
+import { ToppingsManager } from '@/components/admin/ToppingsManager';
 import { PlanGate } from '@/components/plan/PlanGate';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -67,7 +68,6 @@ import { getProducts, getCategories, getKitchenOrders, createSale, refreshInvent
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { usePlanSystem } from '@/context/PlanSystemContext';
-import { KitchenView } from '../../pages/KitchenView';
 import { ProfessionalKitchenView } from '../../pages/ProfessionalKitchenView';
 import { MesasMesero } from './MesasMesero';
 import { MesaMap } from './index';
@@ -972,8 +972,9 @@ export function POSSystem() {
         items: cart.map((item) => ({
           id_producto: parseInt(item.originalId || item.id),
           cantidad: item.quantity,
-          precio_unitario: item.price,
-          observaciones: item.notes || null
+          precio_unitario: item.originalPrice || item.price, // Usar precio original SIN modificadores
+          observaciones: item.notes || null,
+          modificadores: item.modificadores || []
         })),
         total: pendingSaleData.newSale.total
       });
@@ -1614,6 +1615,17 @@ export function POSSystem() {
                 Sucursales
               </Button>
             )}
+            {(user.rol === 'admin' || user.rol === 'gerente' || user.rol === 'super_admin') && (
+              <Button
+                variant={activeDashboardSubTab === 'toppings' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleDashboardSubTabChange('toppings')}
+                className="rounded-lg transition-all duration-200 flex-shrink-0 whitespace-nowrap"
+              >
+                <ChefHat className="h-4 w-4 mr-2" />
+                Toppings
+              </Button>
+            )}
             {(user.rol === 'admin' || user.rol === 'super_admin') && (
               <Button
                 variant={activeDashboardSubTab === 'membresia' ? 'default' : 'outline'}
@@ -1714,11 +1726,11 @@ export function POSSystem() {
             </div>
           )}
 
-          {/* Vista de Cocina - Pantalla del Cocinero */}
+          {/* Vista de Cocina - Pantalla del Cocinero y Admin */}
           {activeTab === 'kitchen' && (
             <div className="p-6">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
-                <KitchenView />
+                <ProfessionalKitchenView />
               </div>
             </div>
           )}
@@ -1794,6 +1806,11 @@ export function POSSystem() {
               {activeDashboardSubTab === 'sucursales' && (user.rol === 'admin' || user.rol === 'super_admin') && (
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
                   <SucursalManagement currentUserRole={(user.rol === 'super_admin' ? 'admin' : user.rol) as any} />
+                </div>
+              )}
+              {activeDashboardSubTab === 'toppings' && (user.rol === 'admin' || user.rol === 'gerente' || user.rol === 'super_admin') && (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-6">
+                  <ToppingsManager />
                 </div>
               )}
               {activeDashboardSubTab === 'membresia' && (
@@ -2067,16 +2084,35 @@ export function POSSystem() {
                       placeholder="Ej. 5"
                       value={mesaNumero === null ? '' : mesaNumero}
                       onChange={(e) => setMesaNumero(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm text-xs"
+                      className={`w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 shadow-sm text-xs ${
+                        !mesaNumero ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                      }`}
                       required
                       min="1"
                     />
+                    {(!mesaNumero || mesaNumero <= 0) && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>Debe ingresar un número de mesa para continuar</span>
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {/* Botón de Checkout */}
                 <Button
-                  onClick={() => setShowCheckout(true)}
+                  onClick={() => {
+                    // Validación: Si el tipo de servicio es "Mesa", debe haber un número de mesa
+                    if (tipoServicio === 'Mesa' && (!mesaNumero || mesaNumero <= 0)) {
+                      toast({
+                        title: "⚠️ Mesa Requerida",
+                        description: "Debe seleccionar un número de mesa válido para procesar una venta de mesa.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setShowCheckout(true);
+                  }}
                   className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg transition-all duration-200 py-2 text-sm font-semibold"
                   size="sm"
                 >
@@ -2094,6 +2130,7 @@ export function POSSystem() {
         onConfirmSale={confirmSale}
         onCancel={() => setShowCheckout(false)}
         mesaNumero={mesaNumero}
+        tipoServicio={tipoServicio}
       />
     )}
     {selectedInvoice && <InvoiceModal sale={selectedInvoice} onClose={() => setSelectedInvoice(null)} />}

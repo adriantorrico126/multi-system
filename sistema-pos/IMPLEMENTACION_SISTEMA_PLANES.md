@@ -12,10 +12,31 @@ Este documento describe la implementación completa del sistema de planes comerc
 - **`test_plans_migration_local.py`** - Script Python para probar migración en local
 
 ### 2. Backend (Node.js)
+
+#### Sistema de Planes (Activo)
 - **`src/middlewares/planMiddleware.js`** - Middleware de control de planes y permisos
+- **`src/middlewares/planLimitsMiddleware.js`** - Middleware de límites de recursos
+- **`src/middlewares/planValidationMiddleware.js`** - Middleware de validación de planes
+- **`src/middlewares/usageTrackingMiddleware.js`** - Middleware de seguimiento de uso
 - **`src/controllers/planController.js`** - Controlador para gestión de planes
-- **`src/routes/planRoutes.js`** - Rutas de la API para planes
-- **`src/app.js`** - Actualizado para incluir rutas de planes
+- **`src/models/PlanModel.js`** - Modelo de planes
+- **`src/routes/planesRoutes.js`** - Rutas de la API para planes (/api/v1/planes-sistema)
+
+#### Sistema de Suscripciones
+- **`src/controllers/SuscripcionController.js`** - Controlador de suscripciones
+- **`src/models/SuscripcionModel.js`** - Modelo de suscripciones
+- **`src/routes/suscripcionesRoutes.js`** - Rutas de suscripciones (/api/v1/suscripciones-sistema)
+
+#### Sistema de Contadores y Alertas
+- **`src/controllers/ContadorUsoController.js`** - Controlador de contadores de uso
+- **`src/models/ContadorUsoModel.js`** - Modelo de contadores
+- **`src/controllers/AlertaLimiteController.js`** - Controlador de alertas
+- **`src/models/AlertaLimiteModel.js`** - Modelo de alertas
+- **`src/routes/contadoresSistemaRoutes.js`** - Rutas de contadores (/api/v1/contadores-sistema)
+- **`src/routes/alertasRoutes.js`** - Rutas de alertas (/api/v1/alertas-sistema)
+
+#### Integración en App
+- **`src/app.js`** - Actualizado para incluir rutas del sistema de planes
 
 ### 3. Documentación
 - **`PROPUESTA_PLANES_COMERCIALES.tex`** - Informe profesional en LaTeX
@@ -121,44 +142,64 @@ Middleware específico para verificar límites de recursos:
 
 ## 🌐 API ENDPOINTS
 
-### Gestión de Planes
-- `GET /api/v1/plans/current` - Plan actual del restaurante
-- `GET /api/v1/plans/available` - Planes disponibles
-- `POST /api/v1/plans/change` - Cambiar plan
-- `GET /api/v1/plans/history` - Historial de cambios
+### Gestión de Planes (`/api/v1/planes-sistema`)
+- `GET /api/v1/planes-sistema` - Obtener todos los planes activos
+- `GET /api/v1/planes-sistema/:id` - Obtener un plan por ID
+- `GET /api/v1/planes-sistema/nombre/:nombre` - Obtener un plan por nombre
+- `GET /api/v1/planes-sistema/descuento-anual` - Planes con descuento anual
+- `GET /api/v1/planes-sistema/estadisticas` - Estadísticas de uso de planes
+- `GET /api/v1/planes-sistema/mas-popular` - Plan más popular
+- `GET /api/v1/planes-sistema/:idPlan1/compare/:idPlan2` - Comparar dos planes
+- `GET /api/v1/planes-sistema/:id/validar` - Validar si un plan existe
+- `GET /api/v1/planes-sistema/:id/limites` - Obtener límites de un plan
+- `GET /api/v1/planes-sistema/:id/funcionalidad/:funcionalidad` - Verificar funcionalidad
+- `POST /api/v1/planes-sistema` - Crear un nuevo plan (Admin)
+- `PUT /api/v1/planes-sistema/:id` - Actualizar un plan (Admin)
+- `DELETE /api/v1/planes-sistema/:id` - Desactivar un plan (Admin)
 
-### Monitoreo y Alertas
-- `GET /api/v1/plans/alerts` - Alertas de límites
-- `PUT /api/v1/plans/alerts/:id/resolve` - Resolver alerta
-- `GET /api/v1/plans/usage-stats` - Estadísticas de uso
+### Gestión de Planes por Restaurante
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/actual` - Plan actual del restaurante
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/uso` - Uso actual del restaurante
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/limites` - Verificar límites
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/info` - Información completa del plan
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/funcionalidades` - Funcionalidades disponibles
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/estadisticas` - Estadísticas de uso
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/puede-agregar/:tipoRecurso` - Verificar si puede agregar recurso
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/upgrade-options` - Opciones de upgrade
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/downgrade-options` - Opciones de downgrade
+- `GET /api/v1/planes-sistema/restaurante/:idRestaurante/compare/:idPlan` - Comparar con otro plan
 
-### Verificación de Límites
-- `GET /api/v1/plans/limits/products` - Límite de productos
-- `GET /api/v1/plans/limits/users` - Límite de usuarios
-- `GET /api/v1/plans/limits/sucursales` - Límite de sucursales
-- `GET /api/v1/plans/limits/transactions` - Límite de transacciones
+### Gestión de Suscripciones (`/api/v1/suscripciones-sistema`)
+- `GET /api/v1/suscripciones-sistema/estadisticas` - Estadísticas de suscripciones
+- `GET /api/v1/suscripciones-sistema/ingresos` - Ingresos por suscripciones
+- `GET /api/v1/suscripciones-sistema/estado/:estado` - Suscripciones por estado
+- `GET /api/v1/suscripciones-sistema/proximas-a-vencer` - Suscripciones próximas a vencer
+- `GET /api/v1/suscripciones-sistema/vencidas` - Suscripciones vencidas
+- `GET /api/v1/suscripciones-sistema/activas` - Suscripciones activas
+- `GET /api/v1/suscripciones-sistema/restaurante/:idRestaurante` - Suscripciones de un restaurante
+- `GET /api/v1/suscripciones-sistema/restaurante/:idRestaurante/actual` - Suscripción actual
+- `GET /api/v1/suscripciones-sistema/restaurante/:idRestaurante/historial` - Historial de suscripciones
+- `POST /api/v1/suscripciones-sistema` - Crear suscripción
+- `PUT /api/v1/suscripciones-sistema/:id` - Actualizar suscripción
+- `POST /api/v1/suscripciones-sistema/:id/cambiar-plan` - Cambiar plan
+- `POST /api/v1/suscripciones-sistema/:id/renovar` - Renovar suscripción
+- `POST /api/v1/suscripciones-sistema/:id/cancelar` - Cancelar suscripción
+- `POST /api/v1/suscripciones-sistema/:id/reactivar` - Reactivar suscripción
 
-### Verificación de Funcionalidades
-- `GET /api/v1/plans/features/inventory` - Acceso a inventario
-- `GET /api/v1/plans/features/dashboard` - Acceso al dashboard
-- `GET /api/v1/plans/features/sales` - Acceso a ventas
-- `GET /api/v1/plans/features/mesas` - Acceso a mesas
-- `GET /api/v1/plans/features/reservas` - Acceso a reservas
-- `GET /api/v1/plans/features/delivery` - Acceso a delivery
-- `GET /api/v1/plans/features/promociones` - Acceso a promociones
-- `GET /api/v1/plans/features/egresos` - Acceso a egresos
-- `GET /api/v1/plans/features/cocina` - Acceso a cocina
-- `GET /api/v1/plans/features/arqueo` - Acceso a arqueo
-- `GET /api/v1/plans/features/lotes` - Acceso a lotes
-- `GET /api/v1/plans/features/analytics` - Acceso a analytics
-- `GET /api/v1/plans/features/api` - Acceso a API externa
-- `GET /api/v1/plans/features/white-label` - Acceso a white label
+### Contadores de Uso (`/api/v1/contadores-sistema`)
+- `GET /api/v1/contadores-sistema/restaurante/:idRestaurante` - Contadores de un restaurante
+- `GET /api/v1/contadores-sistema/restaurante/:idRestaurante/actual` - Uso actual
+- `GET /api/v1/contadores-sistema/restaurante/:idRestaurante/:recurso` - Uso de recurso específico
+- `POST /api/v1/contadores-sistema/actualizar` - Actualizar contadores
+- `POST /api/v1/contadores-sistema/restaurante/:idRestaurante/reset` - Resetear contadores mensuales
 
-### Verificación de Planes Específicos
-- `GET /api/v1/plans/check/basico` - Verificar plan básico o superior
-- `GET /api/v1/plans/check/profesional` - Verificar plan profesional o superior
-- `GET /api/v1/plans/check/avanzado` - Verificar plan avanzado o superior
-- `GET /api/v1/plans/check/enterprise` - Verificar plan enterprise
+### Alertas de Límites (`/api/v1/alertas-sistema`)
+- `GET /api/v1/alertas-sistema/restaurante/:idRestaurante` - Alertas de un restaurante
+- `GET /api/v1/alertas-sistema/restaurante/:idRestaurante/activas` - Alertas activas
+- `GET /api/v1/alertas-sistema/:id` - Obtener alerta específica
+- `PUT /api/v1/alertas-sistema/:id/resolver` - Resolver alerta
+- `POST /api/v1/alertas-sistema` - Crear alerta manual
+- `DELETE /api/v1/alertas-sistema/:id` - Eliminar alerta
 
 ## 📊 PLANES IMPLEMENTADOS
 

@@ -727,7 +727,24 @@ exports.getPedidosParaCocina = async (req, res, next) => {
                   'nombre_producto', p.nombre,
                   'cantidad', dv.cantidad,
                   'precio_unitario', dv.precio_unitario,
-                  'observaciones', dv.observaciones
+                  'observaciones', dv.observaciones,
+                  'id_detalle', dv.id_detalle,
+                  'modificadores', COALESCE(
+                    (
+                      SELECT json_agg(
+                        json_build_object(
+                          'id_modificador', pm.id_modificador,
+                          'nombre_modificador', pm.nombre_modificador,
+                          'cantidad', 1,
+                          'tipo_modificador', pm.tipo_modificador
+                        )
+                      )
+                      FROM detalle_ventas_modificadores dvm
+                      JOIN productos_modificadores pm ON dvm.id_modificador = pm.id_modificador
+                      WHERE dvm.id_detalle_venta = dv.id_detalle
+                    ),
+                    '[]'::json
+                  )
               )
           ) AS productos
       FROM
