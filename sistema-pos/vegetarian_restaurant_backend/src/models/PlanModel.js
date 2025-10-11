@@ -30,7 +30,7 @@ class PlanModel {
         try {
             const query = `
                 SELECT 
-                    id_plan,
+                    id as id_plan,
                     nombre,
                     descripcion,
                     precio_mensual,
@@ -58,9 +58,9 @@ class PlanModel {
                     orden_display,
                     created_at,
                     updated_at
-                FROM planes 
-                WHERE activo = true 
-                ORDER BY orden_display ASC, precio_mensual ASC
+                FROM planes_pos_pos 
+                WHERE true 
+                ORDER BY precio_mensual ASC
             `;
             
             const result = await this.pool.query(query);
@@ -80,7 +80,7 @@ class PlanModel {
         try {
             const query = `
                 SELECT 
-                    id_plan,
+                    id as id_plan,
                     nombre,
                     descripcion,
                     precio_mensual,
@@ -109,8 +109,8 @@ class PlanModel {
                     activo,
                     created_at,
                     updated_at
-                FROM planes 
-                WHERE id_plan = $1
+                FROM planes_pos 
+                WHERE id = $1
             `;
             
             const result = await this.pool.query(query, [idPlan]);
@@ -130,7 +130,7 @@ class PlanModel {
         try {
             const query = `
                 SELECT 
-                    id_plan,
+                    id as id_plan,
                     nombre,
                     descripcion,
                     precio_mensual,
@@ -159,7 +159,7 @@ class PlanModel {
                     activo,
                     created_at,
                     updated_at
-                FROM planes 
+                FROM planes_pos 
                 WHERE nombre = $1 AND activo = true
             `;
             
@@ -179,7 +179,7 @@ class PlanModel {
         try {
             const query = `
                 SELECT 
-                    id_plan,
+                    id as id_plan,
                     nombre,
                     descripcion,
                     precio_mensual,
@@ -191,7 +191,7 @@ class PlanModel {
                     max_productos,
                     max_transacciones_mes,
                     almacenamiento_gb
-                FROM planes 
+                FROM planes_pos 
                 WHERE activo = true 
                 AND precio_anual IS NOT NULL 
                 AND precio_anual < (precio_mensual * 12)
@@ -218,8 +218,8 @@ class PlanModel {
     async validatePlan(idPlan) {
         try {
             const query = `
-                SELECT 1 FROM planes 
-                WHERE id_plan = $1 AND activo = true
+                SELECT 1 FROM planes_pos 
+                WHERE id = $1 AND activo = true
             `;
             
             const result = await this.pool.query(query, [idPlan]);
@@ -240,8 +240,8 @@ class PlanModel {
         try {
             const query = `
                 SELECT ${funcionalidad} as disponible
-                FROM planes 
-                WHERE id_plan = $1 AND activo = true
+                FROM planes_pos 
+                WHERE id = $1 AND activo = true
             `;
             
             const result = await this.pool.query(query, [idPlan]);
@@ -266,8 +266,8 @@ class PlanModel {
                     max_productos,
                     max_transacciones_mes,
                     almacenamiento_gb
-                FROM planes 
-                WHERE id_plan = $1 AND activo = true
+                FROM planes_pos 
+                WHERE id = $1 AND activo = true
             `;
             
             const result = await this.pool.query(query, [idPlan]);
@@ -292,7 +292,7 @@ class PlanModel {
         try {
             const query = `
                 SELECT 
-                    id_plan,
+                    id as id_plan,
                     nombre,
                     precio_mensual,
                     precio_anual,
@@ -316,7 +316,7 @@ class PlanModel {
                     incluye_soporte_24h,
                     incluye_api,
                     incluye_white_label
-                FROM planes 
+                FROM planes_pos 
                 WHERE id_plan IN ($1, $2) AND activo = true
                 ORDER BY id_plan
             `;
@@ -370,7 +370,7 @@ class PlanModel {
                     AVG(CASE WHEN sa.estado = 'activa' THEN 
                         EXTRACT(DAYS FROM (sa.fecha_fin - sa.fecha_inicio)) 
                     END) as duracion_promedio_dias
-                FROM planes p
+                FROM planes_pos p
                 LEFT JOIN suscripciones sa ON p.id_plan = sa.id_plan
                 WHERE p.activo = true
                 GROUP BY p.id_plan, p.nombre, p.precio_mensual
@@ -397,7 +397,7 @@ class PlanModel {
                     p.nombre,
                     p.precio_mensual,
                     COUNT(sa.id_suscripcion) as total_suscripciones
-                FROM planes p
+                FROM planes_pos p
                 LEFT JOIN suscripciones sa ON p.id_plan = sa.id_plan
                 WHERE p.activo = true
                 GROUP BY p.id_plan, p.nombre, p.precio_mensual
@@ -528,7 +528,7 @@ class PlanModel {
             const query = `
                 UPDATE planes 
                 SET activo = false, updated_at = CURRENT_TIMESTAMP
-                WHERE id_plan = $1
+                WHERE id = $1
                 RETURNING id_plan
             `;
 

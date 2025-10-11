@@ -12,13 +12,18 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Configuración de la base de datos
+// Configuración de la base de datos - PRODUCCIÓN
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+
 const pool = new Pool({
-    user: 'postgres',
-    password: '6951230Anacleta',
-    host: 'localhost',
-    port: 5432,
-    database: 'sistempos'
+    user: process.env.DB_USER_PROD,
+    password: process.env.DB_PASSWORD_PROD,
+    host: process.env.DB_HOST_PROD,
+    port: process.env.DB_PORT_PROD,
+    database: process.env.DB_NAME_PROD,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 // Colores para la consola
@@ -310,9 +315,9 @@ async function verificarPostMigracion() {
 async function main() {
     logSection('SISTEMA DE MIGRACIONES - TOPPINGS PROFESIONAL');
     
-    console.log('Base de datos: sistempos');
-    console.log('Host: localhost:5432');
-    console.log('Usuario: postgres');
+    console.log('Base de datos: defaultdb (PRODUCCIÓN)');
+    console.log('Host: db-postgresql-nyc3-64232-do-user-24932517-0.j.db.ondigitalocean.com:25060');
+    console.log('Usuario: doadmin');
     console.log('');
     
     try {

@@ -95,3 +95,4 @@ sistema-pos/test_server_status.js
 # Python cache
 __pycache__/
 *.pyc
+.env 
