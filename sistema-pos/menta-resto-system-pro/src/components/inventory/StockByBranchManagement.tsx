@@ -208,12 +208,40 @@ export function StockByBranchManagement({ onStockUpdate }: StockByBranchManageme
     }
   });
 
-  // Efectos
+  // Efectos - Inicializar sucursal del usuario
   useEffect(() => {
+    console.log('🔄 [StockByBranch] useEffect ejecutado:', {
+      branchesLength: branches.length,
+      selectedBranch,
+      user: user ? { id: user.id_vendedor, username: user.username, sucursal: user.sucursal } : null
+    });
+    
     if (branches.length > 0 && !selectedBranch) {
-      setSelectedBranch(branches[0].id_sucursal);
+      // Usar la sucursal del usuario autenticado si está disponible
+      // El objeto user tiene la estructura: user.sucursal.id
+      const userBranchId = user?.sucursal?.id || user?.id_sucursal || branches[0].id_sucursal;
+      
+      console.log('🔍 [StockByBranch] Inicializando sucursal...');
+      console.log('   Usuario completo:', user);
+      console.log('   user.sucursal?.id:', user?.sucursal?.id);
+      console.log('   user.id_sucursal:', user?.id_sucursal);
+      console.log('   Sucursal del usuario (calculada):', userBranchId);
+      console.log('   Sucursales disponibles:', branches.map(b => ({ id: b.id_sucursal, nombre: b.nombre })));
+      
+      // Verificar que la sucursal del usuario esté en la lista
+      const userBranch = branches.find(b => b.id_sucursal === userBranchId);
+      
+      if (userBranch) {
+        setSelectedBranch(userBranchId);
+        console.log('✅ [StockByBranch] Sucursal seleccionada del usuario:', userBranchId, '-', userBranch.nombre);
+      } else {
+        // Si no está, usar la primera disponible
+        const fallbackId = branches[0].id_sucursal;
+        setSelectedBranch(fallbackId);
+        console.log('⚠️ [StockByBranch] Usando primera sucursal disponible:', fallbackId, '-', branches[0].nombre);
+      }
     }
-  }, [branches, selectedBranch]);
+  }, [branches, selectedBranch, user]);
 
   // Limpiar filtros cuando cambie la sucursal
   useEffect(() => {
@@ -317,10 +345,27 @@ export function StockByBranchManagement({ onStockUpdate }: StockByBranchManageme
 
   const handleSaveStock = () => {
     if (selectedProduct && selectedBranch) {
+      console.log('🔍 [StockByBranch] Guardando stock:', {
+        id_producto: selectedProduct.id_producto,
+        id_sucursal: selectedBranch,
+        stockData: editingStock
+      });
+      
       updateStockMutation.mutate({
         id_producto: selectedProduct.id_producto,
         id_sucursal: selectedBranch,
         stockData: editingStock
+      });
+    } else {
+      console.error('❌ [StockByBranch] Error: selectedProduct o selectedBranch es null', {
+        selectedProduct,
+        selectedBranch
+      });
+      
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el stock. Intenta seleccionar una sucursal primero.",
+        variant: "destructive",
       });
     }
   };
