@@ -677,7 +677,7 @@ class ContadorUsoModel {
         try {
             const query = `
                 SELECT 
-                    p.id_plan,
+                    p.id as id_plan,
                     p.nombre as nombre_plan,
                     p.precio_mensual,
                     COUNT(cu.id_contador) as total_restaurantes,

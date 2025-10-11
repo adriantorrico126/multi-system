@@ -51,7 +51,7 @@ class SuscripcionModel {
                     p.max_transacciones_mes,
                     p.almacenamiento_gb
                 FROM suscripciones sa
-                JOIN planes_pos p ON sa.id_plan = p.id
+                JOIN planes p ON sa.id_plan = p.id_plan
                 WHERE sa.id_restaurante = $1 
                 AND sa.estado = 'activa'
                 AND (sa.fecha_fin IS NULL OR sa.fecha_fin >= CURRENT_DATE)
@@ -109,7 +109,7 @@ class SuscripcionModel {
                     p.precio_mensual,
                     p.precio_anual
                 FROM suscripciones sa
-                JOIN planes_pos p ON sa.id_plan = p.id
+                JOIN planes p ON sa.id_plan = p.id_plan
                 WHERE sa.id_restaurante = $1
                 ORDER BY sa.created_at DESC
             `;
@@ -156,7 +156,7 @@ class SuscripcionModel {
                     p.precio_anual,
                     r.nombre as nombre_restaurante
                 FROM suscripciones sa
-                JOIN planes_pos p ON sa.id_plan = p.id
+                JOIN planes p ON sa.id_plan = p.id_plan
                 JOIN restaurantes r ON sa.id_restaurante = r.id_restaurante
                 WHERE sa.estado = $1
                 ORDER BY sa.created_at DESC
@@ -200,7 +200,7 @@ class SuscripcionModel {
                     r.nombre as nombre_restaurante,
                     EXTRACT(DAYS FROM (sa.fecha_fin - CURRENT_DATE)) as dias_restantes
                 FROM suscripciones sa
-                JOIN planes_pos p ON sa.id_plan = p.id
+                JOIN planes p ON sa.id_plan = p.id_plan
                 JOIN restaurantes r ON sa.id_restaurante = r.id_restaurante
                 WHERE sa.estado = 'activa'
                 AND sa.fecha_fin BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '${dias} days'
@@ -244,7 +244,7 @@ class SuscripcionModel {
                     r.nombre as nombre_restaurante,
                     EXTRACT(DAYS FROM (CURRENT_DATE - sa.fecha_fin)) as dias_vencida
                 FROM suscripciones sa
-                JOIN planes_pos p ON sa.id_plan = p.id
+                JOIN planes p ON sa.id_plan = p.id_plan
                 JOIN restaurantes r ON sa.id_restaurante = r.id_restaurante
                 WHERE sa.estado = 'activa'
                 AND sa.fecha_fin < CURRENT_DATE
@@ -609,7 +609,7 @@ class SuscripcionModel {
                         SUM(p.precio_mensual) as ingresos_mensuales,
                         COUNT(*) as total_suscripciones
                     FROM suscripciones sa
-                    JOIN planes_pos p ON sa.id_plan = p.id
+                    JOIN planes p ON sa.id_plan = p.id_plan
                     WHERE sa.estado = 'activa'
                 `;
             } else {
@@ -618,7 +618,7 @@ class SuscripcionModel {
                         SUM(p.precio_anual) as ingresos_anuales,
                         COUNT(*) as total_suscripciones
                     FROM suscripciones sa
-                    JOIN planes_pos p ON sa.id_plan = p.id
+                    JOIN planes p ON sa.id_plan = p.id_plan
                     WHERE sa.estado = 'activa'
                     AND p.precio_anual IS NOT NULL
                 `;
