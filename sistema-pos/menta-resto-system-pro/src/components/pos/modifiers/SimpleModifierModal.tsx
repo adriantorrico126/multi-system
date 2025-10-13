@@ -89,11 +89,10 @@ export function SimpleModifierModal({
       console.log('✅ Toppings cargados:', mods.length);
       setModificadores(mods);
       
-      // Si no hay modificadores, cerrar automáticamente
+      // Si no hay modificadores, mostrar modal sin toppings pero permitir notas
       if (mods.length === 0) {
-        console.log('ℹ️ No hay toppings, agregando directo al carrito...');
-        onAddToCart(product!, '', []);
-        onClose();
+        console.log('ℹ️ No hay toppings disponibles, pero se puede agregar notas');
+        // No cerrar automáticamente, permitir agregar notas
       }
     } catch (error) {
       console.error('Error al cargar toppings:', error);
@@ -144,8 +143,8 @@ export function SimpleModifierModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl">
             🍕 Personaliza tu pedido
           </DialogTitle>
@@ -154,7 +153,7 @@ export function SimpleModifierModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
           {loading ? (
             <div className="text-center py-8 text-gray-500">
               Cargando toppings...
@@ -162,12 +161,12 @@ export function SimpleModifierModal({
           ) : (
             <>
               {/* Lista de Toppings */}
-              {modificadores.length > 0 && (
+              {modificadores.length > 0 ? (
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-gray-700">
                     ✨ Extras Disponibles
                   </Label>
-                  <div className="border rounded-lg p-3 space-y-3 bg-gray-50">
+                  <div className="border rounded-lg p-3 space-y-3 bg-gray-50 max-h-64 overflow-y-auto">
                     {modificadores.map((mod) => {
                       const precio = parseFloat(mod.precio_extra.toString());
                       const isSelected = selectedModifiers.includes(mod.id_modificador);
@@ -200,6 +199,18 @@ export function SimpleModifierModal({
                       );
                     })}
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ShoppingCart className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Este producto no tiene extras disponibles
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Puedes agregar notas especiales a continuación
+                  </p>
                 </div>
               )}
 
@@ -243,7 +254,7 @@ export function SimpleModifierModal({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button
             variant="outline"
             onClick={onClose}

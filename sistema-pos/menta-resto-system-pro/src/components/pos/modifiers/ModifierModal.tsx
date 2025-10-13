@@ -132,11 +132,13 @@ export function ModifierModal({
             setGroups([grupoVirtual]);
           } else {
             console.log('ℹ️ No hay modificadores disponibles, cerrando modal...');
-            handleAddToCartWithoutModifiers();
+            // No cerrar automáticamente, mostrar mensaje de que no hay modificadores
+            setGroups([]);
           }
         } catch (modsError) {
           console.error('Error al cargar modificadores simples:', modsError);
-          handleAddToCartWithoutModifiers();
+          // No cerrar automáticamente, mostrar mensaje de error
+          setGroups([]);
         }
       } else {
         console.log(`✅ ${gruposData.length} grupos de modificadores encontrados`);
@@ -144,8 +146,8 @@ export function ModifierModal({
       }
     } catch (error) {
       console.error('Error al cargar grupos de modificadores:', error);
-      // En caso de error, intentar cerrar el modal
-      handleAddToCartWithoutModifiers();
+      // No cerrar automáticamente, mostrar mensaje de error
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -243,7 +245,7 @@ export function ModifierModal({
 
   const handleAddToCartWithoutModifiers = () => {
     if (!product) return;
-    onAddToCart(product, '', []);
+    onAddToCart(product, notes, []);
     onClose();
   };
 
@@ -274,7 +276,7 @@ export function ModifierModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl sm:text-2xl flex items-center gap-2">
             Personaliza tu pedido
           </DialogTitle>
@@ -293,12 +295,35 @@ export function ModifierModal({
             </div>
           ) : groups.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">
-                Este producto no tiene modificadores configurados
-              </p>
-              <Button onClick={handleAddToCartWithoutModifiers}>
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Sin modificadores disponibles
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Este producto se puede agregar directamente al carrito sin modificaciones adicionales.
+                </p>
+              </div>
+              
+              {/* Notas especiales aún disponibles */}
+              <div className="max-w-md mx-auto mb-6">
+                <label className="font-semibold block mb-2 text-sm text-left">
+                  Notas especiales (opcional)
+                </label>
+                <Textarea
+                  placeholder="Ej: Sin cebolla, cocción término medio, bien cocido, etc."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  className="resize-none text-sm"
+                />
+              </div>
+              
+              <Button onClick={handleAddToCartWithoutModifiers} className="min-w-[200px]">
                 <ShoppingCart className="w-4 h-4 mr-2" />
-                Agregar al carrito
+                Agregar al carrito - Bs {getProductPrice().toFixed(2)}
               </Button>
             </div>
           ) : (
@@ -376,7 +401,7 @@ export function ModifierModal({
           )}
         </div>
 
-        <DialogFooter className="gap-2 mt-4">
+        <DialogFooter className="flex-shrink-0 gap-2 mt-4">
           <Button variant="outline" onClick={onClose} type="button">
             Cancelar
           </Button>
