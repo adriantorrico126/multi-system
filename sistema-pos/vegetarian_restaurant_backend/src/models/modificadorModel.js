@@ -46,17 +46,35 @@ const ModificadorModel = {
   },
 
   /**
-   * Asociar modificadores a un detalle de venta (Legacy - mantener compatibilidad)
+   * Asociar modificadores a un detalle de venta (Actualizado para nueva estructura)
    */
-  async asociarAMovimiento(id_detalle_venta, id_modificadores) {
-    for (const id_modificador of id_modificadores) {
+  async asociarAMovimiento(id_detalle_venta, id_modificadores, modificadoresData = []) {
+    logger.info(`🔍 [ModificadorModel] Asociando ${id_modificadores.length} modificadores al detalle ${id_detalle_venta}`);
+    
+    for (let i = 0; i < id_modificadores.length; i++) {
+      const id_modificador = id_modificadores[i];
+      
+      // Buscar datos del modificador en modificadoresData si está disponible
+      const modificadorData = modificadoresData.find(m => m.id_modificador === id_modificador);
+      const cantidad = modificadorData?.cantidad || 1;
+      const precio_unitario = modificadorData?.precio_unitario || modificadorData?.precio_extra || 0;
+      const subtotal = precio_unitario * cantidad;
+      
+      logger.info(`🔍 [ModificadorModel] Insertando modificador ${id_modificador}: cantidad=${cantidad}, precio=${precio_unitario}, subtotal=${subtotal}`);
+      
       await pool.query(
-        `INSERT INTO detalle_ventas_modificadores (id_detalle_venta, id_modificador, precio_aplicado)
-         VALUES ($1, $2, (SELECT precio_extra FROM productos_modificadores WHERE id_modificador = $2))
-         ON CONFLICT DO NOTHING`,
-        [id_detalle_venta, id_modificador]
+        `INSERT INTO detalle_ventas_modificadores (
+          id_detalle_venta, id_modificador, cantidad, precio_unitario, subtotal
+        ) VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (id_detalle_venta, id_modificador) DO UPDATE SET
+         cantidad = EXCLUDED.cantidad,
+         precio_unitario = EXCLUDED.precio_unitario,
+         subtotal = EXCLUDED.subtotal`,
+        [id_detalle_venta, id_modificador, cantidad, precio_unitario, subtotal]
       );
     }
+    
+    logger.info(`✅ [ModificadorModel] Modificadores asociados exitosamente al detalle ${id_detalle_venta}`);
   },
 
   /**

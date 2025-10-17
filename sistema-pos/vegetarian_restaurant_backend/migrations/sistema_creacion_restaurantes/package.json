@@ -1,0 +1,28 @@
+{
+  "name": "sistema-creacion-restaurantes",
+  "version": "1.0.0",
+  "description": "Sistema avanzado para crear restaurantes completos con todas las configuraciones necesarias",
+  "main": "index.js",
+  "scripts": {
+    "start": "node cli_interactivo.js",
+    "cli": "node cli_interactivo.js",
+    "test": "node ejemplos/prueba_completa.js",
+    "ejemplo:pizzeria": "node ejemplos/crear_pizzeria.js",
+    "ejemplo:personalizado": "node ejemplos/crear_personalizado.js",
+    "ejemplo:produccion": "node ejemplos/crear_produccion.js"
+  },
+  "keywords": [
+    "pos",
+    "restaurant",
+    "setup",
+    "migration",
+    "postgresql"
+  ],
+  "author": "Menta Resto - POS System",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.11.3"
+  }
+}
+

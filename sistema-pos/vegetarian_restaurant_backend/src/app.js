@@ -67,8 +67,10 @@ startupLogger.logStep('inventarioLotesRoutes', 'success');
 const categoriasAlmacenRoutes = require('./routes/categoriasAlmacenRoutes');
 startupLogger.logStep('categoriasAlmacenRoutes', 'success');
 const cocinaRoutes = require('./routes/cocinaRoutes');
+const pensionadoRoutes = require('./routes/pensionadoRoutes');
 const { pool } = require('./config/database');
 startupLogger.logStep('cocinaRoutes', 'success');
+startupLogger.logStep('pensionadoRoutes', 'success');
 
 // Rutas de Egresos
 const egresoRoutes = require('./routes/egresoRoutes');
@@ -239,6 +241,8 @@ app.use('/api/v1/categorias-almacen', categoriasAlmacenRoutes);
 startupLogger.logStep('Ruta /api/v1/categorias-almacen', 'success');
 app.use('/api/v1/cocina', cocinaRoutes);
 startupLogger.logStep('Ruta /api/v1/cocina', 'success');
+app.use('/api/v1/pensionados', pensionadoRoutes);
+startupLogger.logStep('Ruta /api/v1/pensionados', 'success');
 
 // Rutas de Egresos
 app.use('/api/v1/egresos', egresoRoutes);

@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, CreditCard, Printer } from 'lucide-react';
+import { CheckCircle, CreditCard, Printer, UserPlus } from 'lucide-react';
 import { printService, PrintData } from '@/services/printService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { getMetodosPago } from '@/services/api';
+import { PensionadoSelectorInline } from '../pensionados/PensionadoSelectorInline';
+
+
 
 interface CheckoutModalProps {
   items: CartItem[];
@@ -28,6 +31,9 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipo
     businessName: '',
     customerName: ''
   });
+  const [esPensionado, setEsPensionado] = useState(false);
+  const [pensionadoSeleccionado, setPensionadoSeleccionado] = useState<any>(null);
+  const [verificacionPensionado, setVerificacionPensionado] = useState<any>(null);
   // Determinar tipoPedido inicial basado en tipoServicio y mesaNumero
   const getInitialTipoPedido = (): 'mesa' | 'llevar' | 'delivery' => {
     if (tipoServicio === 'Mesa') {
@@ -113,10 +119,16 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipo
       return;
     }
     
-    // Preparar datos adicionales para pago diferido
+    // Preparar datos adicionales para pago diferido y pensionado
     const additionalData = {
       tipo_pago: tipoPago,
-      observaciones_pago: tipoPago === 'diferido' ? observacionesPago : null
+      observaciones_pago: tipoPago === 'diferido' ? observacionesPago : null,
+      es_pensionado: esPensionado,
+      pensionado_data: esPensionado && pensionadoSeleccionado ? {
+        id_pensionado: pensionadoSeleccionado.id_pensionado,
+        nombre_cliente: pensionadoSeleccionado.nombre_cliente,
+        tipo_comida: determinarTipoComida()
+      } : null
     };
     
     console.log('🔍 [CheckoutModal] Llamando a onConfirmSale con:', {
@@ -127,6 +139,13 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipo
     
     onConfirmSale(selectedPayment, needsInvoice ? invoiceData : undefined, additionalData);
     console.log('🔍 [CheckoutModal] onConfirmSale llamado exitosamente');
+  };
+
+  const determinarTipoComida = () => {
+    const hora = new Date().getHours();
+    if (hora >= 6 && hora < 11) return 'desayuno';
+    if (hora >= 11 && hora < 17) return 'almuerzo';
+    return 'cena';
   };
 
   // Función para imprimir comanda
@@ -274,56 +293,96 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipo
             </div>
           </div>
 
-          {/* Tipo de Pago */}
+          {/* Modo Pensionado */}
           <div>
-            <Label className="text-sm sm:text-base font-semibold">Tipo de Pago</Label>
+            <Label className="text-sm sm:text-base font-semibold">Tipo de Venta</Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
               <Button
-                variant={tipoPago === 'anticipado' ? "default" : "outline"}
-                onClick={() => setTipoPago('anticipado')}
+                variant={!esPensionado ? "default" : "outline"}
+                onClick={() => {
+                  setEsPensionado(false);
+                  setPensionadoSeleccionado(null);
+                }}
                 className="flex items-center gap-2 text-xs sm:text-sm h-10 sm:h-auto"
               >
                 <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
-                Pago Anticipado
+                Venta Normal
               </Button>
               <Button
-                variant={tipoPago === 'diferido' ? "default" : "outline"}
-                onClick={() => setTipoPago('diferido')}
-                className="flex items-center gap-2 text-xs sm:text-sm h-10 sm:h-auto"
+                variant={esPensionado ? "default" : "outline"}
+                onClick={() => setEsPensionado(true)}
+                className="flex items-center gap-2 text-xs sm:text-sm h-10 sm:h-auto bg-purple-50 border-purple-300 hover:bg-purple-100"
               >
-                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                Pago al Final
+                <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+                Consumo Pensionado
               </Button>
             </div>
-            
-            {tipoPago === 'diferido' && (
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-yellow-800 font-medium mb-2">
-                  💡 Información sobre Pago Diferido
-                </p>
-                <ul className="text-xs text-yellow-700 space-y-1">
-                  <li>• El cliente pagará al finalizar el consumo</li>
-                  <li>• Se registrará el método de pago cuando se cobre</li>
-                  <li>• El pedido se procesará normalmente</li>
-                </ul>
-                <div className="mt-2">
-                  <Label htmlFor="observacionesPago" className="text-xs font-medium">
-                    Observaciones (opcional)
-                  </Label>
-                  <Input
-                    id="observacionesPago"
-                    value={observacionesPago}
-                    onChange={(e) => setObservacionesPago(e.target.value)}
-                    placeholder="Ej: Cliente conocido, pagará con tarjeta..."
-                    className="text-xs h-8 sm:h-10"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Método de pago - Solo mostrar si es pago anticipado */}
-          {tipoPago === 'anticipado' && (
+          {/* Tipo de Pago (solo si NO es pensionado) */}
+          {!esPensionado && (
+            <div>
+              <Label className="text-sm sm:text-base font-semibold">Tipo de Pago</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <Button
+                  variant={tipoPago === 'anticipado' ? "default" : "outline"}
+                  onClick={() => setTipoPago('anticipado')}
+                  className="flex items-center gap-2 text-xs sm:text-sm h-10 sm:h-auto"
+                >
+                  <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Pago Anticipado
+                </Button>
+                <Button
+                  variant={tipoPago === 'diferido' ? "default" : "outline"}
+                  onClick={() => setTipoPago('diferido')}
+                  className="flex items-center gap-2 text-xs sm:text-sm h-10 sm:h-auto"
+                >
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Pago al Final
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Selección de Pensionado */}
+          {esPensionado && (
+            <PensionadoSelectorInline
+              onSeleccionar={(pensionado, verificacion) => {
+                setPensionadoSeleccionado(pensionado);
+                setVerificacionPensionado(verificacion);
+              }}
+              tipoComida={determinarTipoComida() as any}
+            />
+          )}
+
+          {/* Observaciones de pago diferido */}
+          {!esPensionado && tipoPago === 'diferido' && (
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs sm:text-sm text-yellow-800 font-medium mb-2">
+                💡 Información sobre Pago Diferido
+              </p>
+              <ul className="text-xs text-yellow-700 space-y-1">
+                <li>• El cliente pagará al finalizar el consumo</li>
+                <li>• Se registrará el método de pago cuando se cobre</li>
+                <li>• El pedido se procesará normalmente</li>
+              </ul>
+              <div className="mt-2">
+                <Label htmlFor="observacionesPago" className="text-xs font-medium">
+                  Observaciones (opcional)
+                </Label>
+                <Input
+                  id="observacionesPago"
+                  value={observacionesPago}
+                  onChange={(e) => setObservacionesPago(e.target.value)}
+                  placeholder="Ej: Cliente conocido, pagará con tarjeta..."
+                  className="text-xs h-8 sm:h-10"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Método de pago - Solo mostrar si es pago anticipado y NO es pensionado */}
+          {!esPensionado && tipoPago === 'anticipado' && (
             <div>
               <Label className="text-sm sm:text-base font-semibold">Método de Pago</Label>
               {loadingMetodos ? (
@@ -434,11 +493,14 @@ export function CheckoutModal({ items, onConfirmSale, onCancel, mesaNumero, tipo
               className="flex-1 h-10 sm:h-auto text-xs sm:text-sm"
               disabled={
                 (needsInvoice && (!invoiceData.nit || !invoiceData.businessName)) ||
-                (tipoPedido === 'mesa' && (!mesaNumero || mesaNumero <= 0))
+                (tipoPedido === 'mesa' && (!mesaNumero || mesaNumero <= 0)) ||
+                (esPensionado && (!pensionadoSeleccionado || !verificacionPensionado?.puede_consumir))
               }
             >
               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Confirmar Venta</span>
+              <span className="hidden sm:inline">
+                {esPensionado ? 'Registrar Consumo' : 'Confirmar Venta'}
+              </span>
               <span className="sm:hidden">Confirmar</span>
             </Button>
           </div>

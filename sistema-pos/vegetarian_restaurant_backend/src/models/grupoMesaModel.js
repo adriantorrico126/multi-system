@@ -285,18 +285,44 @@ const GrupoMesaModel = {
         const productosRes = await client.query(
           `SELECT 
             p.nombre as nombre_producto,
+            p.id_producto,
             dv.cantidad,
             dv.precio_unitario,
-            (dv.cantidad * dv.precio_unitario) as subtotal,
+            dv.subtotal,
             dv.observaciones,
+            dv.id_detalle,
             v.fecha as fecha_venta,
-            v.id_venta
+            v.id_venta,
+            
+            -- NUEVO: Agregación de modificadores en JSON
+            COALESCE(
+              JSON_AGG(
+                JSON_BUILD_OBJECT(
+                  'id_modificador', pm.id_modificador,
+                  'nombre_modificador', pm.nombre_modificador,
+                  'cantidad', dvm.cantidad,
+                  'precio_unitario', dvm.precio_unitario,
+                  'subtotal', dvm.subtotal
+                ) ORDER BY pm.nombre_modificador
+              ) FILTER (WHERE pm.id_modificador IS NOT NULL),
+              '[]'::json
+            ) as modificadores
+            
            FROM detalle_ventas dv
            JOIN productos p ON dv.id_producto = p.id_producto
            JOIN ventas v ON dv.id_venta = v.id_venta
+           
+           -- NUEVO: Join con modificadores
+           LEFT JOIN detalle_ventas_modificadores dvm ON dv.id_detalle = dvm.id_detalle_venta
+           LEFT JOIN productos_modificadores pm ON dvm.id_modificador = pm.id_modificador
+           
            WHERE v.id_mesa = $1 
              AND v.estado != 'cancelado'
              AND v.fecha >= $2
+           
+           GROUP BY p.nombre, p.id_producto, dv.id_detalle, dv.cantidad, 
+                    dv.precio_unitario, dv.subtotal, dv.observaciones, 
+                    v.fecha, v.id_venta
            ORDER BY v.fecha ASC`,
           [mesa.id_mesa, fechaCreacionGrupo]
         );
@@ -312,17 +338,27 @@ const GrupoMesaModel = {
       
       console.log(`💰 Total final del grupo: $${totalFinal}`);
       
-      // Agrupar productos por nombre y sumar cantidades
+      // Agrupar productos por nombre Y modificadores (NUEVO: distingue por modificadores)
       const productosAgrupados = {};
       productos.forEach(producto => {
-        const key = producto.nombre_producto;
+        // Crear key única que incluya modificadores
+        const modificadores = Array.isArray(producto.modificadores) ? producto.modificadores : [];
+        const modificadoresKey = modificadores
+          .map(m => `${m.id_modificador}:${m.cantidad || 1}`)
+          .sort()
+          .join(',') || 'sin-mods';
+        
+        const key = `${producto.id_producto}__${modificadoresKey}`;
+        
         if (!productosAgrupados[key]) {
           productosAgrupados[key] = {
-            nombre_producto: key,
+            nombre_producto: producto.nombre_producto,
+            id_producto: producto.id_producto,
             cantidad_total: 0,
             precio_unitario: parseFloat(producto.precio_unitario) || 0,
             subtotal_total: 0,
-            observaciones: producto.observaciones || '-'
+            observaciones: producto.observaciones || '-',
+            modificadores: modificadores // Incluir modificadores
           };
         }
         

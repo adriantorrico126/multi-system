@@ -351,8 +351,41 @@ exports.agregarProductosAMesa = async (req, res, next) => {
           client
         );
 
+        // NUEVO: Procesar modificadores para cada detalle creado
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const detalle = detalles[i];
+          
+          if (item.modificadores && Array.isArray(item.modificadores) && item.modificadores.length > 0) {
+            logger.info(`🔍 [DEBUG] Procesando ${item.modificadores.length} modificadores para detalle ${detalle.id_detalle}`);
+            
+            // Insertar modificadores en detalle_ventas_modificadores
+            for (const modificador of item.modificadores) {
+              await client.query(`
+                INSERT INTO detalle_ventas_modificadores (
+                  id_detalle_venta, id_modificador, cantidad, precio_unitario, subtotal
+                ) VALUES ($1, $2, $3, $4, $5)
+              `, [
+                detalle.id_detalle,
+                modificador.id_modificador,
+                modificador.cantidad || 1,
+                modificador.precio_unitario || modificador.precio_extra || 0,
+                (modificador.precio_unitario || modificador.precio_extra || 0) * (modificador.cantidad || 1)
+              ]);
+              
+              logger.info(`✅ Modificador ${modificador.nombre_modificador} agregado al detalle ${detalle.id_detalle}`);
+            }
+          }
+        }
+
         // Actualizar el total de la venta existente (SUMAR, no reemplazar)
-        const nuevoTotalVenta = parseFloat(venta.total) + parseFloat(total);
+        // CORREGIDO: Asegurar conversión a números
+        const totalVentaActual = parseFloat(venta.total) || 0;
+        const totalNuevoProductos = parseFloat(total) || 0;
+        const nuevoTotalVenta = totalVentaActual + totalNuevoProductos;
+        
+        logger.info(`🔍 [DEBUG] Calculando total venta: ${totalVentaActual} + ${totalNuevoProductos} = ${nuevoTotalVenta}`);
+        
         await client.query(`
           UPDATE ventas 
           SET total = $1, updated_at = NOW()
@@ -389,11 +422,45 @@ exports.agregarProductosAMesa = async (req, res, next) => {
           id_restaurante, // Pasar id_restaurante a createDetalleVenta
           client
         );
+
+        // NUEVO: Procesar modificadores para cada detalle creado
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const detalle = detalles[i];
+          
+          if (item.modificadores && Array.isArray(item.modificadores) && item.modificadores.length > 0) {
+            logger.info(`🔍 [DEBUG] Procesando ${item.modificadores.length} modificadores para detalle ${detalle.id_detalle}`);
+            
+            // Insertar modificadores en detalle_ventas_modificadores
+            for (const modificador of item.modificadores) {
+              await client.query(`
+                INSERT INTO detalle_ventas_modificadores (
+                  id_detalle_venta, id_modificador, cantidad, precio_unitario, subtotal
+                ) VALUES ($1, $2, $3, $4, $5)
+              `, [
+                detalle.id_detalle,
+                modificador.id_modificador,
+                modificador.cantidad || 1,
+                modificador.precio_unitario || modificador.precio_extra || 0,
+                (modificador.precio_unitario || modificador.precio_extra || 0) * (modificador.cantidad || 1)
+              ]);
+              
+              logger.info(`✅ Modificador ${modificador.nombre_modificador} agregado al detalle ${detalle.id_detalle}`);
+            }
+          }
+        }
+        
         logger.info(`🔍 [DEBUG] Nueva venta creada ID: ${venta.id_venta}`);
       }
 
       // Actualizar total acumulado de la mesa
-      const nuevoTotal = mesa.total_acumulado + total;
+      // CORREGIDO: Convertir a números antes de sumar para evitar concatenación de strings
+      const totalAcumuladoActual = parseFloat(mesa.total_acumulado) || 0;
+      const totalNuevo = parseFloat(total) || 0;
+      const nuevoTotal = totalAcumuladoActual + totalNuevo;
+      
+      logger.info(`🔍 [DEBUG] Calculando nuevo total: ${totalAcumuladoActual} + ${totalNuevo} = ${nuevoTotal}`);
+      
       await Mesa.actualizarTotalAcumulado(id_mesa, nuevoTotal, id_restaurante, client);
       await client.query('COMMIT');
       logger.info(`Productos agregados a la mesa con ID ${id_mesa} exitosamente para el restaurante ${id_restaurante}. Total acumulado: ${nuevoTotal}`);
@@ -580,7 +647,7 @@ exports.generarPrefactura = async (req, res, next) => {
     // Actualizar el total acumulado en la mesa SOLO con el de la sesión actual
     await pool.query('UPDATE mesas SET total_acumulado = $1 WHERE id_mesa = $2 AND id_restaurante = $3', [totalAcumulado, mesa.id_mesa, id_restaurante]);
 
-    // Obtener historial completo de la mesa con más detalles
+    // Obtener historial completo de la mesa con más detalles (INCLUYE MODIFICADORES)
     const historialQuery = `
       SELECT 
         v.id_venta,
@@ -595,16 +662,40 @@ exports.generarPrefactura = async (req, res, next) => {
         p.nombre as nombre_producto,
         vend.nombre as nombre_vendedor,
         dv.id_detalle,
-        dv.id_producto
+        dv.id_producto,
+        
+        -- NUEVO: Agregación de modificadores en JSON
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id_modificador', pm.id_modificador,
+              'nombre_modificador', pm.nombre_modificador,
+              'cantidad', dvm.cantidad,
+              'precio_unitario', dvm.precio_unitario,
+              'subtotal', dvm.subtotal
+            ) ORDER BY pm.nombre_modificador
+          ) FILTER (WHERE pm.id_modificador IS NOT NULL),
+          '[]'::json
+        ) as modificadores
+        
       FROM ventas v
       LEFT JOIN detalle_ventas dv ON v.id_venta = dv.id_venta
       LEFT JOIN productos p ON dv.id_producto = p.id_producto
       LEFT JOIN vendedores vend ON v.id_vendedor = vend.id_vendedor
+      
+      -- NUEVO: Join con modificadores
+      LEFT JOIN detalle_ventas_modificadores dvm ON dv.id_detalle = dvm.id_detalle_venta
+      LEFT JOIN productos_modificadores pm ON dvm.id_modificador = pm.id_modificador
+      
       WHERE v.id_mesa = $1
         AND v.id_sucursal = $2
         AND v.id_restaurante = $3
         AND v.estado = ANY($4)
         ${fechaAperturaPrefactura ? 'AND v.fecha >= $5' : ''}
+      
+      GROUP BY v.id_venta, v.fecha, v.total, v.estado, v.tipo_servicio,
+               dv.id_detalle, dv.cantidad, dv.precio_unitario, dv.subtotal, dv.observaciones,
+               p.nombre, p.id_producto, vend.nombre
       ORDER BY v.fecha DESC
     `;
     const historialParams = fechaAperturaPrefactura 
@@ -639,17 +730,27 @@ exports.generarPrefactura = async (req, res, next) => {
       });
     }
 
-    // Calcular subtotales por producto
+    // Calcular subtotales por producto (NUEVO: distingue por modificadores)
     const productosAgrupados = {};
     historialResult.rows.forEach((item, index) => {
-      const key = item.nombre_producto;
+      // Crear key única que incluya modificadores
+      const modificadores = Array.isArray(item.modificadores) ? item.modificadores : [];
+      const modificadoresKey = modificadores
+        .map(m => `${m.id_modificador}:${m.cantidad || 1}`)
+        .sort()
+        .join(',') || 'sin-mods';
+      
+      const key = `${item.id_producto}__${modificadoresKey}`;
+      
       if (!productosAgrupados[key]) {
         productosAgrupados[key] = {
-          nombre_producto: key,
+          nombre_producto: item.nombre_producto,
+          id_producto: item.id_producto,
           cantidad_total: 0,
           precio_unitario: parseFloat(item.precio_unitario) || 0,
           subtotal_total: 0,
-          observaciones: item.observaciones || '-'
+          observaciones: item.observaciones || '-',
+          modificadores: modificadores // Incluir modificadores
         };
       }
       
@@ -659,7 +760,10 @@ exports.generarPrefactura = async (req, res, next) => {
       productosAgrupados[key].cantidad_total += cantidad;
       productosAgrupados[key].subtotal_total += subtotal;
       
-      logger.info(`Producto ${index + 1}: ${key}, Cantidad: ${cantidad}, Subtotal: ${subtotal}`);
+      const modsText = modificadores.length > 0 
+        ? ` + ${modificadores.map(m => m.nombre_modificador).join(', ')}` 
+        : '';
+      logger.info(`Producto ${index + 1}: ${item.nombre_producto}${modsText}, Cantidad: ${cantidad}, Subtotal: ${subtotal}`);
     });
 
     const historialAgrupado = Object.values(productosAgrupados);

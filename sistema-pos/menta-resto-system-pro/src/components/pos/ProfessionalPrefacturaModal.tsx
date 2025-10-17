@@ -39,6 +39,14 @@ import { useMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { getVentaConDetalles } from '@/services/api';
 
+interface Modificador {
+  id_modificador: number;
+  nombre_modificador: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
 interface ProductoDetalle {
   id_detalle: number;
   producto_nombre: string;
@@ -48,6 +56,7 @@ interface ProductoDetalle {
   observaciones?: string;
   estado?: string;
   fecha_agregado?: string;
+  modificadores?: Modificador[];
 }
 
 interface MesaInfo {
@@ -421,16 +430,25 @@ export function ProfessionalPrefacturaModal({
                       {data.detalles && data.detalles.length > 0 ? (
                         <div className="space-y-3">
                           {(() => {
-                            // Agrupar productos por nombre y sumar cantidades
+                            // Agrupar productos por nombre Y modificadores (NUEVO: distingue por modificadores)
                             const productosAgrupados = data.detalles.reduce((acc: any, producto: any) => {
-                              const key = producto.producto_nombre;
+                              // Crear key única que incluya modificadores
+                              const modificadores = Array.isArray(producto.modificadores) ? producto.modificadores : [];
+                              const modificadoresKey = modificadores
+                                .map((m: Modificador) => `${m.id_modificador}:${m.cantidad || 1}`)
+                                .sort()
+                                .join(',') || 'sin-mods';
+                              
+                              const key = `${producto.id_producto || producto.producto_nombre}__${modificadoresKey}`;
+                              
                               if (!acc[key]) {
                                 acc[key] = {
                                   ...producto,
                                   cantidad_total: 0,
                                   subtotal_total: 0,
                                   observaciones_combinadas: [],
-                                  fechas_agregado: []
+                                  fechas_agregado: [],
+                                  modificadores: modificadores // Incluir modificadores
                                 };
                               }
                               // Asegurar que los valores sean números
@@ -473,20 +491,36 @@ export function ProfessionalPrefacturaModal({
                                       <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
                                         <Package className="h-5 w-5 text-white" />
                                       </div>
-                                      <div>
-                                        <h4 className="font-semibold text-gray-900">{producto.producto_nombre}</h4>
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                          <span className="font-medium text-blue-600">
-                                            Cantidad: {producto.cantidad_total}
-                                          </span>
-                                          <span>Precio unitario: {formatCurrency(producto.precio_unitario)}</span>
-                                          {producto.estado && (
-                                            <Badge className={getEstadoColor(producto.estado)}>
-                                              {producto.estado}
-                                            </Badge>
-                                          )}
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-gray-900">{producto.producto_nombre}</h4>
+                                      
+                                      {/* NUEVO: Mostrar modificadores */}
+                                      {producto.modificadores && producto.modificadores.length > 0 && (
+                                        <div className="mt-1 space-y-0.5">
+                                          {producto.modificadores.map((mod: Modificador) => (
+                                            <div key={mod.id_modificador} className="text-xs text-green-600 flex items-center gap-1">
+                                              <span>+ {mod.nombre_modificador}</span>
+                                              {mod.cantidad > 1 && <span>(×{mod.cantidad})</span>}
+                                              <span className="text-gray-500">
+                                                {formatCurrency(mod.subtotal)}
+                                              </span>
+                                            </div>
+                                          ))}
                                         </div>
+                                      )}
+                                      
+                                      <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                        <span className="font-medium text-blue-600">
+                                          Cantidad: {producto.cantidad_total}
+                                        </span>
+                                        <span>Precio base: {formatCurrency(producto.producto_precio || producto.precio_unitario)}</span>
+                                        {producto.estado && (
+                                          <Badge className={getEstadoColor(producto.estado)}>
+                                            {producto.estado}
+                                          </Badge>
+                                        )}
                                       </div>
+                                    </div>
                                     </div>
                                     <div className="text-right">
                                       <div className="text-lg font-bold text-green-600">

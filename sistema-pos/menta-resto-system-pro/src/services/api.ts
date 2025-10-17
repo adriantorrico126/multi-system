@@ -980,7 +980,18 @@ export const liberarMesa = async (id_mesa: number) => {
 // Agregar productos a mesa existente
 export const agregarProductosAMesa = async (data: {
   id_mesa: number;
-  items: Array<{ id_producto: number; cantidad: number; precio_unitario: number; observaciones?: string }>;
+  items: Array<{ 
+    id_producto: number; 
+    cantidad: number; 
+    precio_unitario: number; 
+    observaciones?: string;
+    modificadores?: Array<{
+      id_modificador: number;
+      nombre_modificador: string;
+      precio_extra: number;
+      cantidad?: number;
+    }>;
+  }>;
   total: number;
 }) => {
   try {

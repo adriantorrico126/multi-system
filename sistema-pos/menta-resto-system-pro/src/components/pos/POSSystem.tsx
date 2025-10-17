@@ -60,7 +60,8 @@ import {
   Database,
   UserCheck,
   Crown,
-  ChefHat
+  ChefHat,
+  UserPlus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { exportSalesToCSV } from '@/utils/csvExport';
@@ -892,17 +893,67 @@ export function POSSystem() {
       clearCartAfterSale();
 
       console.log('✅ [POSSystem] Mostrando toast de venta exitosa');
-      try {
-        const toastResult = toast({
-          title: '✅ Venta Registrada',
-          description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
-          variant: 'default',
-          duration: 5000, // 5 segundos
-        });
-        console.log('✅ [POSSystem] Toast llamado exitosamente, resultado:', toastResult);
-      } catch (toastError) {
-        console.error('❌ [POSSystem] Error al mostrar toast:', toastError);
+      
+      // Si es un consumo de pensionado, registrarlo
+      if (additionalData?.es_pensionado && additionalData?.pensionado_data) {
+        try {
+          console.log('🔍 [POSSystem] Registrando consumo de pensionado...');
+          
+          const { registrarConsumo } = await import('@/services/pensionadosApi');
+          
+          const consumoData = {
+            id_pensionado: additionalData.pensionado_data.id_pensionado,
+            fecha_consumo: new Date().toISOString().split('T')[0],
+            tipo_comida: additionalData.pensionado_data.tipo_comida,
+            id_venta: parseInt(realSaleId),
+            id_mesa: idMesaSeleccionada,
+            productos_consumidos: cart.map(item => ({
+              id_producto: item.originalId || item.id,
+              nombre_producto: item.name,
+              cantidad: item.quantity,
+              precio_unitario: item.price,
+              subtotal: item.price * item.quantity,
+              modificadores: item.modificadores || []
+            })),
+            total_consumido: newSale.total,
+            observaciones: `Consumo registrado desde POS - ${additionalData.pensionado_data.tipo_comida}`
+          };
+
+          const consumoResponse = await registrarConsumo(consumoData);
+          
+          if (consumoResponse.success) {
+            console.log('✅ [POSSystem] Consumo de pensionado registrado exitosamente');
+            toast({
+              title: '✅ Consumo Registrado',
+              description: `Consumo de ${additionalData.pensionado_data.nombre_cliente} registrado exitosamente.`,
+              variant: 'default',
+              duration: 5000,
+            });
+          }
+        } catch (pensionadoError: any) {
+          console.error('❌ [POSSystem] Error al registrar consumo de pensionado:', pensionadoError);
+          toast({
+            title: '⚠️ Venta creada pero consumo no registrado',
+            description: 'La venta se creó correctamente, pero hubo un error al vincularla con el pensionado. Regístrala manualmente.',
+            variant: 'destructive',
+            duration: 7000,
+          });
+        }
+      } else {
+        // Venta normal, mostrar toast normal
+        try {
+          const toastResult = toast({
+            title: '✅ Venta Registrada',
+            description: `Venta por Bs ${newSale.total.toFixed(2)} procesada exitosamente.`,
+            variant: 'default',
+            duration: 5000, // 5 segundos
+          });
+          console.log('✅ [POSSystem] Toast llamado exitosamente, resultado:', toastResult);
+        } catch (toastError) {
+          console.error('❌ [POSSystem] Error al mostrar toast:', toastError);
+        }
       }
+      
       console.log('✅ [POSSystem] Toast mostrado exitosamente');
     } catch (error: any) {
       // LOG DETALLADO PARA DEPURACIÓN
@@ -1634,6 +1685,17 @@ export function POSSystem() {
               >
                 <Tag className="h-4 w-4 mr-2" />
                 Membresía
+              </Button>
+            )}
+            {(user.rol === 'admin' || user.rol === 'gerente' || user.rol === 'super_admin') && (
+              <Button
+                variant={activeDashboardSubTab === 'pensionados' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => navigate('/pensionados')}
+                className="rounded-lg transition-all duration-200 flex-shrink-0 whitespace-nowrap"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Pensionados
               </Button>
             )}
           </div>

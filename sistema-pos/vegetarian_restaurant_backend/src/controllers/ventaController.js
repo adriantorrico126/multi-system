@@ -433,7 +433,9 @@ exports.createVenta = async (req, res, next) => {
           const totalAcumulado = parseFloat(totalSesionResult.rows[0].total_acumulado) || 0;
           
           // Sumar la venta actual al total de la sesión
-          const nuevoTotal = totalAcumulado + total;
+          // CORREGIDO: Asegurar que total también sea numérico
+          const totalVentaActual = parseFloat(total) || 0;
+          const nuevoTotal = totalAcumulado + totalVentaActual;
           
           mesaActualizada = await Mesa.actualizarTotalAcumulado(mesa.id_mesa, nuevoTotal, id_restaurante, client);
           if (!mesaActualizada) {
@@ -674,8 +676,9 @@ exports.createVenta = async (req, res, next) => {
         const detalle = detalles[i];
         const item = items[i];
         if (item.modificadores && item.modificadores.length > 0) {
+          logger.info(`🔍 [VentaController] Procesando ${item.modificadores.length} modificadores para detalle ${detalle.id_detalle}`);
           const id_modificadores = item.modificadores.map((m) => m.id_modificador);
-          await ModificadorModel.asociarAMovimiento(detalle.id_detalle, id_modificadores);
+          await ModificadorModel.asociarAMovimiento(detalle.id_detalle, id_modificadores, item.modificadores);
         }
       }
     }

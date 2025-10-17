@@ -18,6 +18,7 @@ import InventoryPage from '@/pages/InventoryPage';
 import CajaEgresoPage from '@/pages/CajaEgresoPage';
 import InfoCajaPage from '@/pages/InfoCajaPage';
 import SupportPage from '@/pages/SupportPage';
+import PensionadosPage from '@/pages/PensionadosPage';
 
 const App: React.FC = () => {
   return (
@@ -77,6 +78,15 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <SupportPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/pensionados"
+          element={
+            <ProtectedRoute requiredRole={['admin', 'super_admin', 'gerente']}>
+              <PensionadosPage />
             </ProtectedRoute>
           }
         />

@@ -442,9 +442,12 @@ const Venta = {
       const venta = ventaResult.rows[0];
       console.log('✅ [MODEL] getVentaConDetalles - Venta encontrada:', venta.id_venta);
 
-      // Obtener los detalles de la venta
+      // Obtener los detalles de la venta (sin modificadores primero)
       const detallesQuery = `
-        SELECT dv.*, p.nombre as producto_nombre, p.precio as producto_precio
+        SELECT 
+          dv.*,
+          p.nombre as producto_nombre, 
+          p.precio as producto_precio
         FROM detalle_ventas dv
         LEFT JOIN productos p ON dv.id_producto = p.id_producto
         WHERE dv.id_venta = $1 AND dv.id_restaurante = $2
@@ -453,6 +456,24 @@ const Venta = {
       const detallesResult = await pool.query(detallesQuery, [id_venta, id_restaurante]);
 
       console.log('🔍 [MODEL] getVentaConDetalles - Detalles encontrados:', detallesResult.rows.length, 'productos');
+
+      // Obtener modificadores para cada detalle
+      for (let detalle of detallesResult.rows) {
+        const modificadoresQuery = `
+          SELECT 
+            pm.id_modificador,
+            pm.nombre_modificador,
+            dvm.cantidad,
+            dvm.precio_unitario,
+            dvm.subtotal
+          FROM detalle_ventas_modificadores dvm
+          LEFT JOIN productos_modificadores pm ON dvm.id_modificador = pm.id_modificador
+          WHERE dvm.id_detalle_venta = $1
+          ORDER BY pm.nombre_modificador
+        `;
+        const modificadoresResult = await pool.query(modificadoresQuery, [detalle.id_detalle]);
+        detalle.modificadores = modificadoresResult.rows;
+      }
 
       const resultado = {
         ...venta,
